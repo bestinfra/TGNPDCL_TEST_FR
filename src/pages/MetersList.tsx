@@ -198,6 +198,81 @@ const MetersList: React.FC = () => {
         window.location.reload();
     };
 
+    const handleExportData = () => {
+        import("xlsx").then((XLSX) => {
+            const workbook = XLSX.utils.book_new();
+
+            // 1. Meter Statistics Cards
+            const meterStatsExportData = meterCards.map((card) => ({
+                Metric: card.title,
+                Value: card.value || "N/A",
+                Subtitle1: card.subtitle1 || "",
+                Subtitle2: card.subtitle2 || "",
+            }));
+
+            // 2. Meters Table Data
+            const metersTableExportData = tableData.map((meter, index) => ({
+                "S.No": meter.slNo || index + 1,
+                "Meter Serial No": meter.meterSlNo || "N/A",
+                "Modem Serial No": meter.modemSlNo || "N/A",
+                "Meter Type": meter.meterType || "N/A",
+                "Meter Make": meter.meterMake || "N/A",
+                "Consumer Name": meter.consumerName || "N/A",
+                "Location": meter.location || "N/A",
+                "Installation Date": meter.installationDate || "N/A",
+                "Status": meter.status || "N/A"
+            }));
+
+            // Create sheets with auto-sizing
+            const meterStatsSheet = XLSX.utils.json_to_sheet(meterStatsExportData);
+            const metersTableSheet = XLSX.utils.json_to_sheet(metersTableExportData);
+
+            // Auto-size columns for better readability
+            const setAutoWidth = (worksheet: any) => {
+                const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+                const colWidths: any[] = [];
+                
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = worksheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+                }
+                worksheet['!cols'] = colWidths;
+            };
+
+            // Apply auto-width to all sheets
+            [meterStatsSheet, metersTableSheet].forEach(sheet => setAutoWidth(sheet));
+
+            // Append sheets to workbook
+            XLSX.utils.book_append_sheet(workbook, meterStatsSheet, "Meter Statistics");
+            XLSX.utils.book_append_sheet(workbook, metersTableSheet, "Meters List");
+
+            const excelBuffer = XLSX.write(workbook, {
+                bookType: "xlsx",
+                type: "array",
+            });
+
+            const blob = new Blob([excelBuffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "meters-list.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        });
+    };
+
     return (
         <Page
             sections={[
@@ -231,9 +306,9 @@ const MetersList: React.FC = () => {
                                 title: 'Meters List',
                                 onBackClick: () => window.history.back(),
                                 backButtonText: 'Back to Dashboard',
-                                buttonsLabel: '',
+                                buttonsLabel: 'Export',
                                 variant: 'primary',
-                                onClick: () => {},
+                                onClick: () => handleExportData(),
                                 showMenu: true,
                                 showDropdown: true,
                                 menuItems: [
@@ -243,7 +318,8 @@ const MetersList: React.FC = () => {
                                     { id: 'prepaid', label: 'Prepaid' },
                                     { id: 'postpaid', label: 'Postpaid' },
                                     { id: 'mapped', label: 'Mapped' },
-                                    { id: 'unmapped', label: 'Unmapped' }
+                                    { id: 'unmapped', label: 'Unmapped' },
+                                    { id: 'export', label: 'Export' }
                                 ],
                                 onMenuItemClick: (itemId: string) => {
                                     console.log(`Filter by: ${itemId}`);
@@ -253,6 +329,8 @@ const MetersList: React.FC = () => {
                                         setType(itemId);
                                     } else if (itemId === 'mapped' || itemId === 'unmapped') {
                                         setMapping(itemId);
+                                    } else if (itemId === 'export') {
+                                        handleExportData();
                                     } else if (itemId === 'all') {
                                         setStatus('');
                                         setType('');
