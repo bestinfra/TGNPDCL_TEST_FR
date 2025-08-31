@@ -62,21 +62,21 @@ const dummyAlertsData = [
 
 // Default stats data
 const defaultStats = [
-    { title: 'R-Phase Voltage', value: '257.686', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Voltage', value: '255.089', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'B-Phase Voltage', value: '254.417', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Apparent Power', value: '19.527', icon: '/icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'MD-kVA', value: '52.220', icon: '/icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'R-Phase Current', value: '15.892', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Y-Phase Current', value: '27.644', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'B-Phase Current', value: '33.984', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8',valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base' ,iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Neutral Current', value: '12.980', icon: '/icons/consumption.svg', subtitle1: 'Amps' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'Frequency', value: '49.980', icon: '/icons/frequency.svg', subtitle1: 'Hz' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'R-Phase PF', value: '1.000', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE}, 
-    { title: 'Y-Phase PF', value: '-0.987', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'B-Phase PF', value: '0.998', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Avg PF', value: '-0.999', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'Cummulative kVAh', value: '77902.296', icon: '/icons/consumption.svg', subtitle1: 'kVAh' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
+    { title: 'R-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Apparent Power', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'MD-kVA', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Neutral Current', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Frequency', value: 'N/A', icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
+    { title: 'Y-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Avg PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Cummulative kVAh', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
 ];
 
 const Feeders = () => {
@@ -84,8 +84,7 @@ const Feeders = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    console.log('Feeders Page - DTR ID:', dtrId, 'Feeder ID:', feederId);
-    console.log('Feeders Page - Location State:', location.state);
+
     
     // Get passed data from navigation state
     const passedData = location.state as {
@@ -108,6 +107,82 @@ const Feeders = () => {
     // Use passed feeder data if available, otherwise use default
     const feederData = passedData?.feederData;
 
+    // If we have a feederId but no passedData, we need to construct the data structure
+    // This handles the case when navigating directly to /feeder/SN18132429
+    const effectiveFeederData = passedData?.feederData || (feederId ? {
+        feederName: feederId,
+        // We'll need to get other feeder details from the API
+    } : null);
+
+    // Determine the effective DTR ID to use for API calls
+    const getEffectiveDtrId = () => {
+        // First try passedData.dtrId
+        if (passedData?.dtrId) {
+            return passedData.dtrId;
+        }
+        
+        // Then try to extract from dtrId parameter
+        if (dtrId && dtrId.match(/\d+/)?.[0]) {
+            return dtrId.match(/\d+/)?.[0];
+        }
+        
+        // If we have a feederId, we need to find the DTR ID from the backend
+        // For now, return null and handle this case in the API calls
+        if (feederId) {
+            return null; // We'll need to handle this specially
+        }
+        
+        return dtrId;
+    };
+
+    const effectiveDtrId = getEffectiveDtrId();
+
+    // Function to find DTR ID from feeder ID
+    const findDtrIdFromFeederId = async (feederId: string): Promise<string | null> => {
+        try {
+    
+            
+            // We need to search for the feeder to find its DTR ID
+            // This could be done by searching through all DTRs or by a specific feeder search endpoint
+            // For now, let's try to search through the DTRs endpoint with a search parameter
+            
+            // Option 1: Search through DTRs with feeder name
+            const searchResponse = await fetch(`${BACKEND_URL}/dtrs?search=${feederId}`);
+            if (searchResponse.ok) {
+                const searchData = await searchResponse.json();
+                if (searchData.success && searchData.data.length > 0) {
+                    // Find the DTR that contains this feeder
+                    for (const dtr of searchData.data) {
+                        // Check if this DTR has the feeder
+                        const dtrResponse = await fetch(`${BACKEND_URL}/dtrs/${dtr.dtrId || dtr.dtrNumber}`);
+                        if (dtrResponse.ok) {
+                            const dtrData = await dtrResponse.json();
+                            if (dtrData.success && dtrData.data?.feeders) {
+                                const hasFeeder = dtrData.data.feeders.some((feeder: any) => 
+                                    feeder.serialNumber === feederId || 
+                                    feeder.meterNumber === feederId
+                                );
+                                if (hasFeeder) {
+                    
+                                    return dtr.dtrId || dtr.dtrNumber;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            console.warn('findDtrIdFromFeederId - Could not find DTR ID for feeder:', feederId);
+            return null;
+        } catch (error) {
+            console.error('findDtrIdFromFeederId - Error:', error);
+            return null;
+        }
+    };
+
+    // State to store the resolved DTR ID when we find it from feeder ID
+    const [resolvedDtrId, setResolvedDtrId] = useState<string | null>(effectiveDtrId || null);
+
     // State for API data - initialized with dummy data
     const [instantaneousStatsData, setInstantaneousStatsData] = useState<any>(dummyInstantaneousStatsData);
     const [consumptionAnalyticsData, setConsumptionAnalyticsData] = useState<any>(dummyConsumptionAnalyticsData);
@@ -118,11 +193,11 @@ const Feeders = () => {
         seriesData: [{ name: 'kVA', data: [] }]
     });
 
-    // Loading states - initialized to true
-    const [isStatsLoading, setIsStatsLoading] = useState(true);
-    const [isConsumptionLoading, setIsConsumptionLoading] = useState(true);
-    const [isAlertsLoading, setIsAlertsLoading] = useState(true);
-    const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(true);
+    // Loading states - initialized to false
+    const [isStatsLoading, setIsStatsLoading] = useState(false);
+    const [isConsumptionLoading, setIsConsumptionLoading] = useState(false);
+    const [isAlertsLoading, setIsAlertsLoading] = useState(false);
+    const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
 
     // State for tracking failed APIs
     const [failedApis, setFailedApis] = useState<Array<{
@@ -134,27 +209,59 @@ const Feeders = () => {
 
     // API Functions
     const fetchInstantaneousStats = async () => {
-        // Use numeric ID from passed data or extract from dtrNumber
-        const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-        console.log('fetchInstantaneousStats - Original dtrId:', dtrId);
-        console.log('fetchInstantaneousStats - passedData?.dtrId:', passedData?.dtrId);
-        console.log('fetchInstantaneousStats - Extracted numericDtrId:', numericDtrId);
-        if (!numericDtrId) return;
+        // Use resolved DTR ID
+        let numericDtrId = resolvedDtrId;
+        
+        // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
+        if (!numericDtrId && feederId) {
+
+            const foundDtrId = await findDtrIdFromFeederId(feederId);
+            if (foundDtrId) {
+                setResolvedDtrId(foundDtrId);
+                numericDtrId = foundDtrId;
+            } else {
+                console.warn('fetchInstantaneousStats - Could not find DTR ID for feeder:', feederId);
+                return;
+            }
+        }
+        
+        if (!numericDtrId) {
+            console.warn('fetchInstantaneousStats - No DTR ID available');
+            return;
+        }
+
+
 
         setIsStatsLoading(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`);
+            // If we have specific feeder data, we need to get individual meter data
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
+            
+            // If we have specific feeder data, we should get individual meter stats
+            if (effectiveFeederData?.feederName) {
+
+            }
+            
+            const response = await fetch(endpoint);
             const data = await response.json();
             
             if (data.success) {
-                console.log('Instantaneous stats API response:', data.data);
-                console.log('lastCommDate from API:', data.data.lastCommDate);
-                // Ensure we're setting the actual API data, not mixing with dummy data
-                const apiData = {
+                
+                
+                // If we have specific feeder data, we might need to adjust the data
+                let apiData = {
                     ...data.data,
                     lastCommDate: data.data.lastCommDate || null
                 };
-                console.log('Setting instantaneous stats data:', apiData);
+                
+                // If this is for a specific feeder, we might need to adjust the data
+                if (effectiveFeederData?.feederName) {
+    
+                    // For now, use the DTR-level data, but this could be enhanced
+                    // when backend supports individual meter stats
+                }
+                
+
                 setInstantaneousStatsData(apiData);
             } else {
                 throw new Error(data.message || 'Failed to fetch instantaneous stats');
@@ -174,18 +281,44 @@ const Feeders = () => {
     };
 
     const fetchConsumptionAnalytics = async () => {
-        // Use numeric ID from passed data or extract from dtrNumber
-        const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-        if (!numericDtrId) return;
+        // Use resolved DTR ID
+        let numericDtrId = resolvedDtrId;
+        
+        // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
+        if (!numericDtrId && feederId) {
+
+            const foundDtrId = await findDtrIdFromFeederId(feederId);
+            if (foundDtrId) {
+                setResolvedDtrId(foundDtrId);
+                numericDtrId = foundDtrId;
+            } else {
+                console.warn('fetchConsumptionAnalytics - Could not find DTR ID for feeder:', feederId);
+                return;
+            }
+        }
+        
+        if (!numericDtrId) {
+            console.warn('fetchConsumptionAnalytics - No DTR ID available');
+            return;
+        }
+
+
 
         setIsConsumptionLoading(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`;
+            
+            // If we have specific feeder data, we should get individual meter consumption
+            if (effectiveFeederData?.feederName) {
+                
+            }
+            
+            const response = await fetch(endpoint);
             const data = await response.json();
             
             if (data.status === 'success') {
                 // Transform the data to match frontend expectations
-                const transformedData = {
+                let transformedData = {
                     xAxisData: data.data.dailyData?.xAxisData || [],
                     seriesData: [{
                         name: 'Consumption',
@@ -199,6 +332,14 @@ const Feeders = () => {
                         }]
                     }
                 };
+                
+                // If this is for a specific feeder, we might need to adjust the data
+                if (effectiveFeederData?.feederName) {
+    
+                    // For now, use the DTR-level data, but this could be enhanced
+                    // when backend supports individual meter consumption
+                }
+                
                 setConsumptionAnalyticsData(transformedData);
             } else {
                 throw new Error(data.message || 'Failed to fetch consumption analytics');
@@ -218,16 +359,78 @@ const Feeders = () => {
     };
 
     const fetchFeederInfo = async () => {
-        // Use numeric ID from passed data or extract from dtrNumber
-        const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-        if (!numericDtrId) return;
+        // Use resolved DTR ID
+        let numericDtrId = resolvedDtrId;
+        
+        // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
+        if (!numericDtrId && feederId) {
+
+            const foundDtrId = await findDtrIdFromFeederId(feederId);
+            if (foundDtrId) {
+                setResolvedDtrId(foundDtrId);
+                numericDtrId = foundDtrId;
+            } else {
+                console.warn('fetchFeederInfo - Could not find DTR ID for feeder:', feederId);
+                return;
+            }
+        }
+        
+        if (!numericDtrId) {
+            console.warn('fetchFeederInfo - No DTR ID available');
+            return;
+        }
+
+
 
         try {
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}`;
+            
+            // If we have specific feeder data, we should get individual meter info
+            if (effectiveFeederData?.feederName) {
+    
+            }
+            
+            const response = await fetch(endpoint);
             const data = await response.json();
             
             if (data.success) {
-                setFeederInfoData(data.data);
+                let feederInfo = data.data;
+                
+                // If this is for a specific feeder, we need to filter the data
+                if (effectiveFeederData?.feederName) {
+                    const feederName = effectiveFeederData.feederName;
+    
+                    
+                    // Find the specific feeder in the DTR's feeders list
+                    const specificFeeder = feederInfo.feeders?.find((feeder: any) => 
+                        feeder.serialNumber === feederName ||
+                        feeder.meterNumber === feederName
+                    );
+                    
+                    if (specificFeeder) {
+    
+                        // Create feeder-specific info
+                        feederInfo = {
+                            dtr: feederInfo.dtr,
+                            totalFeeders: 1, // This is now for a specific feeder
+                            specificFeeder: {
+                                serialNumber: specificFeeder.serialNumber,
+                                meterNumber: specificFeeder.meterNumber,
+                                manufacturer: specificFeeder.manufacturer,
+                                model: specificFeeder.model,
+                                type: specificFeeder.type,
+                                phase: specificFeeder.phase,
+                                status: specificFeeder.status,
+                                location: specificFeeder.location,
+                                city: specificFeeder.city
+                            }
+                        };
+                    } else {
+                        console.warn('fetchFeederInfo - Specific feeder not found in DTR data');
+                    }
+                }
+                
+                setFeederInfoData(feederInfo);
             } else {
                 throw new Error(data.message || 'Failed to fetch feeder information');
             }
@@ -244,30 +447,57 @@ const Feeders = () => {
     };
 
     const fetchAlerts = async () => {
-        // Use numeric ID from passed data or extract from dtrNumber
-        const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-        console.log('fetchAlerts - Original dtrId:', dtrId);
-        console.log('fetchAlerts - passedData?.dtrId:', passedData?.dtrId);
-        console.log('fetchAlerts - Extracted numericDtrId:', numericDtrId);
-        if (!numericDtrId) return;
+        // Use resolved DTR ID
+        let numericDtrId = resolvedDtrId;
+        
+        // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
+        if (!numericDtrId && feederId) {
+
+            const foundDtrId = await findDtrIdFromFeederId(feederId);
+            if (foundDtrId) {
+                setResolvedDtrId(foundDtrId);
+                numericDtrId = foundDtrId;
+            } else {
+                console.warn('fetchAlerts - Could not find DTR ID for feeder:', feederId);
+                return;
+            }
+        }
+        
+        if (!numericDtrId) {
+            console.warn('fetchAlerts - No DTR ID available');
+            return;
+        }
+
+
 
         setIsAlertsLoading(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/alerts`;
+            
+            // If we have specific feeder data, we should get individual meter alerts
+            if (effectiveFeederData?.feederName) {
+                
+            }
+            
+            const response = await fetch(endpoint);
             const data = await response.json();
-            console.log('Alerts API response:', data.data);
-            console.log('Alerts API response structure:', data.data?.[0] ? Object.keys(data.data[0]) : 'No data');
+
             
             if (data.success) {
                 // Transform the data to ensure it matches the table column structure
-                const transformedAlerts = data.data?.map((alert: any) => ({
-                    alertId: alert.id || alert.alertId || 'N/A',
-                    type: alert.type || alert.alertType || 'N/A',
-                    feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
-                    occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
+                               let transformedAlerts = data.data?.map((alert: any) => ({
+                    ...alert,
+                    feederName: effectiveFeederData?.feederName || alert.feederName || 'N/A'
                 })) || [];
                 
-                console.log('Transformed alerts data:', transformedAlerts);
+                if (effectiveFeederData?.feederName) {
+                    const targetFeederName = effectiveFeederData.feederName;
+                    
+                    transformedAlerts = transformedAlerts.map((alert: any) => ({
+                        ...alert,
+                        feederName: targetFeederName
+                    }));
+                }
                 
                 // If transformation resulted in all N/A values, log the raw data for debugging
                 if (transformedAlerts.every((alert: any) => 
@@ -298,28 +528,69 @@ const Feeders = () => {
     };
 
     const fetchKVAMetrics = async () => {
-        // Use numeric ID from passed data or extract from dtrNumber
-        const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-        console.log('fetchKVAMetrics - Original dtrId:', dtrId);
-        console.log('fetchKVAMetrics - passedData?.dtrId:', passedData?.dtrId);
-        console.log('fetchKVAMetrics - Extracted numericDtrId:', numericDtrId);
-        if (!numericDtrId) return;
+        // Use resolved DTR ID
+        let numericDtrId = resolvedDtrId;
+        
+        // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
+        if (!numericDtrId && feederId) {
+
+            const foundDtrId = await findDtrIdFromFeederId(feederId);
+            if (foundDtrId) {
+                setResolvedDtrId(foundDtrId);
+                numericDtrId = foundDtrId;
+            } else {
+                console.warn('fetchKVAMetrics - Could not find DTR ID for feeder:', feederId);
+                return;
+            }
+        }
+        
+        if (!numericDtrId) {
+            console.warn('fetchKVAMetrics - No DTR ID available');
+            return;
+        }
+
+
 
         setIsKvaMetricsLoading(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
-            const data = await response.json();
-            console.log('KVA metrics API response:', data.data);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`;
             
-            if (data.success) {
+            // If we have specific feeder data, we should get individual meter KVA metrics
+            if (effectiveFeederData?.feederName) {
+                
+            }
+            
+            const response = await fetch(endpoint);
+            const data = await response.json();
+
+            
+            if (data.status === 'success') {
                 // Transform the data to match frontend expectations
-                const transformedData = {
-                    xAxisData: data.data?.xAxisData || [],
+
+                let transformedData = {
+                    xAxisData: data.data?.dailyData?.xAxisData || [],
                     seriesData: [{
                         name: 'kVA',
-                        data: data.data?.seriesData || []
-                    }]
+                        data: data.data?.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || []
+                    }],
+                    monthly: {
+                        xAxisData: data.data?.monthlyData?.xAxisData || [],
+                        seriesData: [{
+                            name: 'kVA',
+                            data: data.data?.monthlyData?.sums?.map((sum: string) => parseFloat(sum)) || []
+                        }]
+                    }
                 };
+                
+
+                
+                // If this is for a specific feeder, we might need to adjust the data
+                if (effectiveFeederData?.feederName) {
+    
+                    // For now, use the DTR-level data, but this could be enhanced
+                    // when backend supports individual meter KVA metrics
+                }
+                
                 setKvaMetricsData(transformedData);
             } else {
                 throw new Error(data.message || 'Failed to fetch KVA metrics');
@@ -386,7 +657,14 @@ const Feeders = () => {
             const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
             if (!numericDtrId) return;
 
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
+            
+            // If we have specific feeder data, we need to get individual meter data
+            if (passedData?.feederData?.feederName) {
+    
+            }
+            
+            const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch instantaneous stats');
             
             const contentType = response.headers.get('content-type');
@@ -398,11 +676,17 @@ const Feeders = () => {
             if (data.success) {
                 console.log('Retry - Instantaneous stats API response:', data.data);
                 console.log('Retry - lastCommDate from API:', data.data.lastCommDate);
-                // Ensure we're setting the actual API data, not mixing with dummy data
-                const apiData = {
+                
+                // If we have specific feeder data, we might need to adjust the data
+                let apiData = {
                     ...data.data,
                     lastCommDate: data.data.lastCommDate || null
                 };
+                
+                if (passedData?.feederData?.feederName) {
+                    console.log('retryStatsAPI - Adjusting data for specific feeder:', passedData.feederData.feederName);
+                }
+                
                 console.log('Retry - Setting instantaneous stats data:', apiData);
                 setInstantaneousStatsData(apiData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'instantaneousStats'));
@@ -425,7 +709,14 @@ const Feeders = () => {
             const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
             if (!numericDtrId) return;
 
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`;
+            
+            // If we have specific feeder data, we should get individual meter consumption
+            if (passedData?.feederData?.feederName) {
+                console.log('retryConsumptionAPI - Fetching individual feeder consumption for:', passedData.feederData.feederName);
+            }
+            
+            const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch consumption analytics');
             
             const contentType = response.headers.get('content-type');
@@ -435,7 +726,7 @@ const Feeders = () => {
             
             const data = await response.json();
             if (data.status === 'success') {
-                const transformedData = {
+                let transformedData = {
                     xAxisData: data.data.dailyData?.xAxisData || [],
                     seriesData: [{
                         name: 'Consumption',
@@ -449,6 +740,12 @@ const Feeders = () => {
                         }]
                     }
                 };
+                
+                // If this is for a specific feeder, we might need to adjust the data
+                if (passedData?.feederData?.feederName) {
+                    console.log('retryConsumptionAPI - Adjusting consumption data for specific feeder:', passedData.feederData.feederName);
+                }
+                
                 setConsumptionAnalyticsData(transformedData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'consumptionAnalytics'));
             } else {
@@ -458,18 +755,28 @@ const Feeders = () => {
             console.error("Error in Consumption API:", err);
             setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
         } finally {
-            setTimeout(() => {
-                setIsConsumptionLoading(false);
-            }, 1000);
+            setIsConsumptionLoading(false);
         }
     };
 
     const retryFeederInfoAPI = async () => {
         try {
-            const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-            if (!numericDtrId) return;
+            // Use resolved DTR ID
+            let numericDtrId = resolvedDtrId;
+            
+            if (!numericDtrId) {
+                console.warn('retryFeederInfoAPI - No DTR ID available');
+                return;
+            }
 
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}`;
+            
+            // If we have specific feeder data, we should get individual meter info
+            if (effectiveFeederData?.feederName) {
+                console.log('retryFeederInfoAPI - Fetching individual feeder info for:', effectiveFeederData.feederName);
+            }
+            
+            const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch feeder information');
             
             const contentType = response.headers.get('content-type');
@@ -479,7 +786,43 @@ const Feeders = () => {
             
             const data = await response.json();
             if (data.success) {
-                setFeederInfoData(data.data);
+                let feederInfo = data.data;
+                
+                // If this is for a specific feeder, we need to filter the data
+                if (effectiveFeederData?.feederName) {
+                    const feederName = effectiveFeederData.feederName;
+                    console.log('retryFeederInfoAPI - Filtering data for specific feeder:', feederName);
+                    
+                    // Find the specific feeder in the DTR's feeders list
+                    const specificFeeder = feederInfo.feeders?.find((feeder: any) => 
+                        feeder.serialNumber === feederName ||
+                        feeder.meterNumber === feederName
+                    );
+                    
+                    if (specificFeeder) {
+                        console.log('retryFeederInfoAPI - Found specific feeder:', specificFeeder);
+                        // Create feeder-specific info
+                        feederInfo = {
+                            dtr: feederInfo.dtr,
+                            totalFeeders: 1, // This is now for a specific feeder
+                            specificFeeder: {
+                                serialNumber: specificFeeder.serialNumber,
+                                meterNumber: specificFeeder.meterNumber,
+                                manufacturer: specificFeeder.manufacturer,
+                                model: specificFeeder.model,
+                                type: specificFeeder.type,
+                                phase: specificFeeder.phase,
+                                status: specificFeeder.status,
+                                location: specificFeeder.location,
+                                city: specificFeeder.city
+                            }
+                        };
+                    } else {
+                        console.warn('retryFeederInfoAPI - Specific feeder not found in DTR data');
+                    }
+                }
+                
+                setFeederInfoData(feederInfo);
                 setFailedApis(prev => prev.filter(api => api.id !== 'feederInfo'));
             } else {
                 throw new Error(data.message || 'Failed to fetch feeder information');
@@ -493,21 +836,48 @@ const Feeders = () => {
     const retryAlertsAPI = async () => {
         setIsAlertsLoading(true);
         try {
-            const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-            if (!numericDtrId) return;
+            // Use resolved DTR ID
+            let numericDtrId = resolvedDtrId;
+            
+            if (!numericDtrId) {
+                console.warn('retryAlertsAPI - No DTR ID available');
+                return;
+            }
 
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/alerts`;
+            
+            // If we have specific feeder data, we should get individual meter alerts
+            if (effectiveFeederData?.feederName) {
+                console.log('retryAlertsAPI - Fetching individual feeder alerts for:', effectiveFeederData.feederName);
+            }
+            
+            const response = await fetch(endpoint);
             const data = await response.json();
             console.log('Retry - Alerts API response:', data.data);
             
             if (data.success) {
                 // Transform the data to ensure it matches the table column structure
-                const transformedAlerts = data.data?.map((alert: any) => ({
-                    alertId: alert.id || alert.alertId || 'N/A',
-                    type: alert.type || alert.alertType || 'N/A',
-                    feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
-                    occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
+                               // Backend now returns: { alertId: 'id', type: 'type', feederName: 'feederName', occuredOn: 'occuredOn' }
+                // Just update the feederName if we have specific feeder data
+                let transformedAlerts = data.data?.map((alert: any) => ({
+                    ...alert,
+                    feederName: effectiveFeederData?.feederName || alert.feederName || 'N/A'
                 })) || [];
+                
+                // If this is for a specific feeder, filter alerts for that feeder only
+                if (effectiveFeederData?.feederName) {
+                    const targetFeederName = effectiveFeederData.feederName;
+                    console.log('retryAlertsAPI - Filtering alerts for specific feeder:', targetFeederName);
+                    
+                    // Since we're showing alerts for a specific feeder, we'll show all alerts
+                    // but mark them as belonging to this feeder
+                    transformedAlerts = transformedAlerts.map((alert: any) => ({
+                        ...alert,
+                        feederName: targetFeederName
+                    }));
+                    
+                    console.log('retryAlertsAPI - Filtered alerts for specific feeder:', transformedAlerts);
+                }
                 
                 console.log('Retry - Transformed alerts data:', transformedAlerts);
                 setAlertsData(transformedAlerts);
@@ -519,30 +889,53 @@ const Feeders = () => {
             console.error("Error in Alerts API:", err);
             setAlertsData(dummyAlertsData);
         } finally {
-            setTimeout(() => {
-                setIsAlertsLoading(false);
-            }, 1000);
+            setIsAlertsLoading(false);
         }
     };
 
     const retryKVAMetricsAPI = async () => {
         setIsKvaMetricsLoading(true);
         try {
-            const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-            if (!numericDtrId) return;
+            // Use resolved DTR ID
+            let numericDtrId = resolvedDtrId;
+            
+            if (!numericDtrId) {
+                console.warn('retryKVAMetricsAPI - No DTR ID available');
+                return;
+            }
 
-            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
+            let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`;
+            
+            // If we have specific feeder data, we should get individual meter KVA metrics
+            if (effectiveFeederData?.feederName) {
+                console.log('retryKVAMetricsAPI - Fetching individual feeder KVA metrics for:', effectiveFeederData.feederName);
+            }
+            
+            const response = await fetch(endpoint);
             const data = await response.json();
             console.log('Retry - KVA metrics API response:', data.data);
             
-            if (data.success) {
-                const transformedData = {
-                    xAxisData: data.data?.xAxisData || [],
+            if (data.status === 'success') {
+                let transformedData = {
+                    xAxisData: data.data?.dailyData?.xAxisData || [],
                     seriesData: [{
                         name: 'kVA',
-                        data: data.data?.seriesData || []
-                    }]
+                        data: data.data?.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || []
+                    }],
+                    monthly: {
+                        xAxisData: data.data?.monthlyData?.xAxisData || [],
+                        seriesData: [{
+                            name: 'kVA',
+                            data: data.data?.monthlyData?.sums?.map((sum: string) => parseFloat(sum)) || []
+                        }]
+                    }
                 };
+                
+                // If this is for a specific feeder, we might need to adjust the data
+                if (effectiveFeederData?.feederName) {
+                    console.log('retryKVAMetricsAPI - Adjusting KVA metrics data for specific feeder:', effectiveFeederData.feederName);
+                }
+                
                 setKvaMetricsData(transformedData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'kvaMetrics'));
             } else {
@@ -555,9 +948,7 @@ const Feeders = () => {
                 seriesData: [{ name: 'kVA', data: [] }]
             });
         } finally {
-            setTimeout(() => {
-                setIsKvaMetricsLoading(false);
-            }, 1000);
+            setIsKvaMetricsLoading(false);
         }
     };
 
@@ -569,246 +960,43 @@ const Feeders = () => {
         }
     };
 
+    // Effect to resolve DTR ID from feeder ID when needed
+    useEffect(() => {
+        const resolveDtrId = async () => {
+            if (!resolvedDtrId && feederId) {
+                console.log('useEffect - resolveDtrId - No DTR ID available, searching for DTR ID from feeder ID:', feederId);
+                const foundDtrId = await findDtrIdFromFeederId(feederId);
+                if (foundDtrId) {
+                    console.log('useEffect - resolveDtrId - Found DTR ID:', foundDtrId);
+                    setResolvedDtrId(foundDtrId);
+                } else {
+                    console.warn('useEffect - resolveDtrId - Could not find DTR ID for feeder:', feederId);
+                }
+            }
+        };
+
+        resolveDtrId();
+    }, [feederId, resolvedDtrId]);
+
     // Load data on component mount
     useEffect(() => {
-        const fetchInstantaneousStats = async () => {
-            setIsStatsLoading(true);
-            try {
-                const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-                if (!numericDtrId) return;
-
-                const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`);
-                if (!response.ok) throw new Error('Failed to fetch instantaneous stats');
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid response format');
-                }
-                
-                const data = await response.json();
-                if (data.success) {
-                    console.log('useEffect - Instantaneous stats API response:', data.data);
-                    console.log('useEffect - lastCommDate from API:', data.data.lastCommDate);
-                    // Ensure we're setting the actual API data, not mixing with dummy data
-                    const apiData = {
-                        ...data.data,
-                        lastCommDate: data.data.lastCommDate || null
-                    };
-                    console.log('useEffect - Setting instantaneous stats data:', apiData);
-                    setInstantaneousStatsData(apiData);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch instantaneous stats');
-                }
-            } catch (error: any) {
-                console.error('Error fetching instantaneous stats:', error);
-                setInstantaneousStatsData(dummyInstantaneousStatsData);
-                setFailedApis(prev => {
-                    if (!prev.find(api => api.id === 'instantaneousStats')) {
-                        return [...prev, { 
-                            id: 'instantaneousStats', 
-                            name: 'Instantaneous Stats', 
-                            retryFunction: retryStatsAPI, 
-                            errorMessage: 'Failed to load Instantaneous Statistics. Please try again.' 
-                        }];
-                    }
-                    return prev;
-                });
-            } finally {
-                setTimeout(() => {
-                    setIsStatsLoading(false);
-                }, 1000);
-            }
-        };
-
-        const fetchConsumptionAnalytics = async () => {
-            setIsConsumptionLoading(true);
-            try {
-                const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-                if (!numericDtrId) return;
-
-                const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
-                if (!response.ok) throw new Error('Failed to fetch consumption analytics');
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid response format');
-                }
-                
-                const data = await response.json();
-                if (data.status === 'success') {
-                    const transformedData = {
-                        xAxisData: data.data.dailyData?.xAxisData || [],
-                        seriesData: [{
-                            name: 'Consumption',
-                            data: data.data.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || []
-                        }],
-                        monthly: {
-                            xAxisData: data.data.monthlyData?.xAxisData || [],
-                            seriesData: [{
-                                name: 'Consumption',
-                                data: data.data.monthlyData?.sums?.map((sum: string) => parseFloat(sum)) || []
-                            }]
-                        }
-                    };
-                    setConsumptionAnalyticsData(transformedData);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch consumption analytics');
-                }
-            } catch (error: any) {
-                setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
-                setFailedApis(prev => {
-                    if (!prev.find(api => api.id === 'consumptionAnalytics')) {
-                        return [...prev, { 
-                            id: 'consumptionAnalytics', 
-                            name: 'Consumption Analytics', 
-                            retryFunction: retryConsumptionAPI, 
-                            errorMessage: 'Failed to load Consumption Analytics. Please try again.' 
-                        }];
-                    }
-                    return prev;
-                });
-            } finally {
-                setTimeout(() => {
-                    setIsConsumptionLoading(false);
-                }, 1000);
-            }
-        };
-
-        const fetchFeederInfo = async () => {
-            try {
-                const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-                if (!numericDtrId) return;
-
-                const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
-                if (!response.ok) throw new Error('Failed to fetch feeder information');
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid response format');
-                }
-                
-                const data = await response.json();
-                if (data.success) {
-                    setFeederInfoData(data.data);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch feeder information');
-                }
-            } catch (error: any) {
-                setFeederInfoData(dummyFeederInfoData);
-                setFailedApis(prev => {
-                    if (!prev.find(api => api.id === 'feederInfo')) {
-                        return [...prev, { 
-                            id: 'feederInfo', 
-                            name: 'Feeder Information', 
-                            retryFunction: retryFeederInfoAPI, 
-                            errorMessage: 'Failed to load Feeder Information. Please try again.' 
-                        }];
-                    }
-                    return prev;
-                });
-            }
-        };
-
-        const fetchAlertsData = async () => {
-            setIsAlertsLoading(true);
-            try {
-                const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-                if (!numericDtrId) return;
-
-                const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
-                const data = await response.json();
-                console.log('useEffect - Alerts API response:', data.data);
-                
-                if (data.success) {
-                    // Transform the data to ensure it matches the table column structure
-                    const transformedAlerts = data.data?.map((alert: any) => ({
-                        alertId: alert.id || alert.alertId || 'N/A',
-                        type: alert.type || alert.alertType || 'N/A',
-                        feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
-                        occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
-                    })) || [];
-                    
-                    console.log('useEffect - Transformed alerts data:', transformedAlerts);
-                    setAlertsData(transformedAlerts);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch alerts');
-                }
-            } catch (error: any) {
-                setAlertsData(dummyAlertsData);
-                setFailedApis(prev => {
-                    if (!prev.find(api => api.id === 'alerts')) {
-                        return [...prev, { 
-                            id: 'alerts', 
-                            name: 'Alerts Data', 
-                            retryFunction: retryAlertsAPI, 
-                            errorMessage: 'Failed to load Alerts Data. Please try again.' 
-                        }];
-                    }
-                    return prev;
-                });
-            } finally {
-                setTimeout(() => {
-                    setIsAlertsLoading(false);
-                }, 1000);
+        // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
+        if (!resolvedDtrId && feederId) {
+            console.log('useEffect - Waiting for DTR ID to be resolved for feeder:', feederId);
+            return;
         }
-        };
 
-        const fetchKVAMetricsData = async () => {
-            setIsKvaMetricsLoading(true);
-            try {
-                const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
-                if (!numericDtrId) return;
-
-                const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
-                const data = await response.json();
-                console.log('useEffect - KVA metrics API response:', data.data);
-                
-                if (data.success) {
-                    const transformedData = {
-                        xAxisData: data.data?.xAxisData || [],
-                        seriesData: [{
-                            name: 'kVA',
-                            data: data.data?.seriesData || []
-                        }]
-                    };
-                    setKvaMetricsData(transformedData);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch KVA metrics');
-                }
-            } catch (error: any) {
-                setKvaMetricsData({
-                    xAxisData: [],
-                    seriesData: [{ name: 'kVA', data: [] }]
-                });
-                setFailedApis(prev => {
-                    if (!prev.find(api => api.id === 'kvaMetrics')) {
-                        return [...prev, { 
-                            id: 'kvaMetrics', 
-                            name: 'KVA Metrics Data', 
-                            retryFunction: retryKVAMetricsAPI, 
-                            errorMessage: 'Failed to load KVA Metrics Data. Please try again.' 
-                        }];
-                    }
-                    return prev;
-                });
-            } finally {
-                setTimeout(() => {
-                    setIsKvaMetricsLoading(false);
-                }, 1000);
-            }
-        };
-
-        if (dtrId) {
-            console.log('useEffect - Starting API calls with dtrId:', dtrId);
+        if (resolvedDtrId || dtrId) {
+            console.log('useEffect - Starting API calls with DTR ID:', resolvedDtrId || dtrId);
             fetchInstantaneousStats();
             fetchConsumptionAnalytics();
             fetchFeederInfo();
-            fetchAlertsData();
-            fetchKVAMetricsData();
+            fetchAlerts();
+            fetchKVAMetrics();
         } else {
-            console.log('useEffect - No dtrId available, skipping API calls');
+            console.log('useEffect - No DTR ID available, skipping API calls');
         }
-    }, [dtrId]);
+    }, [resolvedDtrId, dtrId]);
 
     // Enhanced data for Alerts Table with more entries
     const [_feederData, _setFeederData] = useState([
@@ -882,7 +1070,7 @@ const Feeders = () => {
                                     {
                                         name: 'PageHeader',
                                         props: {
-                                            title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId}` : 'Feeder Information',
+                                            title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId}` : (effectiveFeederData?.feederName ? `Feeder ${effectiveFeederData.feederName}` : 'Feeder Information'),
                                             onBackClick: () => {
                                                 if (isIndividualFeeder) {
                                                     // Go back to the specific DTR detail page if we have the DTR ID
@@ -920,7 +1108,7 @@ const Feeders = () => {
                                     {
                                         name: 'SectionHeader',
                                         props: {
-                                            title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId} Information` : 'DTR Information',
+                                            title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId} Information` : (effectiveFeederData?.feederName ? `Feeder ${effectiveFeederData.feederName} Information` : 'DTR Information'),
                                             titleLevel: 2,
                                             titleSize: 'md',
                                             titleVariant: 'primary',
@@ -995,7 +1183,7 @@ const Feeders = () => {
                                     {
                                         name: 'SectionHeader',
                                         props: {
-                                            title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId} Information` : 'Instantaneous Stats',
+                                            title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId} Information` : (effectiveFeederData?.feederName ? `Feeder ${effectiveFeederData.feederName} Information` : 'Instantaneous Stats'),
                                             titleLevel: 2,
                                             titleSize: 'md',
                                             titleVariant: 'primary',

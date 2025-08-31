@@ -325,6 +325,80 @@ export default function Users() {
         }
     ];
 
+    // Export function for users data
+    const handleExportData = () => {
+        import("xlsx").then((XLSX) => {
+            const workbook = XLSX.utils.book_new();
+
+            // 1. User Statistics Cards
+            const userStatsExportData = userWidgets.map((widget) => ({
+                Metric: widget.title,
+                Value: widget.value || "N/A",
+                Subtitle1: widget.subtitle1 || "",
+                Subtitle2: widget.subtitle2 || "",
+            }));
+
+            // 2. Users Table Data
+            const usersTableExportData = users.map((user, index) => ({
+                "S.No": user.sNo || index + 1,
+                "Full Name": user.name || "N/A",
+                "Email Address": user.email || "N/A",
+                "Phone Number": user.phone || "N/A",
+                "Role": user.role || "N/A",
+                "Client": user.client || "N/A",
+                "Created Date": user.createdDate || "N/A"
+            }));
+
+            // Create sheets with auto-sizing
+            const userStatsSheet = XLSX.utils.json_to_sheet(userStatsExportData);
+            const usersTableSheet = XLSX.utils.json_to_sheet(usersTableExportData);
+
+            // Auto-size columns for better readability
+            const setAutoWidth = (worksheet: any) => {
+                const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+                const colWidths: any[] = [];
+                
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = worksheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+                }
+                worksheet['!cols'] = colWidths;
+            };
+
+            // Apply auto-width to all sheets
+            [userStatsSheet, usersTableSheet].forEach(sheet => setAutoWidth(sheet));
+
+            // Append sheets to workbook
+            XLSX.utils.book_append_sheet(workbook, userStatsSheet, "User Statistics");
+            XLSX.utils.book_append_sheet(workbook, usersTableSheet, "Users List");
+
+            const excelBuffer = XLSX.write(workbook, {
+                bookType: "xlsx",
+                type: "array",
+            });
+
+            const blob = new Blob([excelBuffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "users-list.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        });
+    };
+
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <Page
@@ -388,7 +462,7 @@ export default function Users() {
                                                     },  
                                                     {
                                                         id: 'Export',
-                                                        label: 'Export ',
+                                                        label: 'Export',
                                                     },
                                                   
                                                 ],
@@ -400,6 +474,8 @@ export default function Users() {
                                                     );
                                                     if (itemId === 'RoleManagement') {
                                                         navigate('/role-management');
+                                                    } else if (itemId === 'Export') {
+                                                        handleExportData();
                                                     }
                                                 },
                                             },
