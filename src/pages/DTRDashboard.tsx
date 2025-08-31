@@ -1,15 +1,14 @@
-import { lazy } from 'react';
+import { lazy } from "react";
 import React, { useState, useEffect } from "react";
 // Define TableData type locally since we're using federated components
 interface TableData {
   [key: string]: string | number | boolean | null | undefined;
 }
 import { useNavigate } from "react-router-dom";
-const Page = lazy(() => import('SuperAdmin/Page'));
+const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { FILTER_STYLES } from "../contexts/FilterStyleContext";
-import BACKEND_URL from '../config';
-
+import BACKEND_URL from "../config";
 
 // Dummy data for fallback
 const dummyDtrStatsData = {
@@ -35,7 +34,10 @@ const dummyDtrStatsData = {
 
 // Dummy data for filter options
 const dummyFilterOptions = {
-  projectTypes: [{ value: "HT", label: "HT" }, { value: "LT", label: "LT" }],
+  projectTypes: [
+    { value: "HT", label: "HT" },
+    { value: "LT", label: "LT" },
+  ],
   discoms: [{ value: "all", label: "discoms" }],
   circles: [{ value: "all", label: "circles" }],
   divisions: [{ value: "all", label: "divisions" }],
@@ -85,11 +87,11 @@ const dummyChartData = {
 };
 
 const dummyMeterStatusData = [
-  { value: 0, name: 'Communicating' },
-  { value: 0, name: 'Non-Communicating' },
+  { value: 0, name: "Communicating" },
+  { value: 0, name: "Non-Communicating" },
 ];
 
-  const DTRDashboard: React.FC = () => {
+const DTRDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   // State for time range toggle
@@ -397,7 +399,7 @@ const dummyMeterStatusData = [
         if (!contentType || !contentType.includes("application/json")) {
           throw new Error("Invalid response format");
         }
-        
+
         const data = await response.json();
         if (data.success) {
           setFilterOptions(data.data || dummyFilterOptions);
@@ -415,7 +417,8 @@ const dummyMeterStatusData = [
                 id: "filters",
                 name: "Filter Options",
                 retryFunction: retryFiltersAPI,
-                errorMessage: "Failed to load Filter Options. Please try again.",
+                errorMessage:
+                  "Failed to load Filter Options. Please try again.",
               },
             ];
           }
@@ -759,9 +762,9 @@ const dummyMeterStatusData = [
 
   // Filter change handlers
   const handleFilterChange = (filterName: string, value: string) => {
-    setFilterValues(prev => ({
+    setFilterValues((prev) => ({
       ...prev,
-      [filterName]: value
+      [filterName]: value,
     }));
   };
 
@@ -777,7 +780,7 @@ const dummyMeterStatusData = [
           params.append(key, value);
         }
       });
-      
+
       // Refresh data with new filters
       retryStatsAPI();
       retryTableAPI();
@@ -795,7 +798,8 @@ const dummyMeterStatusData = [
       value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "N/A",
       icon: "/icons/dtr.svg",
       subtitle1: "Total Transformer Units",
-      onValueClick: () => navigate("/dtr-table?type=total-dtrs&title=Total%20DTRs"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=total-dtrs&title=Total%20DTRs"),
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
     },
@@ -807,7 +811,8 @@ const dummyMeterStatusData = [
         "N/A",
       icon: "/icons/feeder.svg",
       subtitle1: "Connected to DTRs",
-      onValueClick: () => navigate("/dtr-table?type=total-lt-feeders&title=Total%20LT%20Feeders"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=total-lt-feeders&title=Total%20LT%20Feeders"),
       loading: isStatsLoading,
     },
     {
@@ -822,7 +827,8 @@ const dummyMeterStatusData = [
         dtrStatsData?.row1?.fuseBlownPercentage ||
         "N/A"
       }% of Total DTRs`,
-      onValueClick: () => navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
       loading: isStatsLoading,
     },
     {
@@ -837,7 +843,10 @@ const dummyMeterStatusData = [
         dtrStatsData?.row1?.overloadedPercentage ||
         "N/A"
       }% of Total Feeders`,
-      onValueClick: () => navigate("/dtr-table?type=overloaded-feeders&title=Overloaded%20Feeders"),
+      onValueClick: () =>
+        navigate(
+          "/dtr-table?type=overloaded-feeders&title=Overloaded%20Feeders"
+        ),
       loading: isStatsLoading,
     },
     {
@@ -852,7 +861,10 @@ const dummyMeterStatusData = [
         dtrStatsData?.row1?.underloadedPercentage ||
         "N/A"
       }% of Total Feeders`,
-      onValueClick: () => navigate("/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"),
+      onValueClick: () =>
+        navigate(
+          "/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"
+        ),
       loading: isStatsLoading,
     },
     {
@@ -863,7 +875,10 @@ const dummyMeterStatusData = [
         "N/A",
       icon: "/icons/power_failure.svg",
       subtitle1: "Incidents Today",
-      onValueClick: () => navigate("/dtr-table?type=lt-fuse-blown&title=LT%20Side%20Fuse%20Blown"),
+      onValueClick: () =>
+        navigate(
+          "/dtr-table?type=lt-fuse-blown&title=LT%20Side%20Fuse%20Blown"
+        ),
       loading: isStatsLoading,
     },
     {
@@ -878,7 +893,8 @@ const dummyMeterStatusData = [
         dtrStatsData?.row1?.unbalancedPercentage ||
         "N/A"
       }% of Total DTRs`,
-      onValueClick: () => navigate("/dtr-table?type=unbalanced-dtrs&title=Unbalanced%20DTRs"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=unbalanced-dtrs&title=Unbalanced%20DTRs"),
       loading: isStatsLoading,
     },
     {
@@ -893,7 +909,10 @@ const dummyMeterStatusData = [
         dtrStatsData?.row1?.powerFailurePercentage ||
         "N/A"
       }% of Feeders`,
-      onValueClick: () => navigate("/dtr-table?type=power-failure-feeders&title=Power%20Failure%20Feeders"),
+      onValueClick: () =>
+        navigate(
+          "/dtr-table?type=power-failure-feeders&title=Power%20Failure%20Feeders"
+        ),
       loading: isStatsLoading,
     },
     {
@@ -904,7 +923,10 @@ const dummyMeterStatusData = [
         "N/A",
       icon: "/icons/dtr.svg",
       subtitle1: "Incidents Today",
-      onValueClick: () => navigate("/dtr-table?type=ht-fuse-blown&title=HT%20Side%20Fuse%20Blown"),
+      onValueClick: () =>
+        navigate(
+          "/dtr-table?type=ht-fuse-blown&title=HT%20Side%20Fuse%20Blown"
+        ),
       loading: isStatsLoading,
     },
   ];
@@ -918,7 +940,8 @@ const dummyMeterStatusData = [
       subtitle1: "Today's Active Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)"),
     },
     {
       title: "Total kVAh",
@@ -927,7 +950,8 @@ const dummyMeterStatusData = [
       subtitle1: "Today's Apparent Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)"),
     },
     {
       title: "Total kW",
@@ -936,7 +960,8 @@ const dummyMeterStatusData = [
       subtitle1: "Current Active Power",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=daily-kw&title=Total%20kW%20(Current)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=daily-kw&title=Total%20kW%20(Current)"),
     },
     {
       title: "Total kVA",
@@ -945,7 +970,8 @@ const dummyMeterStatusData = [
       subtitle1: "Current Apparent Power",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)"),
     },
     {
       title: "Active DTRs",
@@ -976,7 +1002,8 @@ const dummyMeterStatusData = [
       subtitle1: "Monthly Active Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)"),
     },
     {
       title: "Total kVAh",
@@ -985,7 +1012,8 @@ const dummyMeterStatusData = [
       subtitle1: "Monthly Apparent Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)"),
     },
     {
       title: "Avg kW",
@@ -994,7 +1022,8 @@ const dummyMeterStatusData = [
       subtitle1: "Monthly Average Power",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)"),
     },
     {
       title: "Avg kVA",
@@ -1003,7 +1032,8 @@ const dummyMeterStatusData = [
       subtitle1: "Monthly Average Apparent",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)"),
+      onValueClick: () =>
+        navigate("/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)"),
     },
     {
       title: "Active DTRs",
@@ -1089,7 +1119,7 @@ const dummyMeterStatusData = [
                 },
               ]
             : []),
-            
+
           // Header section
           {
             layout: {
@@ -1119,120 +1149,131 @@ const dummyMeterStatusData = [
               },
             ],
           },
-                     // Filter Section
-                       {
-              layout: {
-                type: "grid" as const,
-                columns: 8,
-                gap: "gap-4 ",
-                className: " flex items-center justify-center",
+          // Filter Section
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 8,
+              gap: "gap-4 ",
+              className: " flex items-center justify-center",
+            },
+            components: [
+              {
+                name: "Dropdown",
+                props: {
+                  label: "Project Type",
+                  options: filterOptions.projectTypes,
+                  value: filterValues.projectType,
+                  onChange: (value: string) =>
+                    handleFilterChange("projectType", value),
+                  placeholder: "Select Project Type",
+                  loading: isFiltersLoading,
+                  searchable: false,
+                },
+                span: { col: 1, row: 1 },
               },
-             components: [
-               {
-                 name: "Dropdown",
-                 props: {
-                   label: "Project Type",
-                   options: filterOptions.projectTypes,
-                   value: filterValues.projectType,
-                   onChange: (value: string) => handleFilterChange("projectType", value),
-                   placeholder: "Select Project Type",
-                   loading: isFiltersLoading,
-                   searchable: false,
-                 },
-                 span: { col: 1, row: 1 },
-               },
-               {
-                 name: "Dropdown",
-                 props: {
-                   label: "DISCOM",
-                   options: filterOptions.discoms,
-                   value: filterValues.discom,
-                   onChange: (value: string) => handleFilterChange("discom", value),
-                   placeholder: "Select DISCOM",
-                   loading: isFiltersLoading,
-                   searchable: false,
-                 },
-                 span: { col: 1, row: 1 },
-               },
-               {
-                 name: "Dropdown",
-                 props: {
-                   label: "CIRCLE",
-                   options: filterOptions.circles,
-                   value: filterValues.circle,
-                   onChange: (value: string) => handleFilterChange("circle", value),
-                   placeholder: "Select Circle",
-                   loading: isFiltersLoading,
-                   searchable: false, 
-                 },
-                 span: { col: 1, row: 1 },
-               },
-               {
-                 name: "Dropdown",
-                 props: {
-                   label: "DIVISION",
-                   options: filterOptions.divisions,
-                   value: filterValues.division,
-                   onChange: (value: string) => handleFilterChange("division", value),
-                   placeholder: "Select Division",
-                   loading: isFiltersLoading,
-                   searchable: false,
-                 },
-                 span: { col: 1, row: 1 },
-               },
-                               {
-                  name: "Dropdown",
-                  props: {
-                    label: "SUB-DIVISION",
-                    options: filterOptions.subDivisions,
-                    value: filterValues.subDivision,
-                    onChange: (value: string) => handleFilterChange("subDivision", value),
-                    placeholder: "Select Sub-Division",
-                    loading: isFiltersLoading,
-                    searchable: false,
-                  },
-                  span: { col: 1, row: 1 },
+              {
+                name: "Dropdown",
+                props: {
+                  label: "DISCOM",
+                  options: filterOptions.discoms,
+                  value: filterValues.discom,
+                  onChange: (value: string) =>
+                    handleFilterChange("discom", value),
+                  placeholder: "Select DISCOM",
+                  loading: isFiltersLoading,
+                  searchable: false,
                 },
-                {
-                  name: "Dropdown",
-                  props: {
-                    label: "SECTION",
-                    options: filterOptions.sections,
-                    value: filterValues.section,
-                    onChange: (value: string) => handleFilterChange("section", value),
-                    placeholder: "Select Section",
-                    loading: isFiltersLoading,
-                    searchable: false,
-                  },
-                  span: { col: 1, row: 1 },
+                span: { col: 1, row: 1 },
+              },
+              {
+                name: "Dropdown",
+                props: {
+                  label: "CIRCLE",
+                  options: filterOptions.circles,
+                  value: filterValues.circle,
+                  onChange: (value: string) =>
+                    handleFilterChange("circle", value),
+                  placeholder: "Select Circle",
+                  loading: isFiltersLoading,
+                  searchable: false,
                 },
-                {
-                  name: "Dropdown",
-                  props: {
-                    label: "METER LOCATION",
-                    options: filterOptions.meterLocations,
-                    value: filterValues.meterLocation,
-                    onChange: (value: string) => handleFilterChange("meterLocation", value),
-                    placeholder: "Select Meter Location",
-                    loading: isFiltersLoading,
-                    searchable: false,  
-                      },
-                  span: { col: 1, row: 1 },
+                span: { col: 1, row: 1 },
+              },
+              {
+                name: "Dropdown",
+                props: {
+                  label: "DIVISION",
+                  options: filterOptions.divisions,
+                  value: filterValues.division,
+                  onChange: (value: string) =>
+                    handleFilterChange("division", value),
+                  placeholder: "Select Division",
+                  loading: isFiltersLoading,
+                  searchable: false,
                 },
-               {
-                 name: "Button",
-                 props: {
-                   variant: "primary",
-                   onClick: handleGetData,
-                   children: "Get Data",
-                   className: "h-10 px-6 self-end",
-                   loading: isStatsLoading || isTableLoading || isAlertsLoading || isChartLoading,
-                   searchable: false,
-                 },
-                 span: { col: 1, row: 1 },
-               },
-             ],
-           },
+                span: { col: 1, row: 1 },
+              },
+              {
+                name: "Dropdown",
+                props: {
+                  label: "SUB-DIVISION",
+                  options: filterOptions.subDivisions,
+                  value: filterValues.subDivision,
+                  onChange: (value: string) =>
+                    handleFilterChange("subDivision", value),
+                  placeholder: "Select Sub-Division",
+                  loading: isFiltersLoading,
+                  searchable: false,
+                },
+                span: { col: 1, row: 1 },
+              },
+              {
+                name: "Dropdown",
+                props: {
+                  label: "SECTION",
+                  options: filterOptions.sections,
+                  value: filterValues.section,
+                  onChange: (value: string) =>
+                    handleFilterChange("section", value),
+                  placeholder: "Select Section",
+                  loading: isFiltersLoading,
+                  searchable: false,
+                },
+                span: { col: 1, row: 1 },
+              },
+              {
+                name: "Dropdown",
+                props: {
+                  label: "METER LOCATION",
+                  options: filterOptions.meterLocations,
+                  value: filterValues.meterLocation,
+                  onChange: (value: string) =>
+                    handleFilterChange("meterLocation", value),
+                  placeholder: "Select Meter Location",
+                  loading: isFiltersLoading,
+                  searchable: false,
+                },
+                span: { col: 1, row: 1 },
+              },
+              {
+                name: "Button",
+                props: {
+                  variant: "primary",
+                  onClick: handleGetData,
+                  children: "Get Data",
+                  className: "h-10 px-6 self-end",
+                  loading:
+                    isStatsLoading ||
+                    isTableLoading ||
+                    isAlertsLoading ||
+                    isChartLoading,
+                  searchable: false,
+                },
+                span: { col: 1, row: 1 },
+              },
+            ],
+          },
           // DTR Statistics Cards
           {
             layout: {
@@ -1241,7 +1282,7 @@ const dummyMeterStatusData = [
               gap: "gap-4",
               rows: [
                 {
-                  layout: "grid", 
+                  layout: "grid",
                   gap: "gap-4",
                   gridColumns: 3,
                   span: { col: 3, row: 1 },
@@ -1261,7 +1302,10 @@ const dummyMeterStatusData = [
                           name: "Button",
                           props: {
                             variant: "secondary",
-                            onClick: () => navigate("/dtr-table?type=total-dtrs&title=Total%20DTRs"),
+                            onClick: () =>
+                              navigate(
+                                "/dtr-table?type=total-dtrs&title=Total%20DTRs"
+                              ),
                             children: "View All",
                             className: "px-4 py-2 text-sm",
                           },
@@ -1346,8 +1390,10 @@ const dummyMeterStatusData = [
                   layout: "grid",
                   gridColumns: 1,
                   gap: "gap-4",
-                  className: "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
+                  className:
+                    "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
                   columns: [
+                    
                     {
                       name: "Holder",
                       props: {
@@ -1370,9 +1416,7 @@ const dummyMeterStatusData = [
                           if (segmentName === "Communicating")
                             navigate("/connect-disconnect/communicating");
                           else if (segmentName === "Non-Communicating")
-                            navigate(
-                              "/connect-disconnect/non-communicating"
-                            );
+                            navigate("/connect-disconnect/non-communicating");
                           else navigate("/connect-disconnect");
                         },
                         isLoading: isMeterStatusLoading,
@@ -1386,31 +1430,40 @@ const dummyMeterStatusData = [
                   gap: "gap-4",
                   columns: [
                     {
-                      name: "Table",
-                      props: {
-                        data: dtrTableData,
-                        columns: dtrTableColumns,
-                        showHeader: true,
-                        headerTitle: "Distribution Transformers",
-                        headerClassName: "h-18",
-                        searchable: true,
-                        sortable: true,
-                        initialRowsPerPage: 10,
-                        showActions: true,
-                        text: "DTR Management Table",
-                        onRowClick: (row: TableData) =>
-                          navigate(`/dtr-detail/${row.dtrId}`),
-                        onView: handleViewDTR,
-                        availableTimeRanges: [],
-                        onPageChange: handlePageChange,
-                        onSearch: handleSearch,
-                        pagination: true,
-                        serverPagination: serverPagination,
-                        loading: isTableLoading,
-                      },
+                      name: "StackedBarChart",
+                  props: {
+                    xAxisData: chartMonths,
+                    seriesData: chartSeries,
+                    seriesColors: alertColors,
+                    height: 300,
+                    showLegendInteractions: true,
+                    timeRange: statsRange,
+                    showHeader: true,
+                    headerTitle: "DTR Alert Statistics",
+                    showDownloadButton: true,
+                    onDownload: () => handleChartDownload(),
+                    isLoading: isChartLoading,
+                  },
                     },
                   ],
                 },
+
+                // {
+                //   name: "StackedBarChart",
+                //   props: {
+                //     xAxisData: chartMonths,
+                //     seriesData: chartSeries,
+                //     seriesColors: alertColors,
+                //     height: 300,
+                //     showLegendInteractions: true,
+                //     timeRange: statsRange,
+                //     showHeader: true,
+                //     headerTitle: "DTR Alert Statistics",
+                //     showDownloadButton: true,
+                //     onDownload: () => handleChartDownload(),
+                //     isLoading: isChartLoading,
+                //   },
+                // },
               ],
             },
           },
@@ -1422,20 +1475,44 @@ const dummyMeterStatusData = [
               columns: 2,
             },
             components: [
+              // {
+              //   name: "StackedBarChart",
+              //   props: {
+              //     xAxisData: chartMonths,
+              //     seriesData: chartSeries,
+              //     seriesColors: alertColors,
+              //     height: 300,
+              //     showLegendInteractions: true,
+              //     timeRange: statsRange,
+              //     showHeader: true,
+              //     headerTitle: "DTR Alert Statistics",
+              //     showDownloadButton: true,
+              //     onDownload: () => handleChartDownload(),
+              //     isLoading: isChartLoading,
+              //   },
+              // },
               {
-                name: "StackedBarChart",
+                name: "Table",
                 props: {
-                  xAxisData: chartMonths,
-                  seriesData: chartSeries,
-                  seriesColors: alertColors,
-                  height: 300,
-                  showLegendInteractions: true,
-                  timeRange: statsRange,
+                  data: dtrTableData,
+                  columns: dtrTableColumns,
                   showHeader: true,
-                  headerTitle: "DTR Alert Statistics",
-                  showDownloadButton: true,
-                  onDownload: () => handleChartDownload(),
-                  isLoading: isChartLoading,
+                  headerTitle: "Distribution Transformers",
+                  headerClassName: "h-18",
+                  searchable: true,
+                  sortable: true,
+                  initialRowsPerPage: 10,
+                  showActions: true,
+                  text: "DTR Management Table",
+                  onRowClick: (row: TableData) =>
+                    navigate(`/dtr-detail/${row.dtrId}`),
+                  onView: handleViewDTR,
+                  availableTimeRanges: [],
+                  onPageChange: handlePageChange,
+                  onSearch: handleSearch,
+                  pagination: true,
+                  serverPagination: serverPagination,
+                  loading: isTableLoading,
                 },
               },
               {
@@ -1454,7 +1531,8 @@ const dummyMeterStatusData = [
                   initialRowsPerPage: 3,
                   emptyMessage: "No alerts found",
                   loading: isAlertsLoading,
-                  onRowClick: () => navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
+                  onRowClick: () =>
+                    navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
                 },
               },
             ],

@@ -30,16 +30,6 @@ interface SidebarProps {
     currentPath?: string;
     onNavigate?: (path: string) => void;
     menus?: MenuCategory[];
-    logo?: {
-        src: string;
-        alt: string;
-        collapsedSrc: string;
-    };
-    clientLogo?: {
-        src: string;
-        alt: string;
-        collapsedSrc: string;
-    };
     appDownload?: {
         enabled: boolean;
         title: string;
@@ -209,8 +199,6 @@ const Sidebar = ({
     currentPath,
     onNavigate,
     menus = defaultMenus,
-    logo,
-    clientLogo,
     appDownload = defaultProps.appDownload,
     footer = defaultProps.footer,
     showThemeToggle = true,
@@ -249,71 +237,24 @@ const Sidebar = ({
                 aria-label="Main navigation">
                 <div className="flex flex-col w-full h-fit overflow-hidden overflow-y-auto scrollbar-hide">
                     <header
-                        className={` dark:bg-primary-dark flex flex-col justify-center border-b border-b-primary-border dark:border-dark-border items-center ${isSidebarCollapsed
+                        className={` dark:bg-primary-dark flex justify-center border-b border-b-primary-border dark:border-dark-border items-center ${isSidebarCollapsed
                                 ? 'bg-primary px-4'
                                 : 'bg-white px-10'
-                            } py-6 gap-4`}>
-                        {/* Debug Info */}
-                        <div className="text-white text-xs bg-black p-2 rounded mb-2">
-                            Logo prop: {logo ? 'Present' : 'Missing'} | 
-                            ClientLogo prop: {clientLogo ? 'Present' : 'Missing'}
-                        </div>
-                        
-                        {/* Main Company Logo */}
-                        {logo && (
-                            <div className="bg-red-100 p-2 rounded border-2 border-red-500">
-                                <div className="text-xs text-red-600 mb-1">Main Logo:</div>
-                                <img
-                                    src={
-                                        isSidebarCollapsed
-                                            ? logo.collapsedSrc
-                                            : logo.src
-                                    }
-                                    alt={logo.alt}
-                                    className={`md:block ${isSidebarCollapsed ? 'w-8' : 'w-[170px]'
-                                        }`}
-                                    onError={(e) => {
-                                        console.error('Logo failed to load:', logo.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                    onLoad={() => console.log('Logo loaded successfully:', logo.src)}
-                                />
-                                <div className="text-xs text-red-600 mt-1">Path: {logo.src}</div>
-                                <div className="text-xs text-red-600">Collapsed: {logo.collapsedSrc}</div>
-                            </div>
-                        )}
-                        
-                        {/* Client Logo */}
-                        {clientLogo && (
-                            <div className={`flex justify-center ${isSidebarCollapsed ? 'w-full' : 'w-full'}`}>
-                                <div className="bg-blue-100 p-2 rounded border-2 border-blue-500">
-                                    <div className="text-xs text-blue-600 mb-1">Client Logo:</div>
-                                    <img
-                                        src={
-                                            isSidebarCollapsed
-                                                ? clientLogo.collapsedSrc
-                                                : clientLogo.src
-                                        }
-                                        alt={clientLogo.alt}
-                                        className={`${isSidebarCollapsed ? 'w-6 h-6' : 'w-16 h-16'}`}
-                                        onError={(e) => {
-                                            console.error('Client logo failed to load:', clientLogo.src);
-                                            e.currentTarget.style.display = 'none';
-                                        }}
-                                        onLoad={() => console.log('Client logo loaded successfully:', clientLogo.src)}
-                                    />
-                                    <div className="text-xs text-blue-600 mt-1">Path: {clientLogo.src}</div>
-                                    <div className="text-xs text-blue-600">Collapsed: {clientLogo.collapsedSrc}</div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {/* Force visible test */}
-                        <div className="bg-green-100 p-2 rounded border-2 border-green-500">
-                            <div className="text-xs text-green-600">Test Box - Should be visible</div>
-                            <div className="text-xs text-green-600">Logo: {logo?.src || 'undefined'}</div>
-                            <div className="text-xs text-green-600">Client: {clientLogo?.src || 'undefined'}</div>
-                        </div>
+                            } py-6`}>
+                        <img
+                            src={
+                                isSidebarCollapsed
+                                    ? isDarkMode
+                                        ? '/images/bi-white-logo.svg'
+                                        : '/images/changed-logo.svg'
+                                    : isDarkMode
+                                        ? '/images/bi-white-logo.svg'
+                                        : '/images/bi-blue-logo.svg'
+                            }
+                            alt="Company Logo"
+                            className={`md:block ${isSidebarCollapsed ? 'w-8' : 'w-[170px]'
+                                }`}
+                        />
                     </header>
                     <main className="flex p-4 flex-col w-full md:block dark:bg-primary-dark-light">
                         {menus.map((category, categoryIndex) => (
