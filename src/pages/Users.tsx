@@ -1,0 +1,569 @@
+import { lazy } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
+const Page = lazy(() => import('SuperAdmin/Page'));
+import BACKEND_URL from '../config';
+
+const tableColumns = [
+    { key: 'sNo', label: 'S.No' },
+    { key: 'name', label: 'Full Name' },
+    { key: 'email', label: 'Email Address' },
+    { key: 'phone', label: 'Phone Number' },
+    { key: 'role', label: 'Role' },
+    { key: 'client', label: 'Client' },
+    // { key: 'lastActive', label: 'Last Active' },
+    { key: 'createdDate', label: 'Created Date' },
+    // Add actions column if you want to show action buttons
+];
+
+export default function Users() {
+    const navigate = useNavigate();
+    const [users, setUsers] = useState<
+        Array<{
+            sNo: number;
+            name: string;
+            email: string;
+            phone: string;
+            role: string;
+            client: string;
+            createdDate: string;
+        }>
+    >([]);
+    const [loading, setLoading] = useState(true);
+    const [serverPagination, setServerPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 8,
+        hasNextPage: false,
+        hasPrevPage: false,
+    });
+    // User stats state
+    const [userStats, setUserStats] = useState<any>(null);
+    const [statsLoading, setStatsLoading] = useState(true);
+
+    // State for tracking failed APIs
+    const [failedApis, setFailedApis] = useState<
+        Array<{
+            id: string;
+            name: string;
+            retryFunction: () => Promise<void>;
+            errorMessage: string;
+        }>
+    >([]);
+
+    // Inactive modal state
+    const [showInactiveModal, setShowInactiveModal] = useState(false);
+    const [userToInactive, setUserToInactive] = useState<any>(null);
+    const [inactiveFormData, setInactiveFormData] = useState({
+        userName: '',
+        reason: ''
+    });
+
+    // Filter state
+    const [filters, setFilters] = useState({
+        userTypes: '',
+        userStatus: '',
+    });
+
+    // Dropdown options
+    const userTypesOptions = [
+        { value: 'admin', label: 'Admin' },
+        { value: 'user', label: 'User' },
+        { value: 'moderator', label: 'Moderator' },
+        { value: 'accountant', label: 'Accountant' },
+    ];
+
+    const userStatusOptions = [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+    ];
+
+    // Filter change handler
+    const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        console.log(`Filter changed: ${name} = ${value}`);
+        // Add your filter logic here
+    };
+
+    const handlePageChange = (page: number, limit: number) => {
+        fetchUsers(page, limit);
+    };
+
+    // Handle table search
+    const handleSearch = (searchTerm: string) => {
+        // Reset to first page when searching
+        fetchUsers(1, serverPagination.limit, searchTerm);
+    };
+
+    // Retry specific API
+    const retrySpecificAPI = (apiId: string) => {
+        const api = failedApis.find((a) => a.id === apiId);
+        if (api) {
+            api.retryFunction();
+        }
+    };
+
+    const fetchUsers = async (page = 1, limit = 8, searchTerm = '') => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams();
+            params.append('page', String(page));
+            params.append('limit', String(limit));
+            
+            if (searchTerm && searchTerm.trim()) {
+                params.append('search', searchTerm.trim());
+            }
+            
+            const response = await fetch(`${BACKEND_URL}/users?${params.toString()}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                setUsers(data.data);
+                setServerPagination({
+                    currentPage: data.pagination?.currentPage || 1,
+                    totalPages: data.pagination?.totalPages || 1,
+                    totalCount: data.pagination?.totalCount || 0,
+                    limit: data.pagination?.limit || limit,
+                    hasNextPage: data.pagination?.hasNextPage || false,
+                    hasPrevPage: data.pagination?.hasPrevPage || false,
+                });
+                // Remove from failed APIs if successful
+                setFailedApis((prev) => prev.filter((api) => api.id !== "users"));
+            } else {
+                throw new Error(data.message || 'Failed to fetch users');
+            }
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : 'Failed to fetch users');
+            setUsers([]);
+            setServerPagination({
+                currentPage: 1,
+                totalPages: 1,
+                totalCount: 0,
+                limit: limit,
+                hasNextPage: false,
+                hasPrevPage: false,
+            });
+            // Add to failed APIs
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "users")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "users",
+                            name: "Users Table",
+                            retryFunction: () => fetchUsers(page, limit, searchTerm),
+                            errorMessage: "Failed to load Users Table. Please try again.",
+                        },
+                    ];
+                }
+                return prev;
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    // Fetch user stats (widgets)
+    const fetchUserStats = async () => {
+        setStatsLoading(true);
+        try {
+            const response = await fetch(`${BACKEND_URL}/users/stats`);
+            if (!response.ok) throw new Error('Failed to fetch user stats');
+            const result = await response.json();
+            if (!result.success)
+                throw new Error(
+                    result.message || 'Failed to fetch user stats'
+                );
+            setUserStats(result.data);
+            console.log('User stats:', result.data);
+            // Remove from failed APIs if successful
+            setFailedApis((prev) => prev.filter((api) => api.id !== "stats"));
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : 'Failed to fetch user stats');
+            setUserStats(null);
+            // Add to failed APIs
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "stats")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "stats",
+                            name: "User Statistics",
+                            retryFunction: fetchUserStats,
+                            errorMessage: "Failed to load User Statistics. Please try again.",
+                        },
+                    ];
+                }
+                return prev;
+            });
+        } finally {
+            setStatsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUserStats();
+    }, []);
+
+    // Widget cards array (same style as meters/tickets)
+    const userWidgets = [
+        {
+            title: 'Total Users',
+            value: userStats?.totalUsers || 'N/A',
+            icon: '/icons/total-users.svg',
+            subtitle1: userStats ? `${userStats.activeUsers} Active Users` : 'N/A Active Users',
+            subtitle2: userStats ? `${userStats.inactiveUsers} Inactive Users` : 'N/A Inactive Users',
+        },
+        {
+            title: 'Total Admins',
+            value: userStats?.roleBreakdown?.Admin || 'N/A',
+            icon: '/icons/admin.svg',
+            subtitle1: 'This Month',
+        },
+        {
+            title: 'Total Accountants',
+            value: userStats?.roleBreakdown?.Accountant || 'N/A',
+            icon: '/icons/accountant.svg',
+            subtitle1: 'This Month',
+        },
+        {
+            title: 'Total Moderators',
+            value: userStats?.roleBreakdown?.Moderator || 'N/A',
+            icon: '/icons/moderator.svg',
+            subtitle1: '1 Active Users', // Adjust if you want to show actual active moderators
+        },
+        {
+            title: 'Total Roles',
+            value: userStats?.totalRoles || 'N/A',
+            icon: '/icons/roles.svg',
+            subtitle1: '1 Active Users', // Adjust if you want to show actual active roles
+        },
+    ];
+
+    const handleInactiveClick = (row: any) => {
+        setUserToInactive(row);
+        setInactiveFormData({
+            userName: row.name || '',
+            reason: ''
+        });
+        setShowInactiveModal(true);
+    };
+
+    const handleConfirmInactive = async (data: any) => {
+        try {
+            console.log('Inactivating user:', userToInactive.sNo, data);
+            // Here you would make the actual API call to inactive the user
+            // const res = await fetch(`${BACKEND_URL}/users/${userToInactive.sNo}/inactive`, {
+            //     method: 'PUT',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ reason: data.reason })
+            // });
+            
+            // For demo purposes, update local state
+            setUsers(users.map(user => 
+                user.sNo === userToInactive.sNo 
+                    ? { ...user, status: 'inactive' }
+                    : user
+            ));
+        } catch (error) {
+            console.error('Error inactivating user:', error);
+        } finally {
+            setShowInactiveModal(false);
+            setUserToInactive(null);
+            setInactiveFormData({
+                userName: '',
+                reason: ''
+            });
+        }
+    };
+
+    const handleCancelInactive = () => {
+        setShowInactiveModal(false);
+        setUserToInactive(null);
+        setInactiveFormData({
+            userName: '',
+            reason: ''
+        });
+    };
+
+    // Form fields configuration for inactive user
+    const inactiveFormFields = [
+        {
+            type: 'input' as const,
+            label: 'User Name',
+            name: 'userName',
+            value: inactiveFormData.userName,
+            placeholder: 'User name',
+            required: true,
+            onChange: (value: string) => setInactiveFormData(prev => ({ ...prev, userName: value })),
+            disabled: true
+        },
+        {
+            type: 'dropdown' as const,
+            label: 'Reason for Inactivation',
+            name: 'reason',
+            searchable: false,
+            value: inactiveFormData.reason,
+            required: true,
+            options: [
+                { value: 'account_violation', label: 'Account Violation' },
+                { value: 'inactive_usage', label: 'Inactive Usage' },
+                { value: 'security_concern', label: 'Security Concern' },
+                { value: 'user_request', label: 'User Request' },
+                { value: 'other', label: 'Other' }
+            ],
+            onChange: (value: string) => setInactiveFormData(prev => ({ ...prev, reason: value }))
+        }
+    ];
+
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <Page
+                sections={[
+                    // Error Section (show when there are failed APIs)
+                    ...(failedApis.length > 0
+                        ? [
+                            {
+                                layout: {
+                                    type: 'column' as const,
+                                    gap: 'gap-4',
+                                    rows: [
+                                        {
+                                            layout: 'column' as const,
+                                            columns: [
+                                                {
+                                                    name: 'Error',
+                                                    props: {
+                                                        visibleErrors: failedApis.map(
+                                                            (api) => api.errorMessage
+                                                        ),
+                                                        showRetry: true,
+                                                        maxVisibleErrors: 3, // Show max 3 errors at once
+                                                        failedApis: failedApis, // Pass all failed APIs for individual retry
+                                                        onRetrySpecific: retrySpecificAPI, // Pass the retry function
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            },
+                        ]
+                        : []),
+                    // Page Header Section
+                    {
+                        layout: {
+                            type: 'column' as const,
+                            gap: 'gap-4',
+                            rows: [
+                                {
+                                    layout: 'row' as const,
+                                    columns: [
+                                        {
+                                            name: 'PageHeader',
+                                            props: {
+                                                title: 'Users',
+                                                onBackClick: () =>
+                                                    navigate('/superadmin'),
+                                                backButtonText:
+                                                    'Back to Dashboard',
+                                                buttonsLabel: 'Add User',
+                                                variant: 'primary',
+                                                onClick: () => navigate('/add-user'),
+                                                showMenu: true,
+                                                showDropdown: true,
+                                                menuItems: [
+                                                    {
+                                                        id: 'RoleManagement',
+                                                        label: 'Role Management',
+                                                    },  
+                                                    {
+                                                        id: 'Export',
+                                                        label: 'Export ',
+                                                    },
+                                                  
+                                                ],
+                                                onMenuItemClick: (
+                                                    itemId: string
+                                                ) => {
+                                                    console.log(
+                                                        `Filter by: ${itemId}`
+                                                    );
+                                                    if (itemId === 'RoleManagement') {
+                                                        navigate('/role-management');
+                                                    }
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    // Overview Cards Section
+                    {
+                        layout: {
+                            type: 'column' as const,
+                            gap: 'gap-4',
+                            rows: [
+                                {
+                                    layout: 'grid' as const,
+                                    gridColumns: 5,
+                                    gap: 'gap-4',
+                                    columns: userWidgets.map((card) => ({
+                                        name: 'Card',
+                                        props: {
+                                            ...card,
+                                            loading: statsLoading,
+                                            bg: "bg-stat-icon-gradient"
+                                        }
+                                    }))
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        layout: {
+                            type: 'grid' as const,
+                            columns: 1,
+                            gap: 'gap-4',
+                            rows: [
+                                {
+                                    layout: 'grid' as const,
+                                    gridColumns: 2,
+                                    gap: 'gap-4',
+                                    columns: [
+                                        {
+                                            name: 'Dropdown',
+                                            props: {
+                                                name: 'userTypes',
+                                                options: userTypesOptions,
+                                                placeholder: 'Filter By User Types',
+                                                value: filters.userTypes,
+                                                onChange: handleFilterChange,
+                                                className: 'w-48',
+                                                searchable: false,
+                                            },
+                                        },
+                                        {
+                                            name: 'Dropdown',
+                                            props: {
+                                                name: 'userStatus',
+                                                options: userStatusOptions,
+                                                placeholder: 'Filter By User Status',
+                                                value: filters.userStatus,
+                                                onChange: handleFilterChange,
+                                                className: 'w-48',
+                                                searchable:false,
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    // Users Table Section
+                    {
+                        layout: {
+                            type: 'column' as const,
+                            gap: 'gap-4',
+                            rows: [
+                                {
+                                    layout: 'column' as const,
+                                    columns: [
+                                        {
+                                            name: 'Table',
+                                            props: {
+                                                data: users,
+                                                columns: tableColumns,
+                                                loading: loading,
+                                                searchable: true,
+                                                sortable: true,
+                                                pagination: true,
+                                                showHeader: true,
+                                                showActions: true,
+                                                serverPagination: serverPagination,
+                                                onPageChange: handlePageChange,
+                                                onSearch: handleSearch,
+                                                headerTitle: 'User Management',
+                                                onView: (row: any) => {
+                                                    console.log('Users: onView triggered', row);
+                                                    console.log('Users: Navigating to', `/user-detail/${row.sNo}`);
+                                                    navigate(`/user-detail/${row.sNo}`, {
+                                                        state: {
+                                                            user: row
+                                                        }
+                                                    });
+                                                },
+                                                onEdit: (row: any) => {
+                                                    console.log('Edit user:', row);
+                                                    // Navigate to edit page or open edit modal
+                                                    navigate(`/edit-user/${row.sNo}`, {
+                                                        state: {
+                                                            user: row
+                                                        }
+                                                    });
+                                                },
+                                                onInactive: (row: any) => {
+                                                    handleInactiveClick(row);
+                                                },
+                                                availableTimeRanges:[],
+                                                // dateRange: 'Real-time data',
+                                                text: 'User Management Table',
+                                                className: 'w-full',
+                                                emptyMessage: 'No users found',
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    // Inactive User Modal Section
+                    {
+                        layout: {
+                            type: 'column' as const,
+                            gap: 'gap-4',
+                            rows: [
+                                {
+                                    layout: 'row' as const,
+                                    columns: [
+                                        {
+                                            name: 'Modal',
+                                            props: {
+                                                isOpen: showInactiveModal,
+                                                onClose: handleCancelInactive,
+                                                title: 'Inactivate User',
+                                                size: 'md',
+                                                showForm: true,
+                                                formFields: inactiveFormFields,
+                                                onSave: handleConfirmInactive,
+                                                saveButtonLabel: 'Inactivate User',
+                                                cancelButtonLabel: 'Cancel',
+                                                cancelButtonVariant: 'secondary',
+                                                gridLayout: {
+                                                    gridRows: 2,
+                                                    gridColumns: 1,
+                                                    gap: 'gap-4'
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                ]}
+            />
+        </Suspense>
+    );
+}
