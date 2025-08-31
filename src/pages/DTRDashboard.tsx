@@ -33,6 +33,17 @@ const dummyDtrStatsData = {
   inactivePercentage: "N/A",
 };
 
+// Dummy data for filter options
+const dummyFilterOptions = {
+  projectTypes: [{ value: "HT", label: "HT" }, { value: "LT", label: "LT" }],
+  discoms: [{ value: "all", label: "discoms" }],
+  circles: [{ value: "all", label: "circles" }],
+  divisions: [{ value: "all", label: "divisions" }],
+  subDivisions: [{ value: "all", label: "subDivisions" }],
+  sections: [{ value: "all", label: "sections" }],
+  meterLocations: [{ value: "all", label: "meterLocations" }],
+};
+
 const dummyDtrConsumptionData = {
   daily: { totalKwh: "N/A", totalKvah: "N/A", totalKw: "N/A", totalKva: "N/A" },
   monthly: {
@@ -81,6 +92,20 @@ const dummyChartData = {
     "Daily" | "Monthly"
   >("Daily");
 
+  // State for filter values
+  const [filterValues, setFilterValues] = useState({
+    projectType: "HT",
+    discom: "all",
+    circle: "all",
+    division: "all",
+    subDivision: "all",
+    section: "all",
+    meterLocation: "all",
+  });
+
+  // State for filter options from backend
+  const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
+
   // State for API data
   const [dtrStatsData, setDtrStatsData] = useState<any>(dummyDtrStatsData);
   const [dtrConsumptionData, setDtrConsumptionData] = useState<{
@@ -124,6 +149,7 @@ const dummyChartData = {
   const [isTableLoading, setIsTableLoading] = useState(true);
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
   const [isChartLoading, setIsChartLoading] = useState(true);
+  const [isFiltersLoading, setIsFiltersLoading] = useState(true);
 
   // State for tracking failed APIs
   const [failedApis, setFailedApis] = useState<
@@ -136,6 +162,34 @@ const dummyChartData = {
   >([]);
 
   // Retry functions for each API
+  const retryFiltersAPI = async () => {
+    setIsFiltersLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
+      if (!response.ok) throw new Error("Failed to fetch filter options");
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid response format");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setFilterOptions(data.data || dummyFilterOptions);
+        setFailedApis((prev) => prev.filter((api) => api.id !== "filters"));
+      } else {
+        throw new Error(data.message || "Failed to fetch filter options");
+      }
+    } catch (err: any) {
+      console.error("Error in Filters API:", err);
+      setFilterOptions(dummyFilterOptions);
+    } finally {
+      setTimeout(() => {
+        setIsFiltersLoading(false);
+      }, 1000);
+    }
+  };
+
   const retryStatsAPI = async () => {
     setIsStatsLoading(true);
     try {
@@ -303,6 +357,47 @@ const dummyChartData = {
 
   // Load data on component mount
   useEffect(() => {
+    const fetchFilterOptions = async () => {
+      setIsFiltersLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
+        if (!response.ok) throw new Error("Failed to fetch filter options");
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setFilterOptions(data.data || dummyFilterOptions);
+        } else {
+          throw new Error(data.message || "Failed to fetch filter options");
+        }
+      } catch (error) {
+        console.error("Error fetching filter options:", error);
+        setFilterOptions(dummyFilterOptions);
+        setFailedApis((prev) => {
+          if (!prev.find((api) => api.id === "filters")) {
+            return [
+              ...prev,
+              {
+                id: "filters",
+                name: "Filter Options",
+                retryFunction: retryFiltersAPI,
+                errorMessage: "Failed to load Filter Options. Please try again.",
+              },
+            ];
+          }
+          return prev;
+        });
+      } finally {
+        setTimeout(() => {
+          setIsFiltersLoading(false);
+        }, 1000);
+      }
+    };
+
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
       try {
@@ -513,6 +608,7 @@ const dummyChartData = {
       }
     };
 
+    fetchFilterOptions();
     fetchDTRStats();
     fetchDTRTable();
     fetchDTRAlerts();
@@ -592,6 +688,37 @@ const dummyChartData = {
 
   const handleTimeRangeChange = (range: string) => {
     setSelectedTimeRange(range as "Daily" | "Monthly");
+  };
+
+  // Filter change handlers
+  const handleFilterChange = (filterName: string, value: string) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  // Handle Get Data button click
+  const handleGetData = async () => {
+    console.log("Filter values:", filterValues);
+    // Here you can implement the logic to fetch data based on filters
+    // For example, call the DTR stats API with filter parameters
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filterValues).forEach(([key, value]) => {
+        if (value !== "all") {
+          params.append(key, value);
+        }
+      });
+      
+      // Refresh data with new filters
+      retryStatsAPI();
+      retryTableAPI();
+      retryAlertsAPI();
+      retryChartAPI();
+    } catch (error) {
+      console.error("Error applying filters:", error);
+    }
   };
 
   // DTR statistics cards data - Using API data
@@ -843,8 +970,8 @@ const dummyChartData = {
     { key: "dtrId", label: "DTR ID" },
     { key: "dtrName", label: "DTR Name" },
     { key: "feedersCount", label: "Feeders Count" },
-    { key: "streetName", label: "Street Name" },
-    { key: "city", label: "City" },
+    // { key: "streetName", label: "Street Name" },
+    // { key: "city", label: "City" },
     {
       key: "commStatus",
       label: "Communication-Status",
@@ -895,6 +1022,7 @@ const dummyChartData = {
                 },
               ]
             : []),
+            
           // Header section
           {
             layout: {
@@ -924,6 +1052,120 @@ const dummyChartData = {
               },
             ],
           },
+                     // Filter Section
+                       {
+              layout: {
+                type: "grid" as const,
+                columns: 8,
+                gap: "gap-4 ",
+                className: " flex items-center justify-center",
+              },
+             components: [
+               {
+                 name: "Dropdown",
+                 props: {
+                   label: "Project Type",
+                   options: filterOptions.projectTypes,
+                   value: filterValues.projectType,
+                   onChange: (value: string) => handleFilterChange("projectType", value),
+                   placeholder: "Select Project Type",
+                   loading: isFiltersLoading,
+                   searchable: false,
+                 },
+                 span: { col: 1, row: 1 },
+               },
+               {
+                 name: "Dropdown",
+                 props: {
+                   label: "DISCOM",
+                   options: filterOptions.discoms,
+                   value: filterValues.discom,
+                   onChange: (value: string) => handleFilterChange("discom", value),
+                   placeholder: "Select DISCOM",
+                   loading: isFiltersLoading,
+                   searchable: false,
+                 },
+                 span: { col: 1, row: 1 },
+               },
+               {
+                 name: "Dropdown",
+                 props: {
+                   label: "CIRCLE",
+                   options: filterOptions.circles,
+                   value: filterValues.circle,
+                   onChange: (value: string) => handleFilterChange("circle", value),
+                   placeholder: "Select Circle",
+                   loading: isFiltersLoading,
+                   searchable: false, 
+                 },
+                 span: { col: 1, row: 1 },
+               },
+               {
+                 name: "Dropdown",
+                 props: {
+                   label: "DIVISION",
+                   options: filterOptions.divisions,
+                   value: filterValues.division,
+                   onChange: (value: string) => handleFilterChange("division", value),
+                   placeholder: "Select Division",
+                   loading: isFiltersLoading,
+                   searchable: false,
+                 },
+                 span: { col: 1, row: 1 },
+               },
+                               {
+                  name: "Dropdown",
+                  props: {
+                    label: "SUB-DIVISION",
+                    options: filterOptions.subDivisions,
+                    value: filterValues.subDivision,
+                    onChange: (value: string) => handleFilterChange("subDivision", value),
+                    placeholder: "Select Sub-Division",
+                    loading: isFiltersLoading,
+                    searchable: false,
+                  },
+                  span: { col: 1, row: 1 },
+                },
+                {
+                  name: "Dropdown",
+                  props: {
+                    label: "SECTION",
+                    options: filterOptions.sections,
+                    value: filterValues.section,
+                    onChange: (value: string) => handleFilterChange("section", value),
+                    placeholder: "Select Section",
+                    loading: isFiltersLoading,
+                    searchable: false,
+                  },
+                  span: { col: 1, row: 1 },
+                },
+                {
+                  name: "Dropdown",
+                  props: {
+                    label: "METER LOCATION",
+                    options: filterOptions.meterLocations,
+                    value: filterValues.meterLocation,
+                    onChange: (value: string) => handleFilterChange("meterLocation", value),
+                    placeholder: "Select Meter Location",
+                    loading: isFiltersLoading,
+                    searchable: false,  
+                      },
+                  span: { col: 1, row: 1 },
+                },
+               {
+                 name: "Button",
+                 props: {
+                   variant: "primary",
+                   onClick: handleGetData,
+                   children: "Get Data",
+                   className: "h-10 px-6 self-end",
+                   loading: isStatsLoading || isTableLoading || isAlertsLoading || isChartLoading,
+                   searchable: false,
+                 },
+                 span: { col: 1, row: 1 },
+               },
+             ],
+           },
           // DTR Statistics Cards
           {
             layout: {
