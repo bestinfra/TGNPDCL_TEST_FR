@@ -206,8 +206,8 @@ export default function RoleManagement() {
     const handleEditClick = (row: any) => {
         setRoleToEdit(row);
         setFormData({
-            roleName: row.roleName || row.name || 'N/A',
-            description: row.description || 'N/A'
+            roleName: row.roleName || row.name || '-',
+            description: row.description || '-'
         });
         setShowEditModal(true);
     };
@@ -220,8 +220,8 @@ export default function RoleManagement() {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: data.roleName || 'N/A',
-                        description: data.description || 'N/A'
+                        name: data.roleName || '-',
+                        description: data.description || '-'
                     })
                 });
                 if (!res.ok) {
@@ -252,8 +252,8 @@ export default function RoleManagement() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: data.roleName || 'N/A',
-                        description: data.description || 'N/A'
+                        name: data.roleName || '-',
+                        description: data.description || '-'
                     })
                 });
                 if (!res.ok) {
@@ -343,7 +343,7 @@ export default function RoleManagement() {
             type: 'input' as const,
             label: 'Current Role',
             name: 'currentRole',
-            value: roleToEdit?.roleName || roleToEdit?.name || 'N/A',
+            value: roleToEdit?.roleName || roleToEdit?.name || '-',
             placeholder: 'Current role name',
             required: true,
             onChange: (value: string) => setFormData(prev => ({ ...prev, roleName: value })),
@@ -367,18 +367,18 @@ export default function RoleManagement() {
 
     // Table data for the Table component - Updated to match the image layout with smart fallbacks
     const tableData = roles.map((role) => ({
-        id: role.id || 'N/A',
+        id: role.id || '-',
         fullName: role.users && role.users.length > 0 
-            ? `${role.users[0].firstName || 'N/A'} ${role.users[0].lastName || 'N/A'}`.trim() || 'N/A'
-            : 'N/A',
-        roleName: role.name || 'N/A',
+            ? `${role.users[0].firstName || '-'} ${role.users[0].lastName || '-'}`.trim() || '-'
+            : '-',
+        roleName: role.name || '-',
         client: 'GMR', // Default client as shown in the image
         users: role.users ? role.users.length : 0,
         permissions: role.permissions && role.permissions.length > 0 
-            ? role.permissions.map((p) => p.name || 'N/A').join(', ')
-            : 'N/A',
-        createdAt: role.createdAt || 'N/A',
-        updatedAt: role.updatedAt || 'N/A',
+            ? role.permissions.map((p) => p.name || '-').join(', ')
+            : '-',
+        createdAt: role.createdAt || '-',
+        updatedAt: role.updatedAt || '-',
     }));
 
     // Table columns configuration - Updated to match the image
@@ -415,23 +415,23 @@ export default function RoleManagement() {
             // 1. Roles Table Data
             const rolesTableExportData = tableData.map((role, index) => ({
                 "S.No": index + 1,
-                "Full Name": role.fullName || "N/A",
-                "Role Name": role.roleName || "N/A",
-                "Client": role.client || "N/A",
+                "Full Name": role.fullName || "-",
+                "Role Name": role.roleName || "-",
+                "Client": role.client || "-",
                 "Users Count": role.users || 0,
-                "Permissions": role.permissions || "N/A",
-                "Created Date": role.createdAt || "N/A",
-                "Updated Date": role.updatedAt || "N/A"
+                "Permissions": role.permissions || "-",
+                "Created Date": role.createdAt || "-",
+                "Updated Date": role.updatedAt || "-"
             }));
 
             // 2. Role Summary Data
             const roleSummaryData = roles.map((role) => ({
-                "Role ID": role.id || "N/A",
-                "Role Name": role.name || "N/A",
+                "Role ID": role.id || "-",
+                "Role Name": role.name || "-",
                 "Total Users": role.users ? role.users.length : 0,
                 "Total Permissions": role.permissions ? role.permissions.length : 0,
-                "Created Date": role.createdAt || "N/A",
-                "Last Updated": role.updatedAt || "N/A"
+                "Created Date": role.createdAt || "-",
+                "Last Updated": role.updatedAt || "-"
             }));
 
             // Create sheets with auto-sizing
@@ -627,7 +627,7 @@ export default function RoleManagement() {
                                                 confirmButtonVariant: 'danger',
                                                 onConfirm: handleConfirmDelete,
                                                 disabled: deleting,
-                                                message: `Are you sure you want to delete the role "${roleToDelete?.roleName || roleToDelete?.name || 'N/A'}"?`,
+                                                message: `Are you sure you want to delete the role "${roleToDelete?.roleName || roleToDelete?.name || '-'}"?`,
                                                 warningMessage: 'This action cannot be undone. All users assigned to this role will lose their permissions.',
                                             },
                                         },

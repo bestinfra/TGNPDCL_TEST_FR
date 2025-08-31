@@ -60,23 +60,23 @@ const TicketView: React.FC = () => {
     // Ticket data with smart fallbacks
     const [ticket, setTicket] = useState<Ticket>({
         id: 0,
-        ticketNumber: 'N/A',
-        uid: 'N/A',
-        subject: 'N/A',
-        status: 'N/A',
-        customerName: 'N/A',
-        category: 'N/A',
-        priority: 'N/A',
-        assignedTo: 'N/A',
-        createdAt: 'N/A',
-        lastUpdated: 'N/A',
-        description: 'N/A',
-        location: 'N/A',
-        email: 'N/A',
-        unitNumber: 'N/A',
-        meterId: 'N/A',
-        mobile: 'N/A',
-        connectionType: 'N/A',
+        ticketNumber: '-',
+        uid: '-',
+        subject: '-',
+        status: '-',
+        customerName: '-',
+        category: '-',
+        priority: '-',
+        assignedTo: '-',
+        createdAt: '-',
+        lastUpdated: '-',
+        description: '-',
+        location: '-',
+        email: '-',
+        unitNumber: '-',
+        meterId: '-',
+        mobile: '-',
+        connectionType: '-',
     });
 
     // Activity log data with smart fallbacks
@@ -117,23 +117,23 @@ const TicketView: React.FC = () => {
                 const ticketData = result.data;
                 setTicket({
                     id: ticketData.id || 0,
-                    ticketNumber: ticketData.ticketNumber || 'N/A',
-                    uid: ticketData.uid || 'N/A',
-                    subject: ticketData.subject || 'N/A',
-                    status: ticketData.status || 'N/A',
-                    customerName: ticketData.customerName || 'N/A',
-                    category: ticketData.category || 'N/A',
-                    priority: ticketData.priority || 'N/A',
-                    assignedTo: ticketData.assignedTo || 'N/A',
-                    createdAt: ticketData.createdAt || 'N/A',
-                    lastUpdated: ticketData.lastUpdated || 'N/A',
-                    description: ticketData.description || 'N/A',
-                    location: ticketData.location || 'N/A',
-                    email: ticketData.email || 'N/A',
-                    unitNumber: ticketData.unitNumber || 'N/A',
-                    meterId: ticketData.meterId || 'N/A',
-                    mobile: ticketData.mobile || 'N/A',
-                    connectionType: ticketData.connectionType || 'N/A',
+                    ticketNumber: ticketData.ticketNumber || '-',
+                    uid: ticketData.uid || '-',
+                    subject: ticketData.subject || '-',
+                    status: ticketData.status || '-',
+                    customerName: ticketData.customerName || '-',
+                    category: ticketData.category || '-',
+                    priority: ticketData.priority || '-',
+                    assignedTo: ticketData.assignedTo || '-',
+                    createdAt: ticketData.createdAt || '-',
+                    lastUpdated: ticketData.lastUpdated || '-',
+                    description: ticketData.description || '-',
+                    location: ticketData.location || '-',
+                    email: ticketData.email || '-',
+                    unitNumber: ticketData.unitNumber || '-',
+                    meterId: ticketData.meterId || '-',
+                    mobile: ticketData.mobile || '-',
+                    connectionType: ticketData.connectionType || '-',
                 });
                 console.log('Ticket data:', ticketData);
             } else {
@@ -190,12 +190,12 @@ const TicketView: React.FC = () => {
             if (result.success) {
                 const activityData = result.data || [];
                 setActivityLog(activityData.map((item: any) => ({
-                    id: item.id || 'N/A',
-                    description: item.description || 'N/A',
-                    timestamp: item.timestamp || 'N/A',
-                    status: item.status || 'N/A',
-                    subText: item.subText || 'N/A',
-                    author: item.author || 'N/A',
+                    id: item.id || '-',
+                    description: item.description || '-',
+                    timestamp: item.timestamp || '-',
+                    status: item.status || '-',
+                    subText: item.subText || '-',
+                    author: item.author || '-',
                 })));
                 console.log('Activity log:', activityData);
             } else {
@@ -280,7 +280,7 @@ const TicketView: React.FC = () => {
                             {
                                 name: 'PageHeader',
                                 props: {
-                                    title: `Ticket Details - #${ticket.ticketNumber !== 'N/A' ? ticket.ticketNumber : 'Loading...'}`,
+                                    title: `Ticket Details - #${ticket.ticketNumber !== '-' ? ticket.ticketNumber : 'Loading...'}`,
                                     onBackClick: () => {
                                         if (isAdmin) {
                                             navigate(basePath);
@@ -318,7 +318,7 @@ const TicketView: React.FC = () => {
                                                     leftColumn: [
                                                         {
                                                             label: 'Ticket ID',
-                                                            value: ticket.ticketNumber !== 'N/A' ? `#${ticket.ticketNumber}` : 'N/A',
+                                                            value: ticket.ticketNumber !== '-' ? `#${ticket.ticketNumber}` : '-',
                                                         },
                                                     ],
                                                 },
@@ -332,7 +332,7 @@ const TicketView: React.FC = () => {
                                                 ticket: ticket,
                                                 activityLog: activityLog,
                                                 rightStatus: {
-                                                    text: ticket.status !== 'N/A' ? ticket.status : 'Loading...',
+                                                    text: ticket.status !== '-' ? ticket.status : 'Loading...',
                                                     variant: "default",
                                                     onClick: () => handleOpenTicket()
                                                 },

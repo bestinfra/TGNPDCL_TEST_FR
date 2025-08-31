@@ -9,40 +9,40 @@ import BACKEND_URL from '../config';
 
 // Dummy data for fallback
 const dummyInstantaneousStatsData = {
-    rphVolt: 'N/A',
-    yphVolt: 'N/A',
-    bphVolt: 'N/A',
-    instantKVA: 'N/A',
-    mdKVA: 'N/A',
-    rphCurr: 'N/A',
-    yphCurr: 'N/A',
-    bphCurr: 'N/A',
-    neutralCurrent: 'N/A',
-    freqHz: 'N/A',
-    rphPF: 'N/A',
-    yphPF: 'N/A',
-    bphPF: 'N/A',
-    avgPF: 'N/A',
-    cumulativeKVAh: 'N/A',
+    rphVolt: '-',
+    yphVolt: '-',
+    bphVolt: '-',
+    instantKVA: '-',
+    mdKVA: '-',
+    rphCurr: '-',
+    yphCurr: '-',
+    bphCurr: '-',
+    neutralCurrent: '-',
+    freqHz: '-',
+    rphPF: '-',
+    yphPF: '-',
+    bphPF: '-',
+    avgPF: '-',
+    cumulativeKVAh: '-',
     lastCommDate: null
 };
 
 const dummyConsumptionAnalyticsData = {
-    xAxisData: ['N/A'],
+    xAxisData: ['-'],
     seriesData: [{ name: 'Consumption', data: [0] }],
     monthly: {
-        xAxisData: ['N/A'],
+        xAxisData: ['-'],
         seriesData: [{ name: 'Consumption', data: [0] }]
     }
 };
 
 const dummyFeederInfoData = {
     dtr: {
-        dtrNumber: 'N/A',
-        capacity: 'N/A',
-        status: 'N/A'
+        dtrNumber: '-',
+        capacity: '-',
+        status: '-'
     },
-    totalFeeders: 'N/A'
+    totalFeeders: '-'
 };
 
 const dummyAlertsData = [
@@ -62,21 +62,21 @@ const dummyAlertsData = [
 
 // Default stats data
 const defaultStats = [
-    { title: 'R-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Apparent Power', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'MD-kVA', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'R-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Neutral Current', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'Frequency', value: 'N/A', icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'R-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
-    { title: 'Y-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Avg PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'Cummulative kVAh', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Voltage', value: '-', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Voltage', value: '-', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Voltage', value: '-', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Apparent Power', value: '-', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'MD-kVA', value: '-', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Current', value: '-', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Current', value: '-', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Current', value: '-', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Neutral Current', value: '-', icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Frequency', value: '-', icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
+    { title: 'Y-Phase PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Avg PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Cummulative kVAh', value: '-', icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
 ];
 
 const Feeders = () => {
@@ -491,7 +491,7 @@ const Feeders = () => {
                 // Transform the data to ensure it matches the table column structure
                                let transformedAlerts = data.data?.map((alert: any) => ({
                     ...alert,
-                    feederName: effectiveFeederData?.feederName || alert.feederName || 'N/A'
+                    feederName: effectiveFeederData?.feederName || alert.feederName || '-'
                 })) || [];
                 
                 if (effectiveFeederData?.feederName) {
@@ -503,14 +503,14 @@ const Feeders = () => {
                     }));
                 }
                 
-                // If transformation resulted in all N/A values, log the raw data for debugging
+                // If transformation resulted in all - values, log the raw data for debugging
                 if (transformedAlerts.every((alert: any) => 
-                    alert.alertId === 'N/A' && 
-                    alert.type === 'N/A' && 
-                    alert.feederName === 'N/A' && 
-                    alert.occuredOn === 'N/A'
+                    alert.alertId === '-' && 
+                    alert.type === '-' && 
+                    alert.feederName === '-' && 
+                    alert.occuredOn === '-'
                 )) {
-                    console.warn('All alerts transformed to N/A. Raw API data:', data.data);
+                    console.warn('All alerts transformed to -. Raw API data:', data.data);
                 }
                 
                 setAlertsData(transformedAlerts);
@@ -618,7 +618,7 @@ const Feeders = () => {
 
     // Generate stats from API data or use defaults
     const getStats = () => {
-        if (instantaneousStatsData && Object.keys(instantaneousStatsData).length > 0 && instantaneousStatsData.rphVolt !== 'N/A') {
+        if (instantaneousStatsData && Object.keys(instantaneousStatsData).length > 0 && instantaneousStatsData.rphVolt !== '-') {
             return [
                 { title: 'R-Phase Voltage', value: instantaneousStatsData.rphVolt?.toString() || '257.686', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading },
                 { title: 'Y-Phase Voltage', value: instantaneousStatsData.yphVolt?.toString() || '255.089', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
@@ -902,7 +902,7 @@ const Feeders = () => {
                 // Just update the feederName if we have specific feeder data
                 let transformedAlerts = data.data?.map((alert: any) => ({
                     ...alert,
-                    feederName: effectiveFeederData?.feederName || alert.feederName || 'N/A'
+                    feederName: effectiveFeederData?.feederName || alert.feederName || '-'
                 })) || [];
                 
                 // If this is for a specific feeder, filter alerts for that feeder only
@@ -1354,7 +1354,7 @@ const Feeders = () => {
                                                 value: (() => {
                                                     const lastComm = instantaneousStatsData?.lastCommDate;
                                                     console.log('LastComm component - lastCommDate:', lastComm);
-                                                    if (lastComm && lastComm !== 'N/A' && lastComm !== null) {
+                                                    if (lastComm && lastComm !== '-' && lastComm !== null) {
                                                         try {
                                                             const date = new Date(lastComm);
                                                             if (!isNaN(date.getTime())) {
