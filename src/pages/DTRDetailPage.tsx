@@ -887,7 +887,7 @@ const DTRDetailPage = () => {
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
                                             className:'w-full',
-                                            rightComponent: { name: 'LastComm', props: { value: lastComm } },
+                                            // rightComponent: { name: 'LastComm', props: { value: lastComm } },
                                         },
                                         span: { col: 1, row: 1 },
                                     },

@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BACKEND_URL from '../config';
 const Page = lazy(() => import('SuperAdmin/Page'));
 import BACKEND_URL from '../config';
 
@@ -24,6 +25,7 @@ const DTRTable: React.FC = () => {
     hasNextPage: false,
     hasPrevPage: false,
   });
+  const [hasRealData, setHasRealData] = useState(false);
 
   // Check URL parameters to determine which card was clicked
   useEffect(() => {
@@ -629,7 +631,15 @@ const DTRTable: React.FC = () => {
                         text: cardTitle,
                         availableTimeRanges: [],
                         className: 'w-full',
-                        emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
+                        emptyMessage: cardType === 'ht-fuse-blown' 
+                          ? 'No HT side fuse blown incidents found. This indicates all DTRs have healthy voltage levels.' 
+                          : cardType === 'lt-fuse-blown'
+                          ? 'No LT side fuse blown incidents found. All LT feeders are operating normally.'
+                          : cardType === 'unbalanced-dtrs'
+                          ? 'No unbalanced DTRs found. All transformers have balanced load distribution.'
+                          : cardType === 'power-failure-feeders'
+                          ? 'No power failure incidents found. All feeders are operating normally.'
+                          : `No ${cardTitle.toLowerCase()} data found`,
                         rowsPerPageOptions: [10, 25, 50],
                         initialRowsPerPage: 10,
                         showSkeletonActionButtons: true,

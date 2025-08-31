@@ -405,7 +405,7 @@ export default function AssetManagment() {
   const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
   const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<"hierarchy" | "table">("hierarchy");
+  const [viewMode, setViewMode] = useState<"hierarchy" | "table">("table");
   const [meterTableData, setMeterTableData] = useState<any[]>([]);
   const [isLoadingMeterData, setIsLoadingMeterData] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1001,20 +1001,21 @@ export default function AssetManagment() {
                 // TABLE VIEW - Full-width table layout
                 {
                   layout: {
-                    type: "grid",
+                    type: "flex" as const,
+                    direction: "row" as const,
+                    gap: "gap-4",
                     columns: 1,
-                    className: "w-full",
+                    className: "w-full flex  flex-col gap-4",
                     rows: [
                       {
-                        layout: "grid",
-                        gridColumns: 8,
+                        layout: "flex" as const,
+                        direction: "row" as const,
                         gap: "gap-4",
-                        className:'flex justify-center items-center',
+                        className:"flex items-center gap-5 justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
                         columns: [
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'Project Type',
                               options: [
                                 { value: 'all', label: 'All Project Types' },
                                 ...dropdownData.projectTypes.map(item => ({
@@ -1031,7 +1032,6 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'DISCOM',
                               options: [
                                 { value: 'all', label: 'All DISCOMs' },
                                 ...dropdownData.discoms.map(item => ({
@@ -1048,7 +1048,6 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'CIRCLE',
                               options: [
                                 { value: 'all', label: 'All Circles' },
                                 ...dropdownData.circles.map(item => ({
@@ -1065,7 +1064,6 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'DIVISION',
                               options: [
                                 { value: 'all', label: 'All Divisions' },
                                 ...dropdownData.divisions.map(item => ({
@@ -1082,7 +1080,6 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'SUB-DIVISION',
                               options: [
                                 { value: 'all', label: 'All Sub-Divisions' },
                                 ...dropdownData.subDivisions.map(item => ({
@@ -1099,7 +1096,6 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'SECTION',
                               options: [
                                 { value: 'all', label: 'All Sections' },
                                 ...dropdownData.sections.map(item => ({
@@ -1116,7 +1112,6 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'METER LOCATION',
                               options: [
                                 { value: 'all', label: 'All Locations' },
                                 ...dropdownData.meterLocations.map(item => ({
@@ -1140,7 +1135,7 @@ export default function AssetManagment() {
                               loading: false,
                               searchable: false,
                             },
-                            align:'center'
+                            align:'end'
                             
                           }
                         ],

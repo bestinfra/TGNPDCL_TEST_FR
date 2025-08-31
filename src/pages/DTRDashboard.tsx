@@ -11,74 +11,74 @@ import BACKEND_URL from "../config";
 
 // Dummy data for fallback
 const dummyDtrStatsData = {
-  totalDtrs: "-",
-  totalLtFeeders: "-",
-  totalFuseBlown: "-",
-  fuseBlownPercentage: "-",
-  overloadedFeeders: "-",
-  overloadedPercentage: "-",
-  underloadedFeeders: "-",
-  underloadedPercentage: "-",
-  ltSideFuseBlown: "-",
-  unbalancedDtrs: "-",
-  unbalancedPercentage: "-",
-  powerFailureFeeders: "-",
-  powerFailurePercentage: "-",
-  htSideFuseBlown: "-",
-  activeDtrs: "-",
-  inactiveDtrs: "-",
-  activePercentage: "-",
-  inactivePercentage: "-",
+  totalDtrs: "0",
+  totalLtFeeders: "0",
+  totalFuseBlown: "0",
+  fuseBlownPercentage: "0",
+  overloadedFeeders: "0",
+  overloadedPercentage: "0",
+  underloadedFeeders: "0",
+  underloadedPercentage: "0",
+  ltSideFuseBlown: "0",
+  unbalancedDtrs: "0",
+  unbalancedPercentage: "0",
+  powerFailureFeeders: "0",
+  powerFailurePercentage: "0",
+  htSideFuseBlown: "0",
+  activeDtrs: "0",
+  inactiveDtrs: "0",
+  activePercentage: "0",
+  inactivePercentage: "0",
 };
 
 // Updated filter options structure to match API response
 const dummyFilterOptions = {
   discoms: [
     { value: "DISCOM1", label: "DISCOM 1" },
-    { value: "DISCOM2", label: "DISCOM 2" }
+    { value: "DISCOM2", label: "DISCOM 2" },
   ],
   circles: [
     { value: "CIRCLE1", label: "Circle 1" },
-    { value: "CIRCLE2", label: "Circle 2" }
+    { value: "CIRCLE2", label: "Circle 2" },
   ],
   divisions: [
     { value: "DIV1", label: "Division 1" },
-    { value: "DIV2", label: "Division 2" }
+    { value: "DIV2", label: "Division 2" },
   ],
   subDivisions: [
     { value: "SUBDIV1", label: "Sub Division 1" },
-    { value: "SUBDIV2", label: "Sub Division 2" }
+    { value: "SUBDIV2", label: "Sub Division 2" },
   ],
   sections: [
     { value: "SECTION1", label: "Section 1" },
-    { value: "SECTION2", label: "Section 2" }
+    { value: "SECTION2", label: "Section 2" },
   ],
   meterLocations: [
     { value: "INDOOR", label: "Indoor" },
-    { value: "OUTDOOR", label: "Outdoor" }
+    { value: "OUTDOOR", label: "Outdoor" },
   ],
 };
 
 const dummyDtrConsumptionData = {
-  daily: { totalKwh: "-", totalKvah: "-", totalKw: "-", totalKva: "-" },
+  daily: { totalKwh: "0", totalKvah: "0", totalKw: "0", totalKva: "0" },
   monthly: {
-    totalKwh: "-",
-    totalKvah: "-",
-    totalKw: "-",
-    totalKva: "-",
+    totalKwh: "0",
+    totalKvah: "0",
+    totalKw: "0",
+    totalKva: "0",
   },
-  currentDay: { totalKwh: "N/A", totalKvah: "N/A", totalKw: "N/A", totalKva: "N/A" },
+  currentDay: { totalKwh: "0", totalKvah: "0", totalKw: "0", totalKva: "0" },
 };
 
 const dummyDtrTableData = [
   {
-    dtrId: "-",
-    dtrName: "-",
-    feedersCount: "-",
-    streetName: "-",
-    city: "-",
-    commStatus: "-",
-    lastCommunication: "-",
+    dtrId: "0",
+    dtrName: "0",
+    feedersCount: "0",
+    streetName: "0",
+    city: "0",
+    commStatus: "0",
+    lastCommunication: "0",
   },
 ];
 
@@ -102,7 +102,7 @@ const dummyAlertsData = [
 ];
 
 const dummyChartData = {
-  months: ["-"],
+  months: ["0"],
   series: [
     { name: "LT FUSE BLOWN", data: [0] },
     { name: "HT FUSE BLOWN", data: [0] },
@@ -209,12 +209,10 @@ const DTRDashboard: React.FC = () => {
     // try {
     //   const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
     //   if (!response.ok) throw new Error("Failed to fetch filter options");
-
     //   const contentType = response.headers.get("content-type");
     //   if (!contentType || !contentType.includes("application/json")) {
     //     throw new Error("Invalid response format");
     //   }
-
     //   const data = await response.json();
     //   console.log('data 2', data);
     //   if (data.success) {
@@ -309,6 +307,7 @@ const DTRDashboard: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log("data", data);
       if (data.success) {
         setDtrTableData(data.data);
         setServerPagination({
@@ -481,24 +480,42 @@ const DTRDashboard: React.FC = () => {
           const transformedData = {
             discoms: data.data
               .filter((item: any) => item.levelName === "DISCOM")
-              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+              .map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name,
+              })),
             circles: data.data
               .filter((item: any) => item.levelName === "CIRCLE")
-              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+              .map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name,
+              })),
             divisions: data.data
               .filter((item: any) => item.levelName === "DIVISION")
-              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+              .map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name,
+              })),
             subDivisions: data.data
               .filter((item: any) => item.levelName === "SUB-DIVISION")
-              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+              .map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name,
+              })),
             sections: data.data
               .filter((item: any) => item.levelName === "SECTION")
-              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+              .map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name,
+              })),
             meterLocations: data.data
               .filter((item: any) => item.levelName === "METER-LOCATION")
-              .map((item: any) => ({ value: item.id.toString(), label: item.name }))
+              .map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name,
+              })),
           };
-          
+
           setFilterOptions(transformedData);
         } else {
           throw new Error(data.message || "Failed to fetch filter options");
@@ -526,7 +543,6 @@ const DTRDashboard: React.FC = () => {
         }, 1000);
       }
     };
-
 
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
@@ -612,6 +628,7 @@ const DTRDashboard: React.FC = () => {
         const response = await fetch(
           `${BACKEND_URL}/dtrs?${params.toString()}`
         );
+        
         if (!response.ok) throw new Error("Failed to fetch DTR table");
 
         const contentType = response.headers.get("content-type");
@@ -853,10 +870,10 @@ const DTRDashboard: React.FC = () => {
       // Add currentDay data to export if available
       if (dtrConsumptionData.currentDay) {
         const currentDayExportData = [
-          { Metric: "Current Day kWh", Value: dtrConsumptionData.currentDay.totalKwh || "N/A", Subtitle: "Today's Active Energy" },
-          { Metric: "Current Day kVAh", Value: dtrConsumptionData.currentDay.totalKvah || "N/A", Subtitle: "Today's Apparent Energy" },
-          { Metric: "Current Day kW", Value: dtrConsumptionData.currentDay.totalKw || "N/A", Subtitle: "Current Active Power" },
-          { Metric: "Current Day kVA", Value: dtrConsumptionData.currentDay.totalKva || "N/A", Subtitle: "Current Apparent Power" },
+          { Metric: "Current Day kWh", Value: dtrConsumptionData.currentDay.totalKwh || "0", Subtitle: "Today's Active Energy" },
+          { Metric: "Current Day kVAh", Value: dtrConsumptionData.currentDay.totalKvah || "0", Subtitle: "Today's Apparent Energy" },
+          { Metric: "Current Day kW", Value: dtrConsumptionData.currentDay.totalKw || "0", Subtitle: "Current Active Power" },
+          { Metric: "Current Day kVA", Value: dtrConsumptionData.currentDay.totalKva || "0", Subtitle: "Current Apparent Power" },
         ];
         consumptionWidgetsExportData.push(...currentDayExportData);
       }
@@ -865,12 +882,13 @@ const DTRDashboard: React.FC = () => {
       const dtrTableExportData = dtrTableData.map((dtr, index) => ({
         "S.No": index + 1,
         "DTR ID": dtr.dtrId || "N/A",
-        "DTR Name": dtr.dtrName || "N/A", 
+        "DTR Name": dtr.dtrName || "N/A",
         "Feeders Count": dtr.feedersCount || "N/A",
         "Street Name": dtr.streetName || "N/A",
-        "City": dtr.city || "N/A",
+        "Meter Location": dtr.meterLocation || "N/A",
+        City: dtr.city || "N/A",
         "Communication Status": dtr.commStatus || "N/A",
-        "Last Communication": dtr.lastCommunication || "N/A"
+        "Last Communication": dtr.lastCommunication || "N/A",
       }));
 
       // 4. Latest Alerts Table
@@ -886,37 +904,82 @@ const DTRDashboard: React.FC = () => {
       // 5. Chart Data (DTR Alert Statistics)
       const chartExportData = chartMonths.map((month, index) => {
         const row: any = { Month: month };
-        chartSeries.forEach(series => {
+        chartSeries.forEach((series) => {
           row[series.name] = series.data[index] || 0;
         });
         return row;
       });
 
       // 6. Meter Status Data (from Pie Chart)
-      const meterStatusExportData = (meterStatus || dummyMeterStatusData).map((status: any) => ({
-        "Status": status.name || "N/A",
-        "Count": status.value || 0,
-        "Percentage": meterStatus && meterStatus.length > 0 
-          ? `${((status.value / meterStatus.reduce((sum: number, item: any) => sum + item.value, 0)) * 100).toFixed(2)}%`
-          : "N/A"
-      }));
+      const meterStatusExportData = (meterStatus || dummyMeterStatusData).map(
+        (status: any) => ({
+          Status: status.name || "N/A",
+          Count: status.value || 0,
+          Percentage:
+            meterStatus && meterStatus.length > 0
+              ? `${(
+                  (status.value /
+                    meterStatus.reduce(
+                      (sum: number, item: any) => sum + item.value,
+                      0
+                    )) *
+                  100
+                ).toFixed(2)}%`
+              : "N/A",
+        })
+      );
 
       // Create sheets with auto-sizing
       const dtrStatsSheet = XLSX.utils.json_to_sheet(dtrStatsExportData);
       const consumptionWidgetsSheet = XLSX.utils.json_to_sheet(
         consumptionWidgetsExportData
       );
+      const dtrTableSheet = XLSX.utils.json_to_sheet(dtrTableExportData);
+      const alertsTableSheet = XLSX.utils.json_to_sheet(alertsExportData);
+      const chartDataSheet = XLSX.utils.json_to_sheet(chartExportData);
+      const meterStatusSheet = XLSX.utils.json_to_sheet(meterStatusExportData);
 
-      XLSX.utils.book_append_sheet(
-        workbook,
+      // Auto-size columns for better readability
+      const setAutoWidth = (worksheet: any) => {
+        const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1:A1");
+        const colWidths: any[] = [];
+
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          let maxWidth = 10;
+          for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = worksheet[cellAddress];
+            if (cell && cell.v) {
+              const cellLength = cell.v.toString().length;
+              maxWidth = Math.max(maxWidth, cellLength);
+            }
+          }
+          colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+        }
+        worksheet["!cols"] = colWidths;
+      };
+
+      // Apply auto-width to all sheets
+      [
         dtrStatsSheet,
-        "DTR Statistics Widgets"
-      );
+        consumptionWidgetsSheet,
+        dtrTableSheet,
+        alertsTableSheet,
+        chartDataSheet,
+        meterStatusSheet,
+      ].forEach((sheet) => setAutoWidth(sheet));
+
+      // Append all sheets to workbook
+      XLSX.utils.book_append_sheet(workbook, dtrStatsSheet, "DTR Statistics");
       XLSX.utils.book_append_sheet(
         workbook,
         consumptionWidgetsSheet,
-        "Consumption Widgets"
+        "Consumption Data"
       );
+      XLSX.utils.book_append_sheet(workbook, dtrTableSheet, "DTR Table");
+      XLSX.utils.book_append_sheet(workbook, alertsTableSheet, "Latest Alerts");
+      XLSX.utils.book_append_sheet(workbook, chartDataSheet, "Alert Trends");
+      XLSX.utils.book_append_sheet(workbook, meterStatusSheet, "Meter Status");
 
       const excelBuffer = XLSX.write(workbook, {
         bookType: "xlsx",
@@ -968,13 +1031,13 @@ const DTRDashboard: React.FC = () => {
 
       
       const params = new URLSearchParams();
-      params.append('parentId', value);
+      params.append("parentId", value);
       const apiUrl = `${BACKEND_URL}/dtrs/filter/filter-options?${params.toString()}`;
       
       
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch filter options");
-      
+
       const data = await response.json();
       
       
@@ -988,115 +1051,130 @@ const DTRDashboard: React.FC = () => {
 
             setFilterOptions(prev => ({
               ...prev,
-              circles: [{ value: "all", label: "All Circles" }, ...newOptions.map((item: any) => ({ 
-                value: item.id.toString(), 
-                label: item.name 
-              }))]
+              circles: [
+                { value: "all", label: "All Circles" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
             }));
             // Reset dependent filters
-            setFilterValues(prev => ({
+            setFilterValues((prev) => ({
               ...prev,
               circle: "all",
               division: "all",
               subDivision: "all",
               section: "all",
-              meterLocation: "all"
+              meterLocation: "all",
             }));
             // Clear dependent dropdowns
-            setFilterOptions(prev => ({
+            setFilterOptions((prev) => ({
               ...prev,
               divisions: [{ value: "all", label: "All Divisions" }],
               subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
               sections: [{ value: "all", label: "All Sections" }],
-              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
             }));
             break;
-            
+
           case "circle":
 
             setFilterOptions(prev => ({
               ...prev,
-              divisions: [{ value: "all", label: "All Divisions" }, ...newOptions.map((item: any) => ({ 
-                value: item.id.toString(), 
-                label: item.name 
-              }))]
+              divisions: [
+                { value: "all", label: "All Divisions" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
             }));
             // Reset dependent filters
-            setFilterValues(prev => ({
+            setFilterValues((prev) => ({
               ...prev,
               division: "all",
               subDivision: "all",
               section: "all",
-              meterLocation: "all"
+              meterLocation: "all",
             }));
             // Clear dependent dropdowns
-            setFilterOptions(prev => ({
+            setFilterOptions((prev) => ({
               ...prev,
               subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
               sections: [{ value: "all", label: "All Sections" }],
-              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
             }));
             break;
-            
+
           case "division":
 
             setFilterOptions(prev => ({
               ...prev,
-              subDivisions: [{ value: "all", label: "All Sub-Divisions" }, ...newOptions.map((item: any) => ({ 
-                value: item.id.toString(), 
-                label: item.name 
-              }))]
+              subDivisions: [
+                { value: "all", label: "All Sub-Divisions" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
             }));
             // Reset dependent filters
-            setFilterValues(prev => ({
+            setFilterValues((prev) => ({
               ...prev,
               subDivision: "all",
               section: "all",
-              meterLocation: "all"
+              meterLocation: "all",
             }));
             // Clear dependent dropdowns
-            setFilterOptions(prev => ({
+            setFilterOptions((prev) => ({
               ...prev,
               sections: [{ value: "all", label: "All Sections" }],
-              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
             }));
             break;
-            
+
           case "subDivision":
 
             setFilterOptions(prev => ({
               ...prev,
-              sections: [{ value: "all", label: "All Sections" }, ...newOptions.map((item: any) => ({ 
-                value: item.id.toString(), 
-                label: item.name 
-              }))]
+              sections: [
+                { value: "all", label: "All Sections" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
             }));
             // Reset dependent filters
-            setFilterValues(prev => ({
+            setFilterValues((prev) => ({
               ...prev,
               section: "all",
-              meterLocation: "all"
+              meterLocation: "all",
             }));
             // Clear dependent dropdowns
-            setFilterOptions(prev => ({
+            setFilterOptions((prev) => ({
               ...prev,
-              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
             }));
             break;
-            
+
           case "section":
 
             setFilterOptions(prev => ({
               ...prev,
-              meterLocations: [{ value: "all", label: "All Meter Locations" }, ...newOptions.map((item: any) => ({ 
-                value: item.id.toString(), 
-                label: item.name 
-              }))]
+              meterLocations: [
+                { value: "all", label: "All Meter Locations" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
             }));
             // Reset dependent filters
-            setFilterValues(prev => ({
+            setFilterValues((prev) => ({
               ...prev,
-              meterLocation: "all"
+              meterLocation: "all",
             }));
             break;
         }
@@ -1104,21 +1182,33 @@ const DTRDashboard: React.FC = () => {
 
       }
     } catch (error) {
-      console.error(`❌ Error updating filter options for ${filterName}:`, error);
+      console.error(
+        `❌ Error updating filter options for ${filterName}:`,
+        error
+      );
     }
   };
 
   // Filter change handlers
-  const handleFilterChange = async (filterName: string, value: any) => {
-    const selectedValue = value.target?.value || value;
-    
+  const handleFilterChange = async (
+    filterName: string,
+    value: string | { target: { value: string } }
+  ) => {
+    console.log("value", value);
+    console.log("filterName", filterName);
+
+    // Handle both string and event object cases
+    const selectedValue =
+      typeof value === "string" ? value : value.target.value;
+
     setFilterValues((prev) => ({
       ...prev,
       [filterName]: selectedValue,
     }));
-    
-    // Update dependent filter options
-    await updateFilterOptions(filterName, value);
+
+    // Update dependent filter options - create event-like object for compatibility
+    const eventObject = { target: { value: selectedValue } };
+    await updateFilterOptions(filterName, eventObject);
   };
 
   // Handle Get Data button click
@@ -1171,7 +1261,7 @@ const DTRDashboard: React.FC = () => {
   const dtrStatsCards = [
     {
       title: "Total DTRs",
-      value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "-",
+      value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "0",
       icon: "/icons/dtr.svg",
       subtitle1: "Total Transformer Units",
       onValueClick: () =>
@@ -1184,7 +1274,7 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.totalLtFeeders ||
         dtrStatsData?.row1?.totalLtFeeders ||
-        "-",
+        "0",
       icon: "/icons/feeder.svg",
       subtitle1: "Connected to DTRs",
       onValueClick: () =>
@@ -1196,19 +1286,19 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.totalFuseBlown ||
         dtrStatsData?.row1?.totalFuseBlown ||
-        "-",
+        "0",
       icon: "/icons/power_failure.svg",
       subtitle1: `${
         dtrStatsData.fuseBlownPercentage ||
         dtrStatsData?.row1?.fuseBlownPercentage ||
-        "-"
+        "0"
       }% of Total DTRs`,
       onValueClick: () =>
         navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
       loading: isStatsLoading,
     },
     {
-      title: "Overloaded Feeders",
+      title: "Overloaded DTRs",
       value:
         dtrStatsData.overloadedFeeders ||
         dtrStatsData?.row1?.overloadedFeeders ||
@@ -1228,7 +1318,7 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Underloaded Feeders",
+      title: "Underloaded DTRs",
       value:
         dtrStatsData.underloadedFeeders ||
         dtrStatsData?.row1?.underloadedFeeders ||
@@ -1252,7 +1342,7 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.ltSideFuseBlown ||
         dtrStatsData?.row1?.ltSideFuseBlown ||
-        "-",
+        "0",
       icon: "/icons/power_failure.svg",
       subtitle1: "Incidents Today",
       onValueClick: () =>
@@ -1266,12 +1356,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.unbalancedDtrs ||
         dtrStatsData?.row1?.unbalancedDtrs ||
-        "-",
+        "0",
       icon: "/icons/dtr.svg",
       subtitle1: `${
         dtrStatsData.unbalancedPercentage ||
         dtrStatsData?.row1?.unbalancedPercentage ||
-        "-"
+        "0"
       }% of Total DTRs`,
       onValueClick: () =>
         navigate("/dtr-table?type=unbalanced-dtrs&title=Unbalanced%20DTRs"),
@@ -1282,12 +1372,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.powerFailureFeeders ||
         dtrStatsData?.row1?.powerFailureFeeders ||
-        "-",
+        "0",
       icon: "/icons/power_failure.svg",
       subtitle1: `${
         dtrStatsData.powerFailurePercentage ||
         dtrStatsData?.row1?.powerFailurePercentage ||
-        "-"
+        "0"
       }% of Feeders`,
       onValueClick: () =>
         navigate(
@@ -1300,7 +1390,7 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.htSideFuseBlown ||
         dtrStatsData?.row1?.htSideFuseBlown ||
-        "-",
+        "0",
       icon: "/icons/dtr.svg",
       subtitle1: "Incidents Today",
       onValueClick: () =>
@@ -1315,7 +1405,7 @@ const DTRDashboard: React.FC = () => {
   const dailyConsumptionCards = [
     {
       title: "Total kWh",
-      value: String(dtrConsumptionData.daily.totalKwh || "-"),
+      value: String(dtrConsumptionData.daily.totalKwh || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Today's Active Energy",
       bg: "bg-stat-icon-gradient",
@@ -1325,7 +1415,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kVAh",
-      value: String(dtrConsumptionData.daily.totalKvah || "-"),
+      value: String(dtrConsumptionData.daily.totalKvah || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Today's Apparent Energy",
       bg: "bg-stat-icon-gradient",
@@ -1335,7 +1425,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kW",
-      value: String(dtrConsumptionData.daily.totalKw || "-"),
+      value: String(dtrConsumptionData.daily.totalKw || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Current Active Power",
       bg: "bg-stat-icon-gradient",
@@ -1345,7 +1435,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kVA",
-      value: String(dtrConsumptionData.daily.totalKva || "-"),
+      value: String(dtrConsumptionData.daily.totalKva || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Current Apparent Power",
       bg: "bg-stat-icon-gradient",
@@ -1355,18 +1445,18 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Active DTRs",
-      value: Number(dtrStatsData?.activeDtrs || "-"),
+      value: Number(dtrStatsData?.activeDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.activePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
       bg: "bg-[var(--color-secondary)]",
       loading: isStatsLoading,
     },
     {
       title: "In-Active DTRs",
-      value: Number(dtrStatsData?.inactiveDtrs || "-"),
+      value: Number(dtrStatsData?.inactiveDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.inactivePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
       bg: "bg-[var(--color-danger)]",
       loading: isStatsLoading,
@@ -1377,7 +1467,7 @@ const DTRDashboard: React.FC = () => {
   const monthlyConsumptionCards = [
     {
       title: "Total kWh",
-      value: String(dtrConsumptionData.monthly.totalKwh || "-"),
+      value: String(dtrConsumptionData.monthly.totalKwh || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Active Energy",
       bg: "bg-stat-icon-gradient",
@@ -1387,7 +1477,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kVAh",
-      value: String(dtrConsumptionData.monthly.totalKvah || "-"),
+      value: String(dtrConsumptionData.monthly.totalKvah || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Apparent Energy",
       bg: "bg-stat-icon-gradient",
@@ -1397,7 +1487,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Avg kW",
-      value: String(dtrConsumptionData.monthly.totalKw || "-"),
+      value: String(dtrConsumptionData.monthly.totalKw || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Average Power",
       bg: "bg-stat-icon-gradient",
@@ -1407,7 +1497,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Avg kVA",
-      value: String(dtrConsumptionData.monthly.totalKva || "-"),
+      value: String(dtrConsumptionData.monthly.totalKva || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Average Apparent",
       bg: "bg-stat-icon-gradient",
@@ -1417,18 +1507,18 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Active DTRs",
-      value: Number(dtrStatsData?.activeDtrs || "-"),
+      value: Number(dtrStatsData?.activeDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.activePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
       bg: "bg-[var(--color-secondary)]",
       loading: isStatsLoading,
     },
     {
       title: "In-Active DTRs",
-      value: Number(dtrStatsData?.inactiveDtrs || "-"),
+      value: Number(dtrStatsData?.inactiveDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.inactivePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
       bg: "bg-[var(--color-danger)]",
       loading: isStatsLoading,
@@ -1443,7 +1533,7 @@ const DTRDashboard: React.FC = () => {
       return [
         {
           title: "Total kWh",
-          value: String(currentDayData.totalKwh || "N/A"),
+          value: String(currentDayData.totalKwh || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Today's Active Energy",
           bg: "bg-stat-icon-gradient",
@@ -1453,7 +1543,7 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Total kVAh",
-          value: String(currentDayData.totalKvah || "N/A"),
+          value: String(currentDayData.totalKvah || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Today's Apparent Energy",
           bg: "bg-stat-icon-gradient",
@@ -1463,7 +1553,7 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Total kW",
-          value: String(currentDayData.totalKw || "N/A"),
+          value: String(currentDayData.totalKw || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Current Active Power",
           bg: "bg-stat-icon-gradient",
@@ -1473,7 +1563,7 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Total kVA",
-          value: String(currentDayData.totalKva || "N/A"),
+          value: String(currentDayData.totalKva || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Current Apparent Power",
           bg: "bg-stat-icon-gradient",
@@ -1483,18 +1573,18 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Active DTRs",
-          value: Number(dtrStatsData?.activeDtrs || "N/A"),
+          value: Number(dtrStatsData?.activeDtrs || "0"),
           icon: "/icons/dtr.svg",
-          subtitle1: `${dtrStatsData?.activePercentage ?? "N/A"}% of Total DTRs`,
+          subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
           bg: "bg-[var(--color-secondary)]",
           loading: isStatsLoading,
         },
         {
           title: "In-Active DTRs",
-          value: Number(dtrStatsData?.inactiveDtrs || "N/A"),
+          value: Number(dtrStatsData?.inactiveDtrs || "0"),
           icon: "/icons/dtr.svg",
-          subtitle1: `${dtrStatsData?.inactivePercentage ?? "N/A"}% of Total DTRs`,
+          subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
           bg: "bg-[var(--color-danger)]",
           loading: isStatsLoading,
@@ -1511,7 +1601,7 @@ const DTRDashboard: React.FC = () => {
     { key: "dtrId", label: "DTR ID" },
     { key: "dtrName", label: "DTR Name" },
     { key: "feedersCount", label: "Feeders Count" },
-    // { key: "streetName", label: "Street Name" },
+    { key: "Meter Location", label: "Meter Location" },
     // { key: "city", label: "City" },
     {
       key: "commStatus",
@@ -1600,17 +1690,17 @@ const DTRDashboard: React.FC = () => {
           // Filter Section
           {
             layout: {
-              type: "grid" as const,
-              columns: 7,
-              gap: "gap-4 ",
-              className: " flex items-center justify-center",
+              type: "flex" as const,
+              direction: "row" as const,
+              gap: "gap-4",
+              className:
+                "flex items-center justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
             },
             components: [
               {
                 name: "Dropdown",
                 props: {
-                  label: "DISCOM",
-                  options: [ ...filterOptions.discoms],
+                  options: [...filterOptions.discoms],
                   value: filterValues.discom,
                   onChange: (value: string) =>
                     handleFilterChange("discom", value),
@@ -1618,13 +1708,11 @@ const DTRDashboard: React.FC = () => {
                   loading: isFiltersLoading,
                   searchable: false,
                 },
-                span: { col: 1, row: 1 },
               },
               {
                 name: "Dropdown",
                 props: {
-                  label: "CIRCLE",
-                  options: [ ...filterOptions.circles],
+                  options: [...filterOptions.circles],
                   value: filterValues.circle,
                   onChange: (value: string) =>
                     handleFilterChange("circle", value),
@@ -1632,12 +1720,10 @@ const DTRDashboard: React.FC = () => {
                   loading: isFiltersLoading,
                   searchable: false,
                 },
-                span: { col: 1, row: 1 },
               },
               {
                 name: "Dropdown",
                 props: {
-                  label: "DIVISION",
                   options: [...filterOptions.divisions],
                   value: filterValues.division,
                   onChange: (value: string) =>
@@ -1646,13 +1732,11 @@ const DTRDashboard: React.FC = () => {
                   loading: isFiltersLoading,
                   searchable: false,
                 },
-                span: { col: 1, row: 1 },
               },
               {
                 name: "Dropdown",
                 props: {
-                  label: "SUB-DIVISION",
-                  options: [ ...filterOptions.subDivisions],
+                  options: [...filterOptions.subDivisions],
                   value: filterValues.subDivision,
                   onChange: (value: string) =>
                     handleFilterChange("subDivision", value),
@@ -1660,13 +1744,11 @@ const DTRDashboard: React.FC = () => {
                   loading: isFiltersLoading,
                   searchable: false,
                 },
-                span: { col: 1, row: 1 },
               },
               {
                 name: "Dropdown",
                 props: {
-                  label: "SECTION",
-                  options: [ ...filterOptions.sections],
+                  options: [...filterOptions.sections],
                   value: filterValues.section,
                   onChange: (value: string) =>
                     handleFilterChange("section", value),
@@ -1674,13 +1756,11 @@ const DTRDashboard: React.FC = () => {
                   loading: isFiltersLoading,
                   searchable: false,
                 },
-                span: { col: 1, row: 1 },
               },
               {
                 name: "Dropdown",
                 props: {
-                  label: "METER LOCATION",
-                  options: [ ...filterOptions.meterLocations],
+                  options: [...filterOptions.meterLocations],
                   value: filterValues.meterLocation,
                   onChange: (value: string) =>
                     handleFilterChange("meterLocation", value),
@@ -1688,7 +1768,6 @@ const DTRDashboard: React.FC = () => {
                   loading: isFiltersLoading,
                   searchable: false,
                 },
-                span: { col: 1, row: 1 },
               },
               {
                 name: "Button",
@@ -1696,18 +1775,14 @@ const DTRDashboard: React.FC = () => {
                   variant: "primary",
                   onClick: handleGetData,
                   children: "Get Data",
-                  className: "h-10 px-6 self-end",
-                  loading:
-                    isStatsLoading ||
-                    isTableLoading ||
-                    isAlertsLoading ||
-                    isChartLoading,
-                  searchable: false,
+                  className: "self-end h-100%",
+                  searchable: false
                 },
-                span: { col: 1, row: 1 },
+                align: "center",
               },
             ],
           },
+
           // DTR Statistics Cards
           {
             layout: {
@@ -1775,10 +1850,11 @@ const DTRDashboard: React.FC = () => {
                     {
                       name: "SectionHeader",
                       props: {
-                        title: "Latest Alerts",
+                        title: "Consumption & Energies",
                         titleLevel: 2,
                         titleSize: "md",
                         titleVariant: "primary",
+                        titleWeight: "medium",
                         titleAlign: "left",
                         rightComponent: {
                           name: "TimeRangeSelector",
@@ -1812,95 +1888,82 @@ const DTRDashboard: React.FC = () => {
               ],
             },
           },
-
-          // DTRs Table section
-          {
-            layout: {
-              type: "grid",
-              columns: 2,
-              gap: "gap-4",
-              rows: [
-                {
-                  layout: "grid",
-                  gridColumns: 1,
-                  gap: "gap-4",
-                  className:
-                    "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
-                  columns: [
-                    
-                    {
-                      name: "Holder",
-                      props: {
-                        title: "Meter Status",
-                        subtitle:
-                          "Distribution of communicating and non-communicating meters",
-                        className: "border-none rounded-t-3xl ",
-                      },
-                    },
-                    {
-                      name: "PieChart",
-                      props: {
-                        data: meterStatus || dummyMeterStatusData,
-                        height: 330,
-                        showLegend: false,
-                        showNoDataMessage: false,
-                        showHeader: false,
-                        className: "p-4",
-                        onClick: (segmentName?: string) => {
-                          if (segmentName === "Communicating")
-                            navigate("/connect-disconnect/communicating");
-                          else if (segmentName === "Non-Communicating")
-                            navigate("/connect-disconnect/non-communicating");
-                          else navigate("/connect-disconnect");
+            // DTRs Table section
+            {
+              layout: {
+                type: "grid",
+                columns: 2,
+                gap: "gap-4",
+                rows: [
+                  {
+                    layout: "grid",
+                    gridColumns: 1,
+                    gap: "gap-4",
+                    className:
+                      "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
+                    columns: [
+                      {
+                        name: "Holder",
+                        props: {
+                          title: "Communication  Status",
+                          subtitle:
+                            "Distribution of communicating and non-communicating meters",
+                          className: "border-none rounded-t-3xl ",
                         },
-                        isLoading: isMeterStatusLoading,
                       },
-                    },
-                  ],
-                },
-                {
-                  layout: "grid",
-                  gridColumns: 1,
-                  gap: "gap-4",
-                  columns: [
-                    {
-                      name: "StackedBarChart",
-                  props: {
-                    xAxisData: chartMonths,
-                    seriesData: chartSeries,
-                    height: 300,
-                    showLegendInteractions: true,
-                    timeRange: statsRange,
-                    showHeader: true,
-                    headerTitle: "DTR Alert Statistics",
-                    showDownloadButton: true,
-                    onDownload: () => handleChartDownload(),
-                    isLoading: isChartLoading,
+                      {
+                        name: "PieChart",
+                        props: {
+                          data: meterStatus || dummyMeterStatusData,
+                          height: 330,
+                          showLegend: false,
+                          showNoDataMessage: false, 
+                          showDownloadButton: true,
+                          showHeader: false,
+                          className: "p-4",
+                          onClick: (segmentName?: string) => {
+                            if (segmentName === "Communicating")
+                              navigate("/connect-disconnect/communicating");
+                            else if (segmentName === "Non-Communicating")
+                              navigate("/connect-disconnect/non-communicating");
+                            else navigate("/connect-disconnect");
+                          },
+                          isLoading: isMeterStatusLoading,
+                        },
+                      },
+                    ],
                   },
-                    },
-                  ],
-                },
-
-                // {
-                //   name: "StackedBarChart",
-                //   props: {
-                //     xAxisData: chartMonths,
-                //     seriesData: chartSeries,
-                //     seriesColors: alertColors,
-                //     height: 300,
-                //     showLegendInteractions: true,
-                //     timeRange: statsRange,
-                //     showHeader: true,
-                //     headerTitle: "DTR Alert Statistics",
-                //     showDownloadButton: true,
-                //     onDownload: () => handleChartDownload(),
-                //     isLoading: isChartLoading,
-                //   },
-                // },
-              ],
+                  {
+                    layout: "grid",
+                    gridColumns: 1,
+                    gap: "gap-4",
+                    columns: [
+                      {
+                        name: "Table",
+                        props: {
+                          data: alertsData,
+                          columns: alertsTableColumns,
+                          showHeader: true,
+                          headerTitle: "Latest Alerts",
+                          headerClickable: true,
+                          onHeaderClick: () => navigate("/dtr-table?tab=alerts"),
+                          showActions: false,
+                          searchable: true,
+                          pagination: true,
+                          availableTimeRanges: [],
+                          initialRowsPerPage: 3,
+                          emptyMessage: "No alerts found",
+                          loading: isAlertsLoading,
+                          onRowClick: () =>
+                            navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
+                        },
+                      },
+                    ],
+                  },
+                 
+                ],
+              },
             },
-          },
-          // // Latest Alerts section
           {
             layout: {
               type: "grid" as const,
@@ -1908,23 +1971,8 @@ const DTRDashboard: React.FC = () => {
               columns: 2,
             },
             components: [
-              // {
-              //   name: "StackedBarChart",
-              //   props: {
-              //     xAxisData: chartMonths,
-              //     seriesData: chartSeries,
-              //     seriesColors: alertColors,
-              //     height: 300,
-              //     showLegendInteractions: true,
-              //     timeRange: statsRange,
-              //     showHeader: true,
-              //     headerTitle: "DTR Alert Statistics",
-              //     showDownloadButton: true,
-              //     onDownload: () => handleChartDownload(),
-              //     isLoading: isChartLoading,
-              //   },
-              // },
               {
+                
                 name: "Table",
                 props: {
                   data: dtrTableData,
@@ -1947,26 +1995,35 @@ const DTRDashboard: React.FC = () => {
                   serverPagination: serverPagination,
                   loading: isTableLoading,
                 },
+                span:{col:2,row:1}
               },
+            ],
+          },
+        
+          // // Latest Alerts section
+          {
+            layout: {
+              type: "grid" as const,
+              className: "",
+              columns: 2,
+            },
+            components: [
               {
-                name: "Table",
+                name: "StackedBarChart",
                 props: {
-                  data: alertsData,
-                  columns: alertsTableColumns,
+                  xAxisData: chartMonths,
+                  seriesData: chartSeries,
+                  seriesColors: alertColors,
+                  height: 300,
+                  showLegendInteractions: true,
+                  timeRange: statsRange,
                   showHeader: true,
-                  headerTitle: "Latest Alerts",
-                  headerClickable: true,
-                  onHeaderClick: () => navigate("/dtr-table?tab=alerts"),
-                  showActions: false,
-                  searchable: true,
-                  pagination: true,
-                  availableTimeRanges: [],
-                  initialRowsPerPage: 5,
-                  emptyMessage: "No alerts found",
-                  loading: isAlertsLoading,
-                                  onRowClick: (row: TableData) =>
-                  navigate(`/dtr-table?type=alerts&title=Latest%20Alerts&alertId=${row.alertId}`),
+                  headerTitle: "DTR Alert Statistics",
+                  showDownloadButton: true,
+                  onDownload: () => handleChartDownload(),
+                  isLoading: isChartLoading,
                 },
+                span: { col: 2, row: 1 },
               },
             ],
           },
