@@ -655,14 +655,14 @@ const Feeders = () => {
                 return data;
             }
         } else if (consumptionTimeRange === 'Monthly') {
-            if (consumptionAnalyticsData && consumptionAnalyticsData.monthly) {
+        if (consumptionAnalyticsData && consumptionAnalyticsData.monthly) {
                 const data = {
-                    xAxisData: consumptionAnalyticsData.monthly.xAxisData || [],
-                    seriesData: consumptionAnalyticsData.monthly.seriesData || [{ name: 'Consumption', data: [] }],
-                };
+                xAxisData: consumptionAnalyticsData.monthly.xAxisData || [],
+                seriesData: consumptionAnalyticsData.monthly.seriesData || [{ name: 'Consumption', data: [] }],
+            };
                 console.log('Returning monthly consumption data:', data);
                 return data;
-            }
+        }
         }
         console.log('No data available, returning empty data');
         return {
@@ -796,7 +796,7 @@ const Feeders = () => {
             console.error("Error in Consumption API:", err);
             setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
         } finally {
-            setIsConsumptionLoading(false);
+                setIsConsumptionLoading(false);
         }
     };
 
@@ -930,7 +930,7 @@ const Feeders = () => {
             console.error("Error in Alerts API:", err);
             setAlertsData(dummyAlertsData);
         } finally {
-            setIsAlertsLoading(false);
+                setIsAlertsLoading(false);
         }
     };
 
@@ -989,7 +989,7 @@ const Feeders = () => {
                 seriesData: [{ name: 'kVA', data: [] }]
             });
         } finally {
-            setIsKvaMetricsLoading(false);
+                setIsKvaMetricsLoading(false);
         }
     };
 
@@ -1040,7 +1040,7 @@ const Feeders = () => {
             fetchFeederInfo();
             fetchAlerts();
             fetchKVAMetrics();
-        } else {
+                } else {
             console.log('useEffect - No DTR ID available, skipping API calls');
         }
     }, [resolvedDtrId, dtrId]);
@@ -1429,7 +1429,7 @@ const Feeders = () => {
                                             headerTitle: `${consumptionTimeRange} Consumption Metrics Bar Chart`,
                                             className: 'w-full',
                                             dateRange: 'Last 30 days',
-                                            availableTimeRanges: ['Daily', 'Monthly', 'Yearly'],
+                                            availableTimeRanges: ['Daily', 'Monthly'],
                                             initialTimeRange: consumptionTimeRange,
                                             onTimeRangeChange: (range: string) => {
                                                 console.log('Consumption chart time range changed to:', range);
@@ -1468,7 +1468,7 @@ const Feeders = () => {
                                             headerTitle: `${kvaTimeRange} kVA Metrics`,
                                             className: 'w-full',
                                             dateRange: 'Last 30 days',
-                                            availableTimeRanges: ['Daily', 'Monthly', 'Yearly'],
+                                            availableTimeRanges: ['Daily', 'Monthly',],
                                             initialTimeRange: kvaTimeRange,
                                             onTimeRangeChange: (range: string) => {
                                                 console.log('KVA Metrics chart time range changed to:', range);
