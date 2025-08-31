@@ -951,12 +951,12 @@ export default function AssetManagment() {
                         layout: "grid",
                         gridColumns: 8,
                         gap: "gap-4",
-                        className:'flex justify-center items-center',
+                        className:'flex justify-center items-center p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary',
                         columns: [
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'Project Type',
+
                               options: [
                                 { value: 'all', label: 'All Project Types' },
                                 ...dropdownData.projectTypes.map(item => ({
@@ -973,7 +973,7 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'DISCOM',
+
                               options: [
                                 { value: 'all', label: 'All DISCOMs' },
                                 ...dropdownData.discoms.map(item => ({
@@ -990,7 +990,7 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'CIRCLE',
+
                               options: [
                                 { value: 'all', label: 'All Circles' },
                                 ...dropdownData.circles.map(item => ({
@@ -1007,7 +1007,7 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'DIVISION',
+
                               options: [
                                 { value: 'all', label: 'All Divisions' },
                                 ...dropdownData.divisions.map(item => ({
@@ -1024,7 +1024,7 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'SUB-DIVISION',
+
                               options: [
                                 { value: 'all', label: 'All Sub-Divisions' },
                                 ...dropdownData.subDivisions.map(item => ({
@@ -1041,7 +1041,7 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'SECTION',
+
                               options: [
                                 { value: 'all', label: 'All Sections' },
                                 ...dropdownData.sections.map(item => ({
@@ -1058,7 +1058,7 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              label: 'METER LOCATION',
+
                               options: [
                                 { value: 'all', label: 'All Locations' },
                                 ...dropdownData.meterLocations.map(item => ({
@@ -1075,7 +1075,6 @@ export default function AssetManagment() {
                           {
                             name:'Button',
                             props: {
-                              label: 'Search',
                               onClick: () => console.log("Search"),
                               variant: "primary",
                               className: "h-10 px-6 self-end",
