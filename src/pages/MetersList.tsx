@@ -205,7 +205,7 @@ const MetersList: React.FC = () => {
             // 1. Meter Statistics Cards
             const meterStatsExportData = meterCards.map((card) => ({
                 Metric: card.title,
-                Value: card.value || "N/A",
+                Value: card.value || "-",
                 Subtitle1: card.subtitle1 || "",
                 Subtitle2: card.subtitle2 || "",
             }));
@@ -213,14 +213,14 @@ const MetersList: React.FC = () => {
             // 2. Meters Table Data
             const metersTableExportData = tableData.map((meter, index) => ({
                 "S.No": meter.slNo || index + 1,
-                "Meter Serial No": meter.meterSlNo || "N/A",
-                "Modem Serial No": meter.modemSlNo || "N/A",
-                "Meter Type": meter.meterType || "N/A",
-                "Meter Make": meter.meterMake || "N/A",
-                "Consumer Name": meter.consumerName || "N/A",
-                "Location": meter.location || "N/A",
-                "Installation Date": meter.installationDate || "N/A",
-                "Status": meter.status || "N/A"
+                "Meter Serial No": meter.meterSlNo || "-",
+                "Modem Serial No": meter.modemSlNo || "-",
+                "Meter Type": meter.meterType || "-",
+                "Meter Make": meter.meterMake || "-",
+                "Consumer Name": meter.consumerName || "-",
+                "Location": meter.location || "-",
+                "Installation Date": meter.installationDate || "-",
+                "Status": meter.status || "-"
             }));
 
             // Create sheets with auto-sizing

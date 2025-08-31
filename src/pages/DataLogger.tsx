@@ -204,8 +204,8 @@ export default function DataLogger() {
                                                     console.log('Delete:', row),
                                                 onView: (row: TableData) => {
                                                     // Navigate to the data logger dashboard with the row ID
-                                                    const dataLoggerId = row.modemSlNo || row.sNo?.toString() || 'N/A';
-                                                    if (dataLoggerId && dataLoggerId !== 'N/A') {
+                                                    const dataLoggerId = row.modemSlNo || row.sNo?.toString() || '-';
+                                                    if (dataLoggerId && dataLoggerId !== '-') {
                                                         navigate(`/data-logger/${dataLoggerId}`);
                                                     }
                                                 },

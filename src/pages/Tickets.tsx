@@ -45,16 +45,16 @@ const dummyTicketTrends = {
 const dummyTickets = [
   {
     id: 1,
-    ticketNumber: 'N/A',
-    dtrNumber: 'N/A',
-    subject: 'N/A',
-    priority: 'N/A',
-    status: 'N/A',
-    assignedTo: 'N/A',
-    createdAt: 'N/A',
-    category: 'N/A',
-    meterSerialNo: 'N/A',
-    description: 'N/A',
+    ticketNumber: '-',
+    dtrNumber: '-',
+    subject: '-',
+    priority: '-',
+    status: '-',
+    assignedTo: '-',
+    createdAt: '-',
+    category: '-',
+    meterSerialNo: '-',
+    description: '-',
   }
 ];
 
@@ -99,40 +99,40 @@ export default function Tickets() {
             key: 'total', 
             label: 'Total Tickets', 
             icon: 'icons/open-tickets.svg', 
-            subtitle1: ticketStats ? `Total active tickets` : 'N/A active tickets', 
-            subtitle2: ticketStats ? 'Last 24 hours' : 'N/A', 
+            subtitle1: ticketStats ? `Total active tickets` : '- active tickets', 
+            subtitle2: ticketStats ? 'Last 24 hours' : '-', 
             iconStyle: brandGreenIconStyle 
         },
         { 
             key: 'open', 
             label: 'Open Tickets', 
             icon: 'icons/check-circle.svg', 
-            subtitle1: ticketStats ? `Successfully resolved` : 'N/A resolved', 
-            subtitle2: ticketStats ? 'Today' : 'N/A', 
+            subtitle1: ticketStats ? `Successfully resolved` : '- resolved', 
+            subtitle2: ticketStats ? 'Today' : '-', 
             iconStyle: brandGreenIconStyle 
         },
         { 
             key: 'inProgress', 
             label: 'In Progress Tickets', 
             icon: 'icons/progress.svg', 
-            subtitle1: ticketStats ? `Customer satisfaction` : 'N/A satisfaction', 
-            subtitle2: ticketStats ? 'Target: 4h' : 'N/A target', 
+            subtitle1: ticketStats ? `Customer satisfaction` : '- satisfaction', 
+            subtitle2: ticketStats ? 'Target: 4h' : '- target', 
             iconStyle: brandGreenIconStyle 
         },
         { 
             key: 'resolved', 
             label: 'Resolved Tickets', 
             icon: 'icons/alert-triggered.svg', 
-            subtitle1: ticketStats ? `Requires attention` : 'N/A attention', 
-            subtitle2: ticketStats ? 'High priority' : 'N/A priority', 
+            subtitle1: ticketStats ? `Requires attention` : '- attention', 
+            subtitle2: ticketStats ? 'High priority' : '- priority', 
             iconStyle: brandGreenIconStyle 
         },
         { 
             key: 'closed', 
             label: 'Closed Tickets', 
             icon: 'icons/closed.svg', 
-            subtitle1: ticketStats ? `Based on ${ticketStats.total || 'N/A'} reviews` : 'Based on N/A reviews', 
-            subtitle2: ticketStats ? 'This month' : 'N/A month', 
+            subtitle1: ticketStats ? `Based on ${ticketStats.total || '-'} reviews` : 'Based on - reviews', 
+            subtitle2: ticketStats ? 'This month' : '- month', 
             iconStyle: brandGreenIconStyle  
         },
     ];
@@ -484,7 +484,7 @@ export default function Tickets() {
             // 1. Ticket Statistics Cards
             const ticketStatsExportData = statsArray.map((stat) => ({
                 Metric: stat.label,
-                Value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? 'N/A' : ticketStats[stat.key as keyof typeof ticketStats]) : 'N/A',
+                Value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? '-' : ticketStats[stat.key as keyof typeof ticketStats]) : '-',
                 Subtitle1: stat.subtitle1,
                 Subtitle2: stat.subtitle2,
             }));
@@ -492,16 +492,16 @@ export default function Tickets() {
             // 2. Tickets Table Data
             const ticketsTableExportData = tickets.map((ticket, index) => ({
                 "S.No": index + 1,
-                "Ticket Number": ticket.ticketNumber || "N/A",
-                "DTR Number": ticket.dtrNumber || "N/A",
-                "Subject": ticket.subject || "N/A",
-                "Meter Serial No": ticket.meterSerialNo || "N/A",
-                "Category": ticket.category || "N/A",
-                "Priority": ticket.priority || "N/A",
-                "Status": ticket.status || "N/A",
-                "Assigned To": ticket.assignedTo || "N/A",
-                "Created Date": ticket.createdAt || "N/A",
-                "Description": ticket.description || "N/A"
+                "Ticket Number": ticket.ticketNumber || "-",
+                "DTR Number": ticket.dtrNumber || "-",
+                "Subject": ticket.subject || "-",
+                "Meter Serial No": ticket.meterSerialNo || "-",
+                "Category": ticket.category || "-",
+                "Priority": ticket.priority || "-",
+                "Status": ticket.status || "-",
+                "Assigned To": ticket.assignedTo || "-",
+                "Created Date": ticket.createdAt || "-",
+                "Description": ticket.description || "-"
             }));
 
             // Create sheets with auto-sizing
@@ -625,7 +625,7 @@ export default function Tickets() {
                                     name: 'Card',
                                     props: {
                                         title: stat.label,
-                                        value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? 'N/A' : ticketStats[stat.key as keyof typeof ticketStats]) : 'N/A',
+                                        value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? '-' : ticketStats[stat.key as keyof typeof ticketStats]) : '-',
                                         icon: stat.icon,
                                         subtitle1: stat.subtitle1,
                                         subtitle2: stat.subtitle2,
