@@ -960,8 +960,8 @@ const DTRDashboard: React.FC = () => {
 
   // Function to update filter options based on selection
   const updateFilterOptions = async (filterName: string, selectedValue: any) => {
-    const name = selectedValue.target.value;
-    const value = selectedValue.target.value;
+    const name = selectedValue.target?.value || selectedValue;
+    const value = selectedValue.target?.value || selectedValue;
     if (name === "all") return;
 
     try {
@@ -1109,8 +1109,8 @@ const DTRDashboard: React.FC = () => {
   };
 
   // Filter change handlers
-  const handleFilterChange = async (filterName: string, value: string) => {
-    const selectedValue = value.target.value;
+  const handleFilterChange = async (filterName: string, value: any) => {
+    const selectedValue = value.target?.value || value;
     
     setFilterValues((prev) => ({
       ...prev,
@@ -1155,8 +1155,7 @@ const DTRDashboard: React.FC = () => {
         }
       });
 
-      console.log("API calls will be made with lastSelectedId:", lastId);
-      console.log("Filter parameters:", params.toString());
+
 
       // Refresh data with new filters
       retryStatsAPI();
@@ -1193,7 +1192,7 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Today's Fuse Blown",
+      title: "Total Fuse Blown",
       value:
         dtrStatsData.totalFuseBlown ||
         dtrStatsData?.row1?.totalFuseBlown ||
@@ -1213,13 +1212,15 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.overloadedFeeders ||
         dtrStatsData?.row1?.overloadedFeeders ||
-        "-",
+        0,
       icon: "/icons/dtr.svg",
-      subtitle1: `${
-        dtrStatsData.overloadedPercentage ||
-        dtrStatsData?.row1?.overloadedPercentage ||
-        "-"
-      }% of Total Feeders`,
+      subtitle1: (() => {
+        const count = dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0;
+        if (count === 0) {
+          return "No DTRs with load > 90%";
+        }
+        return `${dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}% of Total Feeders`;
+      })(),
       onValueClick: () =>
         navigate(
           "/dtr-table?type=overloaded-feeders&title=Overloaded%20Feeders"
@@ -1231,13 +1232,15 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.underloadedFeeders ||
         dtrStatsData?.row1?.underloadedFeeders ||
-        "-",
+        0,
       icon: "/icons/dtr.svg",
-      subtitle1: `${
-        dtrStatsData.underloadedPercentage ||
-        dtrStatsData?.row1?.underloadedPercentage ||
-        "-"
-      }% of Total Feeders`,
+      subtitle1: (() => {
+        const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
+        if (count === 0) {
+          return "No DTRs with load < 30%";
+        }
+        return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
+      })(),
       onValueClick: () =>
         navigate(
           "/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"
