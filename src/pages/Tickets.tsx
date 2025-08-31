@@ -476,6 +476,84 @@ export default function Tickets() {
         }
     };
 
+    // Export function for tickets data
+    const handleExportData = () => {
+        import("xlsx").then((XLSX) => {
+            const workbook = XLSX.utils.book_new();
+
+            // 1. Ticket Statistics Cards
+            const ticketStatsExportData = statsArray.map((stat) => ({
+                Metric: stat.label,
+                Value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? 'N/A' : ticketStats[stat.key as keyof typeof ticketStats]) : 'N/A',
+                Subtitle1: stat.subtitle1,
+                Subtitle2: stat.subtitle2,
+            }));
+
+            // 2. Tickets Table Data
+            const ticketsTableExportData = tickets.map((ticket, index) => ({
+                "S.No": index + 1,
+                "Ticket Number": ticket.ticketNumber || "N/A",
+                "DTR Number": ticket.dtrNumber || "N/A",
+                "Subject": ticket.subject || "N/A",
+                "Meter Serial No": ticket.meterSerialNo || "N/A",
+                "Category": ticket.category || "N/A",
+                "Priority": ticket.priority || "N/A",
+                "Status": ticket.status || "N/A",
+                "Assigned To": ticket.assignedTo || "N/A",
+                "Created Date": ticket.createdAt || "N/A",
+                "Description": ticket.description || "N/A"
+            }));
+
+            // Create sheets with auto-sizing
+            const ticketStatsSheet = XLSX.utils.json_to_sheet(ticketStatsExportData);
+            const ticketsTableSheet = XLSX.utils.json_to_sheet(ticketsTableExportData);
+
+            // Auto-size columns for better readability
+            const setAutoWidth = (worksheet: any) => {
+                const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+                const colWidths: any[] = [];
+                
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = worksheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+                }
+                worksheet['!cols'] = colWidths;
+            };
+
+            // Apply auto-width to all sheets
+            [ticketStatsSheet, ticketsTableSheet].forEach(sheet => setAutoWidth(sheet));
+
+            // Append sheets to workbook
+            XLSX.utils.book_append_sheet(workbook, ticketStatsSheet, "Ticket Statistics");
+            XLSX.utils.book_append_sheet(workbook, ticketsTableSheet, "Tickets List");
+
+            const excelBuffer = XLSX.write(workbook, {
+                bookType: "xlsx",
+                type: "array",
+            });
+
+            const blob = new Blob([excelBuffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "tickets-list.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        });
+    };
+
     return (
         <Suspense fallback={<div>Loading...</div>}>
         <Page
@@ -519,8 +597,19 @@ export default function Tickets() {
                                 buttonsLabel: "Add Ticket",
                                 variant: "primary",
                                 onClick: () => navigate('/add-ticket'),
+                                showMenu: true,
+                                showDropdown: true,
+                                menuItems: [
+                                    { id: 'add', label: 'Add Ticket' },
+                                    { id: 'export', label: 'Export' }
+                                ],
                                 onMenuItemClick: (itemId: string) => {
                                     console.log(`Filter by: ${itemId}`);
+                                    if (itemId === 'add') {
+                                        navigate('/add-ticket');
+                                    } else if (itemId === 'export') {
+                                        handleExportData();
+                                    }
                                 }
                             }
                         }
