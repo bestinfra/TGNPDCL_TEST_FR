@@ -108,20 +108,20 @@ const dummyDailyConsumptionData = {
 const dummyFeedersData = [
     {
         sNo: 1,
-        feederName: 'N/A',
+        feederName: 'NA',
         loadStatus: 'N/A',
         condition: 'N/A',
         capacity: 'N/A',
-        address: 'N/A',
+        address: 'NA',
     }
 ];
 
 const dummyAlertsData = [
     {
-        alertId: 'N/A',
+            alertId: 'NA',
         type: 'N/A',
-        feederName: 'N/A',
-        occuredOn: 'N/A',
+        feederName: 'NA',
+        occuredOn: 'NA',
     }
 ];
 
