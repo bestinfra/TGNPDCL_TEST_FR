@@ -84,6 +84,11 @@ const dummyChartData = {
   ],
 };
 
+const dummyMeterStatusData = [
+  { value: 0, name: 'Communicating' },
+  { value: 0, name: 'Non-Communicating' },
+];
+
   const DTRDashboard: React.FC = () => {
   const navigate = useNavigate();
 
@@ -150,6 +155,8 @@ const dummyChartData = {
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
   const [isChartLoading, setIsChartLoading] = useState(true);
   const [isFiltersLoading, setIsFiltersLoading] = useState(true);
+  const [isMeterStatusLoading, setIsMeterStatusLoading] = useState(true);
+  const [meterStatus, setMeterStatus] = useState<any>(null);
 
   // State for tracking failed APIs
   const [failedApis, setFailedApis] = useState<
@@ -347,6 +354,29 @@ const dummyChartData = {
     }
   };
 
+  const retryMeterStatusAPI = async () => {
+    setIsMeterStatusLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/consumer/meter-status`);
+      if (!response.ok) throw new Error("Failed to fetch meter status");
+
+      const data = await response.json();
+      if (data.success) {
+        setMeterStatus(data.data);
+        setFailedApis((prev) => prev.filter((api) => api.id !== "meterStatus"));
+      } else {
+        throw new Error(data.message || "Failed to fetch meter status");
+      }
+    } catch (err: any) {
+      console.error("Error in Meter Status API:", err);
+      setMeterStatus(null);
+    } finally {
+      setTimeout(() => {
+        setIsMeterStatusLoading(false);
+      }, 1000);
+    }
+  };
+
   // Retry specific API
   const retrySpecificAPI = (apiId: string) => {
     const api = failedApis.find((a) => a.id === apiId);
@@ -362,12 +392,12 @@ const dummyChartData = {
       try {
         const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
         if (!response.ok) throw new Error("Failed to fetch filter options");
-
+        console.log("response", response);
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           throw new Error("Invalid response format");
         }
-
+        
         const data = await response.json();
         if (data.success) {
           setFilterOptions(data.data || dummyFilterOptions);
@@ -608,11 +638,48 @@ const dummyChartData = {
       }
     };
 
+    const fetchMeterStatus = async () => {
+      setIsMeterStatusLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/consumer/meter-status`);
+        if (!response.ok) throw new Error("Failed to fetch meter status");
+
+        const data = await response.json();
+        if (data.success) {
+          setMeterStatus(data.data);
+        } else {
+          throw new Error(data.message || "Failed to fetch meter status");
+        }
+      } catch (error) {
+        setMeterStatus(null);
+        setFailedApis((prev) => {
+          if (!prev.find((api) => api.id === "meterStatus")) {
+            return [
+              ...prev,
+              {
+                id: "meterStatus",
+                name: "Meter Status",
+                retryFunction: retryMeterStatusAPI,
+                errorMessage:
+                  "Failed to load Meter Status Data. Please try again.",
+              },
+            ];
+          }
+          return prev;
+        });
+      } finally {
+        setTimeout(() => {
+          setIsMeterStatusLoading(false);
+        }, 1000);
+      }
+    };
+
     fetchFilterOptions();
     fetchDTRStats();
     fetchDTRTable();
     fetchDTRAlerts();
     fetchDTRAlertsTrends();
+    fetchMeterStatus();
   }, []);
 
   const handleExportData = () => {
@@ -989,7 +1056,7 @@ const dummyChartData = {
   ];
 
   return (
-    <div className="">
+    <div className=" sticky top-0 ">
       <Page
         sections={[
           // Error Section - Above PageHeader
@@ -1272,9 +1339,47 @@ const dummyChartData = {
           {
             layout: {
               type: "grid",
-              columns: 1,
+              columns: 2,
               gap: "gap-4",
               rows: [
+                {
+                  layout: "grid",
+                  gridColumns: 1,
+                  gap: "gap-4",
+                  className: "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
+                  columns: [
+                    {
+                      name: "Holder",
+                      props: {
+                        title: "Meter Status",
+                        subtitle:
+                          "Distribution of communicating and non-communicating meters",
+                        className: "border-none rounded-t-3xl ",
+                      },
+                    },
+                    {
+                      name: "PieChart",
+                      props: {
+                        data: meterStatus || dummyMeterStatusData,
+                        height: 330,
+                        showLegend: false,
+                        showNoDataMessage: false,
+                        showHeader: false,
+                        className: "p-4",
+                        onClick: (segmentName?: string) => {
+                          if (segmentName === "Communicating")
+                            navigate("/connect-disconnect/communicating");
+                          else if (segmentName === "Non-Communicating")
+                            navigate(
+                              "/connect-disconnect/non-communicating"
+                            );
+                          else navigate("/connect-disconnect");
+                        },
+                        isLoading: isMeterStatusLoading,
+                      },
+                    },
+                  ],
+                },
                 {
                   layout: "grid",
                   gridColumns: 1,
@@ -1318,7 +1423,7 @@ const dummyChartData = {
             },
             components: [
               {
-                name: "BarChart",
+                name: "StackedBarChart",
                 props: {
                   xAxisData: chartMonths,
                   seriesData: chartSeries,
@@ -1327,7 +1432,7 @@ const dummyChartData = {
                   showLegendInteractions: true,
                   timeRange: statsRange,
                   showHeader: true,
-                  headerTitle: "DTR Performance Metrics",
+                  headerTitle: "DTR Alert Statistics",
                   showDownloadButton: true,
                   onDownload: () => handleChartDownload(),
                   isLoading: isChartLoading,
