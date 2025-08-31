@@ -1333,6 +1333,7 @@ const DTRDashboard: React.FC = () => {
                     isAlertsLoading ||
                     isChartLoading,
                   searchable: false,
+                  align:'center'
                 },
                 span: { col: 1, row: 1 },
               },
