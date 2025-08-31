@@ -119,7 +119,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
         appId: window.location.hostname || 'sub-app',
         rememberMe: data.rememberMe as boolean
       });
-
+      console.log('result: ', result);
       if (result.success && result.data) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
