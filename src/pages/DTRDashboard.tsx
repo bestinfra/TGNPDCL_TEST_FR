@@ -1,6 +1,5 @@
 import { lazy } from "react";
 import React, { useState, useEffect } from "react";
-// Define TableData type locally since we're using federated components
 interface TableData {
   [key: string]: string | number | boolean | null | undefined;
 }
@@ -34,13 +33,30 @@ const dummyDtrStatsData = {
 
 // Updated filter options structure to match API response
 const dummyFilterOptions = {
-  projectTypes: [{ value: "HT", label: "HT" }, { value: "LT", label: "LT" }],
-  discoms: [],
-  circles: [],
-  divisions: [],
-  subDivisions: [],
-  sections: [],
-  meterLocations: [],
+  discoms: [
+    { value: "DISCOM1", label: "DISCOM 1" },
+    { value: "DISCOM2", label: "DISCOM 2" }
+  ],
+  circles: [
+    { value: "CIRCLE1", label: "Circle 1" },
+    { value: "CIRCLE2", label: "Circle 2" }
+  ],
+  divisions: [
+    { value: "DIV1", label: "Division 1" },
+    { value: "DIV2", label: "Division 2" }
+  ],
+  subDivisions: [
+    { value: "SUBDIV1", label: "Sub Division 1" },
+    { value: "SUBDIV2", label: "Sub Division 2" }
+  ],
+  sections: [
+    { value: "SECTION1", label: "Section 1" },
+    { value: "SECTION2", label: "Section 2" }
+  ],
+  meterLocations: [
+    { value: "INDOOR", label: "Indoor" },
+    { value: "OUTDOOR", label: "Outdoor" }
+  ],
 };
 
 const dummyDtrConsumptionData = {
@@ -98,7 +114,6 @@ const DTRDashboard: React.FC = () => {
 
   // State for filter values
   const [filterValues, setFilterValues] = useState({
-    projectType: "HT",
     discom: "all",
     circle: "all",
     division: "all",
@@ -167,33 +182,33 @@ const DTRDashboard: React.FC = () => {
     }>
   >([]);
 
-  // Retry functions for each API
   const retryFiltersAPI = async () => {
-    setIsFiltersLoading(true);
-    try {
-      const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
-      if (!response.ok) throw new Error("Failed to fetch filter options");
+    // setIsFiltersLoading(true);
+    // try {
+    //   const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
+    //   if (!response.ok) throw new Error("Failed to fetch filter options");
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
-      }
+    //   const contentType = response.headers.get("content-type");
+    //   if (!contentType || !contentType.includes("application/json")) {
+    //     throw new Error("Invalid response format");
+    //   }
 
-      const data = await response.json();
-      if (data.success) {
-        setFilterOptions(data.data || dummyFilterOptions);
-        setFailedApis((prev) => prev.filter((api) => api.id !== "filters"));
-      } else {
-        throw new Error(data.message || "Failed to fetch filter options");
-      }
-    } catch (err: any) {
-      console.error("Error in Filters API:", err);
-      setFilterOptions(dummyFilterOptions);
-    } finally {
-      setTimeout(() => {
-        setIsFiltersLoading(false);
-      }, 1000);
-    }
+    //   const data = await response.json();
+    //   console.log('data 2', data);
+    //   if (data.success) {
+    //     setFilterOptions(data.data || dummyFilterOptions);
+    //     setFailedApis((prev) => prev.filter((api) => api.id !== "filters"));
+    //   } else {
+    //     throw new Error(data.message || "Failed to fetch filter options");
+    //   }
+    // } catch (err: any) {
+    //   console.error("Error in Filters API:", err);
+    //   setFilterOptions(dummyFilterOptions);
+    // } finally {
+    //   setTimeout(() => {
+    //     setIsFiltersLoading(false);
+    //   }, 1000);
+    // }
   };
 
   const retryStatsAPI = async () => {
@@ -390,7 +405,6 @@ const DTRDashboard: React.FC = () => {
       setIsFiltersLoading(true);
       try {
         const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
-        if (!response.ok) throw new Error("Failed to fetch filter options");
         console.log("response", response);
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
@@ -398,15 +412,36 @@ const DTRDashboard: React.FC = () => {
         }
 
         const data = await response.json();
-        console.log('data', data);
+        console.log('data 2', data);
         if (data.success) {
-          setFilterOptions(data.data || dummyFilterOptions);
+          // Transform the API data to match dropdown component format
+          const transformedData = {
+            discoms: data.data
+              .filter((item: any) => item.levelName === "DISCOM")
+              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+            circles: data.data
+              .filter((item: any) => item.levelName === "CIRCLE")
+              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+            divisions: data.data
+              .filter((item: any) => item.levelName === "DIVISION")
+              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+            subDivisions: data.data
+              .filter((item: any) => item.levelName === "SUB-DIVISION")
+              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+            sections: data.data
+              .filter((item: any) => item.levelName === "SECTION")
+              .map((item: any) => ({ value: item.id.toString(), label: item.name })),
+            meterLocations: data.data
+              .filter((item: any) => item.levelName === "METER-LOCATION")
+              .map((item: any) => ({ value: item.id.toString(), label: item.name }))
+          };
+          
+          setFilterOptions(transformedData);
         } else {
           throw new Error(data.message || "Failed to fetch filter options");
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
-        setFilterOptions(dummyFilterOptions);
         setFailedApis((prev) => {
           if (!prev.find((api) => api.id === "filters")) {
             return [
@@ -429,73 +464,6 @@ const DTRDashboard: React.FC = () => {
       }
     };
 
-    const initializeFilters = async () => {
-      setIsFiltersLoading(true);
-      try {
-        // Fetch initial filter options (DISCOM level)
-        const discoms = await fetchFilterOptions();
-        
-        setFilterOptions(prev => ({
-          ...prev,
-          discoms: discoms.map((item: LocationData) => ({ value: item.id.toString(), label: item.name }))
-        }));
-      } catch (error) {
-        console.error("Error fetching initial filter options:", error);
-        setFilterOptions(dummyFilterOptions);
-        setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "filters")) {
-            return [
-              ...prev,
-              {
-                id: "filters",
-                name: "Filter Options",
-                retryFunction: retryFiltersAPI,
-                errorMessage: "Failed to load Filter Options. Please try again.",
-              },
-            ];
-          }
-          return prev;
-        });
-      } finally {
-        setTimeout(() => {
-          setIsFiltersLoading(false);
-        }, 1000);
-      }
-    };
-
-    const initializeFilters = async () => {
-      setIsFiltersLoading(true);
-      try {
-        // Fetch initial filter options (DISCOM level)
-        const discoms = await fetchFilterOptions();
-        
-        setFilterOptions(prev => ({
-          ...prev,
-          discoms: discoms.map((item: LocationData) => ({ value: item.id.toString(), label: item.name }))
-        }));
-      } catch (error) {
-        console.error("Error fetching initial filter options:", error);
-        setFilterOptions(dummyFilterOptions);
-        setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "filters")) {
-            return [
-              ...prev,
-              {
-                id: "filters",
-                name: "Filter Options",
-                retryFunction: retryFiltersAPI,
-                errorMessage: "Failed to load Filter Options. Please try again.",
-              },
-            ];
-          }
-          return prev;
-        });
-      } finally {
-        setTimeout(() => {
-          setIsFiltersLoading(false);
-        }, 1000);
-      }
-    };
 
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
@@ -826,12 +794,168 @@ const DTRDashboard: React.FC = () => {
     setSelectedTimeRange(range as "Daily" | "Monthly");
   };
 
+  // Function to update filter options based on selection
+  const updateFilterOptions = async (filterName: string, selectedValue: string) => {
+    const name = selectedValue.target.value;
+    const value = selectedValue.target.value;
+    if (name === "all") return;
+
+    try {
+      console.log(`🔄 Updating filter options for ${filterName} with value: ${name}`);
+      
+      const params = new URLSearchParams();
+      params.append('parentId', value);
+      const apiUrl = `${BACKEND_URL}/dtrs/filter/filter-options?${params.toString()}`;
+      console.log(`📡 Calling API: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Failed to fetch filter options");
+      
+      const data = await response.json();
+      console.log(`📥 API Response for ${filterName}:`, data);
+      
+      if (data.success) {
+        const newOptions = data.data || [];
+        console.log(`✅ Found ${newOptions.length} options for ${filterName}:`, newOptions);
+        console.log("newOptions", newOptions);
+        // Update the appropriate filter options based on filterName
+        // and reset dependent filters
+        switch (filterName) {
+          case "discom":
+            console.log(`🏢 Updating circles for DISCOM ${name}`);
+            setFilterOptions(prev => ({
+              ...prev,
+              circles: [{ value: "all", label: "All Circles" }, ...newOptions.map((item: any) => ({ 
+                value: item.id.toString(), 
+                label: item.name 
+              }))]
+            }));
+            // Reset dependent filters
+            setFilterValues(prev => ({
+              ...prev,
+              circle: "all",
+              division: "all",
+              subDivision: "all",
+              section: "all",
+              meterLocation: "all"
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions(prev => ({
+              ...prev,
+              divisions: [{ value: "all", label: "All Divisions" }],
+              subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+              sections: [{ value: "all", label: "All Sections" }],
+              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+            }));
+            break;
+            
+          case "circle":
+            console.log(`⭕ Updating divisions for Circle ${name}`);
+            setFilterOptions(prev => ({
+              ...prev,
+              divisions: [{ value: "all", label: "All Divisions" }, ...newOptions.map((item: any) => ({ 
+                value: item.id.toString(), 
+                label: item.name 
+              }))]
+            }));
+            // Reset dependent filters
+            setFilterValues(prev => ({
+              ...prev,
+              division: "all",
+              subDivision: "all",
+              section: "all",
+              meterLocation: "all"
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions(prev => ({
+              ...prev,
+              subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+              sections: [{ value: "all", label: "All Sections" }],
+              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+            }));
+            break;
+            
+          case "division":
+            console.log(`📊 Updating sub-divisions for Division ${selectedValue}`);
+            setFilterOptions(prev => ({
+              ...prev,
+              subDivisions: [{ value: "all", label: "All Sub-Divisions" }, ...newOptions.map((item: any) => ({ 
+                value: item.id.toString(), 
+                label: item.name 
+              }))]
+            }));
+            // Reset dependent filters
+            setFilterValues(prev => ({
+              ...prev,
+              subDivision: "all",
+              section: "all",
+              meterLocation: "all"
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions(prev => ({
+              ...prev,
+              sections: [{ value: "all", label: "All Sections" }],
+              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+            }));
+            break;
+            
+          case "subDivision":
+            console.log(`🔧 Updating sections for Sub-Division ${selectedValue}`);
+            setFilterOptions(prev => ({
+              ...prev,
+              sections: [{ value: "all", label: "All Sections" }, ...newOptions.map((item: any) => ({ 
+                value: item.id.toString(), 
+                label: item.name 
+              }))]
+            }));
+            // Reset dependent filters
+            setFilterValues(prev => ({
+              ...prev,
+              section: "all",
+              meterLocation: "all"
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions(prev => ({
+              ...prev,
+              meterLocations: [{ value: "all", label: "All Meter Locations" }]
+            }));
+            break;
+            
+          case "section":
+            console.log(`📍 Updating meter locations for Section ${selectedValue}`);
+            setFilterOptions(prev => ({
+              ...prev,
+              meterLocations: [{ value: "all", label: "All Meter Locations" }, ...newOptions.map((item: any) => ({ 
+                value: item.id.toString(), 
+                label: item.name 
+              }))]
+            }));
+            // Reset dependent filters
+            setFilterValues(prev => ({
+              ...prev,
+              meterLocation: "all"
+            }));
+            break;
+        }
+        
+        console.log(`✅ Successfully updated ${filterName} filter options`);
+      }
+    } catch (error) {
+      console.error(`❌ Error updating filter options for ${filterName}:`, error);
+    }
+  };
+
   // Filter change handlers
-  const handleFilterChange = (filterName: string, value: string) => {
+  const handleFilterChange = async (filterName: string, value: string) => {
+    console.log("value", value);
+    console.log("filterName", filterName);
     setFilterValues((prev) => ({
       ...prev,
-      [filterName]: value,
+      [filterName]: value.target.value,
     }));
+    
+    // Update dependent filter options
+    await updateFilterOptions(filterName, value);
   };
 
   // Handle Get Data button click
@@ -1219,7 +1343,7 @@ const DTRDashboard: React.FC = () => {
           {
             layout: {
               type: "grid" as const,
-              columns: 8,
+              columns: 7,
               gap: "gap-4 ",
               className: " flex items-center justify-center",
             },
@@ -1227,22 +1351,8 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Dropdown",
                 props: {
-                  label: "Project Type",
-                  options: filterOptions.projectTypes,
-                  value: filterValues.projectType,
-                  onChange: (value: string) =>
-                    handleFilterChange("projectType", value),
-                  placeholder: "Select Project Type",
-                  loading: isFiltersLoading,
-                  searchable: false,
-                },
-                span: { col: 1, row: 1 },
-              },
-              {
-                name: "Dropdown",
-                props: {
                   label: "DISCOM",
-                  options: filterOptions.discoms,
+                  options: [ ...filterOptions.discoms],
                   value: filterValues.discom,
                   onChange: (value: string) =>
                     handleFilterChange("discom", value),
@@ -1256,7 +1366,7 @@ const DTRDashboard: React.FC = () => {
                 name: "Dropdown",
                 props: {
                   label: "CIRCLE",
-                  options: filterOptions.circles,
+                  options: [ ...filterOptions.circles],
                   value: filterValues.circle,
                   onChange: (value: string) =>
                     handleFilterChange("circle", value),
@@ -1270,7 +1380,7 @@ const DTRDashboard: React.FC = () => {
                 name: "Dropdown",
                 props: {
                   label: "DIVISION",
-                  options: filterOptions.divisions,
+                  options: [...filterOptions.divisions],
                   value: filterValues.division,
                   onChange: (value: string) =>
                     handleFilterChange("division", value),
@@ -1284,7 +1394,7 @@ const DTRDashboard: React.FC = () => {
                 name: "Dropdown",
                 props: {
                   label: "SUB-DIVISION",
-                  options: filterOptions.subDivisions,
+                  options: [ ...filterOptions.subDivisions],
                   value: filterValues.subDivision,
                   onChange: (value: string) =>
                     handleFilterChange("subDivision", value),
@@ -1298,7 +1408,7 @@ const DTRDashboard: React.FC = () => {
                 name: "Dropdown",
                 props: {
                   label: "SECTION",
-                  options: filterOptions.sections,
+                  options: [ ...filterOptions.sections],
                   value: filterValues.section,
                   onChange: (value: string) =>
                     handleFilterChange("section", value),
@@ -1312,7 +1422,7 @@ const DTRDashboard: React.FC = () => {
                 name: "Dropdown",
                 props: {
                   label: "METER LOCATION",
-                  options: filterOptions.meterLocations,
+                  options: [ ...filterOptions.meterLocations],
                   value: filterValues.meterLocation,
                   onChange: (value: string) =>
                     handleFilterChange("meterLocation", value),
