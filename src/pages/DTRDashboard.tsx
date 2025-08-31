@@ -33,15 +33,15 @@ const dummyDtrStatsData = {
   inactivePercentage: "N/A",
 };
 
-// Dummy data for filter options
+// Updated filter options structure to match API response
 const dummyFilterOptions = {
   projectTypes: [{ value: "HT", label: "HT" }, { value: "LT", label: "LT" }],
-  discoms: [{ value: "all", label: "discoms" }],
-  circles: [{ value: "all", label: "circles" }],
-  divisions: [{ value: "all", label: "divisions" }],
-  subDivisions: [{ value: "all", label: "subDivisions" }],
-  sections: [{ value: "all", label: "sections" }],
-  meterLocations: [{ value: "all", label: "meterLocations" }],
+  discoms: [],
+  circles: [],
+  divisions: [],
+  subDivisions: [],
+  sections: [],
+  meterLocations: [],
 };
 
 const dummyDtrConsumptionData = {
@@ -360,7 +360,7 @@ const dummyChartData = {
     const fetchFilterOptions = async () => {
       setIsFiltersLoading(true);
       try {
-        const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
         if (!response.ok) throw new Error("Failed to fetch filter options");
 
         const contentType = response.headers.get("content-type");
@@ -369,6 +369,7 @@ const dummyChartData = {
         }
 
         const data = await response.json();
+        console.log('data', data);
         if (data.success) {
           setFilterOptions(data.data || dummyFilterOptions);
         } else {
@@ -376,6 +377,40 @@ const dummyChartData = {
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
+        setFilterOptions(dummyFilterOptions);
+        setFailedApis((prev) => {
+          if (!prev.find((api) => api.id === "filters")) {
+            return [
+              ...prev,
+              {
+                id: "filters",
+                name: "Filter Options",
+                retryFunction: retryFiltersAPI,
+                errorMessage: "Failed to load Filter Options. Please try again.",
+              },
+            ];
+          }
+          return prev;
+        });
+      } finally {
+        setTimeout(() => {
+          setIsFiltersLoading(false);
+        }, 1000);
+      }
+    };
+
+    const initializeFilters = async () => {
+      setIsFiltersLoading(true);
+      try {
+        // Fetch initial filter options (DISCOM level)
+        const discoms = await fetchFilterOptions();
+        
+        setFilterOptions(prev => ({
+          ...prev,
+          discoms: discoms.map((item: LocationData) => ({ value: item.id.toString(), label: item.name }))
+        }));
+      } catch (error) {
+        console.error("Error fetching initial filter options:", error);
         setFilterOptions(dummyFilterOptions);
         setFailedApis((prev) => {
           if (!prev.find((api) => api.id === "filters")) {
@@ -608,7 +643,7 @@ const dummyChartData = {
       }
     };
 
-    fetchFilterOptions();
+    initializeFilters();
     fetchDTRStats();
     fetchDTRTable();
     fetchDTRAlerts();
