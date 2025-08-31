@@ -11,24 +11,24 @@ import BACKEND_URL from "../config";
 
 // Dummy data for fallback
 const dummyDtrStatsData = {
-  totalDtrs: "-",
-  totalLtFeeders: "-",
-  totalFuseBlown: "-",
-  fuseBlownPercentage: "-",
-  overloadedFeeders: "-",
-  overloadedPercentage: "-",
-  underloadedFeeders: "-",
-  underloadedPercentage: "-",
-  ltSideFuseBlown: "-",
-  unbalancedDtrs: "-",
-  unbalancedPercentage: "-",
-  powerFailureFeeders: "-",
-  powerFailurePercentage: "-",
-  htSideFuseBlown: "-",
-  activeDtrs: "-",
-  inactiveDtrs: "-",
-  activePercentage: "-",
-  inactivePercentage: "-",
+  totalDtrs: "0",
+  totalLtFeeders: "0",
+  totalFuseBlown: "0",
+  fuseBlownPercentage: "0",
+  overloadedFeeders: "0",
+  overloadedPercentage: "0",
+  underloadedFeeders: "0",
+  underloadedPercentage: "0",
+  ltSideFuseBlown: "0",
+  unbalancedDtrs: "0",
+  unbalancedPercentage: "0",
+  powerFailureFeeders: "0",
+  powerFailurePercentage: "0",
+  htSideFuseBlown: "0",
+  activeDtrs: "0",
+  inactiveDtrs: "0",
+  activePercentage: "0",
+  inactivePercentage: "0",
 };
 
 // Updated filter options structure to match API response
@@ -60,25 +60,25 @@ const dummyFilterOptions = {
 };
 
 const dummyDtrConsumptionData = {
-  daily: { totalKwh: "-", totalKvah: "-", totalKw: "-", totalKva: "-" },
+  daily: { totalKwh: "0", totalKvah: "0", totalKw: "0", totalKva: "0" },
   monthly: {
-    totalKwh: "-",
-    totalKvah: "-",
-    totalKw: "-",
-    totalKva: "-",
+    totalKwh: "0",
+    totalKvah: "0",
+    totalKw: "0",
+    totalKva: "0",
   },
   currentDay: { totalKwh: "N/A", totalKvah: "N/A", totalKw: "N/A", totalKva: "N/A" },
 };
 
 const dummyDtrTableData = [
   {
-    dtrId: "-",
-    dtrName: "-",
-    feedersCount: "-",
-    streetName: "-",
-    city: "-",
-    commStatus: "-",
-    lastCommunication: "-",
+    dtrId: "0",
+    dtrName: "0",
+    feedersCount: "0",
+    streetName: "0",
+    city: "0",
+    commStatus: "0",
+    lastCommunication: "0",
   },
 ];
 
@@ -102,7 +102,7 @@ const dummyAlertsData = [
 ];
 
 const dummyChartData = {
-  months: ["-"],
+  months: ["0"],
   series: [
     { name: "LT FUSE BLOWN", data: [0] },
     { name: "HT FUSE BLOWN", data: [0] },
@@ -1172,7 +1172,7 @@ const DTRDashboard: React.FC = () => {
   const dtrStatsCards = [
     {
       title: "Total DTRs",
-      value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "-",
+      value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "0",
       icon: "/icons/dtr.svg",
       subtitle1: "Total Transformer Units",
       onValueClick: () =>
@@ -1185,7 +1185,7 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.totalLtFeeders ||
         dtrStatsData?.row1?.totalLtFeeders ||
-        "-",
+        "0",
       icon: "/icons/feeder.svg",
       subtitle1: "Connected to DTRs",
       onValueClick: () =>
@@ -1197,12 +1197,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.totalFuseBlown ||
         dtrStatsData?.row1?.totalFuseBlown ||
-        "-",
+        "0",
       icon: "/icons/power_failure.svg",
       subtitle1: `${
         dtrStatsData.fuseBlownPercentage ||
         dtrStatsData?.row1?.fuseBlownPercentage ||
-        "-"
+        "0"
       }% of Total DTRs`,
       onValueClick: () =>
         navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
@@ -1213,12 +1213,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.overloadedFeeders ||
         dtrStatsData?.row1?.overloadedFeeders ||
-        "-",
+        "0",
       icon: "/icons/dtr.svg",
       subtitle1: `${
         dtrStatsData.overloadedPercentage ||
         dtrStatsData?.row1?.overloadedPercentage ||
-        "-"
+        "0"
       }% of Total Feeders`,
       onValueClick: () =>
         navigate(
@@ -1231,12 +1231,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.underloadedFeeders ||
         dtrStatsData?.row1?.underloadedFeeders ||
-        "-",
+        "0",
       icon: "/icons/dtr.svg",
       subtitle1: `${
         dtrStatsData.underloadedPercentage ||
         dtrStatsData?.row1?.underloadedPercentage ||
-        "-"
+        "0"
       }% of Total Feeders`,
       onValueClick: () =>
         navigate(
@@ -1249,7 +1249,7 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.ltSideFuseBlown ||
         dtrStatsData?.row1?.ltSideFuseBlown ||
-        "-",
+        "0",
       icon: "/icons/power_failure.svg",
       subtitle1: "Incidents Today",
       onValueClick: () =>
@@ -1263,12 +1263,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.unbalancedDtrs ||
         dtrStatsData?.row1?.unbalancedDtrs ||
-        "-",
+        "0",
       icon: "/icons/dtr.svg",
       subtitle1: `${
         dtrStatsData.unbalancedPercentage ||
         dtrStatsData?.row1?.unbalancedPercentage ||
-        "-"
+        "0"
       }% of Total DTRs`,
       onValueClick: () =>
         navigate("/dtr-table?type=unbalanced-dtrs&title=Unbalanced%20DTRs"),
@@ -1279,12 +1279,12 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.powerFailureFeeders ||
         dtrStatsData?.row1?.powerFailureFeeders ||
-        "-",
+        "0",
       icon: "/icons/power_failure.svg",
       subtitle1: `${
         dtrStatsData.powerFailurePercentage ||
         dtrStatsData?.row1?.powerFailurePercentage ||
-        "-"
+        "0"
       }% of Feeders`,
       onValueClick: () =>
         navigate(
@@ -1297,7 +1297,7 @@ const DTRDashboard: React.FC = () => {
       value:
         dtrStatsData.htSideFuseBlown ||
         dtrStatsData?.row1?.htSideFuseBlown ||
-        "-",
+        "0",
       icon: "/icons/dtr.svg",
       subtitle1: "Incidents Today",
       onValueClick: () =>
@@ -1312,7 +1312,7 @@ const DTRDashboard: React.FC = () => {
   const dailyConsumptionCards = [
     {
       title: "Total kWh",
-      value: String(dtrConsumptionData.daily.totalKwh || "-"),
+      value: String(dtrConsumptionData.daily.totalKwh || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Today's Active Energy",
       bg: "bg-stat-icon-gradient",
@@ -1322,7 +1322,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kVAh",
-      value: String(dtrConsumptionData.daily.totalKvah || "-"),
+      value: String(dtrConsumptionData.daily.totalKvah || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Today's Apparent Energy",
       bg: "bg-stat-icon-gradient",
@@ -1332,7 +1332,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kW",
-      value: String(dtrConsumptionData.daily.totalKw || "-"),
+      value: String(dtrConsumptionData.daily.totalKw || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Current Active Power",
       bg: "bg-stat-icon-gradient",
@@ -1342,7 +1342,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kVA",
-      value: String(dtrConsumptionData.daily.totalKva || "-"),
+      value: String(dtrConsumptionData.daily.totalKva || "0"),
       icon: "/icons/energy.svg",
       subtitle1: "Current Apparent Power",
       bg: "bg-stat-icon-gradient",
@@ -1352,18 +1352,18 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Active DTRs",
-      value: Number(dtrStatsData?.activeDtrs || "-"),
+      value: Number(dtrStatsData?.activeDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.activePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
       bg: "bg-[var(--color-secondary)]",
       loading: isStatsLoading,
     },
     {
       title: "In-Active DTRs",
-      value: Number(dtrStatsData?.inactiveDtrs || "-"),
+      value: Number(dtrStatsData?.inactiveDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.inactivePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
       bg: "bg-[var(--color-danger)]",
       loading: isStatsLoading,
@@ -1374,7 +1374,7 @@ const DTRDashboard: React.FC = () => {
   const monthlyConsumptionCards = [
     {
       title: "Total kWh",
-      value: String(dtrConsumptionData.monthly.totalKwh || "-"),
+      value: String(dtrConsumptionData.monthly.totalKwh || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Active Energy",
       bg: "bg-stat-icon-gradient",
@@ -1384,7 +1384,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Total kVAh",
-      value: String(dtrConsumptionData.monthly.totalKvah || "-"),
+      value: String(dtrConsumptionData.monthly.totalKvah || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Apparent Energy",
       bg: "bg-stat-icon-gradient",
@@ -1394,7 +1394,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Avg kW",
-      value: String(dtrConsumptionData.monthly.totalKw || "-"),
+      value: String(dtrConsumptionData.monthly.totalKw || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Average Power",
       bg: "bg-stat-icon-gradient",
@@ -1404,7 +1404,7 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Avg kVA",
-      value: String(dtrConsumptionData.monthly.totalKva || "-"),
+      value: String(dtrConsumptionData.monthly.totalKva || "0"),
       icon: "/icons/consumption.svg",
       subtitle1: "Monthly Average Apparent",
       bg: "bg-stat-icon-gradient",
@@ -1414,18 +1414,18 @@ const DTRDashboard: React.FC = () => {
     },
     {
       title: "Active DTRs",
-      value: Number(dtrStatsData?.activeDtrs || "-"),
+      value: Number(dtrStatsData?.activeDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.activePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
       bg: "bg-[var(--color-secondary)]",
       loading: isStatsLoading,
     },
     {
       title: "In-Active DTRs",
-      value: Number(dtrStatsData?.inactiveDtrs || "-"),
+      value: Number(dtrStatsData?.inactiveDtrs || "0"),
       icon: "/icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.inactivePercentage ?? "-"}% of Total DTRs`,
+      subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
       bg: "bg-[var(--color-danger)]",
       loading: isStatsLoading,
