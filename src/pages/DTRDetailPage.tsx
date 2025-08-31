@@ -109,20 +109,20 @@ const dummyDailyConsumptionData = {
 const dummyFeedersData = [
     {
         sNo: 1,
-        feederName: 'N/A',
+        feederName: 'NA',
         loadStatus: 'N/A',
         condition: 'N/A',
         capacity: 'N/A',
-        address: 'N/A',
+        address: 'NA',
     }
 ];
 
 const dummyAlertsData = [
     {
-        alertId: 'N/A',
+            alertId: 'NA',
         type: 'N/A',
-        feederName: 'N/A',
-        occuredOn: 'N/A',
+        feederName: 'NA',
+        occuredOn: 'NA',
     }
 ];
 
@@ -506,7 +506,7 @@ const DTRDetailPage = () => {
                     'Substation': dtr.substation,
                     'Feeder': dtr.feeder,
                     'Feeder No': dtr.feederNo,
-                    'Rating': '15.00 kVA', // Using the rating from stats
+                    'Rating': '15.00 kVA',
                     'Condition': dtr.condition,
                     'Capacity': dtr.capacity,
                     'Address': dtr.address,
@@ -515,43 +515,73 @@ const DTRDetailPage = () => {
                 }
             ];
 
-            // Prepare DTR Statistics data
-            const dtrStatsData = dtr.stats.map(stat => ({
+            // Prepare DTR Statistics data with S.No
+            const dtrStatsData = dtr.stats.map((stat, index) => ({
+                'S.No': index + 1,
                 'Metric': stat.title,
-                'Value': stat.value,
+                'Value': stat.value || 'N/A',
                 'Subtitle': stat.subtitle1 || '',
             }));
 
             // Prepare Feeders data
-            const feedersExportData = feedersData.map(feeder => ({
-                'S.No': feeder.sNo,
-                'Feeder Name': feeder.feederName,
-                'Load Status': feeder.loadStatus,
-                'Condition': feeder.condition,
-                'Capacity': feeder.capacity,
-                'Address': feeder.address,
+            const feedersExportData = feedersData.map((feeder, index) => ({
+                'S.No': index + 1,
+                'Feeder Name': feeder.feederName || 'N/A',
+                'Load Status': feeder.loadStatus || 'N/A',
+                'Condition': feeder.condition || 'N/A',
+                'Capacity': feeder.capacity || 'N/A',
+                'Address': feeder.address || 'N/A',
             }));
 
             // Prepare Alerts data
-            const alertsExportData = alertsData.map(alert => ({
-                'Alert ID': alert.alertId,
-                'Type': alert.type,
-                'Feeder Name': alert.feederName,
-                'Occurred On': alert.occuredOn,
+            const alertsExportData = alertsData.map((alert, index) => ({
+                'S.No': index + 1,
+                'Alert ID': alert.alertId || 'N/A',
+                'Type': alert.type || 'N/A',
+                'Feeder Name': alert.feederName || 'N/A',
+                'Occurred On': alert.occuredOn || 'N/A',
             }));
 
             // Prepare Daily Consumption data
             const consumptionExportData = dailyConsumptionData.xAxisData.map((date, index) => ({
-                'Date': date,
-                'Consumption (kWh)': dailyConsumptionData.seriesData[0].data[index],
+                'S.No': index + 1,
+                'Date': date || 'N/A',
+                'Consumption (kWh)': dailyConsumptionData.seriesData[0]?.data[index] || 0,
             }));
 
-            // Convert data to worksheets
+            // Create sheets with auto-sizing
             const dtrInfoSheet = XLSX.utils.json_to_sheet(dtrInfoData);
             const dtrStatsSheet = XLSX.utils.json_to_sheet(dtrStatsData);
             const feedersSheet = XLSX.utils.json_to_sheet(feedersExportData);
             const alertsSheet = XLSX.utils.json_to_sheet(alertsExportData);
             const consumptionSheet = XLSX.utils.json_to_sheet(consumptionExportData);
+
+            // Auto-size columns for all sheets
+            const sheets = [
+                { sheet: dtrInfoSheet, name: 'DTR Information' },
+                { sheet: dtrStatsSheet, name: 'DTR Statistics' },
+                { sheet: feedersSheet, name: 'DTR Feeders' },
+                { sheet: alertsSheet, name: 'DTR Alerts' },
+                { sheet: consumptionSheet, name: 'Daily Consumption' }
+            ];
+
+            sheets.forEach(({ sheet }) => {
+                const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+                const cols = [];
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = sheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    cols[C] = { width: Math.min(maxWidth + 2, 50) };
+                }
+                sheet['!cols'] = cols;
+            });
 
             // Add worksheets to workbook
             XLSX.utils.book_append_sheet(workbook, dtrInfoSheet, 'DTR Information');

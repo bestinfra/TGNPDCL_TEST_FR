@@ -62,21 +62,21 @@ const dummyAlertsData = [
 
 // Default stats data
 const defaultStats = [
-    { title: 'R-Phase Voltage', value: '257.686', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Voltage', value: '255.089', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'B-Phase Voltage', value: '254.417', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Apparent Power', value: '19.527', icon: '/icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'MD-kVA', value: '52.220', icon: '/icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'R-Phase Current', value: '15.892', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Y-Phase Current', value: '27.644', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'B-Phase Current', value: '33.984', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8',valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base' ,iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Neutral Current', value: '12.980', icon: '/icons/consumption.svg', subtitle1: 'Amps' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'Frequency', value: '49.980', icon: '/icons/frequency.svg', subtitle1: 'Hz' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'R-Phase PF', value: '1.000', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE}, 
-    { title: 'Y-Phase PF', value: '-0.987', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'B-Phase PF', value: '0.998', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE},
-    { title: 'Avg PF', value: '-0.999', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
-    { title: 'Cummulative kVAh', value: '77902.296', icon: '/icons/consumption.svg', subtitle1: 'kVAh' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN},
+    { title: 'R-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Voltage', value: 'N/A', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Apparent Power', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'MD-kVA', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Current', value: 'N/A', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Neutral Current', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Frequency', value: 'N/A', icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
+    { title: 'Y-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Avg PF', value: 'N/A', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Cummulative kVAh', value: 'N/A', icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
 ];
 
 const Feeders = () => {
@@ -193,11 +193,11 @@ const Feeders = () => {
         seriesData: [{ name: 'kVA', data: [] }]
     });
 
-    // Loading states - initialized to true
-    const [isStatsLoading, setIsStatsLoading] = useState(true);
-    const [isConsumptionLoading, setIsConsumptionLoading] = useState(true);
-    const [isAlertsLoading, setIsAlertsLoading] = useState(true);
-    const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(true);
+    // Loading states - initialized to false
+    const [isStatsLoading, setIsStatsLoading] = useState(false);
+    const [isConsumptionLoading, setIsConsumptionLoading] = useState(false);
+    const [isAlertsLoading, setIsAlertsLoading] = useState(false);
+    const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
 
     // State for tracking failed APIs
     const [failedApis, setFailedApis] = useState<Array<{
@@ -755,9 +755,7 @@ const Feeders = () => {
             console.error("Error in Consumption API:", err);
             setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
         } finally {
-            setTimeout(() => {
-                setIsConsumptionLoading(false);
-            }, 1000);
+            setIsConsumptionLoading(false);
         }
     };
 
@@ -891,9 +889,7 @@ const Feeders = () => {
             console.error("Error in Alerts API:", err);
             setAlertsData(dummyAlertsData);
         } finally {
-            setTimeout(() => {
-                setIsAlertsLoading(false);
-            }, 1000);
+            setIsAlertsLoading(false);
         }
     };
 
@@ -952,9 +948,7 @@ const Feeders = () => {
                 seriesData: [{ name: 'kVA', data: [] }]
             });
         } finally {
-            setTimeout(() => {
-                setIsKvaMetricsLoading(false);
-            }, 1000);
+            setIsKvaMetricsLoading(false);
         }
     };
 
@@ -1010,6 +1004,111 @@ const Feeders = () => {
         { title: 'Rating', description: '25.00 kVA' },
         { title: 'Address', description: 'Waddepally, Warangal, Telangana, India, 506001' },
     ]);
+
+    // Comprehensive export function for all feeder data
+    const handleExportData = () => {
+        import('xlsx').then((XLSX) => {
+            const workbook = XLSX.utils.book_new();
+
+            // 1. Feeder Information
+            const feederInfoExportData = [
+                {
+                    'DTR Number': feederInfoData?.dtr?.dtrNumber || 'N/A',
+                    'Capacity': feederInfoData?.dtr?.capacity ? `${feederInfoData.dtr.capacity} kVA` : 'N/A',
+                    'Status': feederInfoData?.dtr?.status || 'N/A',
+                    'Total Feeders': feederInfoData?.totalFeeders?.toString() || 'N/A',
+                    'Feeder Name': effectiveFeederData?.feederName || 'N/A',
+                    'Feeder Serial Number': feederInfoData?.specificFeeder?.serialNumber || 'N/A',
+                    'Feeder Meter Number': feederInfoData?.specificFeeder?.meterNumber || 'N/A',
+                    'Manufacturer': feederInfoData?.specificFeeder?.manufacturer || 'N/A',
+                    'Model': feederInfoData?.specificFeeder?.model || 'N/A',
+                    'Type': feederInfoData?.specificFeeder?.type || 'N/A',
+                    'Phase': feederInfoData?.specificFeeder?.phase || 'N/A',
+                    'Location': feederInfoData?.specificFeeder?.location?.name || feederInfoData?.specificFeeder?.city || 'N/A',
+                }
+            ];
+
+            // 2. Instantaneous Statistics
+            const statsData = getStats();
+            const instantaneousStatsExportData = statsData.map((stat, index) => ({
+                'S.No': index + 1,
+                'Metric': stat.title,
+                'Value': stat.value || 'N/A',
+                'Unit': stat.subtitle1 || '',
+            }));
+
+            // 3. Consumption Analytics Data
+            const consumptionExportData = consumptionAnalyticsData.xAxisData.map((date, index) => ({
+                'S.No': index + 1,
+                'Date': date || 'N/A',
+                'Daily Consumption (kWh)': consumptionAnalyticsData.seriesData[0]?.data[index] || 0,
+                'Monthly Consumption (kWh)': consumptionAnalyticsData.monthly?.seriesData[0]?.data[index] || 0,
+            }));
+
+            // 4. KVA Metrics Data
+            const kvaMetricsExportData = kvaMetricsData.xAxisData.map((date, index) => ({
+                'S.No': index + 1,
+                'Date': date || 'N/A',
+                'kVA Value': kvaMetricsData.seriesData[0]?.data[index] || 0,
+            }));
+
+            // 5. Alerts Data
+            const alertsExportData = alertsData.map((alert, index) => ({
+                'S.No': index + 1,
+                'Alert ID': alert.alertId || 'N/A',
+                'Type': alert.type || 'N/A',
+                'Feeder Name': alert.feederName || 'N/A',
+                'Occurred On': alert.occuredOn || 'N/A',
+            }));
+
+            // Create sheets with auto-sizing
+            const feederInfoSheet = XLSX.utils.json_to_sheet(feederInfoExportData);
+            const instantaneousStatsSheet = XLSX.utils.json_to_sheet(instantaneousStatsExportData);
+            const consumptionSheet = XLSX.utils.json_to_sheet(consumptionExportData);
+            const kvaMetricsSheet = XLSX.utils.json_to_sheet(kvaMetricsExportData);
+            const alertsSheet = XLSX.utils.json_to_sheet(alertsExportData);
+
+            // Auto-size columns for all sheets
+            const sheets = [
+                { sheet: feederInfoSheet, name: 'Feeder Information' },
+                { sheet: instantaneousStatsSheet, name: 'Instantaneous Stats' },
+                { sheet: consumptionSheet, name: 'Consumption Analytics' },
+                { sheet: kvaMetricsSheet, name: 'KVA Metrics' },
+                { sheet: alertsSheet, name: 'Alerts' }
+            ];
+
+            sheets.forEach(({ sheet }) => {
+                const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+                const cols = [];
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = sheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    cols[C] = { width: Math.min(maxWidth + 2, 50) };
+                }
+                sheet['!cols'] = cols;
+            });
+
+            // Add worksheets to workbook
+            XLSX.utils.book_append_sheet(workbook, feederInfoSheet, 'Feeder Information');
+            XLSX.utils.book_append_sheet(workbook, instantaneousStatsSheet, 'Instantaneous Stats');
+            XLSX.utils.book_append_sheet(workbook, consumptionSheet, 'Consumption Analytics');
+            XLSX.utils.book_append_sheet(workbook, kvaMetricsSheet, 'KVA Metrics');
+            XLSX.utils.book_append_sheet(workbook, alertsSheet, 'Alerts');
+
+            // Generate Excel file
+            const feederName = effectiveFeederData?.feederName || currentFeederId || 'feeder';
+            const fileName = `${feederName}-complete-data.xlsx`;
+            
+            XLSX.writeFile(workbook, fileName);
+        });
+    };
 
     // Handle Excel download for daily consumption chart
     const handleDailyChartDownload = () => {
@@ -1092,7 +1191,7 @@ const Feeders = () => {
                                             backButtonText: isIndividualFeeder ? (passedData?.dtrName ? `Back to ${passedData.dtrName}` : 'Back to DTR Dashboard') : 'Back to Dashboard',
                                             buttonsLabel: 'Export Data',
                                             variant: 'primary',
-                                            onClick: () => handleDailyChartDownload(),
+                                            onClick: () => handleExportData(),
                                         },
                                     },
                                 ],
