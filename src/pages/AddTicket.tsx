@@ -145,7 +145,7 @@ export default function AddTicket() {
                         setLocation(dtrData.location || 'Location not available');
                         
                         // Show success message
-                        setSuccess(`DTR found! Feeder: ${dtrData.feeder?.serialNumber || dtrData.feeder?.meterNumber || 'No meter'}, Location: ${dtrData.location || 'N/A'}`);
+                        setSuccess(`DTR found! Feeder: ${dtrData.feeder?.serialNumber || dtrData.feeder?.meterNumber || 'No meter'}, Location: ${dtrData.location || '-'}`);
                     } else {
                         setError('DTR not found');
                         setFeederNumber('');
