@@ -119,15 +119,21 @@ function AppLayout({ children }: AppLayoutProps) {
             onNavigate={(path: string) => navigate(path)}
             menus={[{ category: 'GENERAL', items: menuItems }]}
             logo={{
-              src: '/images/bi-blue-logo.svg',
-              alt: 'TGNPDCL',
+              src: '/images/bi-logo-latest.svg',
+              alt: 'Best Infra',
               collapsedSrc: '/images/changed-logo.svg',
+            }}
+            clientLogo={{
+              src: '/images/gmr-logo.png',
+              alt: 'GMR Client',
+              collapsedSrc: '/images/gmr-logo.png',
             }}
             footer={{
               copyright: '© 2024 Best Infra',
               showThemeToggle: true,
               showShareButton: false,
             }}
+            showAppDownload={false}
           />
         <div className="flex flex-col flex-1">
           {/* Header */}
