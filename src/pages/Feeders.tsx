@@ -1085,7 +1085,7 @@ const Feeders = () => {
             }));
 
             // 3. Consumption Analytics Data
-            const consumptionExportData = consumptionAnalyticsData.xAxisData.map((date: any, index: number) => ({
+            const consumptionExportData = consumptionAnalyticsData.xAxisData.map((date: string, index: number) => ({
                 'S.No': index + 1,
                 'Date': date || 'N/A',
                 'Daily Consumption (kWh)': consumptionAnalyticsData.seriesData[0]?.data[index] || 0,
@@ -1093,7 +1093,7 @@ const Feeders = () => {
             }));
 
             // 4. KVA Metrics Data
-            const kvaMetricsExportData = kvaMetricsData.xAxisData.map((date: any, index: number) => ({
+            const kvaMetricsExportData = kvaMetricsData.xAxisData.map((date: string, index: number) => ({
                 'S.No': index + 1,
                 'Date': date || 'N/A',
                 'kVA Value': kvaMetricsData.seriesData[0]?.data[index] || 0,
@@ -1509,6 +1509,9 @@ const Feeders = () => {
                                     },
                                 ],
                             },
+                           
+                              
+                            
                         ],
                     },
                 },
