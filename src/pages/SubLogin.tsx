@@ -14,15 +14,15 @@ import { login } from "../api/subAppAuth";
 const slides: CarouselSlide[] = [
   {
     title: "Welcome to the Sub-App!",
-    img: "/images/Slide-1.jpg",
+    img: "/images/Slide3.jpg",
   },
   {
     title: "Feature Highlight",
-    img: "/images/meter-eval.jpg",
+    img: "/images/DTR.jpg",
   },
   {
     title: "Stay Connected",
-    img: "/images/smart-comm.png",
+    img: "/images/Transformer.jpg",
   },
 ];
 
