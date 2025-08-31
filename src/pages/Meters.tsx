@@ -148,33 +148,33 @@ export default function Meters() {
         {
             id: 1,
             title: 'Total Meters',
-            value: 'N/A',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            value: '-',
+            subtitle1: '-',
+            subtitle2: '-',
             icon: 'icons/meter.svg',
         },
         {
             id: 2,
             title: 'Meter Makes',
-            value: 'N/A',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            value: '-',
+            subtitle1: '-',
+            subtitle2: '-',
             icon: 'icons/meter-make.svg',
         },
         {
             id: 3,
             title: 'Meter Types',
-            value: 'N/A',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            value: '-',
+            subtitle1: '-',
+            subtitle2: '-',
             icon: 'icons/mapped-meter.svg',
         },
         {
             id: 4,
             title: 'Connection Types',
-            value: 'N/A',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            value: '-',
+            subtitle1: '-',
+            subtitle2: '-',
             icon: 'icons/connection-type.svg',
         },
     ]);
@@ -212,7 +212,7 @@ export default function Meters() {
                 setTableData(
                     data.data.map((row: any) => ({
                         ...row,
-                        meterMake: row.meterMake || row.manufacturer || 'N/A',
+                        meterMake: row.meterMake || row.manufacturer || '-',
                     }))
                 );
                 setServerPagination(data.pagination);
@@ -262,15 +262,15 @@ export default function Meters() {
                         {
                             id: 1,
                             title: 'Total Meters',
-                            value: stats.totalMeters || 'N/A',
-                            subtitle1: `${stats.activeMeters || 'N/A'} Active`,
-                            subtitle2: `${stats.inactiveMeters || 'N/A'} Inactive`,
+                            value: stats.totalMeters || '-',
+                            subtitle1: `${stats.activeMeters || '-'} Active`,
+                            subtitle2: `${stats.inactiveMeters || '-'} Inactive`,
                             icon: 'icons/meter.svg',
                         },
                         {
                             id: 2,
                             title: 'Meter Makes',
-                            value: stats.makes?.length || 'N/A',
+                            value: stats.makes?.length || '-',
                             subtitle1: 'Unique Makes',
                             subtitle2: 'Available',
                             icon: 'icons/meter-make.svg',
@@ -278,7 +278,7 @@ export default function Meters() {
                         {
                             id: 3,
                             title: 'Meter Types',
-                            value: stats.types?.length || 'N/A',
+                            value: stats.types?.length || '-',
                             subtitle1: 'Unique Types',
                             subtitle2: 'Available',
                             icon: 'icons/mapped-meter.svg',
@@ -286,7 +286,7 @@ export default function Meters() {
                         {
                             id: 4,
                             title: 'Connection Types',
-                            value: Object.keys(stats.connectionTypes || {}).length || 'N/A',
+                            value: Object.keys(stats.connectionTypes || {}).length || '-',
                             subtitle1: 'Unique Connection Types',
                             subtitle2: 'Available',
                             icon: 'icons/connection-type.svg',
@@ -376,14 +376,14 @@ export default function Meters() {
                     meter.meterNumber === selectedMeter?.meterNumber 
                         ? { 
                             ...meter, 
-                            meterSerialNumber: String(formData.meterSerialNumber || 'N/A'),
-                            modemSerialNumber: String(formData.modemSerialNumber || 'N/A'),
-                            meterType: String(formData.meterType || 'N/A'),
-                            meterMake: String(formData.meterMake || 'N/A'),
-                            consumerName: String(formData.consumerName || 'N/A'),
-                            location: String(formData.location || 'N/A'),
-                            installationDate: String(formData.installationDate || 'N/A'),
-                            status: String(formData.status || 'N/A'),
+                            meterSerialNumber: String(formData.meterSerialNumber || '-'),
+                            modemSerialNumber: String(formData.modemSerialNumber || '-'),
+                            meterType: String(formData.meterType || '-'),
+                            meterMake: String(formData.meterMake || '-'),
+                            consumerName: String(formData.consumerName || '-'),
+                            location: String(formData.location || '-'),
+                            installationDate: String(formData.installationDate || '-'),
+                            status: String(formData.status || '-'),
                         }
                         : meter
                 )
@@ -632,7 +632,7 @@ export default function Meters() {
                                 props: {
                                     isOpen: isEditModalOpen,
                                     onClose: handleCloseModal,
-                                    title: `Edit Meter - ${selectedMeter?.meterSerialNumber || selectedMeter?.meterNumber || 'N/A'}`,
+                                    title: `Edit Meter - ${selectedMeter?.meterSerialNumber || selectedMeter?.meterNumber || '-'}`,
                                     size: 'lg',
                                     showCloseIcon: true,
                                     backdropClosable: !isLoading,
@@ -642,14 +642,14 @@ export default function Meters() {
                                     saveButtonLabel: isLoading ? "Saving..." : "Save Changes",
                                     cancelButtonLabel: "Cancel",
                                     formInitialData: selectedMeter ? {
-                                        meterSerialNumber: selectedMeter.meterSerialNumber || 'N/A',
-                                        modemSerialNumber: selectedMeter.modemSerialNumber || 'N/A',
-                                        meterType: selectedMeter.meterType || 'N/A',
-                                        meterMake: selectedMeter.meterMake || 'N/A',
-                                        consumerName: selectedMeter.consumerName || 'N/A',
-                                        location: selectedMeter.location || 'N/A',
-                                        installationDate: selectedMeter.installationDate || 'N/A',
-                                        status: selectedMeter.status || 'N/A',
+                                        meterSerialNumber: selectedMeter.meterSerialNumber || '-',
+                                        modemSerialNumber: selectedMeter.modemSerialNumber || '-',
+                                        meterType: selectedMeter.meterType || '-',
+                                        meterMake: selectedMeter.meterMake || '-',
+                                        consumerName: selectedMeter.consumerName || '-',
+                                        location: selectedMeter.location || '-',
+                                        installationDate: selectedMeter.installationDate || '-',
+                                        status: selectedMeter.status || '-',
                                     } : {},
                                     gridLayout: {
                                         gridRows: 4,

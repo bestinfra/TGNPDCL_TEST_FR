@@ -723,14 +723,12 @@ const DTRDashboard: React.FC = () => {
     import("xlsx").then((XLSX) => {
       const workbook = XLSX.utils.book_new();
 
-      // 1. DTR Statistics Widgets
       const dtrStatsExportData = dtrStatsCards.map((stat) => ({
         Metric: stat.title,
         Value: stat.value,
         Subtitle: stat.subtitle1 || "",
       }));
 
-      // 2. Consumption Widgets  
       const currentConsumptionCards = getCurrentConsumptionCards();
       const consumptionWidgetsExportData = currentConsumptionCards.map(
         (card) => ({
@@ -740,83 +738,21 @@ const DTRDashboard: React.FC = () => {
         })
       );
 
-      // 3. Distribution Transformers Table
-      const dtrTableExportData = dtrTableData.map((dtr, index) => ({
-        "S.No": index + 1,
-        "DTR ID": dtr.dtrId || "N/A",
-        "DTR Name": dtr.dtrName || "N/A", 
-        "Feeders Count": dtr.feedersCount || "N/A",
-        "Street Name": dtr.streetName || "N/A",
-        "City": dtr.city || "N/A",
-        "Communication Status": dtr.commStatus || "N/A",
-        "Last Communication": dtr.lastCommunication || "N/A"
-      }));
-
-      // 4. Latest Alerts Table
-      const alertsExportData = alertsData.map((alert, index) => ({
-        "S.No": index + 1,
-        "Alert": alert.alert || "N/A",
-        "Occurred On": alert.date || "N/A",
-        "Status": alert.status || "N/A"
-      }));
-
-      // 5. Chart Data (DTR Alert Statistics)
-      const chartExportData = chartMonths.map((month, index) => {
-        const row: any = { Month: month };
-        chartSeries.forEach(series => {
-          row[series.name] = series.data[index] || 0;
-        });
-        return row;
-      });
-
-      // 6. Meter Status Data (from Pie Chart)
-      const meterStatusExportData = (meterStatus || dummyMeterStatusData).map((status: any) => ({
-        "Status": status.name || "N/A",
-        "Count": status.value || 0,
-        "Percentage": meterStatus && meterStatus.length > 0 
-          ? `${((status.value / meterStatus.reduce((sum: number, item: any) => sum + item.value, 0)) * 100).toFixed(2)}%`
-          : "N/A"
-      }));
-
-      // Create sheets with auto-sizing
       const dtrStatsSheet = XLSX.utils.json_to_sheet(dtrStatsExportData);
-      const consumptionWidgetsSheet = XLSX.utils.json_to_sheet(consumptionWidgetsExportData);
-      const dtrTableSheet = XLSX.utils.json_to_sheet(dtrTableExportData);
-      const alertsTableSheet = XLSX.utils.json_to_sheet(alertsExportData);
-      const chartDataSheet = XLSX.utils.json_to_sheet(chartExportData);
-      const meterStatusSheet = XLSX.utils.json_to_sheet(meterStatusExportData);
+      const consumptionWidgetsSheet = XLSX.utils.json_to_sheet(
+        consumptionWidgetsExportData
+      );
 
-      // Auto-size columns for better readability
-      const setAutoWidth = (worksheet: any) => {
-        const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
-        const colWidths: any[] = [];
-        
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          let maxWidth = 10;
-          for (let R = range.s.r; R <= range.e.r; ++R) {
-            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-            const cell = worksheet[cellAddress];
-            if (cell && cell.v) {
-              const cellLength = cell.v.toString().length;
-              maxWidth = Math.max(maxWidth, cellLength);
-            }
-          }
-          colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
-        }
-        worksheet['!cols'] = colWidths;
-      };
-
-      // Apply auto-width to all sheets
-      [dtrStatsSheet, consumptionWidgetsSheet, dtrTableSheet, alertsTableSheet, chartDataSheet, meterStatusSheet]
-        .forEach(sheet => setAutoWidth(sheet));
-
-      // Append all sheets to workbook
-      XLSX.utils.book_append_sheet(workbook, dtrStatsSheet, "DTR Statistics");
-      XLSX.utils.book_append_sheet(workbook, consumptionWidgetsSheet, "Consumption Data");
-      XLSX.utils.book_append_sheet(workbook, dtrTableSheet, "DTR Table");
-      XLSX.utils.book_append_sheet(workbook, alertsTableSheet, "Latest Alerts");
-      XLSX.utils.book_append_sheet(workbook, chartDataSheet, "Alert Trends");
-      XLSX.utils.book_append_sheet(workbook, meterStatusSheet, "Meter Status");
+      XLSX.utils.book_append_sheet(
+        workbook,
+        dtrStatsSheet,
+        "DTR Statistics Widgets"
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        consumptionWidgetsSheet,
+        "Consumption Widgets"
+      );
 
       const excelBuffer = XLSX.write(workbook, {
         bookType: "xlsx",
@@ -829,7 +765,7 @@ const DTRDashboard: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "dtr-dashboard.xlsx";
+      link.download = "dtr-dashboard-widgets.xlsx";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1012,7 +948,6 @@ const DTRDashboard: React.FC = () => {
   // Filter change handlers
   const handleFilterChange = async (filterName: string, value: string) => {
     console.log("value", value);
-    console.log("filterName", filterName);
     setFilterValues((prev) => ({
       ...prev,
       [filterName]: value.target.value,
@@ -1509,7 +1444,6 @@ const DTRDashboard: React.FC = () => {
                     isAlertsLoading ||
                     isChartLoading,
                   searchable: false,
-                  align:'center'
                 },
                 span: { col: 1, row: 1 },
               },

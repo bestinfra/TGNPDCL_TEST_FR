@@ -22,49 +22,49 @@ const MeterDetails: React.FC = () => {
     const [summaryCards, setSummaryCards] = useState([
         {
             title: 'Current Reading',
-            value: 'N/A',
+            value: '-',
             icon: '/icons/current-reading.svg',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            subtitle1: '-',
+            subtitle2: '-',
         },
         {
             title: 'Status',
-            value: 'N/A',
+            value: '-',
             icon: '/icons/status.svg',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            subtitle1: '-',
+            subtitle2: '-',
         },
         {
             title: 'Meter Type',
-            value: 'N/A',
+            value: '-',
             icon: '/icons/units.svg',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            subtitle1: '-',
+            subtitle2: '-',
         },
         {
             title: 'Location',
-            value: 'N/A',
+            value: '-',
             icon: '/icons/location.svg',
-            subtitle1: 'N/A',
-            subtitle2: 'N/A',
+            subtitle1: '-',
+            subtitle2: '-',
         },
     ]);
 
     // Meter information data - Using useState with smart fallbacks
     const [meterInfoRow1, setMeterInfoRow1] = useState([
-        { title: 'Meter Sl No.', value: 'N/A' },
-        { title: 'Modem Sl No', value: 'N/A' },
-        { title: 'UID', value: 'N/A' },
-        { title: 'Assigned To', value: 'N/A' },
-        { title: 'Meter Make', value: 'N/A' },
+        { title: 'Meter Sl No.', value: '-' },
+        { title: 'Modem Sl No', value: '-' },
+        { title: 'UID', value: '-' },
+        { title: 'Assigned To', value: '-' },
+        { title: 'Meter Make', value: '-' },
     ]);
 
     const [meterInfoRow2, setMeterInfoRow2] = useState([
-        { title: 'Meter CT Ratio', value: 'N/A' },
-        { title: 'Meter PT Ratio', value: 'N/A' },
-        { title: 'External CT Ratio', value: 'N/A' },
-        { title: 'External PT Ratio', value: 'N/A' },
-        { title: 'Multiplication Factor', value: 'N/A' },
+        { title: 'Meter CT Ratio', value: '-' },
+        { title: 'Meter PT Ratio', value: '-' },
+        { title: 'External CT Ratio', value: '-' },
+        { title: 'External PT Ratio', value: '-' },
+        { title: 'Multiplication Factor', value: '-' },
     ]);
 
     // Table data - Using useState with smart fallbacks
@@ -99,28 +99,28 @@ const MeterDetails: React.FC = () => {
             setSummaryCards([
                 {
                     title: 'Current Reading',
-                    value: meterData.currentReading ? `${meterData.currentReading} kWh` : 'N/A',
+                    value: meterData.currentReading ? `${meterData.currentReading} kWh` : '-',
                     icon: '/icons/current-reading.svg',
                     subtitle1: meterData.lastReadingDate ? `Last Reading: ${meterData.lastReadingDate}` : 'No readings available',
-                    subtitle2: meterData.consumption ? `Consumption: ${meterData.consumption} kWh` : 'N/A',
+                    subtitle2: meterData.consumption ? `Consumption: ${meterData.consumption} kWh` : '-',
                 },
                 {
                     title: 'Status',
-                    value: meterData.status || 'N/A',
+                    value: meterData.status || '-',
                     icon: '/icons/status.svg',
                     subtitle1: meterData.lastCommunication ? `Last Communication: ${new Date(meterData.lastCommunication).toLocaleString()}` : 'No communication data',
                     subtitle2: '',
                 },
                 {
                     title: 'Meter Type',
-                    value: meterData.meterType || 'N/A',
+                    value: meterData.meterType || '-',
                     icon: '/icons/units.svg',
                     subtitle1: meterData.phase ? `Phase Type: ${meterData.phase}` : 'Phase info not available',
                     subtitle2: '',
                 },
                 {
                     title: 'Location',
-                    value: meterData.location || 'N/A',
+                    value: meterData.location || '-',
                     icon: '/icons/location.svg',
                     subtitle1: meterData.installationDate ? `Installation Date: ${new Date(meterData.installationDate).toLocaleDateString()}` : 'Installation date not available',
                     subtitle2: '',
@@ -129,32 +129,32 @@ const MeterDetails: React.FC = () => {
 
             // Update meter information rows with smart fallbacks
             setMeterInfoRow1([
-                { title: 'Meter Sl No.', value: meterData.meterSerialNumber || 'N/A' },
-                { title: 'Modem Sl No', value: meterData.modemSerialNumber || 'N/A' },
-                { title: 'UID', value: meterData.uid || 'N/A' },
-                { title: 'Assigned To', value: meterData.consumerName || 'N/A' },
-                { title: 'Meter Make', value: meterData.meterMake || 'N/A' },
+                { title: 'Meter Sl No.', value: meterData.meterSerialNumber || '-' },
+                { title: 'Modem Sl No', value: meterData.modemSerialNumber || '-' },
+                { title: 'UID', value: meterData.uid || '-' },
+                { title: 'Assigned To', value: meterData.consumerName || '-' },
+                { title: 'Meter Make', value: meterData.meterMake || '-' },
             ]);
 
             setMeterInfoRow2([
-                { title: 'Meter CT Ratio', value: meterData.meterCTRatio || 'N/A' },
-                { title: 'Meter PT Ratio', value: meterData.meterPTRatio || 'N/A' },
-                { title: 'External CT Ratio', value: meterData.externalCTRatio || 'N/A' },
-                { title: 'External PT Ratio', value: meterData.externalPTRatio || 'N/A' },
-                { title: 'Multiplication Factor', value: meterData.multiplicationFactor || 'N/A' },
+                { title: 'Meter CT Ratio', value: meterData.meterCTRatio || '-' },
+                { title: 'Meter PT Ratio', value: meterData.meterPTRatio || '-' },
+                { title: 'External CT Ratio', value: meterData.externalCTRatio || '-' },
+                { title: 'External PT Ratio', value: meterData.externalPTRatio || '-' },
+                { title: 'Multiplication Factor', value: meterData.multiplicationFactor || '-' },
             ]);
             
             // Update table data with smart fallbacks
             if (meterData.history && meterData.history.length > 0) {
                 setMeterInfoData(meterData.history.map((item: any, index: number) => ({
                     slNo: index + 1,
-                    meterSlNo: item.meterSerialNumber || 'N/A',
-                    modemSlNo: item.modemSerialNumber || 'N/A',
-                    meterType: item.meterType || 'N/A',
-                    meterMake: item.meterMake || 'N/A',
-                    consumerName: item.consumerName || 'N/A',
-                    location: item.location || 'N/A',
-                    installationDate: item.installationDate ? new Date(item.installationDate).toLocaleDateString() : 'N/A',
+                    meterSlNo: item.meterSerialNumber || '-',
+                    modemSlNo: item.modemSerialNumber || '-',
+                    meterType: item.meterType || '-',
+                    meterMake: item.meterMake || '-',
+                    consumerName: item.consumerName || '-',
+                    location: item.location || '-',
+                    installationDate: item.installationDate ? new Date(item.installationDate).toLocaleDateString() : '-',
                 })));
             } else {
                 setMeterInfoData([]);
@@ -163,7 +163,7 @@ const MeterDetails: React.FC = () => {
             // Update chart data with smart fallbacks
             if (meterData.readings && meterData.readings.length > 0) {
                 setChartData({
-                    xAxisData: meterData.readings.map((reading: any) => reading.date || 'N/A'),
+                    xAxisData: meterData.readings.map((reading: any) => reading.date || '-'),
                     seriesData: [{
                         name: 'Meter Readings',
                         data: meterData.readings.map((reading: any) => reading.value || 0)
@@ -185,48 +185,48 @@ const MeterDetails: React.FC = () => {
             setSummaryCards([
                 {
                     title: 'Current Reading',
-                    value: 'N/A',
+                    value: '-',
                     icon: '/icons/current-reading.svg',
-                    subtitle1: 'N/A',
-                    subtitle2: 'N/A',
+                    subtitle1: '-',
+                    subtitle2: '-',
                 },
                 {
                     title: 'Status',
-                    value: 'N/A',
+                    value: '-',
                     icon: '/icons/status.svg',
-                    subtitle1: 'N/A',
-                    subtitle2: 'N/A',
+                    subtitle1: '-',
+                    subtitle2: '-',
                 },
                 {
                     title: 'Meter Type',
-                    value: 'N/A',
+                    value: '-',
                     icon: '/icons/units.svg',
-                    subtitle1: 'N/A',
-                    subtitle2: 'N/A',
+                    subtitle1: '-',
+                    subtitle2: '-',
                 },
                 {
                     title: 'Location',
-                    value: 'N/A',
+                    value: '-',
                     icon: '/icons/location.svg',
-                    subtitle1: 'N/A',
-                    subtitle2: 'N/A',
+                    subtitle1: '-',
+                    subtitle2: '-',
                 },
             ]);
 
             setMeterInfoRow1([
-                { title: 'Meter Sl No.', value: 'N/A' },
-                { title: 'Modem Sl No', value: 'N/A' },
-                { title: 'UID', value: 'N/A' },
-                { title: 'Assigned To', value: 'N/A' },
-                { title: 'Meter Make', value: 'N/A' },
+                { title: 'Meter Sl No.', value: '-' },
+                { title: 'Modem Sl No', value: '-' },
+                { title: 'UID', value: '-' },
+                { title: 'Assigned To', value: '-' },
+                { title: 'Meter Make', value: '-' },
             ]);
 
             setMeterInfoRow2([
-                { title: 'Meter CT Ratio', value: 'N/A' },
-                { title: 'Meter PT Ratio', value: 'N/A' },
-                { title: 'External CT Ratio', value: 'N/A' },
-                { title: 'External PT Ratio', value: 'N/A' },
-                { title: 'Multiplication Factor', value: 'N/A' },
+                { title: 'Meter CT Ratio', value: '-' },
+                { title: 'Meter PT Ratio', value: '-' },
+                { title: 'External CT Ratio', value: '-' },
+                { title: 'External PT Ratio', value: '-' },
+                { title: 'Multiplication Factor', value: '-' },
             ]);
 
             setMeterInfoData([]);
