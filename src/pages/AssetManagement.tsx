@@ -316,6 +316,7 @@ export default function AssetManagment() {
     const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
     const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
     const [errorMessages, setErrorMessages] = useState<string[]>([]);
+    const [viewMode, setViewMode] = useState<"hierarchy" | "table">("hierarchy");
 
     // Asset management menu items
     const assetManagementActions = [
@@ -358,6 +359,20 @@ export default function AssetManagment() {
                 break;
             default:
                 console.log('Unknown action:', actionId);
+        }
+    };
+
+    // Handle menu item click for view mode toggle
+    const handleMenuClick = (menuId: string) => {
+        switch (menuId) {
+            case 'Table View':
+                setViewMode('table');
+                break;
+            case 'HierarchyView':
+                setViewMode('hierarchy');
+                break;
+            default:
+                console.log('Unknown menu item:', menuId);
         }
     };
 
@@ -588,6 +603,34 @@ export default function AssetManagment() {
         return mapHierarchyRecursively(hierarchicalData);
     };
 
+    // Flatten hierarchical data for table view
+    const getFlattenedTableData = () => {
+        const flattened: any[] = [];
+        
+        const flattenNode = (node: any, level: number = 0, parentPath: string = '') => {
+            const currentPath = parentPath ? `${parentPath} > ${node.name}` : node.name;
+            
+            flattened.push({
+                id: node.id || node.hierarchy_id,
+                name: node.name || node.hierarchy_name,
+                type: node.hierarchy_type_title,
+                level: level,
+                path: currentPath,
+                count: node.count || 0,
+                parent: parentPath || 'Root'
+            });
+            
+            if (node.children && node.children.length > 0) {
+                node.children.forEach((child: any) => flattenNode(child, level + 1, currentPath));
+            }
+        };
+        
+        const displayData = getDisplayData();
+        displayData.forEach(node => flattenNode(node));
+        
+        return flattened;
+    };
+
 
 
 
@@ -637,6 +680,12 @@ export default function AssetManagment() {
                                                 title: 'Asset Management',
                                                 onBackClick: () => window.history.back(),
                                                 backButtonText: 'Back to Dashboard',
+                                                showMenu: true,
+                                                menuItems: [
+                                                    { id: 'Table View', label: 'Table View' },
+                                                    { id: 'HierarchyView', label: 'Hierarchy View' },
+                                                ],
+                                                onMenuItemClick: handleMenuClick,
                                                 buttonsLabel: 'Add Asset',
                                                 variant: 'primary',
                                                 onClick: () => {
@@ -651,56 +700,153 @@ export default function AssetManagment() {
                         },
                     },
                    
-                    {
-                        layout: {
-                            type: 'grid',
-                            columns: 4,
-                            className: 'h-full',
-                            rows: [
-                                {
-                                    layout: 'row',
-                                    className:
-                                        'border border-primary-border dark:border-dark-border rounded-3xl overflow-hidden',
-                                    columns: [
-                                        {
-                                            name: 'TopLevelHierarchy',
-                                            props: {
-                                                nodes: getDisplayData(),
-                                                title: 'Asset Hierarchy',
-                                                actions: assetManagementActions,
-                                                onActionClick: handleAssetAction,
-                                                showActions: true
-                                            },
-                                        },
-                                    ],
-                                },
-                       
-                                {
-                                    layout: 'row',
-                                    span: { col: 3, row: 1 },
-                                    className: 'h-full border border-primary-border dark:border-dark-border rounded-3xl overflow-hidden',
-                                    columns: [
-                                        {
-                                            name: 'NodeChart',
-                                            props: {
-                                                data: {
-                                                    Location: mapHierarchyForNodeChart(getDisplayData())
+                    // Conditional View Rendering - Show either Hierarchy OR Table view
+                    ...(viewMode === "hierarchy" ? [
+                        // HIERARCHY VIEW - Hierarchy and Chart
+                        {
+                            layout: {
+                                type: 'grid',
+                                columns: 4,
+                                className: 'h-full',
+                                rows: [
+                                    {
+                                        layout: 'row',
+                                        className:
+                                            'border border-primary-border dark:border-dark-border rounded-3xl overflow-hidden',
+                                        columns: [
+                                            {
+                                                name: 'TopLevelHierarchy',
+                                                props: {
+                                                    nodes: getDisplayData(),
+                                                    title: 'Asset Hierarchy',
+                                                    actions: assetManagementActions,
+                                                    onActionClick: handleAssetAction,
+                                                    showActions: true
                                                 },
-                                                width: '100%',
-                                                height: '100%',
-                                                enableZoom: true,
-                                                minZoom: 0.3,
-                                                maxZoom: 2,
-                                                initialZoom: 0.8,
-                                                layout: 'horizontal',
-                                                EdgeStyleLayout: 'polyline',
                                             },
+                                        ],
+                                    },
+                                   
+                                    {
+                                        layout: 'row',
+                                        span: { col: 3, row: 1 },
+                                        className: 'h-full border border-primary-border dark:border-dark-border rounded-3xl overflow-hidden',
+                                        columns: [
+                                            {
+                                                name: 'NodeChart',
+                                                props: {
+                                                    data: {
+                                                        Location: mapHierarchyForNodeChart(getDisplayData())
+                                                    },
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    type: 'hierarchy',
+                                                    enableZoom: true,
+                                                    minZoom: 0.3,
+                                                    maxZoom: 2,
+                                                    initialZoom: 0.8,
+                                                    layout: 'horizontal',
+                                                    EdgeStyleLayout: 'polyline',
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
+                    ] : [
+                        // TABLE VIEW - Full-width table layout
+                        {
+                            layout: {
+                                type: 'column',
+                                gap: 'gap-6',
+                                className: 'w-full',
+                            },
+                            components: [
+                                {
+                                    name: 'SectionHeader',
+                                    props: {
+                                        title: 'Asset Data Table View',
+                                        titleLevel: 2,
+                                        titleSize: 'lg',
+                                        titleVariant: 'primary',
+                                        titleWeight: 'semibold',
+                                        titleAlign: 'left',
+                                        subtitle: 'Comprehensive view of all assets in tabular format',
+                                    },
+                                },
+                                {
+                                    name: 'Table',
+                                    props: {
+                                        data: getFlattenedTableData(),
+                                        columns: [
+                                            {
+                                                key: 'name',
+                                                label: 'Asset Name',
+                                                sortable: true,
+                                                searchable: true,
+                                            },
+                                            {
+                                                key: 'type',
+                                                label: 'Asset Type',
+                                                sortable: true,
+                                                searchable: true,
+                                            },
+                                            {
+                                                key: 'level',
+                                                label: 'Hierarchy Level',
+                                                sortable: true,
+                                            },
+                                            {
+                                                key: 'path',
+                                                label: 'Full Path',
+                                                sortable: true,
+                                                searchable: true,
+                                            },
+                                            {
+                                                key: 'count',
+                                                label: 'Count',
+                                                sortable: true,
+                                            },
+                                            {
+                                                key: 'parent',
+                                                label: 'Parent',
+                                                sortable: true,
+                                                searchable: true,
+                                            },
+                                        ],
+                                        loading: false,
+                                        emptyMessage: 'No assets found',
+                                        showSearch: true,
+                                        showPagination: true,
+                                        pageSize: 10,
+                                        showActions: true,
+                                        actions: assetManagementActions,
+                                        onActionClick: (actionId: string, row: any) => {
+                                            // Find the original node data for actions
+                                            const findNode = (nodes: any[], targetId: any): any => {
+                                                for (const node of nodes) {
+                                                    if (node.id === targetId || node.hierarchy_id === targetId) {
+                                                        return node;
+                                                    }
+                                                    if (node.children) {
+                                                        const found = findNode(node.children, targetId);
+                                                        if (found) return found;
+                                                    }
+                                                }
+                                                return null;
+                                            };
+                                            
+                                            const originalNode = findNode(getDisplayData(), row.id);
+                                            if (originalNode) {
+                                                handleAssetAction(actionId, originalNode);
+                                            }
                                         },
-                                    ],
+                                    },
                                 },
                             ],
                         },
-                    },
+                    ]),
                     {
                         layout: {
                             type: 'column',
