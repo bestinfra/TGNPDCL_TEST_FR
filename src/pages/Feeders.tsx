@@ -562,7 +562,7 @@ const Feeders = () => {
             
             const response = await fetch(endpoint);
             const data = await response.json();
-
+            
             
             if (data.status === 'success') {
                 // Transform the data to match frontend expectations
@@ -1005,6 +1005,111 @@ const Feeders = () => {
         { title: 'Address', description: 'Waddepally, Warangal, Telangana, India, 506001' },
     ]);
 
+    // Comprehensive export function for all feeder data
+    const handleExportData = () => {
+        import('xlsx').then((XLSX) => {
+            const workbook = XLSX.utils.book_new();
+
+            // 1. Feeder Information
+            const feederInfoExportData = [
+                {
+                    'DTR Number': feederInfoData?.dtr?.dtrNumber || 'N/A',
+                    'Capacity': feederInfoData?.dtr?.capacity ? `${feederInfoData.dtr.capacity} kVA` : 'N/A',
+                    'Status': feederInfoData?.dtr?.status || 'N/A',
+                    'Total Feeders': feederInfoData?.totalFeeders?.toString() || 'N/A',
+                    'Feeder Name': effectiveFeederData?.feederName || 'N/A',
+                    'Feeder Serial Number': feederInfoData?.specificFeeder?.serialNumber || 'N/A',
+                    'Feeder Meter Number': feederInfoData?.specificFeeder?.meterNumber || 'N/A',
+                    'Manufacturer': feederInfoData?.specificFeeder?.manufacturer || 'N/A',
+                    'Model': feederInfoData?.specificFeeder?.model || 'N/A',
+                    'Type': feederInfoData?.specificFeeder?.type || 'N/A',
+                    'Phase': feederInfoData?.specificFeeder?.phase || 'N/A',
+                    'Location': feederInfoData?.specificFeeder?.location?.name || feederInfoData?.specificFeeder?.city || 'N/A',
+                }
+            ];
+
+            // 2. Instantaneous Statistics
+            const statsData = getStats();
+            const instantaneousStatsExportData = statsData.map((stat, index) => ({
+                'S.No': index + 1,
+                'Metric': stat.title,
+                'Value': stat.value || 'N/A',
+                'Unit': stat.subtitle1 || '',
+            }));
+
+            // 3. Consumption Analytics Data
+            const consumptionExportData = consumptionAnalyticsData.xAxisData.map((date, index) => ({
+                'S.No': index + 1,
+                'Date': date || 'N/A',
+                'Daily Consumption (kWh)': consumptionAnalyticsData.seriesData[0]?.data[index] || 0,
+                'Monthly Consumption (kWh)': consumptionAnalyticsData.monthly?.seriesData[0]?.data[index] || 0,
+            }));
+
+            // 4. KVA Metrics Data
+            const kvaMetricsExportData = kvaMetricsData.xAxisData.map((date, index) => ({
+                'S.No': index + 1,
+                'Date': date || 'N/A',
+                'kVA Value': kvaMetricsData.seriesData[0]?.data[index] || 0,
+            }));
+
+            // 5. Alerts Data
+            const alertsExportData = alertsData.map((alert, index) => ({
+                'S.No': index + 1,
+                'Alert ID': alert.alertId || 'N/A',
+                'Type': alert.type || 'N/A',
+                'Feeder Name': alert.feederName || 'N/A',
+                'Occurred On': alert.occuredOn || 'N/A',
+            }));
+
+            // Create sheets with auto-sizing
+            const feederInfoSheet = XLSX.utils.json_to_sheet(feederInfoExportData);
+            const instantaneousStatsSheet = XLSX.utils.json_to_sheet(instantaneousStatsExportData);
+            const consumptionSheet = XLSX.utils.json_to_sheet(consumptionExportData);
+            const kvaMetricsSheet = XLSX.utils.json_to_sheet(kvaMetricsExportData);
+            const alertsSheet = XLSX.utils.json_to_sheet(alertsExportData);
+
+            // Auto-size columns for all sheets
+            const sheets = [
+                { sheet: feederInfoSheet, name: 'Feeder Information' },
+                { sheet: instantaneousStatsSheet, name: 'Instantaneous Stats' },
+                { sheet: consumptionSheet, name: 'Consumption Analytics' },
+                { sheet: kvaMetricsSheet, name: 'KVA Metrics' },
+                { sheet: alertsSheet, name: 'Alerts' }
+            ];
+
+            sheets.forEach(({ sheet }) => {
+                const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+                const cols = [];
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = sheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    cols[C] = { width: Math.min(maxWidth + 2, 50) };
+                }
+                sheet['!cols'] = cols;
+            });
+
+            // Add worksheets to workbook
+            XLSX.utils.book_append_sheet(workbook, feederInfoSheet, 'Feeder Information');
+            XLSX.utils.book_append_sheet(workbook, instantaneousStatsSheet, 'Instantaneous Stats');
+            XLSX.utils.book_append_sheet(workbook, consumptionSheet, 'Consumption Analytics');
+            XLSX.utils.book_append_sheet(workbook, kvaMetricsSheet, 'KVA Metrics');
+            XLSX.utils.book_append_sheet(workbook, alertsSheet, 'Alerts');
+
+            // Generate Excel file
+            const feederName = effectiveFeederData?.feederName || currentFeederId || 'feeder';
+            const fileName = `${feederName}-complete-data.xlsx`;
+            
+            XLSX.writeFile(workbook, fileName);
+        });
+    };
+
     // Handle Excel download for daily consumption chart
     const handleDailyChartDownload = () => {
         // Use KVA metrics data if available, otherwise use empty data
@@ -1086,7 +1191,7 @@ const Feeders = () => {
                                             backButtonText: isIndividualFeeder ? (passedData?.dtrName ? `Back to ${passedData.dtrName}` : 'Back to DTR Dashboard') : 'Back to Dashboard',
                                             buttonsLabel: 'Export Data',
                                             variant: 'primary',
-                                            onClick: () => handleDailyChartDownload(),
+                                            onClick: () => handleExportData(),
                                         },
                                     },
                                 ],

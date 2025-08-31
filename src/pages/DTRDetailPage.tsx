@@ -17,6 +17,7 @@ const dummyDTRData = {
     capacity: 'N/A',
     address: 'N/A',
     location: { lat: 0, lng: 0 },
+    lastCommunication: null,
     stats: [
         {
             title: 'Total LT Feeders',
@@ -129,7 +130,7 @@ const DTRDetailPage = () => {
     const { dtrId } = useParams();
     const navigate = useNavigate();
     
-    console.log('DTR Detail Page - DTR ID:', dtrId);
+
     
     // State for API data
     const [dtr, setDtr] = useState(dummyDTRData);
@@ -174,15 +175,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchDtrData - Original dtrId:', dtrId);
-                console.log('fetchDtrData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the DTR endpoint to get DTR info
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch DTR data');
                 
                 const data = await response.json();
-                console.log('DTR API response:', data);
                 
                 if (data.success) {
                     // Transform the API response to match the expected structure
@@ -198,6 +197,7 @@ const DTRDetailPage = () => {
                         capacity: data.data?.dtr?.capacity || 'N/A',
                         address: 'N/A', // Not available in current API
                         location: { lat: 0, lng: 0 }, // Not available in current API
+                        lastCommunication: data.data?.dtr?.lastCommunication || null,
                         stats: dtr.stats // Keep existing stats for now
                     };
                     
@@ -231,15 +231,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchConsumptionData - Original dtrId:', dtrId);
-                console.log('fetchConsumptionData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the consumptionAnalytics endpoint to get consumption data
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
                 if (!response.ok) throw new Error('Failed to fetch consumption data');
                 
                 const data = await response.json();
-                console.log('Consumption analytics API response:', data);
                 
                 if (data.status === 'success') {
                     // Transform the API response to match the expected structure
@@ -281,15 +279,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchFeedersData - Original dtrId:', dtrId);
-                console.log('fetchFeedersData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the DTR endpoint to get feeders list
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch feeders data');
                 
                 const data = await response.json();
-                console.log('DTR feeders API response:', data);
                 
                 if (data.success) {
                     // Transform the API response to match the expected structure
@@ -332,15 +328,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchAlertsData - Original dtrId:', dtrId);
-                console.log('fetchAlertsData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the alerts endpoint
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
                 if (!response.ok) throw new Error('Failed to fetch alerts data');
                 
                 const data = await response.json();
-                console.log('Alerts API response:', data);
                 
                 if (data.success) {
                     const transformedAlerts = data.data?.map((alert: any) => ({
@@ -377,15 +371,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchFeederStats - Original dtrId:', dtrId);
-                console.log('fetchFeederStats - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the feederStats endpoint to get DTR statistics
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
                 
                 const data = await response.json();
-                console.log('Feeder stats for DTR stats API response:', data);
                 
                 if (data.success) {
                     // Update the DTR stats with real data from the API
@@ -487,7 +479,15 @@ const DTRDetailPage = () => {
         fetchFeederStats();
     }, [dtrId]);
 
-    const lastComm = 'N/A';
+    const lastComm = dtr.lastCommunication ? new Date(dtr.lastCommunication).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }) : 'N/A';
 
     // Handle Excel download for all DTR data in a single file
     const handleExportData = () => {
@@ -506,51 +506,82 @@ const DTRDetailPage = () => {
                     'Substation': dtr.substation,
                     'Feeder': dtr.feeder,
                     'Feeder No': dtr.feederNo,
-                    'Rating': '15.00 kVA', // Using the rating from stats
+                    'Rating': '15.00 kVA',
                     'Condition': dtr.condition,
                     'Capacity': dtr.capacity,
                     'Address': dtr.address,
                     'Location': `${dtr.location.lat}, ${dtr.location.lng}`,
+                    'Last Communication': lastComm,
                 }
             ];
 
-            // Prepare DTR Statistics data
-            const dtrStatsData = dtr.stats.map(stat => ({
+            // Prepare DTR Statistics data with S.No
+            const dtrStatsData = dtr.stats.map((stat, index) => ({
+                'S.No': index + 1,
                 'Metric': stat.title,
-                'Value': stat.value,
+                'Value': stat.value || 'N/A',
                 'Subtitle': stat.subtitle1 || '',
             }));
 
             // Prepare Feeders data
-            const feedersExportData = feedersData.map(feeder => ({
-                'S.No': feeder.sNo,
-                'Feeder Name': feeder.feederName,
-                'Load Status': feeder.loadStatus,
-                'Condition': feeder.condition,
-                'Capacity': feeder.capacity,
-                'Address': feeder.address,
+            const feedersExportData = feedersData.map((feeder, index) => ({
+                'S.No': index + 1,
+                'Feeder Name': feeder.feederName || 'N/A',
+                'Load Status': feeder.loadStatus || 'N/A',
+                'Condition': feeder.condition || 'N/A',
+                'Capacity': feeder.capacity || 'N/A',
+                'Address': feeder.address || 'N/A',
             }));
 
             // Prepare Alerts data
-            const alertsExportData = alertsData.map(alert => ({
-                'Alert ID': alert.alertId,
-                'Type': alert.type,
-                'Feeder Name': alert.feederName,
-                'Occurred On': alert.occuredOn,
+            const alertsExportData = alertsData.map((alert, index) => ({
+                'S.No': index + 1,
+                'Alert ID': alert.alertId || 'N/A',
+                'Type': alert.type || 'N/A',
+                'Feeder Name': alert.feederName || 'N/A',
+                'Occurred On': alert.occuredOn || 'N/A',
             }));
 
             // Prepare Daily Consumption data
             const consumptionExportData = dailyConsumptionData.xAxisData.map((date, index) => ({
-                'Date': date,
-                'Consumption (kWh)': dailyConsumptionData.seriesData[0].data[index],
+                'S.No': index + 1,
+                'Date': date || 'N/A',
+                'Consumption (kWh)': dailyConsumptionData.seriesData[0]?.data[index] || 0,
             }));
 
-            // Convert data to worksheets
+            // Create sheets with auto-sizing
             const dtrInfoSheet = XLSX.utils.json_to_sheet(dtrInfoData);
             const dtrStatsSheet = XLSX.utils.json_to_sheet(dtrStatsData);
             const feedersSheet = XLSX.utils.json_to_sheet(feedersExportData);
             const alertsSheet = XLSX.utils.json_to_sheet(alertsExportData);
             const consumptionSheet = XLSX.utils.json_to_sheet(consumptionExportData);
+
+            // Auto-size columns for all sheets
+            const sheets = [
+                { sheet: dtrInfoSheet, name: 'DTR Information' },
+                { sheet: dtrStatsSheet, name: 'DTR Statistics' },
+                { sheet: feedersSheet, name: 'DTR Feeders' },
+                { sheet: alertsSheet, name: 'DTR Alerts' },
+                { sheet: consumptionSheet, name: 'Daily Consumption' }
+            ];
+
+            sheets.forEach(({ sheet }) => {
+                const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+                const cols = [];
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = sheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    cols[C] = { width: Math.min(maxWidth + 2, 50) };
+                }
+                sheet['!cols'] = cols;
+            });
 
             // Add worksheets to workbook
             XLSX.utils.book_append_sheet(workbook, dtrInfoSheet, 'DTR Information');
@@ -577,7 +608,7 @@ const DTRDetailPage = () => {
 
     // Handle feeders export
     const handleFeedersExport = () => {
-        console.log('Exporting feeders...');
+    
         // Add feeders export logic here
     };
 
@@ -608,8 +639,7 @@ const DTRDetailPage = () => {
     );
     };
 
-    // Debug log to see current errors
-    console.log('Current errorMessages state:', errorMessages);
+
 
     return (
         <Page
