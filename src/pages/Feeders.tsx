@@ -207,6 +207,10 @@ const Feeders = () => {
         errorMessage: string;
     }>>([]);
 
+    // State for time range toggles
+    const [consumptionTimeRange, setConsumptionTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
+    const [kvaTimeRange, setKvaTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
+
     // API Functions
     const fetchInstantaneousStats = async () => {
         // Use resolved DTR ID
@@ -636,17 +640,65 @@ const Feeders = () => {
         return defaultStats.map(stat => ({ ...stat, loading: isStatsLoading }));
     };
 
-        // Monthly consumption data - will be updated from API
-    const getMonthlyConsumptionData = () => {
-        if (consumptionAnalyticsData && consumptionAnalyticsData.monthly) {
-            return {
-                xAxisData: consumptionAnalyticsData.monthly.xAxisData || [],
-                seriesData: consumptionAnalyticsData.monthly.seriesData || [{ name: 'Consumption', data: [] }],
-            };
+        // Get consumption data based on selected time range
+    const getConsumptionData = () => {
+        console.log('getConsumptionData called with timeRange:', consumptionTimeRange);
+        console.log('Available consumption data:', consumptionAnalyticsData);
+        
+        if (consumptionTimeRange === 'Daily') {
+            if (consumptionAnalyticsData && consumptionAnalyticsData.xAxisData) {
+                const data = {
+                    xAxisData: consumptionAnalyticsData.xAxisData || [],
+                    seriesData: consumptionAnalyticsData.seriesData || [{ name: 'Consumption', data: [] }],
+                };
+                console.log('Returning daily consumption data:', data);
+                return data;
+            }
+        } else if (consumptionTimeRange === 'Monthly') {
+            if (consumptionAnalyticsData && consumptionAnalyticsData.monthly) {
+                const data = {
+                    xAxisData: consumptionAnalyticsData.monthly.xAxisData || [],
+                    seriesData: consumptionAnalyticsData.monthly.seriesData || [{ name: 'Consumption', data: [] }],
+                };
+                console.log('Returning monthly consumption data:', data);
+                return data;
+            }
         }
+        console.log('No data available, returning empty data');
         return {
             xAxisData: [],
             seriesData: [{ name: 'Consumption', data: [] }],
+        };
+    };
+
+    // Get KVA metrics data based on selected time range
+    const getKvaMetricsData = () => {
+        console.log('getKvaMetricsData called with timeRange:', kvaTimeRange);
+        console.log('Available KVA data:', kvaMetricsData);
+        
+        if (kvaTimeRange === 'Daily') {
+            if (kvaMetricsData && kvaMetricsData.xAxisData) {
+                const data = {
+                    xAxisData: kvaMetricsData.xAxisData || [],
+                    seriesData: kvaMetricsData.seriesData || [{ name: 'kVA', data: [] }],
+                };
+                console.log('Returning daily KVA data:', data);
+                return data;
+            }
+        } else if (kvaTimeRange === 'Monthly') {
+            if (kvaMetricsData && kvaMetricsData.monthly) {
+                const data = {
+                    xAxisData: kvaMetricsData.monthly.xAxisData || [],
+                    seriesData: kvaMetricsData.monthly.seriesData || [{ name: 'kVA', data: [] }],
+                };
+                console.log('Returning monthly KVA data:', data);
+                return data;
+            }
+        }
+        console.log('No KVA data available, returning empty data');
+        return {
+            xAxisData: [],
+            seriesData: [{ name: 'kVA', data: [] }],
         };
     };
 
@@ -674,8 +726,7 @@ const Feeders = () => {
             
             const data = await response.json();
             if (data.success) {
-                console.log('Retry - Instantaneous stats API response:', data.data);
-                console.log('Retry - lastCommDate from API:', data.data.lastCommDate);
+                
                 
                 // If we have specific feeder data, we might need to adjust the data
                 let apiData = {
@@ -683,11 +734,7 @@ const Feeders = () => {
                     lastCommDate: data.data.lastCommDate || null
                 };
                 
-                if (passedData?.feederData?.feederName) {
-                    console.log('retryStatsAPI - Adjusting data for specific feeder:', passedData.feederData.feederName);
-                }
-                
-                console.log('Retry - Setting instantaneous stats data:', apiData);
+
                 setInstantaneousStatsData(apiData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'instantaneousStats'));
             } else {
@@ -711,10 +758,7 @@ const Feeders = () => {
 
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`;
             
-            // If we have specific feeder data, we should get individual meter consumption
-            if (passedData?.feederData?.feederName) {
-                console.log('retryConsumptionAPI - Fetching individual feeder consumption for:', passedData.feederData.feederName);
-            }
+
             
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch consumption analytics');
@@ -741,10 +785,7 @@ const Feeders = () => {
                     }
                 };
                 
-                // If this is for a specific feeder, we might need to adjust the data
-                if (passedData?.feederData?.feederName) {
-                    console.log('retryConsumptionAPI - Adjusting consumption data for specific feeder:', passedData.feederData.feederName);
-                }
+
                 
                 setConsumptionAnalyticsData(transformedData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'consumptionAnalytics'));
@@ -978,6 +1019,12 @@ const Feeders = () => {
         resolveDtrId();
     }, [feederId, resolvedDtrId]);
 
+    // Effect to log time range changes for debugging
+    useEffect(() => {
+        console.log('Consumption time range changed to:', consumptionTimeRange);
+        console.log('KVA time range changed to:', kvaTimeRange);
+    }, [consumptionTimeRange, kvaTimeRange]);
+
     // Load data on component mount
     useEffect(() => {
         // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
@@ -1038,7 +1085,7 @@ const Feeders = () => {
             }));
 
             // 3. Consumption Analytics Data
-            const consumptionExportData = consumptionAnalyticsData.xAxisData.map((date, index) => ({
+            const consumptionExportData = consumptionAnalyticsData.xAxisData.map((date: any, index: number) => ({
                 'S.No': index + 1,
                 'Date': date || 'N/A',
                 'Daily Consumption (kWh)': consumptionAnalyticsData.seriesData[0]?.data[index] || 0,
@@ -1046,7 +1093,7 @@ const Feeders = () => {
             }));
 
             // 4. KVA Metrics Data
-            const kvaMetricsExportData = kvaMetricsData.xAxisData.map((date, index) => ({
+            const kvaMetricsExportData = kvaMetricsData.xAxisData.map((date: any, index: number) => ({
                 'S.No': index + 1,
                 'Date': date || 'N/A',
                 'kVA Value': kvaMetricsData.seriesData[0]?.data[index] || 0,
@@ -1110,7 +1157,7 @@ const Feeders = () => {
         });
     };
 
-    // Handle Excel download for daily consumption chart
+    // Handle Excel download for daily consumption chart (legacy function - keeping for backward compatibility)
     const handleDailyChartDownload = () => {
         // Use KVA metrics data if available, otherwise use empty data
         const xAxisData = kvaMetricsData.xAxisData || [];
@@ -1118,10 +1165,18 @@ const Feeders = () => {
         exportChartData(xAxisData, seriesData, 'feeder-kva-metrics-data');
     };
 
-    // Handle Excel download for monthly consumption chart
-    const handleMonthlyChartDownload = () => {
-        const monthlyData = getMonthlyConsumptionData();
-        exportChartData(monthlyData.xAxisData, monthlyData.seriesData, 'feeder-monthly-consumption-data');
+    // Handle Excel download for consumption chart based on current time range
+    const handleConsumptionChartDownload = () => {
+        const data = getConsumptionData();
+        const timeRange = consumptionTimeRange.toLowerCase();
+        exportChartData(data.xAxisData, data.seriesData, `feeder-${timeRange}-consumption-data`);
+    };
+
+    // Handle Excel download for KVA metrics chart based on current time range
+    const handleKvaMetricsChartDownload = () => {
+        const data = getKvaMetricsData();
+        const timeRange = kvaTimeRange.toLowerCase();
+        exportChartData(data.xAxisData, data.seriesData, `feeder-${timeRange}-kva-metrics-data`);
     };
 
     // Debug: Log failedApis state
@@ -1367,15 +1422,21 @@ const Feeders = () => {
                                     {
                                         name: 'BarChart',
                                         props: {
-                                            xAxisData: getMonthlyConsumptionData().xAxisData,
-                                            seriesData: getMonthlyConsumptionData().seriesData,
+                                            xAxisData: getConsumptionData().xAxisData,
+                                            seriesData: getConsumptionData().seriesData,
                                             height: 320,
                                             showHeader: true,  
-                                            headerTitle: 'Consumption Metrics Bar Chart',
+                                            headerTitle: `${consumptionTimeRange} Consumption Metrics Bar Chart`,
                                             className: 'w-full',
                                             dateRange: 'Last 30 days',
+                                            availableTimeRanges: ['Daily', 'Monthly', 'Yearly'],
+                                            initialTimeRange: consumptionTimeRange,
+                                            onTimeRangeChange: (range: string) => {
+                                                console.log('Consumption chart time range changed to:', range);
+                                                setConsumptionTimeRange(range as 'Daily' | 'Monthly');
+                                            },
                                             showDownloadButton: true,
-                                            onDownload: () => handleMonthlyChartDownload(),
+                                            onDownload: () => handleConsumptionChartDownload(),
                                             showXAxisLabel: true,
                                             xAxisLabel: 'kWAh',
                                             isLoading: isConsumptionLoading,
@@ -1398,20 +1459,23 @@ const Feeders = () => {
                                     {
                                         name: 'BarChart',
                                         props: {
-                                            xAxisData: kvaMetricsData.xAxisData,
-                                            seriesData: kvaMetricsData.seriesData,
+                                            xAxisData: getKvaMetricsData().xAxisData,
+                                            seriesData: getKvaMetricsData().seriesData,
                                             height: 320,
                                             ariaLabel: ' kVA Metrics Bar Chart',
                                             showHeader: true,
                                             handleDownload: handleDailyChartDownload,
-                                            headerTitle: 'kVA Metrics',
+                                            headerTitle: `${kvaTimeRange} kVA Metrics`,
                                             className: 'w-full',
                                             dateRange: 'Last 30 days',
                                             availableTimeRanges: ['Daily', 'Monthly', 'Yearly'],
-                                            initialTimeRange: 'Daily',
-                                            onTimeRangeChange: (range: string) => console.log('Time range changed to:', range),
+                                            initialTimeRange: kvaTimeRange,
+                                            onTimeRangeChange: (range: string) => {
+                                                console.log('KVA Metrics chart time range changed to:', range);
+                                                setKvaTimeRange(range as 'Daily' | 'Monthly');
+                                            },
                                             showDownloadButton: true,
-                                            onDownload: () => handleDailyChartDownload(),
+                                            onDownload: () => handleKvaMetricsChartDownload(),
                                             showXAxisLabel: true,
                                             xAxisLabel: 'kVA',
                                             isLoading: isKvaMetricsLoading,

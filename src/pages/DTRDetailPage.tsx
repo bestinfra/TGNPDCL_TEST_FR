@@ -195,8 +195,11 @@ const DTRDetailPage = () => {
                         feederNo: 'N/A', // Not available in current API
                         condition: data.data?.dtr?.status || 'N/A',
                         capacity: data.data?.dtr?.capacity || 'N/A',
-                        address: 'N/A', // Not available in current API
-                        location: { lat: 0, lng: 0 }, // Not available in current API
+                        address: data.data?.feeders?.[0]?.location?.name || data.data?.feeders?.[0]?.city || 'N/A',
+                        location: { 
+                            lat: data.data?.feeders?.[0]?.latitude || 0, 
+                            lng: data.data?.feeders?.[0]?.longitude || 0 
+                        },
                         lastCommunication: data.data?.dtr?.lastCommunication || null,
                         stats: dtr.stats // Keep existing stats for now
                     };
@@ -501,16 +504,17 @@ const DTRDetailPage = () => {
                 {
                     'DTR No': dtr.dtrNo,
                     'DTR Name': dtr.name,
-                    'Division': dtr.division,
-                    'Sub-Division': dtr.subDivision,
-                    'Substation': dtr.substation,
-                    'Feeder': dtr.feeder,
-                    'Feeder No': dtr.feederNo,
+                    // 'Division': dtr.division,
+                    // 'Sub-Division': dtr.subDivision,
+                    // 'Substation': dtr.substation,
+                    // 'Feeder': dtr.feeder,
+                    // 'Feeder No': dtr.feederNo,
                     'Rating': '15.00 kVA',
                     'Condition': dtr.condition,
                     'Capacity': dtr.capacity,
                     'Address': dtr.address,
-                    'Location': `${dtr.location.lat}, ${dtr.location.lng}`,
+                    'Latitude': dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
+                    'Longitude': dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
                     'Last Communication': lastComm,
                 }
             ];
@@ -804,6 +808,39 @@ const DTRDetailPage = () => {
                                                         title:'',
                                                         gap: 'gap-1'
                                                     },
+                                                ]
+                                            },
+                                            {
+                                                layout: 'row',
+                                                className: 'justify-between w-full',
+                                                span: { col: 5, row: 1 },
+                                                items: [
+                                                    {
+                                                        title: 'Address',
+                                                        value: dtr.address,
+                                                        align: 'start',
+                                                        gap: 'gap-1'
+                                                    },
+                                                    {
+                                                        title: 'Latitude',
+                                                        value: dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
+                                                        align: 'start',
+                                                        gap: 'gap-1'
+                                                    },
+                                                    {
+                                                        title: 'Longitude',
+                                                        value: dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
+                                                        align: 'start',
+                                                        gap: 'gap-1'
+                                                    },
+                                                    {
+                                                        title: '',
+                                                        gap: 'gap-1'
+                                                    },
+                                                    {
+                                                        title: '',
+                                                        gap: 'gap-1'
+                                                    }
                                                 ]
                                             }
                                         ]

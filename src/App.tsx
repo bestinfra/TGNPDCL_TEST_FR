@@ -19,6 +19,7 @@ import MeterDetails from '@/pages/MeterDetails';
 import Feeders from '@/pages/Feeders';
 import DTRDetailPage from './pages/DTRDetailPage';
 import DTRTable from './pages/DTRTable';
+import ProtectedRoute from './components/auth/LocalProtectedRoute';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +31,7 @@ const App: React.FC = () => {
             <Route
               path="/*"
               element={
+                <ProtectedRoute>
                 <AppLayout>
                 <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
                   <Routes>
@@ -52,9 +54,8 @@ const App: React.FC = () => {
                   </Routes>
                 </Suspense>
               </AppLayout>
-                // <ProtectedRoute>
-            
-                // </ProtectedRoute>
+           
+                </ProtectedRoute>
               }
             />
           </Routes>
