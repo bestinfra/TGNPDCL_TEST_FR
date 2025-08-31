@@ -1219,13 +1219,12 @@ const DTRDashboard: React.FC = () => {
               type: "grid" as const,
               columns: 8,
               gap: "gap-4 ",
-              className: " flex items-center justify-center",
+              className: " flex items-center justify-center w-full border border-primary-border dark:border-dark-border rounded-3xl p-4  bg-",
             },
             components: [
               {
                 name: "Dropdown",
                 props: {
-                  label: "Project Type",
                   options: filterOptions.projectTypes,
                   value: filterValues.projectType,
                   onChange: (value: string) =>
@@ -1239,7 +1238,6 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Dropdown",
                 props: {
-                  label: "DISCOM",
                   options: filterOptions.discoms,
                   value: filterValues.discom,
                   onChange: (value: string) =>
@@ -1252,8 +1250,7 @@ const DTRDashboard: React.FC = () => {
               },
               {
                 name: "Dropdown",
-                props: {
-                  label: "CIRCLE",
+                  props: {
                   options: filterOptions.circles,
                   value: filterValues.circle,
                   onChange: (value: string) =>
@@ -1267,7 +1264,6 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Dropdown",
                 props: {
-                  label: "DIVISION",
                   options: filterOptions.divisions,
                   value: filterValues.division,
                   onChange: (value: string) =>
@@ -1281,7 +1277,6 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Dropdown",
                 props: {
-                  label: "SUB-DIVISION",
                   options: filterOptions.subDivisions,
                   value: filterValues.subDivision,
                   onChange: (value: string) =>
@@ -1295,7 +1290,7 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Dropdown",
                 props: {
-                  label: "SECTION",
+  
                   options: filterOptions.sections,
                   value: filterValues.section,
                   onChange: (value: string) =>
@@ -1309,7 +1304,6 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Dropdown",
                 props: {
-                  label: "METER LOCATION",
                   options: filterOptions.meterLocations,
                   value: filterValues.meterLocation,
                   onChange: (value: string) =>
@@ -1323,17 +1317,17 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Button",
                 props: {
-                  variant: "primary",
+                  variant: "secondary",
                   onClick: handleGetData,
                   children: "Get Data",
-                  className: "h-10 px-6 self-end",
+                  className: "h-10 self-end",
                   loading:
                     isStatsLoading ||
                     isTableLoading ||
                     isAlertsLoading ||
                     isChartLoading,
                   searchable: false,
-                  align:'center'
+                  align:'end'
                 },
                 span: { col: 1, row: 1 },
               },
