@@ -17,6 +17,7 @@ const dummyDTRData = {
     capacity: 'N/A',
     address: 'N/A',
     location: { lat: 0, lng: 0 },
+    lastCommunication: null,
     stats: [
         {
             title: 'Total LT Feeders',
@@ -129,7 +130,7 @@ const DTRDetailPage = () => {
     const { dtrId } = useParams();
     const navigate = useNavigate();
     
-    console.log('DTR Detail Page - DTR ID:', dtrId);
+
     
     // State for API data
     const [dtr, setDtr] = useState(dummyDTRData);
@@ -174,15 +175,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchDtrData - Original dtrId:', dtrId);
-                console.log('fetchDtrData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the DTR endpoint to get DTR info
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch DTR data');
                 
                 const data = await response.json();
-                console.log('DTR API response:', data);
                 
                 if (data.success) {
                     // Transform the API response to match the expected structure
@@ -198,6 +197,7 @@ const DTRDetailPage = () => {
                         capacity: data.data?.dtr?.capacity || 'N/A',
                         address: 'N/A', // Not available in current API
                         location: { lat: 0, lng: 0 }, // Not available in current API
+                        lastCommunication: data.data?.dtr?.lastCommunication || null,
                         stats: dtr.stats // Keep existing stats for now
                     };
                     
@@ -231,15 +231,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchConsumptionData - Original dtrId:', dtrId);
-                console.log('fetchConsumptionData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the consumptionAnalytics endpoint to get consumption data
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
                 if (!response.ok) throw new Error('Failed to fetch consumption data');
                 
                 const data = await response.json();
-                console.log('Consumption analytics API response:', data);
                 
                 if (data.status === 'success') {
                     // Transform the API response to match the expected structure
@@ -281,15 +279,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchFeedersData - Original dtrId:', dtrId);
-                console.log('fetchFeedersData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the DTR endpoint to get feeders list
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch feeders data');
                 
                 const data = await response.json();
-                console.log('DTR feeders API response:', data);
                 
                 if (data.success) {
                     // Transform the API response to match the expected structure
@@ -332,15 +328,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchAlertsData - Original dtrId:', dtrId);
-                console.log('fetchAlertsData - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the alerts endpoint
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
                 if (!response.ok) throw new Error('Failed to fetch alerts data');
                 
                 const data = await response.json();
-                console.log('Alerts API response:', data);
                 
                 if (data.success) {
                     const transformedAlerts = data.data?.map((alert: any) => ({
@@ -377,15 +371,13 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-                console.log('fetchFeederStats - Original dtrId:', dtrId);
-                console.log('fetchFeederStats - Extracted numericDtrId:', numericDtrId);
+
                 
                 // Call the feederStats endpoint to get DTR statistics
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
                 
                 const data = await response.json();
-                console.log('Feeder stats for DTR stats API response:', data);
                 
                 if (data.success) {
                     // Update the DTR stats with real data from the API
@@ -487,7 +479,15 @@ const DTRDetailPage = () => {
         fetchFeederStats();
     }, [dtrId]);
 
-    const lastComm = 'N/A';
+    const lastComm = dtr.lastCommunication ? new Date(dtr.lastCommunication).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }) : 'N/A';
 
     // Handle Excel download for all DTR data in a single file
     const handleExportData = () => {
@@ -511,6 +511,7 @@ const DTRDetailPage = () => {
                     'Capacity': dtr.capacity,
                     'Address': dtr.address,
                     'Location': `${dtr.location.lat}, ${dtr.location.lng}`,
+                    'Last Communication': lastComm,
                 }
             ];
 
@@ -607,7 +608,7 @@ const DTRDetailPage = () => {
 
     // Handle feeders export
     const handleFeedersExport = () => {
-        console.log('Exporting feeders...');
+    
         // Add feeders export logic here
     };
 
@@ -638,8 +639,7 @@ const DTRDetailPage = () => {
     );
     };
 
-    // Debug log to see current errors
-    console.log('Current errorMessages state:', errorMessages);
+
 
     return (
         <Page

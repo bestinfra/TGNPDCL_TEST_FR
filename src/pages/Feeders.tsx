@@ -562,7 +562,7 @@ const Feeders = () => {
             
             const response = await fetch(endpoint);
             const data = await response.json();
-
+            
             
             if (data.status === 'success') {
                 // Transform the data to match frontend expectations
