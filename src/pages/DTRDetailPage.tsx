@@ -168,12 +168,43 @@ const DTRDetailPage = () => {
         const fetchDtrData = async () => {
             setIsDtrLoading(true);
             try {
-                // Simulate API call - replace with actual API
-                const response = await fetch(`${BACKEND_URL}/dtr/${dtrId}`);
+                // Extract numeric DTR ID from the URL parameter
+                const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+                if (!numericDtrId) {
+                    throw new Error('Invalid DTR ID format');
+                }
+                
+                console.log('fetchDtrData - Original dtrId:', dtrId);
+                console.log('fetchDtrData - Extracted numericDtrId:', numericDtrId);
+                
+                // Call the feeders endpoint to get DTR info
+                const response = await fetch(`${BACKEND_URL}/feeders/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch DTR data');
                 
                 const data = await response.json();
-                setDtr(data);
+                console.log('DTR feeders API response:', data);
+                
+                if (data.success) {
+                    // Transform the API response to match the expected structure
+                    const transformedDtrData = {
+                        name: data.data?.dtrName || 'N/A',
+                        dtrNo: data.data?.dtrNumber || 'N/A',
+                        division: data.data?.division || 'N/A',
+                        subDivision: data.data?.subDivision || 'N/A',
+                        substation: data.data?.substation || 'N/A',
+                        feeder: data.data?.feederName || 'N/A',
+                        feederNo: data.data?.feederNumber || 'N/A',
+                        condition: data.data?.condition || 'N/A',
+                        capacity: data.data?.capacity || 'N/A',
+                        address: data.data?.address || 'N/A',
+                        location: { lat: data.data?.latitude || 0, lng: data.data?.longitude || 0 },
+                        stats: dtr.stats // Keep existing stats for now
+                    };
+                    
+                    setDtr(transformedDtrData);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch DTR data');
+                }
             } catch (error) {
                 console.error('Error fetching DTR data:', error);
                 setDtr(dummyDTRData);
@@ -194,13 +225,38 @@ const DTRDetailPage = () => {
         const fetchConsumptionData = async () => {
             setIsConsumptionLoading(true);
             try {
-                // Simulate API call - replace with actual API
-                const response = await fetch(`${BACKEND_URL}/dtr/${dtrId}/consumption`);
+                // Extract numeric DTR ID from the URL parameter
+                const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+                if (!numericDtrId) {
+                    throw new Error('Invalid DTR ID format');
+                }
+                
+                console.log('fetchConsumptionData - Original dtrId:', dtrId);
+                console.log('fetchConsumptionData - Extracted numericDtrId:', numericDtrId);
+                
+                // Call the feederStats endpoint to get consumption data
+                const response = await fetch(`${BACKEND_URL}/feeders/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch consumption data');
                 
                 const data = await response.json();
-                setDailyConsumptionData(data);
+                console.log('Feeder stats API response:', data);
+                
+                if (data.success) {
+                    // Transform the API response to match the expected structure
+                    const transformedConsumptionData = {
+                        xAxisData: data.data?.dailyData?.xAxisData || [],
+                        seriesData: [{
+                            name: 'Consumption',
+                            data: data.data?.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || []
+                        }]
+                    };
+                    
+                    setDailyConsumptionData(transformedConsumptionData);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch consumption data');
+                }
             } catch (error) {
+                console.error('Error fetching consumption data:', error);
                 setDailyConsumptionData(dummyDailyConsumptionData);
                 setErrors(prev => {
                     if (!prev.includes("Failed to fetch consumption data")) {
@@ -219,13 +275,39 @@ const DTRDetailPage = () => {
         const fetchFeedersData = async () => {
             setIsFeedersLoading(true);
             try {
-                // Simulate API call - replace with actual API
-                const response = await fetch(`${BACKEND_URL}/dtr/${dtrId}/feeders`);
+                // Extract numeric DTR ID from the URL parameter
+                const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+                if (!numericDtrId) {
+                    throw new Error('Invalid DTR ID format');
+                }
+                
+                console.log('fetchFeedersData - Original dtrId:', dtrId);
+                console.log('fetchFeedersData - Extracted numericDtrId:', numericDtrId);
+                
+                // Call the feeders endpoint to get feeders list
+                const response = await fetch(`${BACKEND_URL}/feeders/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch feeders data');
                 
                 const data = await response.json();
-                setFeedersData(data);
+                console.log('Feeders list API response:', data);
+                
+                if (data.success) {
+                    // Transform the API response to match the expected structure
+                    const transformedFeedersData = data.data?.feeders?.map((feeder: any, index: number) => ({
+                        sNo: index + 1,
+                        feederName: feeder.feederName || feeder.name || 'N/A',
+                        loadStatus: feeder.loadStatus || feeder.status || 'N/A',
+                        condition: feeder.condition || 'N/A',
+                        capacity: feeder.capacity || feeder.rating || 'N/A',
+                        address: feeder.address || 'N/A',
+                    })) || [];
+                    
+                    setFeedersData(transformedFeedersData);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch feeders data');
+                }
             } catch (error) {
+                console.error('Error fetching feeders data:', error);
                 setFeedersData(dummyFeedersData);
                 setErrors(prev => {
                     if (!prev.includes("Failed to fetch feeders data")) {
@@ -244,13 +326,38 @@ const DTRDetailPage = () => {
         const fetchAlertsData = async () => {
             setIsAlertsLoading(true);
             try {
-                // Simulate API call - replace with actual API
-                const response = await fetch(`${BACKEND_URL}/dtr/${dtrId}/alerts`);
+                // Extract numeric DTR ID from the URL parameter
+                const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+                if (!numericDtrId) {
+                    throw new Error('Invalid DTR ID format');
+                }
+                
+                console.log('fetchAlertsData - Original dtrId:', dtrId);
+                console.log('fetchAlertsData - Extracted numericDtrId:', numericDtrId);
+                
+                // Call the alerts endpoint (you may need to adjust this endpoint)
+                const response = await fetch(`${BACKEND_URL}/feeders/${numericDtrId}/alerts`);
                 if (!response.ok) throw new Error('Failed to fetch alerts data');
                 
                 const data = await response.json();
-                setAlertsData(data);
+                console.log('Alerts API response:', data);
+                
+                if (data.success) {
+                    // Transform the data to ensure it matches the table column structure
+                    const transformedAlerts = data.data?.map((alert: any) => ({
+                        alertId: alert.id || alert.alertId || 'N/A',
+                        type: alert.type || alert.alertType || 'N/A',
+                        feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
+                        occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
+                    })) || [];
+                    
+                    console.log('Transformed alerts data:', transformedAlerts);
+                    setAlertsData(transformedAlerts);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch alerts data');
+                }
             } catch (error) {
+                console.error('Error fetching alerts data:', error);
                 setAlertsData(dummyAlertsData);
                 setErrors(prev => {
                     if (!prev.includes("Failed to fetch alerts data")) {
@@ -264,12 +371,124 @@ const DTRDetailPage = () => {
                     setIsAlertsLoading(false);
                 }, 1000);
             }
+                };
+        
+        const fetchFeederStats = async () => {
+            try {
+                // Extract numeric DTR ID from the URL parameter
+                const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+                if (!numericDtrId) {
+                    throw new Error('Invalid DTR ID format');
+                }
+                
+                console.log('fetchFeederStats - Original dtrId:', dtrId);
+                console.log('fetchFeederStats - Extracted numericDtrId:', numericDtrId);
+                
+                // Call the feederStats endpoint to get DTR statistics
+                const response = await fetch(`${BACKEND_URL}/feeders/${numericDtrId}/feederStats`);
+                if (!response.ok) throw new Error('Failed to fetch feeder stats');
+                
+                const data = await response.json();
+                console.log('Feeder stats for DTR stats API response:', data);
+                
+                if (data.success) {
+                    // Update the DTR stats with real data from the API
+                    const updatedStats = [
+                        {
+                            title: 'Total LT Feeders',
+                            value: data.data?.totalFeeders || 'N/A',
+                            icon: '/icons/feeder.svg',
+                            subtitle1: 'Connected to DTR',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Total kW',
+                            value: data.data?.totalKw || 'N/A',
+                            icon: '/icons/energy.svg',
+                            subtitle1: 'Active Power',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Total kVA',
+                            value: data.data?.totalKva || 'N/A',
+                            icon: '/icons/energy.svg',
+                            subtitle1: 'Apparent Power',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Total kWh',
+                            value: data.data?.totalKwh || 'N/A',
+                            icon: '/icons/energy.svg',
+                            subtitle1: 'Cumulative Active Energy',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Total kVAh',
+                            value: data.data?.totalKvah || 'N/A',
+                            icon: '/icons/energy.svg',
+                            subtitle1: 'Cumulative Apparent Energy',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'LT Feeders Fuse Blown',
+                            value: data.data?.fuseBlownCount || 'N/A',
+                            icon: '/icons/power_failure.svg',
+                            subtitle1: 'Requires maintenance',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Unbalanced LT Feeders',
+                            value: data.data?.unbalancedCount || 'N/A',
+                            icon: '/icons/power_failure.svg',
+                            subtitle1: 'Requires attention',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Power On',
+                            value: data.data?.powerOnCount || 'N/A',
+                            icon: '/icons/power_failure.svg',
+                            subtitle1: '',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                        },
+                        {
+                            title: 'Power Off',
+                            value: data.data?.powerOffCount || 'N/A',
+                            icon: '/icons/power_failure.svg',
+                            subtitle1: '',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                            bg: 'bg-[var(--color-danger)]',
+                            iconStyle: FILTER_STYLES.WHITE,
+                        },
+                        {
+                            title: 'Status',
+                            value: data.data?.status || 'N/A',
+                            icon: '/icons/units.svg',
+                            subtitle1: 'N/A',
+                            valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+                            bg: 'bg-[var(--color-secondary)]',
+                            iconStyle: FILTER_STYLES.WHITE,
+                        },
+                    ];
+                    
+                    // Update the DTR stats
+                    setDtr(prev => ({
+                        ...prev,
+                        stats: updatedStats
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching feeder stats:', error);
+                // Don't add to errors since this is supplementary data
+            }
         };
-
+        
         fetchDtrData();
         fetchConsumptionData();
         fetchFeedersData();
         fetchAlertsData();
+        
+        // Also fetch feeder stats to update DTR statistics
+        fetchFeederStats();
     }, [dtrId]);
 
     const lastComm = 'N/A';
