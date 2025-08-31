@@ -792,7 +792,7 @@ export default function AssetManagment() {
       return [
         {
           id: "no-data",
-          name: "N/A",
+          name: "-",
           hierarchy_type_title: "No Assets Available",
           children: [],
         },
@@ -811,7 +811,7 @@ export default function AssetManagment() {
     if (!nodes || nodes.length === 0) {
       return [
         {
-          name: "N/A",
+          name: "-",
           backgroundColor: "#f5f5f5",
           borderColor: "",
           textColor: "#999999",

@@ -218,32 +218,32 @@ export default function Users() {
     const userWidgets = [
         {
             title: 'Total Users',
-            value: userStats?.totalUsers || 'N/A',
+            value: userStats?.totalUsers || '-',
             icon: '/icons/total-users.svg',
-            subtitle1: userStats ? `${userStats.activeUsers} Active Users` : 'N/A Active Users',
-            subtitle2: userStats ? `${userStats.inactiveUsers} Inactive Users` : 'N/A Inactive Users',
+            subtitle1: userStats ? `${userStats.activeUsers} Active Users` : '- Active Users',
+            subtitle2: userStats ? `${userStats.inactiveUsers} Inactive Users` : '- Inactive Users',
         },
         {
             title: 'Total Admins',
-            value: userStats?.roleBreakdown?.Admin || 'N/A',
+            value: userStats?.roleBreakdown?.Admin || '-',
             icon: '/icons/admin.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Accountants',
-            value: userStats?.roleBreakdown?.Accountant || 'N/A',
+            value: userStats?.roleBreakdown?.Accountant || '-',
             icon: '/icons/accountant.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Moderators',
-            value: userStats?.roleBreakdown?.Moderator || 'N/A',
+            value: userStats?.roleBreakdown?.Moderator || '-',
             icon: '/icons/moderator.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active moderators
         },
         {
             title: 'Total Roles',
-            value: userStats?.totalRoles || 'N/A',
+            value: userStats?.totalRoles || '-',
             icon: '/icons/roles.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active roles
         },
@@ -333,7 +333,7 @@ export default function Users() {
             // 1. User Statistics Cards
             const userStatsExportData = userWidgets.map((widget) => ({
                 Metric: widget.title,
-                Value: widget.value || "N/A",
+                Value: widget.value || "-",
                 Subtitle1: widget.subtitle1 || "",
                 Subtitle2: widget.subtitle2 || "",
             }));
@@ -341,12 +341,12 @@ export default function Users() {
             // 2. Users Table Data
             const usersTableExportData = users.map((user, index) => ({
                 "S.No": user.sNo || index + 1,
-                "Full Name": user.name || "N/A",
-                "Email Address": user.email || "N/A",
-                "Phone Number": user.phone || "N/A",
-                "Role": user.role || "N/A",
-                "Client": user.client || "N/A",
-                "Created Date": user.createdDate || "N/A"
+                "Full Name": user.name || "-",
+                "Email Address": user.email || "-",
+                "Phone Number": user.phone || "-",
+                "Role": user.role || "-",
+                "Client": user.client || "-",
+                "Created Date": user.createdDate || "-"
             }));
 
             // Create sheets with auto-sizing
