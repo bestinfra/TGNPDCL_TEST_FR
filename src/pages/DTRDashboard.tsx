@@ -1025,8 +1025,8 @@ const DTRDashboard: React.FC = () => {
 
   // Function to update filter options based on selection
   const updateFilterOptions = async (filterName: string, selectedValue: any) => {
-    const name = selectedValue.target.value;
-    const value = selectedValue.target.value;
+    const name = selectedValue.target?.value || selectedValue;
+    const value = selectedValue.target?.value || selectedValue;
     if (name === "all") return;
 
     try {
@@ -1279,7 +1279,7 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Today's Fuse Blown",
+      title: "Total Fuse Blown",
       value:
         dtrStatsData.totalFuseBlown ||
         dtrStatsData?.row1?.totalFuseBlown ||
@@ -1295,17 +1295,19 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Overloaded Feeders",
+      title: "Overloaded DTRs",
       value:
         dtrStatsData.overloadedFeeders ||
         dtrStatsData?.row1?.overloadedFeeders ||
-        "0",
+        0,
       icon: "/icons/dtr.svg",
-      subtitle1: `${
-        dtrStatsData.overloadedPercentage ||
-        dtrStatsData?.row1?.overloadedPercentage ||
-        "0"
-      }% of Total Feeders`,
+      subtitle1: (() => {
+        const count = dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0;
+        if (count === 0) {
+          return "No DTRs with load > 90%";
+        }
+        return `${dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}% of Total Feeders`;
+      })(),
       onValueClick: () =>
         navigate(
           "/dtr-table?type=overloaded-feeders&title=Overloaded%20Feeders"
@@ -1313,17 +1315,19 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Underloaded Feeders",
+      title: "Underloaded DTRs",
       value:
         dtrStatsData.underloadedFeeders ||
         dtrStatsData?.row1?.underloadedFeeders ||
-        "0",
+        0,
       icon: "/icons/dtr.svg",
-      subtitle1: `${
-        dtrStatsData.underloadedPercentage ||
-        dtrStatsData?.row1?.underloadedPercentage ||
-        "0"
-      }% of Total Feeders`,
+      subtitle1: (() => {
+        const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
+        if (count === 0) {
+          return "No DTRs with load < 30%";
+        }
+        return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
+      })(),
       onValueClick: () =>
         navigate(
           "/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"
@@ -1617,7 +1621,7 @@ const DTRDashboard: React.FC = () => {
   ];
 
   return (
-    <div className=" sticky top-0 ">
+    <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <Page
         sections={[
           // Error Section - Above PageHeader
@@ -1666,6 +1670,7 @@ const DTRDashboard: React.FC = () => {
                   onBackClick: () => window.history.back(),
                   buttonsLabel: "Export",
                   variant: "primary",
+                  backButtonText:'',
                   onClick: () => handleExportData(),
                   showMenu: true,
                   showDropdown: true,
@@ -1765,11 +1770,11 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Button",
                 props: {
-                  variant: "secondary",
+                  variant: "primary",
                   onClick: handleGetData,
                   children: "Get Data",
-                  className: "h-10 self-end",
-                  searchable: false,
+                  className: "self-end h-100%",
+                  searchable: false
                 },
                 align: "center",
               },
@@ -1893,17 +1898,17 @@ const DTRDashboard: React.FC = () => {
                     gridColumns: 1,
                     gap: "gap-4",
                     className:
-                      "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
+                      " rounded-3xl  dark:bg-primary-dark-light",
                     columns: [
-                      {
-                        name: "Holder",
-                        props: {
-                          title: "Communication  Status",
-                          subtitle:
-                            "Distribution of communicating and non-communicating meters",
-                          className: "border-none rounded-t-3xl ",
-                        },
-                      },
+                      // {
+                      //   name: "Holder",
+                      //   props: {
+                      //     title: "Communication  Status",
+                      //     subtitle:
+                      //       "Distribution of communicating and non-communicating meters",
+                      //     className: "border-none rounded-t-3xl ",
+                      //   },
+                      // },
                       {
                         name: "PieChart",
                         props: {
@@ -1912,8 +1917,9 @@ const DTRDashboard: React.FC = () => {
                           showLegend: false,
                           showNoDataMessage: false, 
                           showDownloadButton: true,
-                          showHeader: false,
-                          className: "p-4",
+                          className: "",
+                             showHeader:true,
+                             headerTitle:"Custom Chart",
                           onClick: (segmentName?: string) => {
                             if (segmentName === "Communicating")
                               navigate("/connect-disconnect/communicating");
@@ -2012,6 +2018,7 @@ const DTRDashboard: React.FC = () => {
                   timeRange: statsRange,
                   showHeader: true,
                   headerTitle: "DTR Alert Statistics",
+
                   showDownloadButton: true,
                   onDownload: () => handleChartDownload(),
                   isLoading: isChartLoading,

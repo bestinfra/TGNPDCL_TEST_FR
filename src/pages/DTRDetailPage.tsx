@@ -6,78 +6,78 @@ import BACKEND_URL from '../config';
 
 // Dummy data for fallback
 const dummyDTRData = {
-    name: 'N/A',
-    dtrNo: 'N/A',
-    division: 'N/A',
-    subDivision: 'N/A',
-    substation: 'N/A',
-    feeder: 'N/A',
-    feederNo: 'N/A',
-    condition: 'N/A',
-    capacity: 'N/A',
-    address: 'N/A',
+    name: '0',
+    dtrNo: '0',
+    division: '0',
+    subDivision: '0',
+    substation: '0',
+    feeder: '0',
+    feederNo: '0',
+    condition: '0',
+    capacity: '0',
+    address: '0',
     location: { lat: 0, lng: 0 },
     lastCommunication: null,
     stats: [
         {
             title: 'Total LT Feeders',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/feeder.svg',
             subtitle1: 'Connected to DTR',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kW',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/energy.svg',
             subtitle1: 'Active Power',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kVA',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/energy.svg',
             subtitle1: 'Apparent Power',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kWh',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/energy.svg',
             subtitle1: 'Cumulative Active Energy',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kVAh',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/energy.svg',
             subtitle1: 'Cumulative Apparent Energy',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'LT Feeders Fuse Blown',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/power_failure.svg',
             subtitle1: 'Requires maintenance',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Unbalanced LT Feeders',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/power_failure.svg',
             subtitle1: 'Requires attention',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Power On',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/power_failure.svg',
             subtitle1: '',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Power Off',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/power_failure.svg',
             subtitle1: '',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -86,9 +86,9 @@ const dummyDTRData = {
         },
         {
             title: 'Status',
-            value: 'N/A',
+            value: '0',
             icon: '/icons/units.svg',
-            subtitle1: 'N/A',
+            subtitle1: '0',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             bg: 'bg-[var(--color-secondary)]',
             iconStyle: FILTER_STYLES.WHITE,
@@ -426,70 +426,68 @@ const DTRDetailPage = () => {
 
                 const data = await response.json();
                 
-                console.log('🔍 Frontend: Feeder Stats API Response:', data);
-                
                 if (data.success) {
                     // Update the DTR stats with real data from the API
                     const updatedStats = [
                         {
                             title: 'Total LT Feeders',
-                            value: data.data?.totalLTFeeders || 'N/A',
+                            value: data.data?.totalLTFeeders || '0',
                             icon: '/icons/feeder.svg',
                             subtitle1: 'Connected to DTR',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kW',
-                            value: data.data?.totalKW || 'N/A',
+                            value: data.data?.totalKW || '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Active Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVA',
-                            value: data.data?.totalKVA || 'N/A',
+                            value: data.data?.totalKVA || '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Apparent Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kWh',
-                            value: data.data?.totalKWh || 'N/A',
+                            value: data.data?.totalKWh || '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Cumulative Active Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVAh',
-                            value: data.data?.totalKVAh || 'N/A',
+                            value: data.data?.totalKVAh || '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Cumulative Apparent Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'LT Feeders Fuse Blown',
-                            value: data.data?.ltFuseBlown || 'N/A',
+                            value: data.data?.ltFuseBlown || '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: 'Requires maintenance',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Unbalanced LT Feeders',
-                            value: data.data?.unbalancedLTFeeders || 'N/A',
+                            value: data.data?.unbalancedLTFeeders || '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: 'Requires attention',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Power On',
-                            value: data.data?.powerOnHours || 'N/A',
+                            value: data.data?.powerOnHours || '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: '',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Power Off',
-                            value: data.data?.powerOffHours || 'N/A',
+                            value: data.data?.powerOffHours || '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: '',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -498,16 +496,14 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Status',
-                            value: data.data?.status || 'N/A',
+                            value: data.data?.status || '0',
                             icon: '/icons/units.svg',
-                            subtitle1: 'N/A',
+                            subtitle1: '0',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                             bg: 'bg-[var(--color-secondary)]',
                             iconStyle: FILTER_STYLES.WHITE,
                         },
                     ];
-                    
-                    console.log('🔍 Frontend: Updated Stats Array:', updatedStats);
                     
                     // Update the DTR stats
                     setDtr(prev => ({
@@ -693,9 +689,6 @@ const DTRDetailPage = () => {
 
 
 
-    // Debug: Log current state before render
-    console.log('🔍 Frontend: Current DTR state before render:', dtr);
-    
     return (
         <Page
             sections={[
@@ -765,7 +758,7 @@ const DTRDetailPage = () => {
                                         props: {
                                             title: 'DTR Information',
                                             titleLevel: 2,
-                                            titleSize: 'md',
+                                            titleSize: 'lg',
                                             titleVariant: 'primary',
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
@@ -781,6 +774,7 @@ const DTRDetailPage = () => {
                                 layout: 'row' as const,
                                 className: 'justify-between w-full',
                                 span: { col: 3, row: 1 },
+
                                 columns: [
                                     {   
                                        name: 'PageInformation',
@@ -888,7 +882,7 @@ const DTRDetailPage = () => {
                                         props: {
                                             title: 'Distribution Transformer (DTR) Statistics',
                                             titleLevel: 2,
-                                            titleSize: 'md',
+                                                titleSize: 'lg',
                                             titleVariant: 'primary',
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
