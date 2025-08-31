@@ -1624,7 +1624,7 @@ const DTRDashboard: React.FC = () => {
   ];
 
   return (
-    <div className=" sticky top-0 ">
+    <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <Page
         sections={[
           // Error Section - Above PageHeader
@@ -1673,6 +1673,7 @@ const DTRDashboard: React.FC = () => {
                   onBackClick: () => window.history.back(),
                   buttonsLabel: "Export",
                   variant: "primary",
+                  backButtonText:'',
                   onClick: () => handleExportData(),
                   showMenu: true,
                   showDropdown: true,
@@ -1900,17 +1901,17 @@ const DTRDashboard: React.FC = () => {
                     gridColumns: 1,
                     gap: "gap-4",
                     className:
-                      "border border-primary-border dark:border-dark-border rounded-3xl  dark:bg-primary-dark-light",
+                      " rounded-3xl  dark:bg-primary-dark-light",
                     columns: [
-                      {
-                        name: "Holder",
-                        props: {
-                          title: "Communication  Status",
-                          subtitle:
-                            "Distribution of communicating and non-communicating meters",
-                          className: "border-none rounded-t-3xl ",
-                        },
-                      },
+                      // {
+                      //   name: "Holder",
+                      //   props: {
+                      //     title: "Communication  Status",
+                      //     subtitle:
+                      //       "Distribution of communicating and non-communicating meters",
+                      //     className: "border-none rounded-t-3xl ",
+                      //   },
+                      // },
                       {
                         name: "PieChart",
                         props: {
@@ -1919,8 +1920,9 @@ const DTRDashboard: React.FC = () => {
                           showLegend: false,
                           showNoDataMessage: false, 
                           showDownloadButton: true,
-                          showHeader: false,
-                          className: "p-4",
+                          className: "",
+                             showHeader:true,
+                             headerTitle:"Custom Chart",
                           onClick: (segmentName?: string) => {
                             if (segmentName === "Communicating")
                               navigate("/connect-disconnect/communicating");
@@ -2019,6 +2021,7 @@ const DTRDashboard: React.FC = () => {
                   timeRange: statsRange,
                   showHeader: true,
                   headerTitle: "DTR Alert Statistics",
+
                   showDownloadButton: true,
                   onDownload: () => handleChartDownload(),
                   isLoading: isChartLoading,
