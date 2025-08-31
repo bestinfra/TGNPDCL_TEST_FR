@@ -47,10 +47,16 @@ const dummyFeederInfoData = {
 
 const dummyAlertsData = [
     {
-        alertId: 'N/A',
-        type: 'N/A',
-        feederName: 'N/A',
-        occuredOn: 'N/A',
+        alertId: 'ALT001',
+        type: 'Overload',
+        feederName: 'D1F1(32500114)',
+        occuredOn: '2024-01-15 14:30:00',
+    },
+    {
+        alertId: 'ALT002',
+        type: 'Power Failure',
+        feederName: 'D1F1(32500114)',
+        occuredOn: '2024-01-15 12:15:00',
     }
 ];
 
@@ -79,6 +85,7 @@ const Feeders = () => {
     const location = useLocation();
     
     console.log('Feeders Page - DTR ID:', dtrId, 'Feeder ID:', feederId);
+    console.log('Feeders Page - Location State:', location.state);
     
     // Get passed data from navigation state
     const passedData = location.state as {
@@ -129,6 +136,9 @@ const Feeders = () => {
     const fetchInstantaneousStats = async () => {
         // Use numeric ID from passed data or extract from dtrNumber
         const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
+        console.log('fetchInstantaneousStats - Original dtrId:', dtrId);
+        console.log('fetchInstantaneousStats - passedData?.dtrId:', passedData?.dtrId);
+        console.log('fetchInstantaneousStats - Extracted numericDtrId:', numericDtrId);
         if (!numericDtrId) return;
 
         setIsStatsLoading(true);
@@ -236,15 +246,40 @@ const Feeders = () => {
     const fetchAlerts = async () => {
         // Use numeric ID from passed data or extract from dtrNumber
         const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
+        console.log('fetchAlerts - Original dtrId:', dtrId);
+        console.log('fetchAlerts - passedData?.dtrId:', passedData?.dtrId);
+        console.log('fetchAlerts - Extracted numericDtrId:', numericDtrId);
         if (!numericDtrId) return;
 
         setIsAlertsLoading(true);
         try {
             const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
             const data = await response.json();
+            console.log('Alerts API response:', data.data);
+            console.log('Alerts API response structure:', data.data?.[0] ? Object.keys(data.data[0]) : 'No data');
             
             if (data.success) {
-                setAlertsData(data.data);
+                // Transform the data to ensure it matches the table column structure
+                const transformedAlerts = data.data?.map((alert: any) => ({
+                    alertId: alert.id || alert.alertId || 'N/A',
+                    type: alert.type || alert.alertType || 'N/A',
+                    feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
+                    occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
+                })) || [];
+                
+                console.log('Transformed alerts data:', transformedAlerts);
+                
+                // If transformation resulted in all N/A values, log the raw data for debugging
+                if (transformedAlerts.every((alert: any) => 
+                    alert.alertId === 'N/A' && 
+                    alert.type === 'N/A' && 
+                    alert.feederName === 'N/A' && 
+                    alert.occuredOn === 'N/A'
+                )) {
+                    console.warn('All alerts transformed to N/A. Raw API data:', data.data);
+                }
+                
+                setAlertsData(transformedAlerts);
             } else {
                 throw new Error(data.message || 'Failed to fetch alerts');
             }
@@ -265,13 +300,16 @@ const Feeders = () => {
     const fetchKVAMetrics = async () => {
         // Use numeric ID from passed data or extract from dtrNumber
         const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
+        console.log('fetchKVAMetrics - Original dtrId:', dtrId);
+        console.log('fetchKVAMetrics - passedData?.dtrId:', passedData?.dtrId);
+        console.log('fetchKVAMetrics - Extracted numericDtrId:', numericDtrId);
         if (!numericDtrId) return;
 
         setIsKvaMetricsLoading(true);
         try {
             const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
             const data = await response.json();
-            console.log('kva metrics data', data);
+            console.log('KVA metrics API response:', data.data);
             
             if (data.success) {
                 // Transform the data to match frontend expectations
@@ -457,16 +495,20 @@ const Feeders = () => {
             if (!numericDtrId) return;
 
             const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
-            if (!response.ok) throw new Error('Failed to fetch alerts');
-            
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Invalid response format');
-            }
-            
             const data = await response.json();
+            console.log('Retry - Alerts API response:', data.data);
+            
             if (data.success) {
-                setAlertsData(data.data);
+                // Transform the data to ensure it matches the table column structure
+                const transformedAlerts = data.data?.map((alert: any) => ({
+                    alertId: alert.id || alert.alertId || 'N/A',
+                    type: alert.type || alert.alertType || 'N/A',
+                    feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
+                    occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
+                })) || [];
+                
+                console.log('Retry - Transformed alerts data:', transformedAlerts);
+                setAlertsData(transformedAlerts);
                 setFailedApis(prev => prev.filter(api => api.id !== 'alerts'));
             } else {
                 throw new Error(data.message || 'Failed to fetch alerts');
@@ -486,14 +528,9 @@ const Feeders = () => {
             if (!numericDtrId) return;
 
             const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
-            if (!response.ok) throw new Error('Failed to fetch KVA metrics');
-            
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Invalid response format');
-            }
-            
             const data = await response.json();
+            console.log('Retry - KVA metrics API response:', data.data);
+            
             if (data.success) {
                 const transformedData = {
                     xAxisData: data.data?.xAxisData || [],
@@ -673,16 +710,20 @@ const Feeders = () => {
                 if (!numericDtrId) return;
 
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
-                if (!response.ok) throw new Error('Failed to fetch alerts');
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid response format');
-                }
-                
                 const data = await response.json();
+                console.log('useEffect - Alerts API response:', data.data);
+                
                 if (data.success) {
-                    setAlertsData(data.data);
+                    // Transform the data to ensure it matches the table column structure
+                    const transformedAlerts = data.data?.map((alert: any) => ({
+                        alertId: alert.id || alert.alertId || 'N/A',
+                        type: alert.type || alert.alertType || 'N/A',
+                        feederName: alert.dtrNumber || alert.feederName || alert.feeder || 'N/A',
+                        occuredOn: alert.createdAt || alert.occuredOn || alert.occurredOn || alert.timestamp || alert.date || 'N/A',
+                    })) || [];
+                    
+                    console.log('useEffect - Transformed alerts data:', transformedAlerts);
+                    setAlertsData(transformedAlerts);
                 } else {
                     throw new Error(data.message || 'Failed to fetch alerts');
                 }
@@ -703,7 +744,7 @@ const Feeders = () => {
                 setTimeout(() => {
                     setIsAlertsLoading(false);
                 }, 1000);
-            }
+        }
         };
 
         const fetchKVAMetricsData = async () => {
@@ -713,14 +754,9 @@ const Feeders = () => {
                 if (!numericDtrId) return;
 
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
-                if (!response.ok) throw new Error('Failed to fetch KVA metrics');
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid response format');
-                }
-                
                 const data = await response.json();
+                console.log('useEffect - KVA metrics API response:', data.data);
+                
                 if (data.success) {
                     const transformedData = {
                         xAxisData: data.data?.xAxisData || [],
@@ -757,11 +793,14 @@ const Feeders = () => {
         };
 
         if (dtrId) {
+            console.log('useEffect - Starting API calls with dtrId:', dtrId);
             fetchInstantaneousStats();
             fetchConsumptionAnalytics();
             fetchFeederInfo();
             fetchAlertsData();
             fetchKVAMetricsData();
+        } else {
+            console.log('useEffect - No dtrId available, skipping API calls');
         }
     }, [dtrId]);
 
@@ -789,9 +828,13 @@ const Feeders = () => {
     // Debug: Log failedApis state
     console.log('Feeders - failedApis:', failedApis);
     console.log('Feeders - failedApis.length:', failedApis.length);
-    console.log('Feeders - instantaneousStatsData:', instantaneousStatsData);
-    console.log('Feeders - lastCommDate in state:', instantaneousStatsData?.lastCommDate);
-    console.log('Feeders - kvaMetricsData:', kvaMetricsData);
+    if (failedApis.length > 0) {
+        console.log('Feeders - Failed API details:', failedApis.map(api => ({
+            id: api.id,
+            name: api.name,
+            errorMessage: api.errorMessage
+        })));
+    }
 
     return (
         <Page
