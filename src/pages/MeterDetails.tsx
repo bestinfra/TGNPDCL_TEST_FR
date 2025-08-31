@@ -4,11 +4,23 @@ import { useNavigate, useParams } from 'react-router-dom';
 const Page = lazy(() => import('SuperAdmin/Page'));
 import BACKEND_URL from '../config';
 
+// Get meter details from backend
+const getMeterDetails = async (meterNumber: string) => {
+  const response = await fetch(`${BACKEND_URL}/meters/${meterNumber}`);
+  return response.json();
+};
+
 const MeterDetails: React.FC = () => {
     const navigate = useNavigate();
-    const { meterSlNo } = useParams();
+    const params = useParams();
+    // Extract just the meter number, remove any extra path parts
+    const meterSlNo = (params.meterSlNo || params.id || Object.values(params)[0] || '').replace('meter-details/', '');
+    
+
+    
     const [isLoading, setIsLoading] = useState(true);
     const [meterData, setMeterData] = useState<any>(null);
+    const [forceUpdate, setForceUpdate] = useState(0);
 
     // State for tracking failed APIs (like Users.tsx)
     const [failedApis, setFailedApis] = useState<Array<{
@@ -74,7 +86,8 @@ const MeterDetails: React.FC = () => {
     const [chartData, setChartData] = useState({
         xAxisData: [] as string[],
         seriesData: [] as Array<{ name: string; data: number[] }>,
-        seriesColors: ['#1976d2', '#ff9800']
+        seriesColors: ['#1976d2', '#ff9800'],
+        timeRangeData: {} as any
     });
 
     const meterDetailAction = [
@@ -94,90 +107,126 @@ const MeterDetails: React.FC = () => {
 
     // Update computed data when meter data changes
     useEffect(() => {
-        if (meterData && failedApis.length === 0) {
+        if (meterData) {
             // Update summary cards with real data using smart fallbacks
             setSummaryCards([
                 {
                     title: 'Current Reading',
                     value: meterData.currentReading ? `${meterData.currentReading} kWh` : 'N/A',
                     icon: '/icons/current-reading.svg',
-                    subtitle1: meterData.lastReadingDate ? `Last Reading: ${meterData.lastReadingDate}` : 'No readings available',
-                    subtitle2: meterData.consumption ? `Consumption: ${meterData.consumption} kWh` : 'N/A',
+                    subtitle1: meterData.lastReadingDate ? `Last Reading: ${new Date(meterData.lastReadingDate).toLocaleDateString()}` : 'No readings available',
+                    subtitle2: 'Current Reading',
                 },
                 {
                     title: 'Status',
                     value: meterData.status || 'N/A',
                     icon: '/icons/status.svg',
-                    subtitle1: meterData.lastCommunication ? `Last Communication: ${new Date(meterData.lastCommunication).toLocaleString()}` : 'No communication data',
-                    subtitle2: '',
+                    subtitle1: `Meter: ${meterData.status || 'Unknown'}`,
+                    subtitle2: 'Status',
                 },
                 {
                     title: 'Meter Type',
-                    value: meterData.meterType || 'N/A',
+                    value: meterData.type || 'N/A',
                     icon: '/icons/units.svg',
-                    subtitle1: meterData.phase ? `Phase Type: ${meterData.phase}` : 'Phase info not available',
-                    subtitle2: '',
+                    subtitle1: meterData.phase ? `${meterData.phase} Phase` : 'Phase info not available',
+                    subtitle2: 'Type',
                 },
                 {
                     title: 'Location',
                     value: meterData.location || 'N/A',
                     icon: '/icons/location.svg',
-                    subtitle1: meterData.installationDate ? `Installation Date: ${new Date(meterData.installationDate).toLocaleDateString()}` : 'Installation date not available',
-                    subtitle2: '',
+                    subtitle1: meterData.installationDate ? `Installed: ${new Date(meterData.installationDate).toLocaleDateString()}` : 'Installation date not available',
+                    subtitle2: 'Location',
                 },
             ]);
 
             // Update meter information rows with smart fallbacks
-            setMeterInfoRow1([
-                { title: 'Meter Sl No.', value: meterData.meterSerialNumber || 'N/A' },
-                { title: 'Modem Sl No', value: meterData.modemSerialNumber || 'N/A' },
-                { title: 'UID', value: meterData.uid || 'N/A' },
-                { title: 'Assigned To', value: meterData.consumerName || 'N/A' },
-                { title: 'Meter Make', value: meterData.meterMake || 'N/A' },
-            ]);
+            const newMeterInfoRow1 = [
+                { title: 'Meter Sl No.', value: meterData.meterNumber || 'N/A' },
+                { title: 'Modem Sl No', value: meterData.serialNumber || 'N/A' },
+                { title: 'UID', value: meterData.manufacturer || 'N/A' },
+                { title: 'Assigned To', value: meterData.consumerInfo?.name || 'N/A' },
+                { title: 'Meter Make', value: meterData.manufacturer || 'N/A' },
+            ];
+            setMeterInfoRow1(newMeterInfoRow1);
+            // Force component re-render by updating a key
+            setForceUpdate(Date.now());
 
             setMeterInfoRow2([
-                { title: 'Meter CT Ratio', value: meterData.meterCTRatio || 'N/A' },
-                { title: 'Meter PT Ratio', value: meterData.meterPTRatio || 'N/A' },
-                { title: 'External CT Ratio', value: meterData.externalCTRatio || 'N/A' },
-                { title: 'External PT Ratio', value: meterData.externalPTRatio || 'N/A' },
-                { title: 'Multiplication Factor', value: meterData.multiplicationFactor || 'N/A' },
+                { title: 'Meter CT Ratio', value: meterData.meterConfig?.ctRatio || 'N/A' },
+                { title: 'Meter PT Ratio', value: meterData.meterConfig?.ptRatio || 'N/A' },
+                { title: 'External CT Ratio', value: meterData.meterConfig?.adoptedCTRatio || 'N/A' },
+                { title: 'External PT Ratio', value: meterData.meterConfig?.adoptedPTRatio || 'N/A' },
+                { title: 'Multiplication Factor', value: meterData.meterConfig?.mf || 'N/A' },
             ]);
             
-            // Update table data with smart fallbacks
-            if (meterData.history && meterData.history.length > 0) {
-                setMeterInfoData(meterData.history.map((item: any, index: number) => ({
-                    slNo: index + 1,
-                    meterSlNo: item.meterSerialNumber || 'N/A',
-                    modemSlNo: item.modemSerialNumber || 'N/A',
-                    meterType: item.meterType || 'N/A',
-                    meterMake: item.meterMake || 'N/A',
-                    consumerName: item.consumerName || 'N/A',
-                    location: item.location || 'N/A',
-                    installationDate: item.installationDate ? new Date(item.installationDate).toLocaleDateString() : 'N/A',
-                })));
-            } else {
-                setMeterInfoData([]);
-            }
+            // Update table data with current meter info
+            const tableData = [{
+                slNo: 1,
+                meterSlNo: meterData.meterNumber || 'N/A',
+                modemSlNo: meterData.serialNumber || 'N/A',
+                meterType: meterData.type || 'N/A',
+                meterMake: meterData.manufacturer || 'N/A',
+                consumerName: meterData.consumerInfo?.name || 'N/A',
+                location: meterData.location || 'N/A',
+                installationDate: meterData.installationDate ? new Date(meterData.installationDate).toLocaleDateString() : 'N/A',
+            }];
+            setMeterInfoData(tableData);
 
-            // Update chart data with smart fallbacks
-            if (meterData.readings && meterData.readings.length > 0) {
+            // Update chart data with smart fallbacks using meterReadingsAggregated
+            if (meterData.meterReadingsAggregated) {
+                const dailyData = meterData.meterReadingsAggregated.daily || [];
+                const weeklyData = meterData.meterReadingsAggregated.weekly || [];
+                const monthlyData = meterData.meterReadingsAggregated.monthly || [];
+                
+                // Use daily data by default, can be changed by time range selector
                 setChartData({
-                    xAxisData: meterData.readings.map((reading: any) => reading.date || 'N/A'),
-                    seriesData: [{
-                        name: 'Meter Readings',
-                        data: meterData.readings.map((reading: any) => reading.value || 0)
-                    }],
-                    seriesColors: ['var(--color-primary)', 'var(--color-secondary)']
+                    xAxisData: dailyData.map((reading: any) => reading.label || 'N/A'),
+                    seriesData: [
+                        {
+                            name: 'kWh',
+                            data: dailyData.map((reading: any) => reading.kWh || 0)
+                        },
+                        {
+                            name: 'kW',
+                            data: dailyData.map((reading: any) => reading.kW || 0)
+                        }
+                    ],
+                    seriesColors: ['#3B82F6', '#10B981'],
+                    // Store all time range data for switching
+                    timeRangeData: {
+                        daily: {
+                            xAxisData: dailyData.map((reading: any) => reading.label || 'N/A'),
+                            seriesData: [
+                                { name: 'kWh', data: dailyData.map((reading: any) => reading.kWh || 0) },
+                                { name: 'kW', data: dailyData.map((reading: any) => reading.kW || 0) }
+                            ]
+                        },
+                        weekly: {
+                            xAxisData: weeklyData.map((reading: any) => reading.label || 'N/A'),
+                            seriesData: [
+                                { name: 'kWh', data: weeklyData.map((reading: any) => reading.kWh || 0) },
+                                { name: 'kW', data: weeklyData.map((reading: any) => reading.kW || 0) }
+                            ]
+                        },
+                        monthly: {
+                            xAxisData: monthlyData.map((reading: any) => reading.label || 'N/A'),
+                            seriesData: [
+                                { name: 'kWh', data: monthlyData.map((reading: any) => reading.kWh || 0) },
+                                { name: 'kW', data: monthlyData.map((reading: any) => reading.kW || 0) }
+                            ]
+                        }
+                    }
                 });
             } else {
                 setChartData({
                     xAxisData: [],
-                    seriesData: [{
-                        name: 'Meter Readings',
-                        data: []
-                    }],
-                    seriesColors: ['var(--color-primary)', 'var(--color-secondary)']
+                    seriesData: [
+                        { name: 'kWh', data: [] },
+                        { name: 'kW', data: [] }
+                    ],
+                    seriesColors: ['#3B82F6', '#10B981'],
+                    timeRangeData: {}
                 });
             }
         } else {
@@ -236,7 +285,8 @@ const MeterDetails: React.FC = () => {
                     name: 'Meter Readings',
                     data: []
                 }],
-                seriesColors: ['var(--color-primary)', 'var(--color-secondary)']
+                seriesColors: ['var(--color-primary)', 'var(--color-secondary)'],
+                timeRangeData: {}
             });
         }
     }, [meterData, failedApis.length]);
@@ -258,15 +308,11 @@ const MeterDetails: React.FC = () => {
             setIsLoading(true);
             setFailedApis([]);
             
-            const response = await fetch(`${BACKEND_URL}/meters/${meterSlNo}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const result = await response.json();
+            const result = await getMeterDetails(meterSlNo);
             
             if (result.success) {
                 setMeterData(result.data);
-                console.log('Meter data:', result.data);
+        
             } else {
                 throw new Error(result.message || 'Failed to fetch meter data');
             }
@@ -338,6 +384,7 @@ const MeterDetails: React.FC = () => {
     return (
         <div className="min-h-screen">
             <Page
+                key={`meter-details-${meterSlNo}-${forceUpdate}`}
                 sections={[
                     // Error Section (show when there are failed APIs)
                     ...(failedApis.length > 0
@@ -503,13 +550,27 @@ const MeterDetails: React.FC = () => {
                                     showXAxisLabel: true,
                                     xAxisLabel: 'kWh',
                                     onTimeRangeChange: (range: string) => {
-                                        console.log('Time range changed:', range);
+                                
+                                        
+                                        // Switch chart data based on time range
+                                        if (meterData?.meterReadingsAggregated && chartData.timeRangeData) {
+                                            const timeRange = range.toLowerCase();
+                                            const newData = chartData.timeRangeData[timeRange];
+                                            
+                                            if (newData) {
+                                                setChartData(prev => ({
+                                                    ...prev,
+                                                    xAxisData: newData.xAxisData,
+                                                    seriesData: newData.seriesData
+                                                }));
+                                            }
+                                        }
                                     },
                                     onViewTypeChange: (viewType: string) => {
-                                        console.log('View type changed:', viewType);
+
                                     },
                                     onDownload: (timeRange: string, viewType: string) => {
-                                        console.log('Download requested:', timeRange, viewType);
+
                                     },
                                     isLoading: isLoading,
                                 }
