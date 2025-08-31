@@ -137,6 +137,7 @@ const DTRDetailPage = () => {
     const [dailyConsumptionData, setDailyConsumptionData] = useState(dummyDailyConsumptionData);
     const [feedersData, setFeedersData] = useState(dummyFeedersData);
     const [alertsData, setAlertsData] = useState(dummyAlertsData);
+    const [locationHierarchy, setLocationHierarchy] = useState<any[]>([]);
 
     // Loading states
     const [isDtrLoading, setIsDtrLoading] = useState(true);
@@ -163,6 +164,20 @@ const DTRDetailPage = () => {
         // Retry all APIs by refreshing the page
         window.location.reload();
     };
+
+    // Update address when location hierarchy changes
+    useEffect(() => {
+        if (locationHierarchy.length > 0) {
+            const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
+            if (feederLocation) {
+                console.log('Location hierarchy changed, updating address to:', feederLocation.name);
+                setDtr(prev => ({
+                    ...prev,
+                    address: feederLocation.name || 'N/A'
+                }));
+            }
+        }
+    }, [locationHierarchy]);
 
     // Load data on component mount
     useEffect(() => {
@@ -203,6 +218,9 @@ const DTRDetailPage = () => {
                         lastCommunication: data.data?.dtr?.lastCommunication || null,
                         stats: dtr.stats // Keep existing stats for now
                     };
+                    
+                    console.log('DTR Address being set to:', transformedDtrData.address);
+                    console.log('First feeder location data:', data.data?.feeders?.[0]?.location);
                     
                     setDtr(transformedDtrData);
                 } else {
@@ -302,6 +320,33 @@ const DTRDetailPage = () => {
                     })) || [];
                     
                     setFeedersData(transformedFeedersData);
+                    
+                    // Set location hierarchy if available
+                    if (data.data?.locationHierarchy) {
+                        console.log('Location Hierarchy received:', data.data.locationHierarchy);
+                        console.log('First feeder location:', data.data?.feeders?.[0]?.location);
+                        setLocationHierarchy(data.data.locationHierarchy);
+                        
+                        // Update the address using the Feeder type from location hierarchy
+                        const feederLocation = data.data.locationHierarchy.find((loc: any) => loc.type === 'Feeder');
+                        if (feederLocation) {
+                            console.log('Found Feeder location:', feederLocation);
+                            console.log('Setting address to:', feederLocation.name);
+                            setDtr(prev => {
+                                console.log('Previous DTR state:', prev);
+                                const updated = {
+                                    ...prev,
+                                    address: feederLocation.name || 'N/A'
+                                };
+                                console.log('Updated DTR state:', updated);
+                                return updated;
+                            });
+                        } else {
+                            console.log('No Feeder location found in hierarchy');
+                        }
+                    } else {
+                        console.log('No location hierarchy data received');
+                    }
                 } else {
                     throw new Error(data.message || 'Failed to fetch feeders data');
                 }
@@ -376,11 +421,13 @@ const DTRDetailPage = () => {
                 
 
                 
-                // Call the feederStats endpoint to get DTR statistics
+                                // Call the feederStats endpoint to get DTR statistics
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
-                
+
                 const data = await response.json();
+                
+                console.log('🔍 Frontend: Feeder Stats API Response:', data);
                 
                 if (data.success) {
                     // Update the DTR stats with real data from the API
@@ -461,6 +508,8 @@ const DTRDetailPage = () => {
                         },
                     ];
                     
+                    console.log('🔍 Frontend: Updated Stats Array:', updatedStats);
+                    
                     // Update the DTR stats
                     setDtr(prev => ({
                         ...prev,
@@ -504,11 +553,11 @@ const DTRDetailPage = () => {
                 {
                     'DTR No': dtr.dtrNo,
                     'DTR Name': dtr.name,
-                    // 'Division': dtr.division,
-                    // 'Sub-Division': dtr.subDivision,
-                    // 'Substation': dtr.substation,
-                    // 'Feeder': dtr.feeder,
-                    // 'Feeder No': dtr.feederNo,
+                    'Division': locationHierarchy.find(loc => loc.type === 'Division')?.name || 'N/A',
+                    'Sub-Division': locationHierarchy.find(loc => loc.type === 'Sub-Division')?.name || 'N/A',
+                    'Substation': locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
+                    'Feeder': locationHierarchy.find(loc => loc.type === 'Feeder')?.name || 'N/A',
+                    'Feeder No': locationHierarchy.find(loc => loc.type === 'Feeder')?.code || 'N/A',
                     'Rating': '15.00 kVA',
                     'Condition': dtr.condition,
                     'Capacity': dtr.capacity,
@@ -645,6 +694,9 @@ const DTRDetailPage = () => {
 
 
 
+    // Debug: Log current state before render
+    console.log('🔍 Frontend: Current DTR state before render:', dtr);
+    
     return (
         <Page
             sections={[
@@ -756,19 +808,19 @@ const DTRDetailPage = () => {
                                                     },
                                                     {
                                                         title: 'Division',
-                                                        value: dtr.division,
+                                                        value: locationHierarchy.find(loc => loc.type === 'Division')?.name || 'N/A',
                                                         align: 'start',
                                                         gap: 'gap-1'
                                                     },
                                                     {
                                                         title: 'Sub-Division',
-                                                        value: dtr.subDivision,
+                                                        value: locationHierarchy.find(loc => loc.type === 'Sub-Division')?.name || 'N/A',
                                                         align: 'start',
                                                         gap: 'gap-1'
                                                     },
                                                     {
                                                         title: 'Substation',
-                                                        value: dtr.substation,
+                                                        value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
                                                         align: 'start',
                                                         gap: 'gap-1'
                                                     }
@@ -779,19 +831,7 @@ const DTRDetailPage = () => {
                                                 className: 'justify-between w-full',
                                                 span: { col: 5, row: 1 },
                                                 items: [
-                                                    {
-                                                        title: 'Feeder',
-                                                        value: dtr.feeder,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Feeder No',
-                                                        value: dtr.feederNo,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                   
+                                                    
                                                     {
                                                         title: 'Condition',
                                                         value: dtr.condition,
@@ -804,17 +844,6 @@ const DTRDetailPage = () => {
                                                         align: 'start',
                                                         gap: 'gap-1'
                                                     },
-                                                    {
-                                                        title:'',
-                                                        gap: 'gap-1'
-                                                    },
-                                                ]
-                                            },
-                                            {
-                                                layout: 'row',
-                                                className: 'justify-between w-full',
-                                                span: { col: 5, row: 1 },
-                                                items: [
                                                     {
                                                         title: 'Address',
                                                         value: dtr.address,
@@ -832,17 +861,10 @@ const DTRDetailPage = () => {
                                                         value: dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
                                                         align: 'start',
                                                         gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: '',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: '',
-                                                        gap: 'gap-1'
                                                     }
                                                 ]
-                                            }
+                                            },
+                                            
                                         ]
                                        }
                                     }
@@ -872,7 +894,7 @@ const DTRDetailPage = () => {
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
                                             className:'w-full',
-                                            rightComponent: { name: 'LastComm', props: { value: lastComm } },
+                                            // rightComponent: { name: 'LastComm', props: { value: lastComm } },
                                         },
                                         span: { col: 1, row: 1 },
                                     },

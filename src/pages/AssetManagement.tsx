@@ -405,7 +405,12 @@ export default function AssetManagment() {
   const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
   const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<"hierarchy" | "table">("hierarchy");
+  const [viewMode, setViewMode] = useState<"hierarchy" | "table">("table");
+  const [meterTableData, setMeterTableData] = useState<any[]>([]);
+  const [isLoadingMeterData, setIsLoadingMeterData] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Asset management menu items
   const assetManagementActions = [
@@ -491,6 +496,59 @@ export default function AssetManagment() {
       }, 1000);
     }
   }, [useDummyData]);
+
+  // Fetch meter data from new API endpoint
+  const fetchMeterData = async (page = 1, pageSize = 20, search = '') => {
+    setIsLoadingMeterData(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        ...(search && { search })
+      });
+
+      const response = await fetch(`${BACKEND_URL}/dtrs/all-meters?${queryParams}`, {
+        method: 'GET',
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+
+      if (data.success) {
+        setMeterTableData(data.data || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+        setTotalCount(data.pagination?.totalCount || 0);
+        setCurrentPage(data.pagination?.currentPage || 1);
+      } else {
+        setErrorMessages((prev) => {
+          if (!prev.includes("Failed to fetch meter data")) {
+            return [...prev, "Failed to fetch meter data"];
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching meter data:", error);
+      setErrorMessages((prev) => {
+        if (!prev.includes("Failed to fetch meter data")) {
+          return [...prev, "Failed to fetch meter data"];
+        }
+        return prev;
+      });
+    } finally {
+      setIsLoadingMeterData(false);
+    }
+  };
+
+  // Fetch meter data when view mode changes to table
+  useEffect(() => {
+    if (viewMode === "table") {
+      fetchMeterData(currentPage);
+    }
+  }, [viewMode, currentPage]);
   
   // Fetch dropdown data from API
   useEffect(() => {
@@ -943,15 +1001,17 @@ export default function AssetManagment() {
                 // TABLE VIEW - Full-width table layout
                 {
                   layout: {
-                    type: "grid",
+                    type: "flex" as const,
+                    direction: "row" as const,
+                    gap: "gap-4",
                     columns: 1,
-                    className: "w-full",
+                    className: "w-full flex  flex-col gap-4",
                     rows: [
                       {
-                        layout: "grid",
-                        gridColumns: 8,
+                        layout: "flex" as const,
+                        direction: "row" as const,
                         gap: "gap-4",
-                        className:'flex justify-center items-center p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary',
+                        className:"flex items-center gap-5 justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
                         columns: [
                           {
                             name: "Dropdown",
@@ -1081,7 +1141,7 @@ export default function AssetManagment() {
                               loading: false,
                               searchable: false,
                             },
-                            align:'center'
+                            align:'end'
                             
                           }
                         ],
@@ -1095,11 +1155,59 @@ export default function AssetManagment() {
                           {
                             name: "Table",
                             props: {
-                              data: getFlattenedTableData(),
-                              headerTitle: "Asset Data Table View",
+                              data: viewMode === "table" ? meterTableData : getFlattenedTableData(),
+                              headerTitle: viewMode === "table" ? "Meters Data Table View" : "Asset Data Table View",
                               showHeader: true,
                               availableTimeRanges: [],
-                              columns: [
+                              columns: viewMode === "table" ? [
+                                {
+                                  key: "slNo",
+                                  label: "Sl.No",
+                                  sortable: true,
+                                },
+                                {
+                                  key: "dtrId",
+                                  label: "DTR ID",
+                                  sortable: true,
+                                  searchable: true,
+                                },
+                                {
+                                  key: "meterNo",
+                                  label: "Meter No",
+                                  sortable: true,
+                                  searchable: true,
+                                },
+                                {
+                                  key: "dtrName",
+                                  label: "DTR Name",
+                                  sortable: true,
+                                  searchable: true,
+                                },
+                                {
+                                  key: "location",
+                                  label: "Location",
+                                  sortable: true,
+                                  searchable: true,
+                                },
+                                {
+                                  key: "communicationStatus",
+                                  label: "Communication Status",
+                                  statusIndicator: {},
+                                  isActive: (
+                                    value:
+                                      | string
+                                      | number
+                                      | boolean
+                                      | null
+                                      | undefined
+                                  ) => String(value).toLowerCase() === "communicating",
+                                },
+                                {
+                                  key: "lastCommunicationDate",
+                                  label: "Last Communication Date",
+                                  sortable: true,
+                                },
+                              ] : [
                                 // {
                                 //   key: "name",
                                 //   label: "Asset Name",
@@ -1170,11 +1278,22 @@ export default function AssetManagment() {
                                   sortable: true,
                                 },
                               ],
-                              loading: false,
-                              emptyMessage: "No assets found",
+                              loading: viewMode === "table" ? isLoadingMeterData : false,
+                              emptyMessage: viewMode === "table" ? "No meters found" : "No assets found",
                               showSearch: true,
                               showPagination: true,
-                              pageSize: 10,
+                              pageSize: viewMode === "table" ? 20 : 10,
+                              totalCount: viewMode === "table" ? totalCount : undefined,
+                              currentPage: viewMode === "table" ? currentPage : undefined,
+                              totalPages: viewMode === "table" ? totalPages : undefined,
+                              onPageChange: viewMode === "table" ? (page: number) => {
+                                setCurrentPage(page);
+                                fetchMeterData(page);
+                              } : undefined,
+                              onSearch: viewMode === "table" ? (searchTerm: string) => {
+                                setCurrentPage(1);
+                                fetchMeterData(1, 20, searchTerm);
+                              } : undefined,
                               showActions: true,
                               actions: assetManagementActions,
                               onActionClick: (actionId: string, row: any) => {
