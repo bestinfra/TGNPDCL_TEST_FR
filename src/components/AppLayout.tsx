@@ -61,7 +61,7 @@ function AppLayout({ children }: AppLayoutProps) {
   // Simplified page title mapping
   const pageTitles: Record<string, string> = {
     '/dtr-dashboard': 'DTR Dashboard',
-    '/asset-management': 'Asset Management',
+    '/asset-management': 'Meter Management',
     '/users': 'Users',
     '/users/:userId': 'User Detail',
     '/add-user': 'Add User',

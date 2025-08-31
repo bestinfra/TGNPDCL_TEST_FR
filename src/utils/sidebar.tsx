@@ -103,7 +103,7 @@ const defaultMenus: MenuCategory[] = [
         category: 'ADMIN SETTINGS',
         items: [
             // {
-            //     title: 'Asset Management',
+            //     title: 'Meter Management',
             //     icon: '/icons/Asset_managment.svg',
             //     link: '/asset-managment',
             // },
