@@ -371,7 +371,7 @@ const DTRDashboard: React.FC = () => {
   const retryMeterStatusAPI = async () => {
     setIsMeterStatusLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/consumer/meter-status`);
+      const response = await fetch(`${BACKEND_URL}/dtrs/meter-status`);
       if (!response.ok) throw new Error("Failed to fetch meter status");
 
       const data = await response.json();
@@ -678,7 +678,7 @@ const DTRDashboard: React.FC = () => {
     const fetchMeterStatus = async () => {
       setIsMeterStatusLoading(true);
       try {
-        const response = await fetch(`${BACKEND_URL}/consumer/meter-status`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/meter-status`);
         if (!response.ok) throw new Error("Failed to fetch meter status");
 
         const data = await response.json();
