@@ -67,7 +67,7 @@ const dummyDtrConsumptionData = {
     totalKw: "0",
     totalKva: "0",
   },
-  currentDay: { totalKwh: "N/A", totalKvah: "N/A", totalKw: "N/A", totalKva: "N/A" },
+  currentDay: { totalKwh: "0", totalKvah: "0", totalKw: "0", totalKva: "0" },
 };
 
 const dummyDtrTableData = [
@@ -870,10 +870,10 @@ const DTRDashboard: React.FC = () => {
       // Add currentDay data to export if available
       if (dtrConsumptionData.currentDay) {
         const currentDayExportData = [
-          { Metric: "Current Day kWh", Value: dtrConsumptionData.currentDay.totalKwh || "N/A", Subtitle: "Today's Active Energy" },
-          { Metric: "Current Day kVAh", Value: dtrConsumptionData.currentDay.totalKvah || "N/A", Subtitle: "Today's Apparent Energy" },
-          { Metric: "Current Day kW", Value: dtrConsumptionData.currentDay.totalKw || "N/A", Subtitle: "Current Active Power" },
-          { Metric: "Current Day kVA", Value: dtrConsumptionData.currentDay.totalKva || "N/A", Subtitle: "Current Apparent Power" },
+          { Metric: "Current Day kWh", Value: dtrConsumptionData.currentDay.totalKwh || "0", Subtitle: "Today's Active Energy" },
+          { Metric: "Current Day kVAh", Value: dtrConsumptionData.currentDay.totalKvah || "0", Subtitle: "Today's Apparent Energy" },
+          { Metric: "Current Day kW", Value: dtrConsumptionData.currentDay.totalKw || "0", Subtitle: "Current Active Power" },
+          { Metric: "Current Day kVA", Value: dtrConsumptionData.currentDay.totalKva || "0", Subtitle: "Current Apparent Power" },
         ];
         consumptionWidgetsExportData.push(...currentDayExportData);
       }
@@ -1530,7 +1530,7 @@ const DTRDashboard: React.FC = () => {
       return [
         {
           title: "Total kWh",
-          value: String(currentDayData.totalKwh || "N/A"),
+          value: String(currentDayData.totalKwh || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Today's Active Energy",
           bg: "bg-stat-icon-gradient",
@@ -1540,7 +1540,7 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Total kVAh",
-          value: String(currentDayData.totalKvah || "N/A"),
+          value: String(currentDayData.totalKvah || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Today's Apparent Energy",
           bg: "bg-stat-icon-gradient",
@@ -1550,7 +1550,7 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Total kW",
-          value: String(currentDayData.totalKw || "N/A"),
+          value: String(currentDayData.totalKw || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Current Active Power",
           bg: "bg-stat-icon-gradient",
@@ -1560,7 +1560,7 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Total kVA",
-          value: String(currentDayData.totalKva || "N/A"),
+          value: String(currentDayData.totalKva || "0"),
           icon: "/icons/energy.svg",
           subtitle1: "Current Apparent Power",
           bg: "bg-stat-icon-gradient",
@@ -1570,18 +1570,18 @@ const DTRDashboard: React.FC = () => {
         },
         {
           title: "Active DTRs",
-          value: Number(dtrStatsData?.activeDtrs || "N/A"),
+          value: Number(dtrStatsData?.activeDtrs || "0"),
           icon: "/icons/dtr.svg",
-          subtitle1: `${dtrStatsData?.activePercentage ?? "N/A"}% of Total DTRs`,
+          subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
           bg: "bg-[var(--color-secondary)]",
           loading: isStatsLoading,
         },
         {
           title: "In-Active DTRs",
-          value: Number(dtrStatsData?.inactiveDtrs || "N/A"),
+          value: Number(dtrStatsData?.inactiveDtrs || "0"),
           icon: "/icons/dtr.svg",
-          subtitle1: `${dtrStatsData?.inactivePercentage ?? "N/A"}% of Total DTRs`,
+          subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
           bg: "bg-[var(--color-danger)]",
           loading: isStatsLoading,
@@ -1851,6 +1851,7 @@ const DTRDashboard: React.FC = () => {
                         titleLevel: 2,
                         titleSize: "md",
                         titleVariant: "primary",
+                        titleWeight: "medium",
                         titleAlign: "left",
                         rightComponent: {
                           name: "TimeRangeSelector",
