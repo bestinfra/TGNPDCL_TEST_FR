@@ -427,8 +427,6 @@ const DTRDetailPage = () => {
 
                 const data = await response.json();
                 
-                console.log('🔍 Frontend: Feeder Stats API Response:', data);
-                
                 if (data.success) {
                     // Update the DTR stats with real data from the API
                     const updatedStats = [
@@ -507,8 +505,6 @@ const DTRDetailPage = () => {
                             iconStyle: FILTER_STYLES.WHITE,
                         },
                     ];
-                    
-                    console.log('🔍 Frontend: Updated Stats Array:', updatedStats);
                     
                     // Update the DTR stats
                     setDtr(prev => ({
@@ -694,9 +690,6 @@ const DTRDetailPage = () => {
 
 
 
-    // Debug: Log current state before render
-    console.log('🔍 Frontend: Current DTR state before render:', dtr);
-    
     return (
         <Page
             sections={[
