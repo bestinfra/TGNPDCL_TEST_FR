@@ -9,40 +9,40 @@ import BACKEND_URL from '../config';
 
 // Dummy data for fallback
 const dummyInstantaneousStatsData = {
-    rphVolt: '-',
-    yphVolt: '-',
-    bphVolt: '-',
-    instantKVA: '-',
-    mdKVA: '-',
-    rphCurr: '-',
-    yphCurr: '-',
-    bphCurr: '-',
-    neutralCurrent: '-',
-    freqHz: '-',
-    rphPF: '-',
-    yphPF: '-',
-    bphPF: '-',
-    avgPF: '-',
-    cumulativeKVAh: '-',
+    rphVolt: "0",
+    yphVolt: "0",
+    bphVolt: "0",
+    instantKVA: "0",
+    mdKVA: "0",
+    rphCurr: "0",
+    yphCurr: "0",
+    bphCurr: "0",
+    neutralCurrent: "0",
+    freqHz: "0",
+    rphPF: "0",
+    yphPF: "0",
+    bphPF: "0",
+    avgPF: "0",
+    cumulativeKVAh: "0",
     lastCommDate: null
 };
 
 const dummyConsumptionAnalyticsData = {
-    xAxisData: ['-'],
+    xAxisData: ["0"],
     seriesData: [{ name: 'Consumption', data: [0] }],
     monthly: {
-        xAxisData: ['-'],
+        xAxisData: ["0"],
         seriesData: [{ name: 'Consumption', data: [0] }]
     }
 };
 
 const dummyFeederInfoData = {
     dtr: {
-        dtrNumber: '-',
-        capacity: '-',
-        status: '-'
+        dtrNumber: "0",
+        capacity: "0",
+        status: "0"
     },
-    totalFeeders: '-'
+    totalFeeders: "0"
 };
 
 const dummyAlertsData = [
@@ -62,21 +62,21 @@ const dummyAlertsData = [
 
 // Default stats data
 const defaultStats = [
-    { title: 'R-Phase Voltage', value: '-', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Voltage', value: '-', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase Voltage', value: '-', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Apparent Power', value: '-', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'MD-kVA', value: '-', icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'R-Phase Current', value: '-', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Current', value: '-', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase Current', value: '-', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Neutral Current', value: '-', icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'Frequency', value: '-', icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'R-Phase PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
-    { title: 'Y-Phase PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Avg PF', value: '-', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'Cummulative kVAh', value: '-', icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Voltage', value: "0", icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Voltage', value: "0", icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Voltage', value: "0", icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Apparent Power', value: "0", icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'MD-kVA', value: "0", icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Current', value: "0", icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Current', value: "0", icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Current', value: "0", icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Neutral Current', value: "0", icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Frequency', value: "0", icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
+    { title: 'Y-Phase PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Avg PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Cummulative kVAh', value: "0", icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
 ];
 
 const Feeders = () => {
@@ -1191,6 +1191,7 @@ const Feeders = () => {
     }
 
     return (
+        <div className=" sticky top-0 ">
         <Page
             sections={[
                 // Error Section - Above PageHeader
@@ -1491,24 +1492,43 @@ const Feeders = () => {
                     layout: {
                         type: 'grid' as const,
                         columns: 1,
-                        className: 'border border-primary-border dark:border-dark-border rounded-3xl p-4 dark:bg-primary-dark-light',
+                        className: '',
                         rows: [
+                            // {
+                            //     layout: 'row' as const,
+                            //     columns: [
+                            //         {
+                            //             name: 'SectionHeader',
+                            //             props: {
+                            //                 title: 'Feeder Location',
+                            //                 titleLevel: 2,
+                            //                 titleSize: 'md',
+                            //                 titleVariant: 'primary',
+                            //                 titleWeight: 'bold',
+                            //                 titleAlign: 'left',
+                            //             },
+                            //         },
+                            //     ],
+                            // },
                             {
-                                layout: 'row' as const,
+                                layout: 'grid' as const,
+                                gridColumns:1,
                                 columns: [
                                     {
-                                        name: 'SectionHeader',
+                                        name: 'ThresholdChart',
                                         props: {
-                                            title: 'Feeder Location',
-                                            titleLevel: 2,
-                                            titleSize: 'md',
-                                            titleVariant: 'primary',
-                                            titleWeight: 'bold',
-                                            titleAlign: 'left',
-                                        },
-                                    },
-                                ],
-                            },
+                                                data:[120, 200, 150, 80, 70, 110, 130], 
+                                                threshold:100       ,                      
+                                                ratingKVA:50      ,                         
+                                                title:"Test Chart",
+                                                chartType:"bar",
+                                                availableTimeRanges:[],
+                                            },
+                                        span: { col: 1, row: 1 },
+                                       
+                                    }
+                                ]
+                            }
                            
                               
                             
@@ -1557,6 +1577,7 @@ const Feeders = () => {
                 },
             ]}
         />
+        </div>
     );
 };
 
