@@ -1,1 +1,8 @@
-#root {  width: 100%;  margin: 0 auto;}
+#root {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.button:hover{
+  background-color: initial !important;
+}

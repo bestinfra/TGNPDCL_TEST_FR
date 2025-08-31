@@ -165,7 +165,6 @@ const DTRDetailPage = () => {
         window.location.reload();
     };
 
-    // Update address when location hierarchy changes
     useEffect(() => {
         if (locationHierarchy.length > 0) {
             const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');

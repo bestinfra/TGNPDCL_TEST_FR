@@ -231,11 +231,11 @@ const DTRDashboard: React.FC = () => {
     // }
   };
 
-  const retryStatsAPI = async () => {
+  const retryStatsAPI = async (lastSelectedId: string) => {
     setIsStatsLoading(true);
     try {
       const url = lastSelectedId 
-        ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
+        ? `${BACKEND_URL}/dtrs/stats?hierarchyId=${lastSelectedId}`
         : `${BACKEND_URL}/dtrs/stats`;
       
       const response = await fetch(url);
@@ -286,7 +286,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryTableAPI = async () => {
+  const retryTableAPI = async (lastSelectedId: string) => {
     setIsTableLoading(true);
     try {
       const params = new URLSearchParams();
@@ -307,7 +307,7 @@ const DTRDashboard: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log("data", data);
+
       if (data.success) {
         setDtrTableData(data.data);
         setServerPagination({
@@ -332,7 +332,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryAlertsAPI = async () => {
+  const retryAlertsAPI = async (lastSelectedId: string) => {
     setIsAlertsLoading(true);
     try {
       const url = lastSelectedId 
@@ -364,7 +364,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryChartAPI = async () => {
+  const retryChartAPI = async (lastSelectedId: string) => {
     setIsChartLoading(true);
     try {
       const url = lastSelectedId 
@@ -426,7 +426,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryMeterStatusAPI = async () => {
+  const retryMeterStatusAPI = async (lastSelectedId: string) => {
     setIsMeterStatusLoading(true);
     try {
       const url = lastSelectedId 
@@ -551,15 +551,17 @@ const DTRDashboard: React.FC = () => {
           ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
           : `${BACKEND_URL}/dtrs/stats`;
         
+
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch DTR stats");
-
+        
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           throw new Error("Invalid response format");
         }
-
+        
         const data = await response.json();
+
         if (data.success) {
           const row1 = data.data?.row1 || {};
           const row2 = data.data?.row2 || {};
@@ -841,12 +843,12 @@ const DTRDashboard: React.FC = () => {
   }, []);
 
   // Refetch stats when lastSelectedId changes
-  useEffect(() => {
-    console.log("lastSelectedId changed to:", lastSelectedId);
-    if (lastSelectedId !== null) {
-      retryStatsAPI();
-    }
-  }, [lastSelectedId]);
+  // useEffect(() => {
+
+  //   if (lastSelectedId !== null) {
+  //     retryStatsAPI();
+  //   }
+  // }, [lastSelectedId]);
 
   const handleExportData = () => {
     import("xlsx").then((XLSX) => {
@@ -1194,8 +1196,7 @@ const DTRDashboard: React.FC = () => {
     filterName: string,
     value: string | { target: { value: string } }
   ) => {
-    console.log("value", value);
-    console.log("filterName", filterName);
+
 
     // Handle both string and event object cases
     const selectedValue =
@@ -1213,12 +1214,9 @@ const DTRDashboard: React.FC = () => {
 
   // Handle Get Data button click
   const handleGetData = async () => {
-    console.log("Filter values:", filterValues);
-    
-    // Determine the last selected ID from the hierarchy
+
     let lastId: string | null = null;
     
-    // Check from most specific to least specific filter
     if (filterValues.meterLocation !== "all") {
       lastId = filterValues.meterLocation;
     } else if (filterValues.section !== "all") {
@@ -1233,9 +1231,8 @@ const DTRDashboard: React.FC = () => {
       lastId = filterValues.discom;
     }
     
-    // Update the last selected ID
     setLastSelectedId(lastId);
-    console.log("Last selected ID:", lastId);
+
     
     try {
       const params = new URLSearchParams();
@@ -1245,14 +1242,13 @@ const DTRDashboard: React.FC = () => {
         }
       });
 
-      console.log("API calls will be made with lastSelectedId:", lastId);
-      console.log("Filter parameters:", params.toString());
+
 
       // Refresh data with new filters
-      retryStatsAPI();
-      retryTableAPI();
-      retryAlertsAPI();
-      retryChartAPI();
+      retryStatsAPI(lastId);
+      retryTableAPI(lastId);
+      retryAlertsAPI(lastId);
+      retryChartAPI(lastId);
     } catch (error) {
       console.error("Error applying filters:", error);
     }
