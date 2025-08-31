@@ -407,6 +407,83 @@ export default function RoleManagement() {
         },
     ];
 
+    // Export function for roles data
+    const handleExportData = () => {
+        import("xlsx").then((XLSX) => {
+            const workbook = XLSX.utils.book_new();
+
+            // 1. Roles Table Data
+            const rolesTableExportData = tableData.map((role, index) => ({
+                "S.No": index + 1,
+                "Full Name": role.fullName || "N/A",
+                "Role Name": role.roleName || "N/A",
+                "Client": role.client || "N/A",
+                "Users Count": role.users || 0,
+                "Permissions": role.permissions || "N/A",
+                "Created Date": role.createdAt || "N/A",
+                "Updated Date": role.updatedAt || "N/A"
+            }));
+
+            // 2. Role Summary Data
+            const roleSummaryData = roles.map((role) => ({
+                "Role ID": role.id || "N/A",
+                "Role Name": role.name || "N/A",
+                "Total Users": role.users ? role.users.length : 0,
+                "Total Permissions": role.permissions ? role.permissions.length : 0,
+                "Created Date": role.createdAt || "N/A",
+                "Last Updated": role.updatedAt || "N/A"
+            }));
+
+            // Create sheets with auto-sizing
+            const rolesTableSheet = XLSX.utils.json_to_sheet(rolesTableExportData);
+            const roleSummarySheet = XLSX.utils.json_to_sheet(roleSummaryData);
+
+            // Auto-size columns for better readability
+            const setAutoWidth = (worksheet: any) => {
+                const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+                const colWidths: any[] = [];
+                
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = worksheet[cellAddress];
+                        if (cell && cell.v) {
+                            const cellLength = cell.v.toString().length;
+                            maxWidth = Math.max(maxWidth, cellLength);
+                        }
+                    }
+                    colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+                }
+                worksheet['!cols'] = colWidths;
+            };
+
+            // Apply auto-width to all sheets
+            [rolesTableSheet, roleSummarySheet].forEach(sheet => setAutoWidth(sheet));
+
+            // Append sheets to workbook
+            XLSX.utils.book_append_sheet(workbook, rolesTableSheet, "Roles List");
+            XLSX.utils.book_append_sheet(workbook, roleSummarySheet, "Role Summary");
+
+            const excelBuffer = XLSX.write(workbook, {
+                bookType: "xlsx",
+                type: "array",
+            });
+
+            const blob = new Blob([excelBuffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "roles-management.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        });
+    };
+
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <Page
@@ -455,7 +532,7 @@ export default function RoleManagement() {
                                     variant: 'primary',
                                     onClick: handleAddClick,
                                     showMenu: true,
-                                    showDropdown: false,
+                                    showDropdown: true,
                                     menuItems: [
                                         {
                                             id: 'all',
@@ -481,7 +558,17 @@ export default function RoleManagement() {
                                             id: 'system',
                                             label: 'System Roles',
                                         },
+                                        {
+                                            id: 'export',
+                                            label: 'Export',
+                                        },
                                     ],
+                                    onMenuItemClick: (itemId: string) => {
+                                        console.log(`Filter by: ${itemId}`);
+                                        if (itemId === 'export') {
+                                            handleExportData();
+                                        }
+                                    },
                                 },
                             },
                         ],
