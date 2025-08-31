@@ -18,6 +18,7 @@ import MetersList from '@/pages/MetersList';
 import MeterDetails from '@/pages/MeterDetails';
 import Feeders from '@/pages/Feeders';
 import ProtectedRoute from './components/auth/LocalProtectedRoute';
+import DTRDetailPage from './pages/DTRDetailPage';
 
 const App: React.FC = () => {
   return (
@@ -45,7 +46,7 @@ const App: React.FC = () => {
               <Route path="/data-logger" element={<DataLogger />} />
               <Route path="/meters" element={<MetersList />} />
               <Route path="/meter-details/:meterId" element={<MeterDetails />} />
-              <Route path="/dtr-detail/:dtrId" element={<Feeders />} />
+              <Route path="/dtr-detail/:dtrId" element={<DTRDetailPage />} />
               <Route path="/feeder/:feederId" element={<Feeders />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
