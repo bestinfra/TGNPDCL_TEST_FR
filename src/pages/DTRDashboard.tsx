@@ -1299,7 +1299,7 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Overloaded Feeders",
+      title: "Overloaded DTRs",
       value:
         dtrStatsData.overloadedFeeders ||
         dtrStatsData?.row1?.overloadedFeeders ||
@@ -1317,7 +1317,7 @@ const DTRDashboard: React.FC = () => {
       loading: isStatsLoading,
     },
     {
-      title: "Underloaded Feeders",
+      title: "Underloaded DTRs",
       value:
         dtrStatsData.underloadedFeeders ||
         dtrStatsData?.row1?.underloadedFeeders ||
@@ -1769,11 +1769,11 @@ const DTRDashboard: React.FC = () => {
               {
                 name: "Button",
                 props: {
-                  variant: "secondary",
+                  variant: "primary",
                   onClick: handleGetData,
                   children: "Get Data",
-                  className: "h-10 self-end",
-                  searchable: false,
+                  className: "self-end h-100%",
+                  searchable: false
                 },
                 align: "center",
               },
