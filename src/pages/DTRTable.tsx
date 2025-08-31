@@ -3,7 +3,6 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BACKEND_URL from '../config';
 const Page = lazy(() => import('SuperAdmin/Page'));
-import BACKEND_URL from '../config';
 
 // Define TableData type locally since we're using federated components
 interface TableData {
@@ -238,7 +237,7 @@ const DTRTable: React.FC = () => {
         } else {
           throw new Error(data.message || "Failed to fetch DTR table");
         }
-              } else if (cardType === 'total-lt-feeders') {
+      } else if (cardType === 'total-lt-feeders') {
         // Use the all-meters endpoint for LT feeders
         const params = new URLSearchParams();
         params.append("page", page.toString());
@@ -282,7 +281,7 @@ const DTRTable: React.FC = () => {
         } else {
           throw new Error(data.message || "Failed to fetch meters data");
         }
-              } else if (cardType === 'fuse-blown') {
+      } else if (cardType === 'fuse-blown') {
         // Use the fuse-blown-meters endpoint for fuse blown meters
         const params = new URLSearchParams();
         params.append("page", page.toString());
@@ -326,7 +325,7 @@ const DTRTable: React.FC = () => {
         } else {
           throw new Error(data.message || "Failed to fetch fuse blown meters data");
         }
-        } else if (cardType === 'overloaded-feeders') {
+      } else if (cardType === 'overloaded-feeders') {
         // Use the overloaded-dtrs endpoint for overloaded DTRs
         const params = new URLSearchParams();
         params.append("page", page.toString());
@@ -383,7 +382,7 @@ const DTRTable: React.FC = () => {
         } else {
           throw new Error(data.message || "Failed to fetch overloaded DTRs data");
         }
-        } else if (cardType === 'underloaded-feeders') {
+      } else if (cardType === 'underloaded-feeders') {
         // Use the underloaded-dtrs endpoint for underloaded DTRs
         const params = new URLSearchParams();
         params.append("page", page.toString());
@@ -427,6 +426,153 @@ const DTRTable: React.FC = () => {
         } else {
           throw new Error(data.message || "Failed to fetch underloaded DTRs data");
         }
+      } else if (cardType === 'ht-fuse-blown') {
+        // Use the ht-fuse-blown endpoint for HT side fuse blown incidents
+        console.log('Fetching HT Fuse Blown data from:', `${BACKEND_URL}/dtrs/ht-fuse-blown`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/ht-fuse-blown`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        if (result.success) {
+          setTableData(result.data || []);
+          setHasRealData(true);
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
+        } else {
+          throw new Error(result.message || 'Failed to fetch HT Side Fuse Blown data');
+        }
+      } else if (cardType === 'lt-fuse-blown') {
+        // Use the lt-fuse-blown endpoint for LT side fuse blown incidents
+        const response = await fetch(`${BACKEND_URL}/dtrs/lt-fuse-blown`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setTableData(result.data || []);
+          setHasRealData(true);
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
+        } else {
+          throw new Error(result.message || 'Failed to fetch LT Side Fuse Blown data');
+        }
+      } else if (cardType === 'unbalanced-dtrs') {
+        // Use the unbalanced-dtrs endpoint for unbalanced DTRs
+        const response = await fetch(`${BACKEND_URL}/dtrs/unbalanced-dtrs`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        if (result.success) {
+          setTableData(result.data || []);
+          setHasRealData(true);
+          console.log('✅ Unbalanced DTRs data received:', result.data?.length || 0, 'records');
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
+        } else {
+          throw new Error(result.message || 'Failed to fetch Unbalanced DTRs data');
+        }
+      } else if (cardType === 'power-failure-feeders') {
+        // Use the power-failure-feeders endpoint for power failure incidents
+        console.log('Fetching Power Failure Feeders data from:', `${BACKEND_URL}/dtrs/power-failure-feeders`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/power-failure-feeders`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        if (result.success) {
+          setTableData(result.data || []);
+          setHasRealData(true);
+          console.log('✅ Power Failure Feeders data received:', result.data?.length || 0, 'records');
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
+        } else {
+          throw new Error(result.message || 'Failed to fetch Power Failure Feeders data');
+        }
       } else {
         // For other card types, show empty state
         // TODO: Implement specific API endpoints for other card types
@@ -436,10 +582,17 @@ const DTRTable: React.FC = () => {
     } catch (err: any) {
       setError(err.message || 'Failed to fetch data. Please try again.');
       console.error('Error fetching data:', err);
+      
+      // Handle error fallback - keep existing data if available, otherwise show empty
+      if (!hasRealData) {
+        setTableData([]);
+      } else {
+        console.log('Keeping real API data despite error');
+      }
     } finally {
       setLoading(false);
     }
-  }, [cardType]);
+  }, [cardType, hasRealData]);
 
 
   useEffect(() => {
