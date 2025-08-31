@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BACKEND_URL from '../config';
 const Page = lazy(() => import('SuperAdmin/Page'));
 
 // Define TableData type locally since we're using federated components
@@ -15,6 +16,7 @@ const DTRTable: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [cardType, setCardType] = useState<string>('total-dtrs');
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
+  const [hasRealData, setHasRealData] = useState(false);
 
   // Check URL parameters to determine which card was clicked
   useEffect(() => {
@@ -162,97 +164,134 @@ const DTRTable: React.FC = () => {
         ];
     }
   };
-
-  // Generate dynamic data based on card type
-  const generateDynamicData = (): TableData[] => {
-    const baseData = [];
-    const count = Math.floor(Math.random() * 10) + 5; // Random count between 5-15
-
-    for (let i = 1; i <= count; i++) {
-      const baseItem: TableData = {
-        sNo: i,
-        id: `${cardType}-${i}`,
-        name: `Sample ${cardTitle} Item ${i}`,
-        status: Math.random() > 0.3 ? 'Active' : 'Inactive',
-        location: `Zone ${String.fromCharCode(65 + (i % 3))}`,
-        lastUpdate: `${Math.floor(Math.random() * 60)} min ago`,
-      };
-
-      // Add specific fields based on card type
-      switch (cardType) {
-        case 'total-dtrs':
-          baseItem.dtrId = `DTR-${String(i).padStart(4, '0')}`;
-          baseItem.dtrName = `Transformer ${i}`;
-          baseItem.capacity = `${Math.floor(Math.random() * 500) + 100}`;
-          break;
-        case 'total-lt-feeders':
-          baseItem.feederId = `FEEDER-${String(i).padStart(4, '0')}`;
-          baseItem.feederName = `LT Feeder ${i}`;
-          baseItem.dtrName = `DTR-${String(Math.floor(Math.random() * 10) + 1).padStart(4, '0')}`;
-          baseItem.load = `${Math.floor(Math.random() * 100) + 20}`;
-          break;
-        case 'fuse-blown':
-        case 'lt-fuse-blown':
-        case 'ht-fuse-blown':
-          baseItem.dtrId = `DTR-${String(i).padStart(4, '0')}`;
-          baseItem.dtrName = `Transformer ${i}`;
-          baseItem.fuseType = cardType === 'ht-fuse-blown' ? 'HT Fuse' : 'LT Fuse';
-          baseItem.blownTime = `${Math.floor(Math.random() * 24)} hours ago`;
-          break;
-        case 'overloaded-feeders':
-          baseItem.feederId = `FEEDER-${String(i).padStart(4, '0')}`;
-          baseItem.feederName = `LT Feeder ${i}`;
-          baseItem.currentLoad = `${Math.floor(Math.random() * 50) + 80}`;
-          baseItem.ratedCapacity = '100';
-          baseItem.overloadPercentage = `${Math.floor(Math.random() * 20) + 80}`;
-          break;
-        case 'unbalanced-dtrs':
-          baseItem.dtrId = `DTR-${String(i).padStart(4, '0')}`;
-          baseItem.dtrName = `Transformer ${i}`;
-          baseItem.phaseA = `${Math.floor(Math.random() * 50) + 30}`;
-          baseItem.phaseB = `${Math.floor(Math.random() * 50) + 30}`;
-          baseItem.phaseC = `${Math.floor(Math.random() * 50) + 30}`;
-          baseItem.imbalance = `${Math.floor(Math.random() * 30) + 5}`;
-          break;
-        case 'daily-kwh':
-        case 'monthly-kwh':
-          baseItem.dtrId = `DTR-${String(i).padStart(4, '0')}`;
-          baseItem.dtrName = `Transformer ${i}`;
-          baseItem.kwh = `${Math.floor(Math.random() * 1000) + 500}`;
-          baseItem.previousReading = `${Math.floor(Math.random() * 1000) + 400}`;
-          baseItem.consumption = `${Math.floor(Math.random() * 100) + 50}`;
-          baseItem.timestamp = new Date().toLocaleString();
-          break;
-        default:
-          // Use base item for unknown types
-          break;
-      }
-
-      baseData.push(baseItem);
-    }
-
-    return baseData;
-  };
-
   // Fetch data based on card type
   const fetchData = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call based on cardType
-      // const response = await fetch(`/api/dtrs/${cardType}`);
-      // const data = await response.json();
+      let apiData = null;
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call specific API based on card type
+      if (cardType === 'ht-fuse-blown') {
+        console.log('Fetching HT Fuse Blown data from:', `${BACKEND_URL}/dtrs/ht-fuse-blown`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/ht-fuse-blown`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        if (result.success) {
+          apiData = result.data || []; // Ensure we have an array even if empty
+          setHasRealData(true);
+        } else {
+          throw new Error(result.message || 'Failed to fetch HT Side Fuse Blown data');
+        }
+      } else if (cardType === 'lt-fuse-blown') {
+        const response = await fetch(`${BACKEND_URL}/dtrs/lt-fuse-blown`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          apiData = result.data || []; // Ensure we have an array even if empty
+          setHasRealData(true);
+        } else {
+          throw new Error(result.message || 'Failed to fetch LT Side Fuse Blown data');
+        }
+      } else if (cardType === 'unbalanced-dtrs') {
+        const response = await fetch(`${BACKEND_URL}/dtrs/unbalanced-dtrs`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        if (result.success) {
+          apiData = result.data || []; // Ensure we have an array even if empty
+          setHasRealData(true);
+          console.log('✅ Unbalanced DTRs data received:', apiData.length, 'records');
+        } else {
+          throw new Error(result.message || 'Failed to fetch Unbalanced DTRs data');
+        }
+      } else if (cardType === 'power-failure-feeders') {
+        console.log('Fetching Power Failure Feeders data from:', `${BACKEND_URL}/dtrs/power-failure-feeders`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/power-failure-feeders`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        if (result.success) {
+          apiData = result.data || []; // Ensure we have an array even if empty
+          setHasRealData(true);
+          console.log('✅ Power Failure Feeders data received:', apiData.length, 'records');
+        } else {
+          throw new Error(result.message || 'Failed to fetch Power Failure Feeders data');
+        }
+      }
       
-      // Generate dynamic data based on card type
-      const dynamicData = generateDynamicData();
-      setTableData(dynamicData);
+      // Use API data if available, otherwise show empty table
+      if (apiData !== null) {
+        setTableData(apiData);
+      } else {
+        // No API data available - show empty table for all card types
+        setTableData([]);
+      }
+      
       setError(null);
       
     } catch (err) {
-      setError('Failed to fetch data. Please try again.');
       console.error('Error fetching data:', err);
+      setError('Failed to fetch data. Please try again.');
+      
+      // Handle error fallback - keep existing data if available, otherwise show empty
+      if (!hasRealData) {
+        setTableData([]);
+      } else {
+        console.log('Keeping real API data despite error');
+      }
     } finally {
       setLoading(false);
     }
@@ -357,7 +396,15 @@ const DTRTable: React.FC = () => {
                         text: cardTitle,
                         availableTimeRanges: [],
                         className: 'w-full',
-                        emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
+                        emptyMessage: cardType === 'ht-fuse-blown' 
+                          ? 'No HT side fuse blown incidents found. This indicates all DTRs have healthy voltage levels.' 
+                          : cardType === 'lt-fuse-blown'
+                          ? 'No LT side fuse blown incidents found. All LT feeders are operating normally.'
+                          : cardType === 'unbalanced-dtrs'
+                          ? 'No unbalanced DTRs found. All transformers have balanced load distribution.'
+                          : cardType === 'power-failure-feeders'
+                          ? 'No power failure incidents found. All feeders are operating normally.'
+                          : `No ${cardTitle.toLowerCase()} data found`,
                         rowsPerPageOptions: [10, 25, 50],
                         initialRowsPerPage: 10,
                         showSkeletonActionButtons: true,
