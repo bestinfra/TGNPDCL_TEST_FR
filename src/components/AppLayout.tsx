@@ -8,6 +8,56 @@ interface AppLayoutProps {
 function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Global search handler
+  const handleGlobalSearch = async (query: string) => {
+    console.log('Global search query:', query);
+    
+    if (!query || query.length < 2) {
+      return;
+    }
+
+    try {
+      // First try direct patterns for DTR format
+      if (query.toUpperCase().startsWith('DTR')) {
+        const dtrNumber = query.replace(/^DTR[-_]?/i, '');
+        navigate(`/dtr-detail/${dtrNumber}`);
+        return;
+      }
+
+      // Handle meter-specific searches
+      if (query.toUpperCase().startsWith('METER')) {
+        const meterQuery = query.replace(/^METER[-_\s]?/i, '');
+        const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(meterQuery)}`);
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          const firstResult = result.data[0];
+          navigate(`/dtr-detail/${firstResult.dtrNumber || firstResult.id}`);
+          return;
+        } else {
+          alert(`No meter found for "${meterQuery}". Please check your search term.`);
+          return;
+        }
+      }
+
+      // For other queries, search the database
+      const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(query)}`);
+      const result = await response.json();
+      
+      if (result.success && result.data.length > 0) {
+        // Take the first result and navigate to DTR details
+        const firstResult = result.data[0];
+        navigate(`/dtr-detail/${firstResult.dtrNumber || firstResult.id}`);
+      } else {
+        // No DTR results found, show alert
+        alert(`No DTR found for "${query}". Please check your search term.`);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      alert(`Search failed. Please try again.`);
+    }
+  };
   // Simplified page title mapping
   const pageTitles: Record<string, string> = {
     '/dtr-dashboard': 'DTR Dashboard',
@@ -137,7 +187,10 @@ function AppLayout({ children }: AppLayoutProps) {
           />
         <div className="flex flex-col flex-1">
           {/* Header */}
-            <Header title={pageTitles[location.pathname] || 'Dashboard'} />
+            <Header 
+              title={pageTitles[location.pathname] || 'Dashboard'} 
+              onSearch={handleGlobalSearch}
+            />
           {/* Main Content */}
           <main className="flex-1 p-6 bg-white overflow-auto dark:bg-primary-dark">
             {children}
