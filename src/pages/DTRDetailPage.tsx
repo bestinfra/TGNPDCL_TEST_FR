@@ -559,7 +559,7 @@ const DTRDetailPage = () => {
                     'Feeder No': locationHierarchy.find(loc => loc.type === 'Feeder')?.code || 'N/A',
                     'Rating': '15.00 kVA',
                     'Condition': dtr.condition,
-                    'Capacity': dtr.capacity,
+                    'Capacity': dtr.capacity ,
                     'Address': dtr.address,
                     'Latitude': dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
                     'Longitude': dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
@@ -838,7 +838,7 @@ const DTRDetailPage = () => {
                                                     },
                                                     {
                                                         title: 'Capacity',
-                                                        value: dtr.capacity,
+                                                        value: `${dtr.capacity} kVA`,
                                                         align: 'start',
                                                         gap: 'gap-1',
                                                         progressBar: true,
