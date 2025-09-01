@@ -1047,12 +1047,10 @@ const Feeders = () => {
     useEffect(() => {
         // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
         if (!resolvedDtrId && feederId) {
-
             return;
         }
 
         if (resolvedDtrId || dtrId) {
-
             fetchInstantaneousStats();
             fetchConsumptionAnalytics();
             fetchFeederInfo();

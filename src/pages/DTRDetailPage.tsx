@@ -438,7 +438,9 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Total kW',
-                            value: data.data?.totalKW || '0',
+                            value: data.data?.totalKW !== undefined && data.data?.totalKW !== null
+                                ? Number(data.data.totalKW).toFixed(2)
+                                : '0',
                             icon: 'icons/energy.svg',
                             subtitle1: 'Active Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -452,14 +454,18 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Total kWh',
-                            value: data.data?.totalKWh || '0',
+                            value: data.data?.totalKWh !== undefined && data.data?.totalKWh !== null
+                                ? Number(data.data.totalKWh).toFixed(2)
+                                : '0',
                             icon: 'icons/energy.svg',
                             subtitle1: 'Cumulative Active Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVAh',
-                            value: data.data?.totalKVAh || '0',
+                            value: data.data?.totalKVAh !== undefined && data.data?.totalKVAh !== null
+                                ? Number(data.data.totalKVAh).toFixed(2)
+                                : '0',
                             icon: 'icons/energy.svg',
                             subtitle1: 'Cumulative Apparent Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
