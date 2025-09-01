@@ -531,7 +531,7 @@ const DTRTable: React.FC = () => {
             hasNextPage: paginationData.hasNextPage || false,
             hasPrevPage: paginationData.hasPrevPage || false,
           });
-          setError(null);
+      setError(null);
         } else {
           throw new Error(result.message || 'Failed to fetch Unbalanced DTRs data');
         }

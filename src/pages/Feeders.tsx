@@ -98,6 +98,7 @@ const Feeders = () => {
         dtrId?: string;
         dtrName?: string;
         dtrNumber?: string;
+        feederId?: string;
     } | null;
     
     // Determine if this is an individual feeder page or DTR page
@@ -242,12 +243,12 @@ const Feeders = () => {
 
         setIsStatsLoading(true);
         try {
-            // If we have specific feeder data, we need to get individual meter data
+            // Build endpoint; pass feederId (meter identifier) when available
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
-            
-            // If we have specific feeder data, we should get individual meter stats
-            if (effectiveFeederData?.feederName) {
-
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -262,12 +263,7 @@ const Feeders = () => {
                     lastCommDate: data.data.lastCommDate || null
                 };
                 
-                // If this is for a specific feeder, we might need to adjust the data
-                if (effectiveFeederData?.feederName) {
-    
-                    // For now, use the DTR-level data, but this could be enhanced
-                    // when backend supports individual meter stats
-                }
+                // No further adjustment needed; backend filters by meter when feederId provided
                 
 
                 setInstantaneousStatsData(apiData);
@@ -314,11 +310,11 @@ const Feeders = () => {
 
         setIsConsumptionLoading(true);
         try {
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`;
-            
-            // If we have specific feeder data, we should get individual meter consumption
-            if (effectiveFeederData?.feederName) {
-                
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -391,11 +387,11 @@ const Feeders = () => {
 
 
         try {
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}`;
-            
-            // If we have specific feeder data, we should get individual meter info
-            if (effectiveFeederData?.feederName) {
-    
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -495,11 +491,11 @@ const Feeders = () => {
 
         setIsAlertsLoading(true);
         try {
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/alerts`;
-            
-            // If we have specific feeder data, we should get individual meter alerts
-            if (effectiveFeederData?.feederName) {
-                
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -576,11 +572,11 @@ const Feeders = () => {
 
         setIsKvaMetricsLoading(true);
         try {
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`;
-            
-            // If we have specific feeder data, we should get individual meter KVA metrics
-            if (effectiveFeederData?.feederName) {
-                
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -727,11 +723,11 @@ const Feeders = () => {
             const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
             if (!numericDtrId) return;
 
+            const meterIdentifier = passedData?.feederId || passedData?.feederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
-            
-            // If we have specific feeder data, we need to get individual meter data
-            if (passedData?.feederData?.feederName) {
-    
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -774,10 +770,12 @@ const Feeders = () => {
             const numericDtrId = passedData?.dtrId || (dtrId && dtrId.match(/\d+/)?.[0]) || dtrId;
             if (!numericDtrId) return;
 
+            const meterIdentifier = passedData?.feederId || passedData?.feederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`;
-            
-
-            
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
+            }
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch consumption analytics');
             
@@ -828,11 +826,11 @@ const Feeders = () => {
                 return;
             }
 
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}`;
-            
-            // If we have specific feeder data, we should get individual meter info
-            if (effectiveFeederData?.feederName) {
-
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -903,11 +901,11 @@ const Feeders = () => {
                 return;
             }
 
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/alerts`;
-            
-            // If we have specific feeder data, we should get individual meter alerts
-            if (effectiveFeederData?.feederName) {
-
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
@@ -963,11 +961,11 @@ const Feeders = () => {
                 return;
             }
 
+            const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`;
-            
-            // If we have specific feeder data, we should get individual meter KVA metrics
-            if (effectiveFeederData?.feederName) {
-
+            if (meterIdentifier) {
+                const qp = new URLSearchParams({ feederId: meterIdentifier });
+                endpoint = `${endpoint}?${qp.toString()}`;
             }
             
             const response = await fetch(endpoint);
