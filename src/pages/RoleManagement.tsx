@@ -393,17 +393,17 @@ export default function RoleManagement() {
         {
             label: 'Manage Permissions',
             onClick: handleManagePermissions,
-            icon: '/icons/settings.svg',
+            icon: 'icons/settings.svg',
         },
         {
             label: 'Edit',
             onClick: handleEditClick,
-            icon: '/icons/user-pen.svg',
+            icon: 'icons/user-pen.svg',
         },
         {
             label: 'Delete',
             onClick: handleDeleteClick,
-            icon: '/icons/delete.svg',
+            icon: 'icons/delete.svg',
         },
     ];
 

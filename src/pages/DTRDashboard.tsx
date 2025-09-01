@@ -181,7 +181,7 @@ const DTRDashboard: React.FC = () => {
   const [chartSeries, setChartSeries] = useState<
     { name: string; data: number[] }[]
   >(dummyChartData.series);
-  const [alertTypes, setAlertTypes] = useState<string[]>([]);
+  // const [alertTypes, setAlertTypes] = useState<string[]>([]);
   const alertColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#d62728", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
   const statsRange = selectedTimeRange;
 
@@ -199,7 +199,7 @@ const DTRDashboard: React.FC = () => {
     Array<{
       id: string;
       name: string;
-      retryFunction: () => Promise<void>;
+      retryFunction: (lastSelectedId?: string) => Promise<void>;
       errorMessage: string;
     }>
   >([]);
@@ -231,11 +231,11 @@ const DTRDashboard: React.FC = () => {
     // }
   };
 
-  const retryStatsAPI = async () => {
+  const retryStatsAPI = async (lastSelectedId?: string) => {
     setIsStatsLoading(true);
     try {
       const url = lastSelectedId 
-        ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
+        ? `${BACKEND_URL}/dtrs/stats?hierarchyId=${lastSelectedId}`
         : `${BACKEND_URL}/dtrs/stats`;
       
       const response = await fetch(url);
@@ -286,7 +286,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryTableAPI = async () => {
+  const retryTableAPI = async (lastSelectedId?: string) => {
     setIsTableLoading(true);
     try {
       const params = new URLSearchParams();
@@ -307,7 +307,7 @@ const DTRDashboard: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log("data", data);
+
       if (data.success) {
         setDtrTableData(data.data);
         setServerPagination({
@@ -332,7 +332,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryAlertsAPI = async () => {
+  const retryAlertsAPI = async (lastSelectedId?: string) => {
     setIsAlertsLoading(true);
     try {
       const url = lastSelectedId 
@@ -364,7 +364,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryChartAPI = async () => {
+  const retryChartAPI = async (lastSelectedId?: string) => {
     setIsChartLoading(true);
     try {
       const url = lastSelectedId 
@@ -396,7 +396,7 @@ const DTRDashboard: React.FC = () => {
         });
         
         const alertTypesArray = Array.from(allAlertTypes);
-        setAlertTypes(alertTypesArray);
+        // setAlertTypes(alertTypesArray);
         
         // Create dynamic series data based on actual alert types
         const seriesData = alertTypesArray.map((alertType, index) => {
@@ -426,7 +426,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryMeterStatusAPI = async () => {
+  const retryMeterStatusAPI = async (lastSelectedId?: string) => {
     setIsMeterStatusLoading(true);
     try {
       const url = lastSelectedId 
@@ -551,15 +551,17 @@ const DTRDashboard: React.FC = () => {
           ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
           : `${BACKEND_URL}/dtrs/stats`;
         
+
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch DTR stats");
-
+        
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           throw new Error("Invalid response format");
         }
-
+        
         const data = await response.json();
+
         if (data.success) {
           const row1 = data.data?.row1 || {};
           const row2 = data.data?.row2 || {};
@@ -749,7 +751,7 @@ const DTRDashboard: React.FC = () => {
           });
           
           const alertTypesArray = Array.from(allAlertTypes);
-          setAlertTypes(alertTypesArray);
+          // setAlertTypes(alertTypesArray);
           
           // Create dynamic series data based on actual alert types
           const seriesData = alertTypesArray.map((alertType, index) => {
@@ -841,12 +843,12 @@ const DTRDashboard: React.FC = () => {
   }, []);
 
   // Refetch stats when lastSelectedId changes
-  useEffect(() => {
-    console.log("lastSelectedId changed to:", lastSelectedId);
-    if (lastSelectedId !== null) {
-      retryStatsAPI();
-    }
-  }, [lastSelectedId]);
+  // useEffect(() => {
+
+  //   if (lastSelectedId !== null) {
+  //     retryStatsAPI();
+  //   }
+  // }, [lastSelectedId]);
 
   const handleExportData = () => {
     import("xlsx").then((XLSX) => {
@@ -1010,11 +1012,11 @@ const DTRDashboard: React.FC = () => {
   };
 
   const handlePageChange = () => {
-    retryTableAPI();
+    retryTableAPI(undefined);
   };
 
   const handleSearch = () => {
-    retryTableAPI();
+    retryTableAPI(undefined);
   };
 
       const handleTimeRangeChange = (range: string) => {
@@ -1194,8 +1196,7 @@ const DTRDashboard: React.FC = () => {
     filterName: string,
     value: string | { target: { value: string } }
   ) => {
-    console.log("value", value);
-    console.log("filterName", filterName);
+
 
     // Handle both string and event object cases
     const selectedValue =
@@ -1213,12 +1214,9 @@ const DTRDashboard: React.FC = () => {
 
   // Handle Get Data button click
   const handleGetData = async () => {
-    console.log("Filter values:", filterValues);
-    
-    // Determine the last selected ID from the hierarchy
+
     let lastId: string | null = null;
     
-    // Check from most specific to least specific filter
     if (filterValues.meterLocation !== "all") {
       lastId = filterValues.meterLocation;
     } else if (filterValues.section !== "all") {
@@ -1233,9 +1231,8 @@ const DTRDashboard: React.FC = () => {
       lastId = filterValues.discom;
     }
     
-    // Update the last selected ID
     setLastSelectedId(lastId);
-    console.log("Last selected ID:", lastId);
+
     
     try {
       const params = new URLSearchParams();
@@ -1248,10 +1245,10 @@ const DTRDashboard: React.FC = () => {
 
 
       // Refresh data with new filters
-      retryStatsAPI();
-      retryTableAPI();
-      retryAlertsAPI();
-      retryChartAPI();
+      retryStatsAPI(lastId || undefined);
+      retryTableAPI(lastId || undefined);
+      retryAlertsAPI(lastId || undefined);
+      retryChartAPI(lastId || undefined);
     } catch (error) {
       console.error("Error applying filters:", error);
     }
@@ -1262,7 +1259,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Total DTRs",
       value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "0",
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: "Total Transformer Units",
       onValueClick: () =>
         navigate("/dtr-table?type=total-dtrs&title=Total%20DTRs"),
@@ -1275,7 +1272,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.totalLtFeeders ||
         dtrStatsData?.row1?.totalLtFeeders ||
         "0",
-      icon: "/icons/feeder.svg",
+      icon: "icons/feeder.svg",
       subtitle1: "Connected to DTRs",
       onValueClick: () =>
         navigate("/dtr-table?type=total-lt-feeders&title=Total%20LT%20Feeders"),
@@ -1287,7 +1284,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.totalFuseBlown ||
         dtrStatsData?.row1?.totalFuseBlown ||
         "0",
-      icon: "/icons/power_failure.svg",
+      icon: "icons/power_failure.svg",
       subtitle1: `${
         dtrStatsData.fuseBlownPercentage ||
         dtrStatsData?.row1?.fuseBlownPercentage ||
@@ -1303,7 +1300,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.overloadedFeeders ||
         dtrStatsData?.row1?.overloadedFeeders ||
         0,
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: (() => {
         const count = dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0;
         if (count === 0) {
@@ -1323,7 +1320,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.underloadedFeeders ||
         dtrStatsData?.row1?.underloadedFeeders ||
         0,
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: (() => {
         const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
         if (count === 0) {
@@ -1343,7 +1340,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.ltSideFuseBlown ||
         dtrStatsData?.row1?.ltSideFuseBlown ||
         "0",
-      icon: "/icons/power_failure.svg",
+      icon: "icons/power_failure.svg",
       subtitle1: "Incidents Today",
       onValueClick: () =>
         navigate(
@@ -1357,7 +1354,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.unbalancedDtrs ||
         dtrStatsData?.row1?.unbalancedDtrs ||
         "0",
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: `${
         dtrStatsData.unbalancedPercentage ||
         dtrStatsData?.row1?.unbalancedPercentage ||
@@ -1373,7 +1370,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.powerFailureFeeders ||
         dtrStatsData?.row1?.powerFailureFeeders ||
         "0",
-      icon: "/icons/power_failure.svg",
+      icon: "icons/power_failure.svg",
       subtitle1: `${
         dtrStatsData.powerFailurePercentage ||
         dtrStatsData?.row1?.powerFailurePercentage ||
@@ -1391,7 +1388,7 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData.htSideFuseBlown ||
         dtrStatsData?.row1?.htSideFuseBlown ||
         "0",
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: "Incidents Today",
       onValueClick: () =>
         navigate(
@@ -1401,12 +1398,13 @@ const DTRDashboard: React.FC = () => {
     },
   ];
 
-  // DTR Consumption Cards - Daily data
+  // DTR Consumption Cards - Daily data - Commented out as not currently used
+  /*
   const dailyConsumptionCards = [
     {
       title: "Total kWh",
       value: String(dtrConsumptionData.daily.totalKwh || "0"),
-      icon: "/icons/energy.svg",
+      icon: "icons/energy.svg",
       subtitle1: "Today's Active Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1416,7 +1414,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Total kVAh",
       value: String(dtrConsumptionData.daily.totalKvah || "0"),
-      icon: "/icons/energy.svg",
+      icon: "icons/energy.svg",
       subtitle1: "Today's Apparent Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1426,7 +1424,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Total kW",
       value: String(dtrConsumptionData.daily.totalKw || "0"),
-      icon: "/icons/energy.svg",
+      icon: "icons/energy.svg",
       subtitle1: "Current Active Power",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1436,7 +1434,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Total kVA",
       value: String(dtrConsumptionData.daily.totalKva || "0"),
-      icon: "/icons/energy.svg",
+      icon: "icons/energy.svg",
       subtitle1: "Current Apparent Power",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1446,7 +1444,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Active DTRs",
       value: Number(dtrStatsData?.activeDtrs || "0"),
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
       bg: "bg-[var(--color-secondary)]",
@@ -1455,20 +1453,21 @@ const DTRDashboard: React.FC = () => {
     {
       title: "In-Active DTRs",
       value: Number(dtrStatsData?.inactiveDtrs || "0"),
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
       bg: "bg-[var(--color-danger)]",
       loading: isStatsLoading,
     },
   ];
+  */
 
   // DTR Consumption Cards - Monthly data
   const monthlyConsumptionCards = [
     {
       title: "Total kWh",
       value: String(dtrConsumptionData.monthly.totalKwh || "0"),
-      icon: "/icons/consumption.svg",
+      icon: "icons/consumption.svg",
       subtitle1: "Monthly Active Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1478,7 +1477,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Total kVAh",
       value: String(dtrConsumptionData.monthly.totalKvah || "0"),
-      icon: "/icons/consumption.svg",
+      icon: "icons/consumption.svg",
       subtitle1: "Monthly Apparent Energy",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1488,7 +1487,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Avg kW",
       value: String(dtrConsumptionData.monthly.totalKw || "0"),
-      icon: "/icons/consumption.svg",
+      icon: "icons/consumption.svg",
       subtitle1: "Monthly Average Power",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1498,7 +1497,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Avg kVA",
       value: String(dtrConsumptionData.monthly.totalKva || "0"),
-      icon: "/icons/consumption.svg",
+      icon: "icons/consumption.svg",
       subtitle1: "Monthly Average Apparent",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -1508,7 +1507,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "Active DTRs",
       value: Number(dtrStatsData?.activeDtrs || "0"),
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
       bg: "bg-[var(--color-secondary)]",
@@ -1517,7 +1516,7 @@ const DTRDashboard: React.FC = () => {
     {
       title: "In-Active DTRs",
       value: Number(dtrStatsData?.inactiveDtrs || "0"),
-      icon: "/icons/dtr.svg",
+      icon: "icons/dtr.svg",
       subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
       bg: "bg-[var(--color-danger)]",
@@ -1534,7 +1533,7 @@ const DTRDashboard: React.FC = () => {
         {
           title: "Total kWh",
           value: String(currentDayData.totalKwh || "0"),
-          icon: "/icons/energy.svg",
+          icon: "icons/energy.svg",
           subtitle1: "Today's Active Energy",
           bg: "bg-stat-icon-gradient",
           loading: isStatsLoading,
@@ -1544,7 +1543,7 @@ const DTRDashboard: React.FC = () => {
         {
           title: "Total kVAh",
           value: String(currentDayData.totalKvah || "0"),
-          icon: "/icons/energy.svg",
+          icon: "icons/energy.svg",
           subtitle1: "Today's Apparent Energy",
           bg: "bg-stat-icon-gradient",
           loading: isStatsLoading,
@@ -1554,7 +1553,7 @@ const DTRDashboard: React.FC = () => {
         {
           title: "Total kW",
           value: String(currentDayData.totalKw || "0"),
-          icon: "/icons/energy.svg",
+          icon: "icons/energy.svg",
           subtitle1: "Current Active Power",
           bg: "bg-stat-icon-gradient",
           loading: isStatsLoading,
@@ -1564,7 +1563,7 @@ const DTRDashboard: React.FC = () => {
         {
           title: "Total kVA",
           value: String(currentDayData.totalKva || "0"),
-          icon: "/icons/energy.svg",
+          icon: "icons/energy.svg",
           subtitle1: "Current Apparent Power",
           bg: "bg-stat-icon-gradient",
           loading: isStatsLoading,
@@ -1574,7 +1573,7 @@ const DTRDashboard: React.FC = () => {
         {
           title: "Active DTRs",
           value: Number(dtrStatsData?.activeDtrs || "0"),
-          icon: "/icons/dtr.svg",
+          icon: "icons/dtr.svg",
           subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
           bg: "bg-[var(--color-secondary)]",
@@ -1583,7 +1582,7 @@ const DTRDashboard: React.FC = () => {
         {
           title: "In-Active DTRs",
           value: Number(dtrStatsData?.inactiveDtrs || "0"),
-          icon: "/icons/dtr.svg",
+          icon: "icons/dtr.svg",
           subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
           bg: "bg-[var(--color-danger)]",
@@ -1681,8 +1680,8 @@ const DTRDashboard: React.FC = () => {
                     { id: "all", label: "Alerts" },
                     { id: "export", label: "Export" },
                   ],
-                  onMenuItemClick: (itemId: string) => {
-  
+                  onMenuItemClick: (_itemId: string) => {
+                    // Handle menu item click if needed
                   },
                 },
               },

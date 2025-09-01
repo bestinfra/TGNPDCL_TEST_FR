@@ -35,28 +35,28 @@ const MeterDetails: React.FC = () => {
         {
             title: 'Current Reading',
             value: '-',
-            icon: '/icons/current-reading.svg',
+            icon: 'icons/current-reading.svg',
             subtitle1: '-',
             subtitle2: '-',
         },
         {
             title: 'Status',
             value: '-',
-            icon: '/icons/status.svg',
+            icon: 'icons/status.svg',
             subtitle1: '-',
             subtitle2: '-',
         },
         {
             title: 'Meter Type',
             value: '-',
-            icon: '/icons/units.svg',
+            icon: 'icons/units.svg',
             subtitle1: '-',
             subtitle2: '-',
         },
         {
             title: 'Location',
             value: '-',
-            icon: '/icons/location.svg',
+            icon: 'icons/location.svg',
             subtitle1: '-',
             subtitle2: '-',
         },
@@ -93,15 +93,15 @@ const MeterDetails: React.FC = () => {
     const meterDetailAction = [
         {
             label: "View",
-            icon: "/icons/eye.svg",
+            icon: "icons/eye.svg",
         },
         {
             label: 'edit',
-            icon: '/icons/edit.svg'
+            icon: 'icons/edit.svg'
         },
         {
             label: 'delete',
-            icon: '/icons/delete.svg'
+            icon: 'icons/delete.svg'
         }
     ];
 
@@ -113,28 +113,28 @@ const MeterDetails: React.FC = () => {
                 {
                     title: 'Current Reading',
                     value: meterData.currentReading ? `${meterData.currentReading} kWh` : '-',
-                    icon: '/icons/current-reading.svg',
+                    icon: 'icons/current-reading.svg',
                     subtitle1: meterData.lastReadingDate ? `Last Reading: ${new Date(meterData.lastReadingDate).toLocaleDateString()}` : 'No readings available',
                     subtitle2: 'Current Reading',
                 },
                 {
                     title: 'Status',
                     value: meterData.status || '-',
-                    icon: '/icons/status.svg',
+                    icon: 'icons/status.svg',
                     subtitle1: `Meter: ${meterData.status || 'Unknown'}`,
                     subtitle2: 'Status',
                 },
                 {
                     title: 'Meter Type',
                     value: meterData.type || 'N/A',
-                    icon: '/icons/units.svg',
+                    icon: 'icons/units.svg',
                     subtitle1: meterData.phase ? `${meterData.phase} Phase` : 'Phase info not available',
                     subtitle2: 'Type',
                 },
                 {
                     title: 'Location',
                     value: meterData.location || '-',
-                    icon: '/icons/location.svg',
+                    icon: 'icons/location.svg',
                     subtitle1: meterData.installationDate ? `Installed: ${new Date(meterData.installationDate).toLocaleDateString()}` : 'Installation date not available',
                     subtitle2: 'Location',
                 },
@@ -235,28 +235,28 @@ const MeterDetails: React.FC = () => {
                 {
                     title: 'Current Reading',
                     value: '-',
-                    icon: '/icons/current-reading.svg',
+                    icon: 'icons/current-reading.svg',
                     subtitle1: '-',
                     subtitle2: '-',
                 },
                 {
                     title: 'Status',
                     value: '-',
-                    icon: '/icons/status.svg',
+                    icon: 'icons/status.svg',
                     subtitle1: '-',
                     subtitle2: '-',
                 },
                 {
                     title: 'Meter Type',
                     value: '-',
-                    icon: '/icons/units.svg',
+                    icon: 'icons/units.svg',
                     subtitle1: '-',
                     subtitle2: '-',
                 },
                 {
                     title: 'Location',
                     value: '-',
-                    icon: '/icons/location.svg',
+                    icon: 'icons/location.svg',
                     subtitle1: '-',
                     subtitle2: '-',
                 },
@@ -439,7 +439,7 @@ const MeterDetails: React.FC = () => {
                             name: 'Card',
                             props: {
                                 ...cardData,
-                                icon: cardData.icon || '/icons/default.svg',
+                                icon: cardData.icon || 'icons/default.svg',
                                 bg: "bg-stat-icon-gradient",
                                 loading: isLoading,
                             },
@@ -566,11 +566,11 @@ const MeterDetails: React.FC = () => {
                                             }
                                         }
                                     },
-                                    onViewTypeChange: (viewType: string) => {
-
+                                    onViewTypeChange: (_viewType: string) => {
+                                        // Handle view type change if needed
                                     },
-                                    onDownload: (timeRange: string, viewType: string) => {
-
+                                    onDownload: (_timeRange: string, _viewType: string) => {
+                                        // Handle download if needed
                                     },
                                     isLoading: isLoading,
                                 }

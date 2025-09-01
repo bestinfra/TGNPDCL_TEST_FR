@@ -58,27 +58,27 @@ const defaultMenus: MenuCategory[] = [
         items: [
             {
                 title: 'SuperAdmin Dashboard', 
-                icon: '/icons/dashboard.svg',
+                icon: 'icons/dashboard.svg',
                 link: '/superadmin',
             },
             // {
             //     title: 'DTR Dashboard',
-            //     icon: '/icons/dashboard.svg',
+            //     icon: 'icons/dashboard.svg',
             //     link: '/dtr-dashboard',
             // },
             // {
             //     title: 'Tickets',
-            //     icon: '/icons/customer-service.svg',
+            //     icon: 'icons/customer-service.svg',
             //     link: '/tickets',   
             // },
             {
                 title:'All Tickets',
-                icon:'/icons/dashboard.svg',
+                icon:'icons/dashboard.svg',
                 link:'/all-tickets',
             },
             // {   
             //         title: 'Bills',
-            //         icon: '/icons/bills.svg',
+            //         icon: 'icons/bills.svg',
             //         link: '/user-management',
             //         hasSubmenu: true,
             //         submenu: [
@@ -94,7 +94,7 @@ const defaultMenus: MenuCategory[] = [
             //     },
             // {
             //     title:'ConsumerDetails',
-            //     icon:'/icons/dashboard.svg',
+            //     icon:'icons/dashboard.svg',
             //     link:'/consumer-details',
             // }
         ],
@@ -103,49 +103,49 @@ const defaultMenus: MenuCategory[] = [
         category: 'ADMIN SETTINGS',
         items: [
             // {
-            //     title: 'Asset Management',
-            //     icon: '/icons/Asset_managment.svg',
+            //     title: 'Meter Management',
+            //     icon: 'icons/Asset_managment.svg',
             //     link: '/asset-managment',
             // },
             // {
             //     title: 'Meter List',
-            //     icon: '/icons/meter_managment.svg',
+            //     icon: 'icons/meter_managment.svg',
             //     link: '/meters',
             // },
             {
                 title: 'User Management',
                 link: '/users',
-                icon:'/icons/user_managment.svg',
+                icon:'icons/user_managment.svg',
             },
             {
                     title: 'Meter List',
-                    icon: '/icons/meter_managment.svg',
+                    icon: 'icons/meter_managment.svg',
                     link: '/meters',
                 },
                 {
                     title: 'Consumer Dashboard',
-                    icon: '/icons/dashboard.svg',
+                    icon: 'icons/dashboard.svg',
                     link: '/consumer-dashboard',
                 },
                 {
                     title:'Role Permissions',
-                    icon:'/icons/roles.svg',
+                    icon:'icons/roles.svg',
                     link:'/roles-permissions',
                 },
                 {
                     title:'Individual Detail',
-                    icon:'/icons/roles.svg',
+                    icon:'icons/roles.svg',
                     link:'/individual-detail',
                 }
                 ,
                 {
                     title:'Data Logger',
-                    icon:'/icons/roles.svg',
+                    icon:'icons/roles.svg',
                     link:'/data-logger',
                 }
             // {   
             //     title: 'User Management',
-            //     icon: '/icons/user_managment.svg',
+            //     icon: 'icons/user_managment.svg',
             //     link: '/user-management',
             //     hasSubmenu: true,
             //     submenu: [
@@ -157,7 +157,7 @@ const defaultMenus: MenuCategory[] = [
             // },
             // {
             //     title: 'User Management',
-            //     icon: '/icons/user_managment.svg',
+            //     icon: 'icons/user_managment.svg',
             //     link: '/user-management',
             //     hasSubmenu: true,
             //     submenu: [
@@ -178,10 +178,10 @@ const defaultProps: Partial<
         title: 'Download our Mobile App',
         subtitle: 'Get easy in another way',
         buttonText: 'Download App',
-        backgroundImage: '/images/download-app.svg',
+        backgroundImage: 'images/download-app.svg',
         downloadUrl: 'https://your-app-download-url.com',
         logo: {
-            src: '/images/changed-logo.svg',
+            src: 'images/changed-logo.svg',
             alt: 'App Logo',
         },
     },
@@ -245,11 +245,11 @@ const Sidebar = ({
                             src={
                                 isSidebarCollapsed
                                     ? isDarkMode
-                                        ? '/images/bi-white-logo.svg'
-                                        : '/images/changed-logo.svg'
+                                        ? 'images/bi-white-logo.svg'
+                                        : 'images/changed-logo.svg'
                                     : isDarkMode
-                                        ? '/images/bi-white-logo.svg'
-                                        : '/images/bi-blue-logo.svg'
+                                        ? 'images/bi-white-logo.svg'
+                                        : 'images/bi-blue-logo.svg'
                             }
                             alt="Company Logo"
                             className={`md:block ${isSidebarCollapsed ? 'w-8' : 'w-[170px]'
@@ -321,7 +321,7 @@ const Sidebar = ({
                                                                                 : ''
                                                                             }`}>
                                                                         <img
-                                                                            src="/icons/arrow-down.svg"
+                                                                            src="icons/arrow-down.svg"
                                                                             alt=""
                                                                             className="w-3 h-3"
                                                                             aria-hidden="true"
@@ -447,7 +447,7 @@ const Sidebar = ({
                     {!isSidebarCollapsed ? (
                         <>
                             {showAppDownload && appDownload?.enabled && (
-                                <section className="rounded-lg bg-[url('/images/download-app.svg')] bg-cover bg-center flex flex-col items-center justify-center p-6 gap-4">
+                                <section className="rounded-lg bg-[url('images/download-app.svg')] bg-cover bg-center flex flex-col items-center justify-center p-6 gap-4">
                                     <div className="flex items-center justify-between w-full">
                                         <span className="w-10 h-10 bg-primary rounded-full transition-all duration-300 flex justify-center items-center">
                                             <img
@@ -487,7 +487,7 @@ const Sidebar = ({
                                                 aria-label="Share app"
                                                 onClick={onShareClick}>
                                                 <img
-                                                    src="/icons/share.svg"
+                                                    src="icons/share.svg"
                                                     alt=""
                                                     className="w-5 h-5 filter"
                                                     aria-hidden="true"
@@ -510,8 +510,8 @@ const Sidebar = ({
                                             className="w-5 h-5"
                                             src={`${
                                                 isDarkMode
-                                                    ? '/icons/sun.svg'
-                                                    : '/icons/moon.svg'
+                                                    ? 'icons/sun.svg'
+                                                    : 'icons/moon.svg'
                                             }`}
                                             alt=""
                                             aria-hidden="true"
@@ -524,7 +524,7 @@ const Sidebar = ({
                         <div className="flex flex-col items-center justify-center py-4 gap-4 w-full">
                             <span className="w-10 h-10 bg-transparent p-2 rounded-full">
                                 <img
-                                    src="/icons/andriod-app.svg"
+                                    src="icons/andriod-app.svg"
                                     alt=""
                                     className="filter"
                                     aria-hidden="true"
@@ -539,8 +539,8 @@ const Sidebar = ({
                                         className="w-5 h-5"
                                         src={`${
                                             isDarkMode
-                                                ? '/icons/sun.svg'
-                                                : '/icons/moon.svg'
+                                                ? 'icons/sun.svg'
+                                                : 'icons/moon.svg'
                                         }`}
                                         alt=""
                                         aria-hidden="true"
