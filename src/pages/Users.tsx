@@ -219,32 +219,32 @@ export default function Users() {
         {
             title: 'Total Users',
             value: userStats?.totalUsers || '-',
-            icon: '/icons/total-users.svg',
+            icon: 'icons/total-users.svg',
             subtitle1: userStats ? `${userStats.activeUsers} Active Users` : '- Active Users',
             subtitle2: userStats ? `${userStats.inactiveUsers} Inactive Users` : '- Inactive Users',
         },
         {
             title: 'Total Admins',
             value: userStats?.roleBreakdown?.Admin || '-',
-            icon: '/icons/admin.svg',
+            icon: 'icons/admin.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Accountants',
             value: userStats?.roleBreakdown?.Accountant || '-',
-            icon: '/icons/accountant.svg',
+            icon: 'icons/accountant.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Moderators',
             value: userStats?.roleBreakdown?.Moderator || '-',
-            icon: '/icons/moderator.svg',
+            icon: 'icons/moderator.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active moderators
         },
         {
             title: 'Total Roles',
             value: userStats?.totalRoles || '-',
-            icon: '/icons/roles.svg',
+            icon: 'icons/roles.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active roles
         },
     ];

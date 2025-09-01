@@ -51,7 +51,7 @@ function AppLayout({ children }: AppLayoutProps) {
         navigate(`/dtr-detail/${firstResult.dtrNumber || firstResult.id}`);
       } else {
         // No DTR results found, show alert
-        alert(`No DTR found for "${query}". Please check your search term.`);
+      
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -61,7 +61,7 @@ function AppLayout({ children }: AppLayoutProps) {
   // Simplified page title mapping
   const pageTitles: Record<string, string> = {
     '/dtr-dashboard': 'DTR Dashboard',
-    '/asset-management': 'Asset Management',
+    '/asset-management': 'Meter Management',
     '/users': 'Users',
     '/users/:userId': 'User Detail',
     '/add-user': 'Add User',
@@ -76,10 +76,10 @@ function AppLayout({ children }: AppLayoutProps) {
   };
   // Menu configuration
   const menuItems = [
-    { title: 'DTR Dashboard', icon: '/icons/dashboard.svg', link: '/' },
+    { title: 'DTR Dashboard', icon: 'icons/dashboard.svg', link: '/' },
     {
       title: 'Dashboard',
-      icon: '/icons/dashboard.svg',
+      icon: 'icons/dashboard.svg',
       hasSubmenu: true,
       submenu: [
 ,
@@ -96,10 +96,10 @@ function AppLayout({ children }: AppLayoutProps) {
       ],
     },
 ,
-    { title: 'Assets', icon: '/icons/workflow-setting-alt.svg', link: '/asset-management' },
+    { title: 'Assets', icon: 'icons/workflow-setting-alt.svg', link: '/asset-management' },
     {
       title: 'User Management',
-      icon: '/icons/user.svg',
+      icon: 'icons/user.svg',
       hasSubmenu: true,
       submenu: [
 ,
@@ -126,12 +126,12 @@ function AppLayout({ children }: AppLayoutProps) {
       ],
     },
 ,
-    { title: 'Users', icon: '/icons/user.svg', link: '/users' },
-    { title: 'Role Management', icon: '/icons/roles.svg', link: '/role-management' },
-    { title: 'All Tickets', icon: '/icons/customer-service.svg', link: '/tickets' },
+    { title: 'Users', icon: 'icons/user.svg', link: '/users' },
+    { title: 'Role Management', icon: 'icons/roles.svg', link: '/role-management' },
+    { title: 'All Tickets', icon: 'icons/customer-service.svg', link: '/tickets' },
     {
       title: 'Meter Management',
-      icon: '/icons/meter-bolt.svg',
+      icon: 'icons/meter-bolt.svg',
       hasSubmenu: true,
       submenu: [
 ,
@@ -158,8 +158,8 @@ function AppLayout({ children }: AppLayoutProps) {
       ],
     },
 ,
-    { title: 'Data Logger', icon: '/icons/meter-bolt.svg', link: '/data-logger' },
-    { title: 'Meter List', icon: '/icons/meter-bolt.svg', link: '/meters' }
+    { title: 'Data Logger', icon: 'icons/meter-bolt.svg', link: '/data-logger' },
+    { title: 'Meter List', icon: 'icons/meter-bolt.svg', link: '/meters' }
   ];
   return (
       <div className="flex h-screen bg-white">
@@ -169,14 +169,14 @@ function AppLayout({ children }: AppLayoutProps) {
             onNavigate={(path: string) => navigate(path)}
             menus={[{ category: 'GENERAL', items: menuItems }]}
             logo={{
-              src: '/images/bi-logo-latest.svg',
+              src: 'images/bi-logo-latest.svg',
               alt: 'Best Infra',
-              collapsedSrc: '/images/changed-logo.svg',
+              collapsedSrc: 'images/changed-logo.svg',
             }}
             clientLogo={{
-              src: '/images/gmr-logo.png',
+              src: 'images/gmr-logo.png',
               alt: 'GMR Client',
-              collapsedSrc: '/images/gmr-logo.png',
+              collapsedSrc: 'images/gmr-logo.png',
             }}
             footer={{
               copyright: '© 2024 Best Infra',

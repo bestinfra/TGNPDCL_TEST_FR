@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import React from "react";
 const Page = lazy(() => import('SuperAdmin/Page'));
+import { APP_CONFIG } from '../config/constants';
 // Define CarouselSlide type locally since we're using federated components
 interface CarouselSlide {
   title: string;
@@ -14,15 +15,15 @@ import { login } from "../api/subAppAuth";
 const slides: CarouselSlide[] = [
   {
     title: "Welcome to the Sub-App!",
-    img: "/images/Slide3.jpg",
+    img: "images/Slide3.jpg",
   },
   {
     title: "Feature Highlight",
-    img: "/images/DTR.jpg",
+    img: "images/DTR.jpg",
   },
   {
     title: "Stay Connected",
-    img: "/images/Transformer.jpg",
+    img: "images/Transformer.jpg",
   },
 ];
 
@@ -123,7 +124,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
       if (result.success && result.data) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
-        window.location.href = "/";
+        window.location.href = `${APP_CONFIG.BASENAME}/`;
       } else {
         setError(result.message || "Login failed");
       }

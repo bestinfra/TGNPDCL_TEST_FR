@@ -22,63 +22,63 @@ const dummyDTRData = {
         {
             title: 'Total LT Feeders',
             value: '0',
-            icon: '/icons/feeder.svg',
+            icon: 'icons/feeder.svg',
             subtitle1: 'Connected to DTR',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kW',
             value: '0',
-            icon: '/icons/energy.svg',
+            icon: 'icons/energy.svg',
             subtitle1: 'Active Power',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kVA',
             value: '0',
-            icon: '/icons/energy.svg',
+            icon: 'icons/energy.svg',
             subtitle1: 'Apparent Power',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kWh',
             value: '0',
-            icon: '/icons/energy.svg',
+            icon: 'icons/energy.svg',
             subtitle1: 'Cumulative Active Energy',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Total kVAh',
             value: '0',
-            icon: '/icons/energy.svg',
+            icon: 'icons/energy.svg',
             subtitle1: 'Cumulative Apparent Energy',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'LT Feeders Fuse Blown',
             value: '0',
-            icon: '/icons/power_failure.svg',
+            icon: 'icons/power_failure.svg',
             subtitle1: 'Requires maintenance',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Unbalanced LT Feeders',
             value: '0',
-            icon: '/icons/power_failure.svg',
+            icon: 'icons/power_failure.svg',
             subtitle1: 'Requires attention',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Power On',
             value: '0',
-            icon: '/icons/power_failure.svg',
+            icon: 'icons/power_failure.svg',
             subtitle1: '',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
         },
         {
             title: 'Power Off',
             value: '0',
-            icon: '/icons/power_failure.svg',
+            icon: 'icons/power_failure.svg',
             subtitle1: '',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             bg: 'bg-[var(--color-danger)]',
@@ -87,7 +87,7 @@ const dummyDTRData = {
         {
             title: 'Status',
             value: '0',
-            icon: '/icons/units.svg',
+            icon: 'icons/units.svg',
             subtitle1: '0',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             bg: 'bg-[var(--color-secondary)]',
@@ -138,6 +138,7 @@ const DTRDetailPage = () => {
     const [feedersData, setFeedersData] = useState(dummyFeedersData);
     const [alertsData, setAlertsData] = useState(dummyAlertsData);
     const [locationHierarchy, setLocationHierarchy] = useState<any[]>([]);
+    const [feederStats, setFeederStats] = useState<any>(null);
 
     // Loading states
     const [isDtrLoading, setIsDtrLoading] = useState(true);
@@ -165,7 +166,6 @@ const DTRDetailPage = () => {
         window.location.reload();
     };
 
-    // Update address when location hierarchy changes
     useEffect(() => {
         if (locationHierarchy.length > 0) {
             const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
@@ -427,71 +427,72 @@ const DTRDetailPage = () => {
 
                 const data = await response.json();
                 
-                console.log('🔍 Frontend: Feeder Stats API Response:', data);
-                
                 if (data.success) {
+                    // Store the feeder stats data for use in other components
+                    setFeederStats(data.data);
+                    
                     // Update the DTR stats with real data from the API
                     const updatedStats = [
                         {
                             title: 'Total LT Feeders',
-                            value: data.data?.totalLTFeeders ? Number(data.data.totalLTFeeders).toFixed(2) : '0',
-                            icon: '/icons/feeder.svg',
+                            value: data.data?.totalLTFeeders || '0',
+                            icon: 'icons/feeder.svg',
                             subtitle1: 'Connected to DTR',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kW',
-                            value: data.data?.totalKW ? Number(data.data.totalKW).toFixed(2) : '0'  ,
-                            icon: '/icons/energy.svg',
+                            value: data.data?.totalKW || '0',
+                            icon: 'icons/energy.svg',
                             subtitle1: 'Active Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVA',
-                            value: data.data?.totalKVA ? Number(data.data.totalKVA).toFixed(2) : '0',
-                            icon: '/icons/energy.svg',
+                            value: data.data?.totalKVA || '0',
+                            icon: 'icons/energy.svg',
                             subtitle1: 'Apparent Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {   
                             title: 'Total kWh',
-                            value: data.data?.totalKWh ? Number(data.data.totalKWh).toFixed(2) : '0',
-                            icon: '/icons/energy.svg',
+                            value: data.data?.totalKWh || '0',
+                            icon: 'icons/energy.svg',
                             subtitle1: 'Cumulative Active Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVAh',
-                            value: data.data?.totalKVAh ? Number(data.data.totalKVAh).toFixed(2) : '0',
-                            icon: '/icons/energy.svg',
+                            value: data.data?.totalKVAh || '0',
+                            icon: 'icons/energy.svg',
                             subtitle1: 'Cumulative Apparent Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'LT Feeders Fuse Blown',
-                            value: data.data?.ltFuseBlown ? Number(data.data.ltFuseBlown).toFixed(2) : '0',
-                            icon: '/icons/power_failure.svg',
+                            value: data.data?.ltFuseBlown || '0',
+                            icon: 'icons/power_failure.svg',
                             subtitle1: 'Requires maintenance',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Unbalanced LT Feeders',
-                            value: data.data?.unbalancedLTFeeders ? Number(data.data.unbalancedLTFeeders).toFixed(2) : '0',
-                            icon: '/icons/power_failure.svg',
+                            value: data.data?.unbalancedLTFeeders || '0',
+                            icon: 'icons/power_failure.svg',
                             subtitle1: 'Requires attention',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Power On',
-                            value: data.data?.powerOnHours ? Number(data.data.powerOnHours).toFixed(2) : '0',
-                            icon: '/icons/power_failure.svg',
+                            value: data.data?.powerOnHours || '0',
+                            icon: 'icons/power_failure.svg',
                             subtitle1: '',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Power Off',
-                            value: data.data?.powerOffHours ? Number(data.data.powerOffHours).toFixed(2) : '0',
-                            icon: '/icons/power_failure.svg',
+                            value: data.data?.powerOffHours || '0',
+                            icon: 'icons/power_failure.svg',
                             subtitle1: '',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                             bg: 'bg-[var(--color-danger)]',
@@ -499,16 +500,14 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Status',
-                            value: data.data?.status ? Number(data.data.status).toFixed(2) : '0',
-                            icon: '/icons/units.svg',
+                            value: data.data?.status || '0',
+                            icon: 'icons/units.svg',
                             subtitle1: '0',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                             bg: 'bg-[var(--color-secondary)]',
                             iconStyle: FILTER_STYLES.WHITE,
                         },
                     ];
-                    
-                    console.log('🔍 Frontend: Updated Stats Array:', updatedStats);
                     
                     // Update the DTR stats
                     setDtr(prev => ({
@@ -694,9 +693,6 @@ const DTRDetailPage = () => {
 
 
 
-    // Debug: Log current state before render
-    console.log('🔍 Frontend: Current DTR state before render:', dtr);
-    
     return (
         <Page
             sections={[
@@ -845,9 +841,9 @@ const DTRDetailPage = () => {
                                                         value: dtr.capacity,
                                                         align: 'start',
                                                         gap: 'gap-1',
-                                                        statusIndicator: true,
-                                                        currentValue: dtr.capacity,
-                                                        maxValue: 15.0,
+                                                        progressBar: true,
+                                                        currentValue: feederStats?.totalKVA || 0,
+                                                        maxValue: dtr.capacity,
                                                         progressColor: 'bg-positive'
 
                                                     },
@@ -969,7 +965,7 @@ const DTRDetailPage = () => {
                                             actions: [
                                                 {
                                                     label: 'View',
-                                                    icon: '/icons/eye.svg',
+                                                    icon: 'icons/eye.svg',
                                                     onClick: handleFeederView,
                                                     variant: 'primary',
                                                     size: 'sm'

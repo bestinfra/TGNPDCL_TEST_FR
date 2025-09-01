@@ -1,9 +1,9 @@
 import { Suspense, useState, useEffect } from "react";
 import { lazy } from "react";
+import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
 const Page = lazy(() => import("SuperAdmin/Page"));
 
-// --- Types ---
 interface HierarchyNode {
     hierarchy_id: string | number;
     hierarchy_name: string;
@@ -11,66 +11,91 @@ interface HierarchyNode {
     children?: HierarchyNode[];
 }
 
-// Dropdown Data Interfaces
-interface ProjectTypeOption {
-    id: string | number;
-    name: string;
-    code: string;
-}
+// interface DiscomOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     region: string;
+// }
 
-interface DiscomOption {
-    id: string | number;
-    name: string;
-    code: string;
-    region: string;
-}
+// interface CircleOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     discom_id: string | number;
+// }
 
-interface CircleOption {
-    id: string | number;
-    name: string;
-    code: string;
-    discom_id: string | number;
-}
+// interface DivisionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     circle_id: string | number;
+// }
 
-interface DivisionOption {
-    id: string | number;
-    name: string;
-    code: string;
-    circle_id: string | number;
-}
+// interface SubDivisionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     division_id: string | number;
+// }
 
-interface SubDivisionOption {
-    id: string | number;
-    name: string;
-    code: string;
-    division_id: string | number;
-}
+// interface SectionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     sub_division_id: string | number;
+// }
 
-interface SectionOption {
-    id: string | number;
-    name: string;
-    code: string;
-    sub_division_id: string | number;
-}
+// interface MeterLocationOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     description: string;
+// }
 
-interface MeterLocationOption {
-    id: string | number;
-    name: string;
-    code: string;
-    description: string;
-}
+// interface DropdownData {
+//     discoms: DiscomOption[];
+//     circles: CircleOption[];
+//     divisions: DivisionOption[];
+//     subDivisions: SubDivisionOption[];
+//     sections: SectionOption[];
+//     meterLocations: MeterLocationOption[];
+// }
 
-interface DropdownData {
-    projectTypes: ProjectTypeOption[];
-    discoms: DiscomOption[];
-    circles: CircleOption[];
-    divisions: DivisionOption[];
-    subDivisions: SubDivisionOption[];
-    sections: SectionOption[];
-    meterLocations: MeterLocationOption[];
-}
+// Updated filter options structure to match API response
+const dummyFilterOptions = {
+  discoms: [
+    { value: "all", label: "All DISCOMs" },
+    { value: "DISCOM1", label: "DISCOM 1" },
+    { value: "DISCOM2", label: "DISCOM 2" },
+  ],
+  circles: [
+    { value: "all", label: "All Circles" },
+    { value: "CIRCLE1", label: "Circle 1" },
+    { value: "CIRCLE2", label: "Circle 2" },
+  ],
+  divisions: [
+    { value: "all", label: "All Divisions" },
+    { value: "DIV1", label: "Division 1" },
+    { value: "DIV2", label: "Division 2" },
+  ],
+  subDivisions: [
+    { value: "all", label: "All Sub-Divisions" },
+    { value: "SUBDIV1", label: "Sub Division 1" },
+    { value: "SUBDIV2", label: "Sub Division 2" },
+  ],
+  sections: [
+    { value: "all", label: "All Sections" },
+    { value: "SECTION1", label: "Section 1" },
+    { value: "SECTION2", label: "Section 2" },
+  ],
+  meterLocations: [
+    { value: "all", label: "All Locations" },
+    { value: "INDOOR", label: "Indoor" },
+    { value: "OUTDOOR", label: "Outdoor" },
+  ],
+};
 
-// Dummy hierarchy data structure
 const dummyHierarchyData = [
   {
     id: 1,
@@ -400,10 +425,12 @@ const DownloadIcon = () => (
 );
 
 export default function AssetManagment() {
+  const navigate = useNavigate();
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
   const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
+  // State for tracking failed APIs
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"hierarchy" | "table">("table");
   const [meterTableData, setMeterTableData] = useState<any[]>([]);
@@ -412,10 +439,24 @@ export default function AssetManagment() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // State for filter values
+  const [filterValues, setFilterValues] = useState({
+    discom: "all",
+    circle: "all",
+    division: "all",
+    subDivision: "all",
+    section: "all",
+    meterLocation: "all",
+  });
+
+  // State for tracking the last selected ID from hierarchy dropdowns
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+
   // Asset management menu items
   const assetManagementActions = [
     { id: "edit-asset-title", label: "Edit Asset Title" },
     { id: "delete", label: "Delete", isDestructive: true },
+    {id:'view' , label: "View"},
   ];
 
   // Handle asset actions
@@ -446,6 +487,11 @@ export default function AssetManagment() {
       case "delete":
         // Handle delete
         console.log("Deleting asset:", node.name);
+        break;
+      case "view":
+        // Navigate to meters page
+        console.log("Navigating to meters page...");
+        navigate("/meters", { state: { row: node } });
         break;
       default:
         console.log("Unknown action:", actionId);
@@ -498,7 +544,7 @@ export default function AssetManagment() {
   }, [useDummyData]);
 
   // Fetch meter data from new API endpoint
-  const fetchMeterData = async (page = 1, pageSize = 20, search = '') => {
+  const fetchMeterData = async (page = 1, pageSize = 20, search = '', lastSelectedId?: string | null) => {
     setIsLoadingMeterData(true);
     try {
       const queryParams = new URLSearchParams({
@@ -506,6 +552,11 @@ export default function AssetManagment() {
         pageSize: pageSize.toString(),
         ...(search && { search })
       });
+
+      // Add lastSelectedId if available
+      if (lastSelectedId) {
+        queryParams.append("hierarchyId", lastSelectedId);
+      }
 
       const response = await fetch(`${BACKEND_URL}/dtrs/all-meters?${queryParams}`, {
         method: 'GET',
@@ -543,42 +594,135 @@ export default function AssetManagment() {
     }
   };
 
-  // Fetch meter data when view mode changes to table
+  // Fetch meter data when view mode changes to table or when lastSelectedId changes
   useEffect(() => {
     if (viewMode === "table") {
-      fetchMeterData(currentPage);
+      fetchMeterData(currentPage, 20, '', lastSelectedId);
     }
-  }, [viewMode, currentPage]);
+  }, [viewMode, currentPage, lastSelectedId]);
   
   // Fetch dropdown data from API
   useEffect(() => {
     const fetchDropdownData = async () => {
       setDropdownLoading(true);
       try {
-        const response = await fetch(`${BACKEND_URL}/dropdowns/asset-management`);
+        const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
         const data = await response.json();
 
         if (data.success) {
-          setDropdownData(data.data || {
-            projectTypes: [],
-            discoms: [],
-            circles: [],
-            divisions: [],
-            subDivisions: [],
-            sections: [],
-            meterLocations: []
+          // Transform the API data to match dropdown component format
+          const transformedData = {
+            discoms: data.data
+              .filter((item: any) => item.levelName === "DISCOM")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                region: item.region || item.name
+              })),
+            circles: data.data
+              .filter((item: any) => item.levelName === "CIRCLE")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                discom_id: item.parentId || 1
+              })),
+            divisions: data.data
+              .filter((item: any) => item.levelName === "DIVISION")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                circle_id: item.parentId || 1
+              })),
+            subDivisions: data.data
+              .filter((item: any) => item.levelName === "SUB-DIVISION")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                division_id: item.parentId || 1
+              })),
+            sections: data.data
+              .filter((item: any) => item.levelName === "SECTION")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                sub_division_id: item.parentId || 1
+              })),
+            meterLocations: data.data
+              .filter((item: any) => item.levelName === "METER-LOCATION")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                description: item.description || item.name
+              }))
+          };
+
+          // setDropdownData(transformedData);
+          
+          // Also update filter options for the new dropdown structure
+          setFilterOptions({
+            discoms: [
+              { value: "all", label: "All DISCOMs" },
+              ...transformedData.discoms.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            circles: [
+              { value: "all", label: "All Circles" },
+              ...transformedData.circles.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            divisions: [
+              { value: "all", label: "All Divisions" },
+              ...transformedData.divisions.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            subDivisions: [
+              { value: "all", label: "All Sub-Divisions" },
+              ...transformedData.subDivisions.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            sections: [
+              { value: "all", label: "All Sections" },
+              ...transformedData.sections.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            meterLocations: [
+              { value: "all", label: "All Locations" },
+              ...transformedData.meterLocations.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ]
           });
+        } else {
+          throw new Error(data.message || "Failed to fetch filter options");
         }
       } catch (error) {
-        console.log("Failed to fetch dropdown data:", error);
+        console.error("Error fetching filter options:", error);
         // Set default data if API fails
+        /*
         setDropdownData({
-          projectTypes: [
-            { id: 1, name: 'HT', code: 'HT' },
-            { id: 2, name: 'LT', code: 'LT' },
-            { id: 3, name: 'Transmission', code: 'TRANS' },
-            { id: 4, name: 'Distribution', code: 'DIST' }
-          ],
           discoms: [
             { id: 1, name: 'TANGEDCO', code: 'TANGEDCO', region: 'Tamil Nadu' },
             { id: 2, name: 'TSEDCL', code: 'TSEDCL', region: 'Telangana' },
@@ -611,6 +755,7 @@ export default function AssetManagment() {
             { id: 4, name: 'Substation', code: 'SUBST', description: 'Substation installation' }
           ]
         });
+        */
       } finally {
         setDropdownLoading(false);
       }
@@ -621,17 +766,19 @@ export default function AssetManagment() {
   
   const [isSubNodeChecked, setIsSubNodeChecked] = useState(false);
   
-  // Dropdown data state
-  const [dropdownData, setDropdownData] = useState<DropdownData>({
-    projectTypes: [],
-    discoms: [],
-    circles: [],
-    divisions: [],
-    subDivisions: [],
-    sections: [],
-    meterLocations: []
-  });
+  // Dropdown data state - Commented out as not currently used
+  // const [dropdownData, setDropdownData] = useState<DropdownData>({
+  //   discoms: [],
+  //   circles: [],
+  //   divisions: [],
+  //   subDivisions: [],
+  //   sections: [],
+  //   meterLocations: []
+  // });
   const [dropdownLoading, setDropdownLoading] = useState(false);
+
+  // State for filter options from backend
+  const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
 
   const handleTabChange = (newTabIndex: number) => {
     setActiveTab(newTabIndex);
@@ -660,6 +807,219 @@ export default function AssetManagment() {
     clearErrors();
     // Retry all APIs by refreshing the page
     window.location.reload();
+  };
+
+  // Function to update filter options based on selection
+  const updateFilterOptions = async (filterName: string, selectedValue: any) => {
+    const name = selectedValue.target.value;
+    const value = selectedValue.target.value;
+    if (name === "all") return;
+
+    try {
+      const params = new URLSearchParams();
+      params.append("parentId", value);
+      const apiUrl = `${BACKEND_URL}/dtrs/filter/filter-options?${params.toString()}`;
+      
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Failed to fetch filter options");
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const newOptions = data.data || [];
+
+        // Update the appropriate filter options based on filterName
+        // and reset dependent filters
+        switch (filterName) {
+          case "discom":
+            setFilterOptions(prev => ({
+              ...prev,
+              circles: [
+                { value: "all", label: "All Circles" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
+            }));
+            // Reset dependent filters
+            setFilterValues((prev) => ({
+              ...prev,
+              circle: "all",
+              division: "all",
+              subDivision: "all",
+              section: "all",
+              meterLocation: "all",
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions((prev) => ({
+              ...prev,
+              divisions: [{ value: "all", label: "All Divisions" }],
+              subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+              sections: [{ value: "all", label: "All Sections" }],
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+            }));
+            break;
+
+          case "circle":
+            setFilterOptions(prev => ({
+              ...prev,
+              divisions: [
+                { value: "all", label: "All Divisions" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
+            }));
+            // Reset dependent filters
+            setFilterValues((prev) => ({
+              ...prev,
+              division: "all",
+              subDivision: "all",
+              section: "all",
+              meterLocation: "all",
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions((prev) => ({
+              ...prev,
+              subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+              sections: [{ value: "all", label: "All Sections" }],
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+            }));
+            break;
+
+          case "division":
+            setFilterOptions(prev => ({
+              ...prev,
+              subDivisions: [
+                { value: "all", label: "All Sub-Divisions" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
+            }));
+            // Reset dependent filters
+            setFilterValues((prev) => ({
+              ...prev,
+              subDivision: "all",
+              section: "all",
+              meterLocation: "all",
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions((prev) => ({
+              ...prev,
+              sections: [{ value: "all", label: "All Sections" }],
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+            }));
+            break;
+
+          case "subDivision":
+            setFilterOptions(prev => ({
+              ...prev,
+              sections: [
+                { value: "all", label: "All Sections" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
+            }));
+            // Reset dependent filters
+            setFilterValues((prev) => ({
+              ...prev,
+              section: "all",
+              meterLocation: "all",
+            }));
+            // Clear dependent dropdowns
+            setFilterOptions((prev) => ({
+              ...prev,
+              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+            }));
+            break;
+
+          case "section":
+            setFilterOptions(prev => ({
+              ...prev,
+              meterLocations: [
+                { value: "all", label: "All Meter Locations" },
+                ...newOptions.map((item: any) => ({
+                  value: item.id.toString(),
+                  label: item.name,
+                })),
+              ],
+            }));
+            // Reset dependent filters
+            setFilterValues((prev) => ({
+              ...prev,
+              meterLocation: "all",
+            }));
+            break;
+        }
+      }
+    } catch (error) {
+      console.error(
+        `❌ Error updating filter options for ${filterName}:`,
+        error
+      );
+    }
+  };
+
+  // Filter change handlers
+  const handleFilterChange = async (
+    filterName: string,
+    value: string | { target: { value: string } }
+  ) => {
+    // Handle both string and event object cases
+    const selectedValue =
+      typeof value === "string" ? value : value.target.value;
+
+    setFilterValues((prev) => ({
+      ...prev,
+      [filterName]: selectedValue,
+    }));
+
+    // Update dependent filter options - create event-like object for compatibility
+    const eventObject = { target: { value: selectedValue } };
+    await updateFilterOptions(filterName, eventObject);
+  };
+
+  // Handle Get Data button click
+  const handleGetData = async () => {
+    let lastId: string | null = null;
+    
+    if (filterValues.meterLocation !== "all") {
+      lastId = filterValues.meterLocation;
+    } else if (filterValues.section !== "all") {
+      lastId = filterValues.section;
+    } else if (filterValues.subDivision !== "all") {
+      lastId = filterValues.subDivision;
+    } else if (filterValues.division !== "all") {
+      lastId = filterValues.division;
+    } else if (filterValues.circle !== "all") {
+      lastId = filterValues.circle;
+    } else if (filterValues.discom !== "all") {
+      lastId = filterValues.discom;
+    }
+    
+    setLastSelectedId(lastId);
+
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filterValues).forEach(([key, value]) => {
+        if (value !== "all") {
+          params.append(key, value);
+        }
+      });
+
+      // Refresh data with new filters
+      if (viewMode === "table") {
+        fetchMeterData(currentPage, 20, '', lastId);
+      }
+    } catch (error) {
+      console.error("Error applying filters:", error);
+    }
   };
 
   const tabs = [
@@ -694,7 +1054,7 @@ export default function AssetManagment() {
             validation: {
               required: "Asset title is required",
             },
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
           },
           {
             name: "assetName",
@@ -728,7 +1088,7 @@ export default function AssetManagment() {
             validation: {
               required: "Parent asset is required when creating a sub node",
             },
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
           });
         }
 
@@ -740,7 +1100,7 @@ export default function AssetManagment() {
             name: "uploadFile",
             type: "chosenfile",
             label: "Upload File",
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
             placeholder: "Drag and drop files here or click to browse",
             required: true,
             validation: {
@@ -760,7 +1120,7 @@ export default function AssetManagment() {
             label: "Search Templates",
             placeholder: "Asset Title (Ex. Locations)",
             required: false,
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
           },
         ];
 
@@ -916,7 +1276,7 @@ export default function AssetManagment() {
                     {
                       name: "PageHeader",
                       props: {
-                        title: "Asset Management",
+                        title: "Meter Management",
                         onBackClick: () => window.history.back(),
                         backButtonText: "Back to Dashboard",
                         showMenu: true,
@@ -1016,127 +1376,79 @@ export default function AssetManagment() {
                           {
                             name: "Dropdown",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All Project Types' },
-                                ...dropdownData.projectTypes.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
+                              options: filterOptions.discoms,
+                              value: filterValues.discom,
+                              onChange: (value: string) => handleFilterChange("discom", value),
+                              placeholder: "Select DISCOM",
                               loading: dropdownLoading,
-                              onChange: (value: string) => console.log('Project Type:', value)
+                              searchable: false,
                             }
                           },
                           {
                             name: "Dropdown",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All DISCOMs' },
-                                ...dropdownData.discoms.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
+                              options: filterOptions.circles,
+                              value: filterValues.circle,
+                              onChange: (value: string) => handleFilterChange("circle", value),
+                              placeholder: "Select Circle",
                               loading: dropdownLoading,
-                              onChange: (value: string) => console.log('DISCOM:', value)
+                              searchable: false,
                             }
                           },
                           {
                             name: "Dropdown",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All Circles' },
-                                ...dropdownData.circles.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
+                              options: filterOptions.divisions,
+                              value: filterValues.division,
+                              onChange: (value: string) => handleFilterChange("division", value),
+                              placeholder: "Select Division",
                               loading: dropdownLoading,
-                              onChange: (value: string) => console.log('CIRCLE:', value)
+                              searchable: false,
                             }
                           },
                           {
                             name: "Dropdown",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All Divisions' },
-                                ...dropdownData.divisions.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
+                              options: filterOptions.subDivisions,
+                              value: filterValues.subDivision,
+                              onChange: (value: string) => handleFilterChange("subDivision", value),
+                              placeholder: "Select Sub-Division",
                               loading: dropdownLoading,
-                              onChange: (value: string) => console.log('DIVISION:', value)
+                              searchable: false,
                             }
                           },
                           {
                             name: "Dropdown",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All Sub-Divisions' },
-                                ...dropdownData.subDivisions.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
+                              options: filterOptions.sections,
+                              value: filterValues.section,
+                              onChange: (value: string) => handleFilterChange("section", value),
+                              placeholder: "Select Section",
                               loading: dropdownLoading,
-                              onChange: (value: string) => console.log('SUB-DIVISION:', value)
+                              searchable: false,
                             }
                           },
                           {
                             name: "Dropdown",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All Sections' },
-                                ...dropdownData.sections.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
+                              options: filterOptions.meterLocations,
+                              value: filterValues.meterLocation,
+                              onChange: (value: string) => handleFilterChange("meterLocation", value),
+                              placeholder: "Select Meter Location",
                               loading: dropdownLoading,
-                              onChange: (value: string) => console.log('SECTION:', value)
+                              searchable: false,
                             }
                           },
                           {
-                            name: "Dropdown",
+                            name: "Button",
                             props: {
-                              options: [
-                                { value: 'all', label: 'All Locations' },
-                                ...dropdownData.meterLocations.map(item => ({
-                                  value: item.id.toString(),
-                                  label: item.name
-                                }))
-                              ],
-                              value: 'all',
-                              searchable: false,
-                              loading: dropdownLoading,
-                              onChange: (value: string) => console.log('METER LOCATION:', value)
-                            }
-                          },
-                          {
-                            name:'Button',
-                            props: {
-                              label: 'Search',
-                              onClick: () => console.log("Search"),
-                              variant: "primary",
-                              className: "h-10 px-6 self-end",
-                              loading: false,
+                              onClick: handleGetData,
+                              variant: "secondary",
+                              children: "Get Data",
+                              className: "h-10 self-end",
                               searchable: false,
                             },
-                            align:'end'
-                            
+                            align: "center"
                           }
                         ],
                       },
@@ -1202,40 +1514,7 @@ export default function AssetManagment() {
                                   sortable: true,
                                 },
                               ] : [
-                                // {
-                                //   key: "name",
-                                //   label: "Asset Name",
-                                //   sortable: true,
-                                //   searchable: true,
-                                // },
-                                // {
-                                //   key: "type",
-                                //   label: "Asset Type",
-                                //   sortable: true,
-                                //   searchable: true,
-                                // },
-                                // {
-                                //   key: "level",
-                                //   label: "Hierarchy Level",
-                                //   sortable: true,
-                                // },
-                                // {
-                                //   key: "path",
-                                //   label: "Full Path",
-                                //   sortable: true,
-                                //   searchable: true,
-                                // },
-                                // {
-                                //   key: "count",
-                                //   label: "Count",
-                                //   sortable: true,
-                                // },
-                                // {
-                                //   key: "parent",
-                                //   label: "Parent",
-                                //   sortable: true,
-                                //   searchable: true,
-                                // },
+                               
                                 {
                                   key: "dtrId",
                                   label: "DTR ID",
@@ -1282,14 +1561,18 @@ export default function AssetManagment() {
                               totalPages: viewMode === "table" ? totalPages : undefined,
                               onPageChange: viewMode === "table" ? (page: number) => {
                                 setCurrentPage(page);
-                                fetchMeterData(page);
+                                fetchMeterData(page, 20, '', lastSelectedId);
                               } : undefined,
                               onSearch: viewMode === "table" ? (searchTerm: string) => {
                                 setCurrentPage(1);
-                                fetchMeterData(1, 20, searchTerm);
+                                fetchMeterData(1, 20, searchTerm, lastSelectedId);
                               } : undefined,
                               showActions: true,
                               actions: assetManagementActions,
+                              onViewClick: (row: any) => {
+                                navigate("/meters", { state: { row: row } });
+                                console.log("Navigating to meters page...");
+                              },
                               onActionClick: (actionId: string, row: any) => {
                                 // Find the original node data for actions
                                 const findNode = (

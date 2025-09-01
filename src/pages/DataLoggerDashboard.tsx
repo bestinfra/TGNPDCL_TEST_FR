@@ -33,28 +33,28 @@ const DataLoggerDashboard: React.FC = () => {
         {
             title: 'Status',
             value: '-',
-            icon: '/icons/status.svg',
+            icon: 'icons/status.svg',
             subtitle1: '-',
             subtitle2: '',
         },
         {
             title: 'Battery Level',
             value: '-',
-            icon: '/icons/battery-charge.svg',
+            icon: 'icons/battery-charge.svg',
             subtitle1: '-',
             subtitle2: '',
         },
         {
             title: 'Signal Strength',
             value: '-',
-            icon: '/icons/signal.svg',
+            icon: 'icons/signal.svg',
             subtitle1: '-',
             subtitle2: '',
         },
         {
             title: 'Assigned Meters',
             value: '-',
-            icon: '/icons/meter.svg',
+            icon: 'icons/meter.svg',
             subtitle1: '-',
             subtitle2: '',
         },
@@ -81,7 +81,7 @@ const DataLoggerDashboard: React.FC = () => {
                         {
                             title: 'Status',
                             value: data.status || '-',
-                            icon: '/icons/status.svg',
+                            icon: 'icons/status.svg',
                             subtitle1: data.lastCommunication 
                                 ? `Last Communication: ${new Date(data.lastCommunication).toLocaleString()}`
                                 : 'No communication data',
@@ -90,7 +90,7 @@ const DataLoggerDashboard: React.FC = () => {
                         {
                             title: 'Battery Level',
                             value: data.batteryLevel ? `${data.batteryLevel}%` : '-',
-                            icon: '/icons/battery-charge.svg',
+                            icon: 'icons/battery-charge.svg',
                             subtitle1: data.batteryLevel && data.batteryLevel < 20 
                                 ? 'Low Battery Warning' 
                                 : 'Battery OK',
@@ -99,7 +99,7 @@ const DataLoggerDashboard: React.FC = () => {
                         {
                             title: 'Signal Strength',
                             value: data.signalStrength ? `${data.signalStrength}%` : '-',
-                            icon: '/icons/signal.svg',
+                            icon: 'icons/signal.svg',
                             subtitle1: data.signalStrength && data.signalStrength > 80 
                                 ? 'Excellent Signal' 
                                 : 'Signal OK',
@@ -108,7 +108,7 @@ const DataLoggerDashboard: React.FC = () => {
                         {
                             title: 'Assigned Meters',
                             value: data.assignedMeters?.toString() || '-',
-                            icon: '/icons/meter.svg',
+                            icon: 'icons/meter.svg',
                             subtitle1: `Total Readings: ${data.totalReadings?.toLocaleString() || '-'}`,
                             subtitle2: '',
                         },

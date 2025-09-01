@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BACKEND_URL from '../config';
 const Page = lazy(() => import('SuperAdmin/Page'));
@@ -16,6 +16,14 @@ const DTRTable: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [cardType, setCardType] = useState<string>('total-dtrs');
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
+  const [serverPagination, setServerPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
   const [hasRealData, setHasRealData] = useState(false);
 
   // Check URL parameters to determine which card was clicked
@@ -36,59 +44,75 @@ const DTRTable: React.FC = () => {
     switch (cardType) {
       case 'total-dtrs':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
-          { key: 'capacity', label: 'Capacity (kVA)' },
-          { key: 'location', label: 'Location' },
-          { key: 'status', label: 'Status' },
-          { key: 'lastUpdate', label: 'Last Update' },
+          { key: 'feedersCount', label: 'Feeders Count' },
+          {
+            key: 'commStatus',
+            label: 'Communication-Status',
+            statusIndicator: {},
+            isActive: (value: string | number | boolean | null | undefined) =>
+              String(value).toLowerCase() === "active",
+          },
+          { key: 'lastCommunication', label: 'Last Communication' },
         ];
       case 'total-lt-feeders':
         return [
-          { key: 'sNo', label: 'S.No' },
-          { key: 'feederId', label: 'Feeder ID' },
-          { key: 'feederName', label: 'Feeder Name' },
-          { key: 'dtrName', label: 'Connected DTR' },
-          { key: 'load', label: 'Current Load (A)' },
-          { key: 'status', label: 'Status' },
-          { key: 'lastUpdate', label: 'Last Update' },
+          { key: 'slNo', label: 'S.No' },
+          { key: 'meterNo', label: 'Meter Number' },
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'location', label: 'Location' },
+          {
+            key: 'communicationStatus',
+            label: 'Communication Status',
+            statusIndicator: {},
+            isActive: (value: string | number | boolean | null | undefined) =>
+              String(value).toLowerCase() === "active" || String(value).toLowerCase() === "communicating",
+          },
+          { key: 'lastCommunicationDate', label: 'Last Communication' },
         ];
       case 'fuse-blown':
       case 'lt-fuse-blown':
       case 'ht-fuse-blown':
         return [
-          { key: 'sNo', label: 'S.No' },
+          { key: 'slNo', label: 'S.No' },
+          { key: 'meterNo', label: 'Meter Number' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
+          { key: 'location', label: 'Location' },
           { key: 'fuseType', label: 'Fuse Type' },
           { key: 'blownTime', label: 'Blown Time' },
-          { key: 'location', label: 'Location' },
-          { key: 'status', label: 'Status' },
+          { key: 'lastReadingDate', label: 'Last Reading Date' },
         ];
       case 'overloaded-feeders':
         return [
-          { key: 'sNo', label: 'S.No' },
-          { key: 'feederId', label: 'Feeder ID' },
-          { key: 'feederName', label: 'Feeder Name' },
-          { key: 'currentLoad', label: 'Current Load (A)' },
-          { key: 'ratedCapacity', label: 'Rated Capacity (A)' },
-          { key: 'overloadPercentage', label: 'Overload %' },
+          { key: 'slNo', label: 'S.No' },
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'manufacturer', label: 'Manufacturer' },
+          { key: 'model', label: 'Model' },
+          { key: 'capacity', label: 'Capacity' },
+          { key: 'loadPercentage', label: 'Load %' },
+          { key: 'feedersCount', label: 'Feeders Count' },
           { key: 'location', label: 'Location' },
+          { key: 'status', label: 'Status' },
         ];
       case 'underloaded-feeders':
         return [
-          { key: 'sNo', label: 'S.No' },
-          { key: 'feederId', label: 'Feeder ID' },
-          { key: 'feederName', label: 'Feeder Name' },
-          { key: 'currentLoad', label: 'Current Load (A)' },
-          { key: 'ratedCapacity', label: 'Rated Capacity (A)' },
-          { key: 'utilization', label: 'Utilization %' },
+          { key: 'slNo', label: 'S.No' },
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'manufacturer', label: 'Manufacturer' },
+          { key: 'model', label: 'Model' },
+          { key: 'capacity', label: 'Capacity' },
+          { key: 'loadPercentage', label: 'Load %' },
+          { key: 'feedersCount', label: 'Feeders Count' },
           { key: 'location', label: 'Location' },
+          { key: 'status', label: 'Status' },
         ];
       case 'unbalanced-dtrs':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'phaseA', label: 'Phase A (A)' },
@@ -99,7 +123,6 @@ const DTRTable: React.FC = () => {
         ];
       case 'power-failure-feeders':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'feederId', label: 'Feeder ID' },
           { key: 'feederName', label: 'Feeder Name' },
           { key: 'failureTime', label: 'Failure Time' },
@@ -110,7 +133,6 @@ const DTRTable: React.FC = () => {
       case 'daily-kwh':
       case 'monthly-kwh':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'kwh', label: 'kWh Reading' },
@@ -122,7 +144,6 @@ const DTRTable: React.FC = () => {
       case 'daily-kvah':
       case 'monthly-kvah':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'kvah', label: 'kVAh Reading' },
@@ -134,7 +155,6 @@ const DTRTable: React.FC = () => {
       case 'daily-kw':
       case 'monthly-kw':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'kw', label: 'kW Reading' },
@@ -145,7 +165,6 @@ const DTRTable: React.FC = () => {
       case 'daily-kva':
       case 'monthly-kva':
         return [
-          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'kva', label: 'kVA Reading' },
@@ -155,23 +174,260 @@ const DTRTable: React.FC = () => {
         ];
       default:
         return [
-          { key: 'sNo', label: 'S.No' },
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name' },
-          { key: 'status', label: 'Status' },
-          { key: 'location', label: 'Location' },
-          { key: 'lastUpdate', label: 'Last Update' },
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'feedersCount', label: 'Feeders Count' },
+          {
+            key: 'commStatus',
+            label: 'Communication-Status',
+            statusIndicator: {},
+            isActive: (value: string | number | boolean | null | undefined) =>
+              String(value).toLowerCase() === "active",
+          },
+          { key: 'lastCommunication', label: 'Last Communication' },
         ];
     }
   };
-  // Fetch data based on card type
-  const fetchData = async () => {
+
+  // Fetch data based on card type using the actual DTR API
+  const fetchData = useCallback(async (page: number = 1, pageSize: number = 10, search?: string) => {
     setLoading(true);
     try {
-      let apiData = null;
-      
-      // Call specific API based on card type
-      if (cardType === 'ht-fuse-blown') {
+      // Use the same API endpoint as DTRDashboard for total-dtrs
+      if (cardType === 'total-dtrs') {
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("pageSize", pageSize.toString());
+        
+        if (search) {
+          params.append("search", search);
+        }
+
+        const response = await fetch(`${BACKEND_URL}/dtrs?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch DTR table");
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setTableData(data.data || []);
+          // Handle both pagination structures (backend returns 'pagination' object)
+          const paginationData = data.pagination || data;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          
+          // Also set the page and total for backward compatibility
+          if (data.pagination) {
+            data.page = paginationData.currentPage;
+            data.total = paginationData.totalCount;
+            data.pageSize = paginationData.limit;
+            data.hasNextPage = paginationData.hasNextPage;
+            data.hasPrevPage = paginationData.hasPrevPage;
+          }
+          setError(null);
+        } else {
+          throw new Error(data.message || "Failed to fetch DTR table");
+        }
+      } else if (cardType === 'total-lt-feeders') {
+        // Use the all-meters endpoint for LT feeders
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("pageSize", pageSize.toString());
+        
+        if (search) {
+          params.append("search", search);
+        }
+
+        const response = await fetch(`${BACKEND_URL}/dtrs/all-meters?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch meters data");
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setTableData(data.data || []);
+          // Handle pagination structure
+          const paginationData = data.pagination || data;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          
+          // Also set the page and total for backward compatibility
+          if (data.pagination) {
+            data.page = paginationData.currentPage;
+            data.total = paginationData.totalCount;
+            data.pageSize = paginationData.limit;
+            data.hasNextPage = paginationData.hasNextPage;
+            data.hasPrevPage = paginationData.hasPrevPage;
+          }
+          setError(null);
+        } else {
+          throw new Error(data.message || "Failed to fetch meters data");
+        }
+      } else if (cardType === 'fuse-blown') {
+        // Use the fuse-blown-meters endpoint for fuse blown meters
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("pageSize", pageSize.toString());
+        
+        if (search) {
+          params.append("search", search);
+        }
+
+        const response = await fetch(`${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch fuse blown meters data");
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setTableData(data.data || []);
+          // Handle pagination structure
+          const paginationData = data.pagination || data;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          
+          // Also set the page and total for backward compatibility
+          if (data.pagination) {
+            data.page = paginationData.currentPage;
+            data.total = paginationData.totalCount;
+            data.pageSize = paginationData.limit;
+            data.hasNextPage = paginationData.hasNextPage;
+            data.hasPrevPage = paginationData.hasPrevPage;
+          }
+          setError(null);
+        } else {
+          throw new Error(data.message || "Failed to fetch fuse blown meters data");
+        }
+      } else if (cardType === 'overloaded-feeders') {
+        // Use the overloaded-dtrs endpoint for overloaded DTRs
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("pageSize", pageSize.toString());
+        
+        if (search) {
+          params.append("search", search);
+        }
+
+        console.log('🔍 Fetching overloaded DTRs...');
+        const response = await fetch(`${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch overloaded DTRs data");
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+        console.log('📊 API Response for overloaded DTRs:', data);
+        console.log('📊 Data array length:', data.data?.length || 0);
+        
+        if (data.success) {
+          console.log('✅ Setting table data to:', data.data || []);
+          setTableData(data.data || []);
+          console.log('📊 Current tableData state after setTableData:', data.data || []);
+          
+          // Additional safety check - ensure tableData is empty if API returns empty
+          if (!data.data || data.data.length === 0) {
+            console.log('🔒 Force setting tableData to empty array');
+            setTableData([]);
+          }
+          
+          // Handle pagination structure
+          const paginationData = data.pagination || data;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          
+          // Also set the page and total for backward compatibility
+          if (data.pagination) {
+            data.page = paginationData.currentPage;
+            data.total = paginationData.totalCount;
+            data.pageSize = paginationData.limit;
+            data.hasNextPage = paginationData.hasNextPage;
+            data.hasPrevPage = paginationData.hasPrevPage;
+          }
+          setError(null);
+        } else {
+          throw new Error(data.message || "Failed to fetch overloaded DTRs data");
+        }
+      } else if (cardType === 'underloaded-feeders') {
+        // Use the underloaded-dtrs endpoint for underloaded DTRs
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("pageSize", pageSize.toString());
+        
+        if (search) {
+          params.append("search", search);
+        }
+
+        const response = await fetch(`${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch underloaded DTRs data");
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setTableData(data.data || []);
+          // Handle pagination structure
+          const paginationData = data.pagination || data;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          
+          // Also set the page and total for backward compatibility
+          if (data.pagination) {
+            data.page = paginationData.currentPage;
+            data.total = paginationData.totalCount;
+            data.pageSize = paginationData.limit;
+            data.hasNextPage = paginationData.hasNextPage;
+            data.hasPrevPage = paginationData.hasPrevPage;
+          }
+          setError(null);
+        } else {
+          throw new Error(data.message || "Failed to fetch underloaded DTRs data");
+        }
+      } else if (cardType === 'ht-fuse-blown') {
+        // Use the ht-fuse-blown endpoint for HT side fuse blown incidents
         console.log('Fetching HT Fuse Blown data from:', `${BACKEND_URL}/dtrs/ht-fuse-blown`);
         const response = await fetch(`${BACKEND_URL}/dtrs/ht-fuse-blown`, {
           method: 'GET',
@@ -191,12 +447,24 @@ const DTRTable: React.FC = () => {
         console.log('API response:', result);
         
         if (result.success) {
-          apiData = result.data || []; // Ensure we have an array even if empty
+          setTableData(result.data || []);
           setHasRealData(true);
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
         } else {
           throw new Error(result.message || 'Failed to fetch HT Side Fuse Blown data');
         }
       } else if (cardType === 'lt-fuse-blown') {
+        // Use the lt-fuse-blown endpoint for LT side fuse blown incidents
         const response = await fetch(`${BACKEND_URL}/dtrs/lt-fuse-blown`, {
           method: 'GET',
           credentials: 'include',
@@ -214,12 +482,24 @@ const DTRTable: React.FC = () => {
         const result = await response.json();
         
         if (result.success) {
-          apiData = result.data || []; // Ensure we have an array even if empty
+          setTableData(result.data || []);
           setHasRealData(true);
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
         } else {
           throw new Error(result.message || 'Failed to fetch LT Side Fuse Blown data');
         }
       } else if (cardType === 'unbalanced-dtrs') {
+        // Use the unbalanced-dtrs endpoint for unbalanced DTRs
         const response = await fetch(`${BACKEND_URL}/dtrs/unbalanced-dtrs`, {
           method: 'GET',
           credentials: 'include',
@@ -238,13 +518,25 @@ const DTRTable: React.FC = () => {
         console.log('API response:', result);
         
         if (result.success) {
-          apiData = result.data || []; // Ensure we have an array even if empty
+          setTableData(result.data || []);
           setHasRealData(true);
-          console.log('✅ Unbalanced DTRs data received:', apiData.length, 'records');
+          console.log('✅ Unbalanced DTRs data received:', result.data?.length || 0, 'records');
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
         } else {
           throw new Error(result.message || 'Failed to fetch Unbalanced DTRs data');
         }
       } else if (cardType === 'power-failure-feeders') {
+        // Use the power-failure-feeders endpoint for power failure incidents
         console.log('Fetching Power Failure Feeders data from:', `${BACKEND_URL}/dtrs/power-failure-feeders`);
         const response = await fetch(`${BACKEND_URL}/dtrs/power-failure-feeders`, {
           method: 'GET',
@@ -264,27 +556,32 @@ const DTRTable: React.FC = () => {
         console.log('API response:', result);
         
         if (result.success) {
-          apiData = result.data || []; // Ensure we have an array even if empty
+          setTableData(result.data || []);
           setHasRealData(true);
-          console.log('✅ Power Failure Feeders data received:', apiData.length, 'records');
+          console.log('✅ Power Failure Feeders data received:', result.data?.length || 0, 'records');
+          // Handle pagination structure
+          const paginationData = result.pagination || result;
+          setServerPagination({
+            currentPage: paginationData.currentPage || paginationData.page || 1,
+            totalPages: paginationData.totalPages || Math.ceil(paginationData.total / paginationData.pageSize) || 1,
+            totalCount: paginationData.totalCount || paginationData.total || 0,
+            limit: paginationData.limit || paginationData.pageSize || 10,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false,
+          });
+          setError(null);
         } else {
           throw new Error(result.message || 'Failed to fetch Power Failure Feeders data');
         }
-      }
-      
-      // Use API data if available, otherwise show empty table
-      if (apiData !== null) {
-        setTableData(apiData);
       } else {
-        // No API data available - show empty table for all card types
+        // For other card types, show empty state
+        // TODO: Implement specific API endpoints for other card types
         setTableData([]);
+        setError(null);
       }
-      
-      setError(null);
-      
-    } catch (err) {
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch data. Please try again.');
       console.error('Error fetching data:', err);
-      setError('Failed to fetch data. Please try again.');
       
       // Handle error fallback - keep existing data if available, otherwise show empty
       if (!hasRealData) {
@@ -295,17 +592,64 @@ const DTRTable: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [cardType, hasRealData]);
+
 
   useEffect(() => {
+    // Reset table data when card type changes
+    setTableData([]);
+    setLoading(true);
+    setError(null);
+    
+    // Reset pagination
+    setServerPagination({
+      currentPage: 1,
+      totalPages: 1,
+      totalCount: 0,
+      limit: 10,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+    
+    // Fetch new data
     fetchData();
-  }, [cardType]);
+    
+    // Cleanup function to prevent race conditions
+    return () => {
+      setTableData([]);
+      setLoading(false);
+      setError(null);
+    };
+  }, [cardType, fetchData]);
+
+  // Monitor tableData changes to debug where data is coming from
+  useEffect(() => {
+    console.log('🔄 tableData state changed to:', tableData);
+    console.log('🔄 tableData length:', tableData.length);
+    if (tableData.length > 0) {
+      console.log('🔄 tableData content:', JSON.stringify(tableData, null, 2));
+    }
+  }, [tableData]);
 
   // Handle row actions
   const handleView = (row: TableData) => {
     console.log('View item:', row);
-    // Navigate to detail view
-    // navigate(`/detail/${row.id}`);
+    // Navigate to detail view based on card type
+    if (cardType === 'total-dtrs' && row.dtrId) {
+      navigate(`/dtr-detail/${row.dtrId}`);
+    } else if (cardType === 'total-lt-feeders' && row.meterNo) {
+      // Navigate to meter detail or search for meter
+      navigate(`/meters?search=${row.meterNo}`);
+                              } else if (cardType === 'fuse-blown' && row.meterNo) {
+                            // Navigate to meter detail or search for meter
+                            navigate(`/meters?search=${row.meterNo}`);
+                                                    } else if (cardType === 'overloaded-feeders' && row.dtrId) {
+                            // Navigate to DTR detail
+                            navigate(`/dtr-detail/${row.dtrId}`);
+                          } else if (cardType === 'underloaded-feeders' && row.dtrId) {
+                            // Navigate to DTR detail
+                            navigate(`/dtr-detail/${row.dtrId}`);
+                          }
   };
 
   const handleEdit = (row: TableData) => {
@@ -314,6 +658,13 @@ const DTRTable: React.FC = () => {
     // navigate(`/edit/${row.id}`);
   };
 
+  const handlePageChange = (page: number) => {
+    fetchData(page, serverPagination.limit);
+  };
+
+  const handleSearch = (searchTerm: string) => {
+    fetchData(1, serverPagination.limit, searchTerm);
+  };
 
 
   return (
@@ -383,7 +734,29 @@ const DTRTable: React.FC = () => {
                     {
                       name: 'Table',
                       props: {
-                        data: tableData,
+                        data: (() => {
+                          console.log('🔍 Rendering Table with tableData:', tableData);
+                          console.log('🔍 tableData length:', tableData.length);
+                          console.log('🔍 cardType:', cardType);
+                          
+                          // Safety check: only show data if it matches the current cardType
+                          if (cardType === 'overloaded-feeders' && tableData.length > 0) {
+                            console.log('⚠️ WARNING: Overloaded feeders should be empty, but tableData has items!');
+                            console.log('⚠️ Forcing tableData to empty array');
+                            // Force empty array for overloaded feeders
+                            return [];
+                          }
+                          
+                          // Safety check: only show data if it matches the current cardType
+                          if (cardType === 'underloaded-feeders' && tableData.length > 0) {
+                            console.log('⚠️ WARNING: Underloaded feeders should be empty, but tableData has items!');
+                            console.log('⚠️ Forcing tableData to empty array');
+                            // Force empty array for underloaded feeders
+                            return [];
+                          }
+                          
+                          return tableData;
+                        })(),
                         columns: getTableColumns(),
                         loading: loading,
                         searchable: true,
@@ -393,6 +766,21 @@ const DTRTable: React.FC = () => {
                         showActions: true,
                         onView: handleView,
                         onEdit: handleEdit,
+                        onRowClick: (row: TableData) => {
+                          if (cardType === 'total-dtrs' && row.dtrId) {
+                            navigate(`/dtr-detail/${row.dtrId}`);
+                          } else if (cardType === 'total-lt-feeders' && row.meterNo) {
+                            // Navigate to meter detail or search for meter
+                            navigate(`/meters?search=${row.meterNo}`);
+                          } else if (cardType === 'fuse-blown' && row.meterNo) {
+                            // Navigate to meter detail or search for meter
+                            navigate(`/meters?search=${row.meterNo}`);
+                          } else if (cardType === 'overloaded-feeders' && row.dtrId) {
+                            navigate(`/dtr-detail/${row.dtrId}`);
+                          } else if (cardType === 'underloaded-feeders' && row.dtrId) {
+                            navigate(`/dtr-detail/${row.dtrId}`);
+                          }
+                        },
                         text: cardTitle,
                         availableTimeRanges: [],
                         className: 'w-full',
@@ -408,6 +796,9 @@ const DTRTable: React.FC = () => {
                         rowsPerPageOptions: [10, 25, 50],
                         initialRowsPerPage: 10,
                         showSkeletonActionButtons: true,
+                        onPageChange: handlePageChange,
+                        onSearch: handleSearch,
+                        serverPagination: serverPagination,
                       },
                     },
                   ],

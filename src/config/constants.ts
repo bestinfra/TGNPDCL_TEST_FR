@@ -1,7 +1,6 @@
 // Application Configuration Constants
 export const APP_CONFIG = {
-  // Base path for the application when deployed under a subdirectory
-  BASENAME: '/staging/tgnpdcl',
+  BASENAME: '/v2/tgnpdcl_smart',
   
   // API Configuration
   API_TIMEOUT: 10000,

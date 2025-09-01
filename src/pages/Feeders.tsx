@@ -62,21 +62,21 @@ const dummyAlertsData = [
 
 // Default stats data
 const defaultStats = [
-    { title: 'R-Phase Voltage', value: "0", icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Voltage', value: "0", icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase Voltage', value: "0", icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Apparent Power', value: "0", icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'MD-kVA', value: "0", icon: '/icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'R-Phase Current', value: "0", icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Y-Phase Current', value: "0", icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase Current', value: "0", icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Neutral Current', value: "0", icon: '/icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'Frequency', value: "0", icon: '/icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'R-Phase PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
-    { title: 'Y-Phase PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'B-Phase PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
-    { title: 'Avg PF', value: "0", icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
-    { title: 'Cummulative kVAh', value: "0", icon: '/icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Voltage', value: "0", icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Voltage', value: "0", icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Voltage', value: "0", icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Apparent Power', value: "0", icon: 'icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'MD-kVA', value: "0", icon: 'icons/consumption.svg', subtitle1: 'kVA', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase Current', value: "0", icon: 'icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Y-Phase Current', value: "0", icon: 'icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase Current', value: "0", icon: 'icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Neutral Current', value: "0", icon: 'icons/consumption.svg', subtitle1: 'Amps', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Frequency', value: "0", icon: 'icons/frequency.svg', subtitle1: 'Hz', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'R-Phase PF', value: "0", icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE }, 
+    { title: 'Y-Phase PF', value: "0", icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'B-Phase PF', value: "0", icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.WHITE },
+    { title: 'Avg PF', value: "0", icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
+    { title: 'Cummulative kVAh', value: "0", icon: 'icons/consumption.svg', subtitle1: 'kVAh', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base', iconStyle: FILTER_STYLES.BRAND_GREEN },
 ];
 
 const Feeders = () => {
@@ -172,10 +172,10 @@ const Feeders = () => {
                 }
             }
             
-            console.warn('findDtrIdFromFeederId - Could not find DTR ID for feeder:', feederId);
+
             return null;
         } catch (error) {
-            console.error('findDtrIdFromFeederId - Error:', error);
+
             return null;
         }
     };
@@ -192,6 +192,10 @@ const Feeders = () => {
         xAxisData: [],
         seriesData: [{ name: 'kVA', data: [] }]
     });
+
+    // State for map coordinates - initialized with default coordinates
+    const [mapLatitude, setMapLatitude] = useState<number>(17.992887);
+    const [mapLongitude, setMapLongitude] = useState<number>(79.550835);
 
     // Loading states - initialized to false
     const [isStatsLoading, setIsStatsLoading] = useState(false);
@@ -224,13 +228,13 @@ const Feeders = () => {
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-                console.warn('fetchInstantaneousStats - Could not find DTR ID for feeder:', feederId);
+
                 return;
             }
         }
         
         if (!numericDtrId) {
-            console.warn('fetchInstantaneousStats - No DTR ID available');
+
             return;
         }
 
@@ -271,7 +275,7 @@ const Feeders = () => {
                 throw new Error(data.message || 'Failed to fetch instantaneous stats');
             }
         } catch (error: any) {
-            console.error('Error fetching instantaneous stats:', error);
+
             setInstantaneousStatsData(dummyInstantaneousStatsData);
             setFailedApis(prev => [...prev, {
                 id: 'instantaneousStats',
@@ -296,13 +300,13 @@ const Feeders = () => {
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-                console.warn('fetchConsumptionAnalytics - Could not find DTR ID for feeder:', feederId);
+
                 return;
             }
         }
         
         if (!numericDtrId) {
-            console.warn('fetchConsumptionAnalytics - No DTR ID available');
+
             return;
         }
 
@@ -396,6 +400,7 @@ const Feeders = () => {
             
             const response = await fetch(endpoint);
             const data = await response.json();
+            console.log('fetchFeederInfo - API response:', data);
             
             if (data.success) {
                 let feederInfo = data.data;
@@ -426,11 +431,25 @@ const Feeders = () => {
                                 phase: specificFeeder.phase,
                                 status: specificFeeder.status,
                                 location: specificFeeder.location,
-                                city: specificFeeder.city
+                                city: specificFeeder.city,
+                                latitude: specificFeeder.latitude,
+                                longitude: specificFeeder.longitude
                             }
                         };
+                        setMapLatitude(specificFeeder.latitude || 17.992887);
+                        setMapLongitude(specificFeeder.longitude || 79.550835);
                     } else {
                         console.warn('fetchFeederInfo - Specific feeder not found in DTR data');
+                    }
+                }
+                
+                // Update map coordinates based on available feeder data
+                if (feederInfo.feeders && feederInfo.feeders.length > 0) {
+                    // Use the first feeder's coordinates if available
+                    const firstFeeder = feederInfo.feeders[0];
+                    if (firstFeeder.latitude && firstFeeder.longitude) {
+                        setMapLatitude(firstFeeder.latitude);
+                        setMapLongitude(firstFeeder.longitude);
                     }
                 }
                 
@@ -620,21 +639,21 @@ const Feeders = () => {
     const getStats = () => {
         if (instantaneousStatsData && Object.keys(instantaneousStatsData).length > 0 && instantaneousStatsData.rphVolt !== '-') {
             return [
-                { title: 'R-Phase Voltage', value: instantaneousStatsData.rphVolt?.toString() || '257.686', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading },
-                { title: 'Y-Phase Voltage', value: instantaneousStatsData.yphVolt?.toString() || '255.089', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'B-Phase Voltage', value: instantaneousStatsData.bphVolt?.toString() || '254.417', icon: '/icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'Apparent Power', value: instantaneousStatsData.instantKVA?.toString() || '19.527', icon: '/icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
-                { title: 'MD-kVA', value: instantaneousStatsData.mdKVA?.toString() || '52.220', icon: '/icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
-                { title: 'R-Phase Current', value: instantaneousStatsData.rphCurr?.toString() || '15.892', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'Y-Phase Current', value: instantaneousStatsData.yphCurr?.toString() || '27.644', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'B-Phase Current', value: instantaneousStatsData.bphCurr?.toString() || '33.984', icon: '/icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8',valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base' ,iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'Neutral Current', value: instantaneousStatsData.neutralCurrent?.toString() || '12.980', icon: '/icons/consumption.svg', subtitle1: 'Amps' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
-                { title: 'Frequency', value: instantaneousStatsData.freqHz?.toString() || '49.980', icon: '/icons/frequency.svg', subtitle1: 'Hz' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
-                { title: 'R-Phase PF', value: instantaneousStatsData.rphPF?.toString() || '1.000', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading}, 
-                { title: 'Y-Phase PF', value: instantaneousStatsData.yphPF?.toString() || '-0.987', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'B-Phase PF', value: instantaneousStatsData.bphPF?.toString() || '0.998', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
-                { title: 'Avg PF', value: instantaneousStatsData.avgPF?.toString() || '-0.999', icon: '/icons/power-factor.svg', subtitle1: 'Power Factor' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
-                { title: 'Cummulative kVAh', value: instantaneousStatsData.cumulativeKVAh?.toString() || '77902.296', icon: '/icons/consumption.svg', subtitle1: 'kVAh' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
+                { title: 'R-Phase Voltage', value: instantaneousStatsData.rphVolt?.toString() || '257.686', icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading },
+                { title: 'Y-Phase Voltage', value: instantaneousStatsData.yphVolt?.toString() || '255.089', icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'B-Phase Voltage', value: instantaneousStatsData.bphVolt?.toString() || '254.417', icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'Apparent Power', value: instantaneousStatsData.instantKVA?.toString() || '19.527', icon: 'icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
+                { title: 'MD-kVA', value: instantaneousStatsData.mdKVA?.toString() || '52.220', icon: 'icons/consumption.svg', subtitle1: 'kVA' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
+                { title: 'R-Phase Current', value: instantaneousStatsData.rphCurr?.toString() || '15.892', icon: 'icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'Y-Phase Current', value: instantaneousStatsData.yphCurr?.toString() || '27.644', icon: 'icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'B-Phase Current', value: instantaneousStatsData.bphCurr?.toString() || '33.984', icon: 'icons/r-phase-current.svg', subtitle1: 'Amps', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8',valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base' ,iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'Neutral Current', value: instantaneousStatsData.neutralCurrent?.toString() || '12.980', icon: 'icons/consumption.svg', subtitle1: 'Amps' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
+                { title: 'Frequency', value: instantaneousStatsData.freqHz?.toString() || '49.980', icon: 'icons/frequency.svg', subtitle1: 'Hz' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
+                { title: 'R-Phase PF', value: instantaneousStatsData.rphPF?.toString() || '1.000', icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading}, 
+                { title: 'Y-Phase PF', value: instantaneousStatsData.yphPF?.toString() || '-0.987', icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-warning-alt)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'B-Phase PF', value: instantaneousStatsData.bphPF?.toString() || '0.998', icon: 'icons/power-factor.svg', subtitle1: 'Power Factor', bg: 'bg-[var(--color-primary)]', iconClassName: 'w-4 h-4', width: 'w-8', height: 'h-8' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading},
+                { title: 'Avg PF', value: instantaneousStatsData.avgPF?.toString() || '-0.999', icon: 'icons/power-factor.svg', subtitle1: 'Power Factor' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
+                { title: 'Cummulative kVAh', value: instantaneousStatsData.cumulativeKVAh?.toString() || '77902.296', icon: 'icons/consumption.svg', subtitle1: 'kVAh' ,valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.BRAND_GREEN, loading: isStatsLoading},
             ];
         }
         return defaultStats.map(stat => ({ ...stat, loading: isStatsLoading }));
@@ -642,8 +661,7 @@ const Feeders = () => {
 
         // Get consumption data based on selected time range
     const getConsumptionData = () => {
-        console.log('getConsumptionData called with timeRange:', consumptionTimeRange);
-        console.log('Available consumption data:', consumptionAnalyticsData);
+
         
         if (consumptionTimeRange === 'Daily') {
             if (consumptionAnalyticsData && consumptionAnalyticsData.xAxisData) {
@@ -651,7 +669,7 @@ const Feeders = () => {
                     xAxisData: consumptionAnalyticsData.xAxisData || [],
                     seriesData: consumptionAnalyticsData.seriesData || [{ name: 'Consumption', data: [] }],
                 };
-                console.log('Returning daily consumption data:', data);
+
                 return data;
             }
         } else if (consumptionTimeRange === 'Monthly') {
@@ -660,11 +678,11 @@ const Feeders = () => {
                 xAxisData: consumptionAnalyticsData.monthly.xAxisData || [],
                 seriesData: consumptionAnalyticsData.monthly.seriesData || [{ name: 'Consumption', data: [] }],
             };
-                console.log('Returning monthly consumption data:', data);
+
                 return data;
         }
         }
-        console.log('No data available, returning empty data');
+
         return {
             xAxisData: [],
             seriesData: [{ name: 'Consumption', data: [] }],
@@ -673,8 +691,7 @@ const Feeders = () => {
 
     // Get KVA metrics data based on selected time range
     const getKvaMetricsData = () => {
-        console.log('getKvaMetricsData called with timeRange:', kvaTimeRange);
-        console.log('Available KVA data:', kvaMetricsData);
+
         
         if (kvaTimeRange === 'Daily') {
             if (kvaMetricsData && kvaMetricsData.xAxisData) {
@@ -682,7 +699,7 @@ const Feeders = () => {
                     xAxisData: kvaMetricsData.xAxisData || [],
                     seriesData: kvaMetricsData.seriesData || [{ name: 'kVA', data: [] }],
                 };
-                console.log('Returning daily KVA data:', data);
+
                 return data;
             }
         } else if (kvaTimeRange === 'Monthly') {
@@ -691,18 +708,19 @@ const Feeders = () => {
                     xAxisData: kvaMetricsData.monthly.xAxisData || [],
                     seriesData: kvaMetricsData.monthly.seriesData || [{ name: 'kVA', data: [] }],
                 };
-                console.log('Returning monthly KVA data:', data);
+
                 return data;
             }
         }
-        console.log('No KVA data available, returning empty data');
+
         return {
             xAxisData: [],
             seriesData: [{ name: 'kVA', data: [] }],
         };
     };
 
-    // Retry functions for each API
+    // Retry functions for each API - Commented out as not currently used
+    /*
     const retryStatsAPI = async () => {
         setIsStatsLoading(true);
         try {
@@ -814,7 +832,7 @@ const Feeders = () => {
             
             // If we have specific feeder data, we should get individual meter info
             if (effectiveFeederData?.feederName) {
-                console.log('retryFeederInfoAPI - Fetching individual feeder info for:', effectiveFeederData.feederName);
+
             }
             
             const response = await fetch(endpoint);
@@ -832,7 +850,7 @@ const Feeders = () => {
                 // If this is for a specific feeder, we need to filter the data
                 if (effectiveFeederData?.feederName) {
                     const feederName = effectiveFeederData.feederName;
-                    console.log('retryFeederInfoAPI - Filtering data for specific feeder:', feederName);
+
                     
                     // Find the specific feeder in the DTR's feeders list
                     const specificFeeder = feederInfo.feeders?.find((feeder: any) => 
@@ -841,7 +859,7 @@ const Feeders = () => {
                     );
                     
                     if (specificFeeder) {
-                        console.log('retryFeederInfoAPI - Found specific feeder:', specificFeeder);
+
                         // Create feeder-specific info
                         feederInfo = {
                             dtr: feederInfo.dtr,
@@ -889,12 +907,12 @@ const Feeders = () => {
             
             // If we have specific feeder data, we should get individual meter alerts
             if (effectiveFeederData?.feederName) {
-                console.log('retryAlertsAPI - Fetching individual feeder alerts for:', effectiveFeederData.feederName);
+
             }
             
             const response = await fetch(endpoint);
             const data = await response.json();
-            console.log('Retry - Alerts API response:', data.data);
+
             
             if (data.success) {
                 // Transform the data to ensure it matches the table column structure
@@ -908,7 +926,7 @@ const Feeders = () => {
                 // If this is for a specific feeder, filter alerts for that feeder only
                 if (effectiveFeederData?.feederName) {
                     const targetFeederName = effectiveFeederData.feederName;
-                    console.log('retryAlertsAPI - Filtering alerts for specific feeder:', targetFeederName);
+
                     
                     // Since we're showing alerts for a specific feeder, we'll show all alerts
                     // but mark them as belonging to this feeder
@@ -917,10 +935,10 @@ const Feeders = () => {
                         feederName: targetFeederName
                     }));
                     
-                    console.log('retryAlertsAPI - Filtered alerts for specific feeder:', transformedAlerts);
+
                 }
                 
-                console.log('Retry - Transformed alerts data:', transformedAlerts);
+
                 setAlertsData(transformedAlerts);
                 setFailedApis(prev => prev.filter(api => api.id !== 'alerts'));
             } else {
@@ -949,12 +967,12 @@ const Feeders = () => {
             
             // If we have specific feeder data, we should get individual meter KVA metrics
             if (effectiveFeederData?.feederName) {
-                console.log('retryKVAMetricsAPI - Fetching individual feeder KVA metrics for:', effectiveFeederData.feederName);
+
             }
             
             const response = await fetch(endpoint);
             const data = await response.json();
-            console.log('Retry - KVA metrics API response:', data.data);
+
             
             if (data.status === 'success') {
                 let transformedData = {
@@ -974,7 +992,7 @@ const Feeders = () => {
                 
                 // If this is for a specific feeder, we might need to adjust the data
                 if (effectiveFeederData?.feederName) {
-                    console.log('retryKVAMetricsAPI - Adjusting KVA metrics data for specific feeder:', effectiveFeederData.feederName);
+
                 }
                 
                 setKvaMetricsData(transformedData);
@@ -992,6 +1010,7 @@ const Feeders = () => {
                 setIsKvaMetricsLoading(false);
         }
     };
+    */
 
     // Retry specific API
     const retrySpecificAPI = (apiId: string) => {
@@ -1005,10 +1024,10 @@ const Feeders = () => {
     useEffect(() => {
         const resolveDtrId = async () => {
             if (!resolvedDtrId && feederId) {
-                console.log('useEffect - resolveDtrId - No DTR ID available, searching for DTR ID from feeder ID:', feederId);
+
                 const foundDtrId = await findDtrIdFromFeederId(feederId);
                 if (foundDtrId) {
-                    console.log('useEffect - resolveDtrId - Found DTR ID:', foundDtrId);
+
                     setResolvedDtrId(foundDtrId);
                 } else {
                     console.warn('useEffect - resolveDtrId - Could not find DTR ID for feeder:', feederId);
@@ -1021,29 +1040,45 @@ const Feeders = () => {
 
     // Effect to log time range changes for debugging
     useEffect(() => {
-        console.log('Consumption time range changed to:', consumptionTimeRange);
-        console.log('KVA time range changed to:', kvaTimeRange);
+
     }, [consumptionTimeRange, kvaTimeRange]);
 
     // Load data on component mount
     useEffect(() => {
         // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
         if (!resolvedDtrId && feederId) {
-            console.log('useEffect - Waiting for DTR ID to be resolved for feeder:', feederId);
+
             return;
         }
 
         if (resolvedDtrId || dtrId) {
-            console.log('useEffect - Starting API calls with DTR ID:', resolvedDtrId || dtrId);
+
             fetchInstantaneousStats();
             fetchConsumptionAnalytics();
             fetchFeederInfo();
             fetchAlerts();
             fetchKVAMetrics();
                 } else {
-            console.log('useEffect - No DTR ID available, skipping API calls');
+            
         }
     }, [resolvedDtrId, dtrId]);
+
+    // Effect to update map coordinates when feeder info changes
+    useEffect(() => {
+        if (feederInfoData && feederInfoData.feeders && feederInfoData.feeders.length > 0) {
+            const firstFeeder = feederInfoData.feeders[0];
+            if (firstFeeder.latitude && firstFeeder.longitude) {
+                console.log('Updating map coordinates from feeder data:', firstFeeder.latitude, firstFeeder.longitude);
+                setMapLatitude(firstFeeder.latitude);
+                setMapLongitude(firstFeeder.longitude);
+            }
+        }
+    }, [feederInfoData]);
+
+    // Effect to log coordinate changes for debugging
+    useEffect(() => {
+        console.log('Map coordinates updated:', mapLatitude, mapLongitude);
+    }, [mapLatitude, mapLongitude]);
 
     // Enhanced data for Alerts Table with more entries
     const [_feederData, _setFeederData] = useState([
@@ -1180,15 +1215,45 @@ const Feeders = () => {
     };
 
     // Debug: Log failedApis state
-    console.log('Feeders - failedApis:', failedApis);
-    console.log('Feeders - failedApis.length:', failedApis.length);
-    if (failedApis.length > 0) {
-        console.log('Feeders - Failed API details:', failedApis.map(api => ({
-            id: api.id,
-            name: api.name,
-            errorMessage: api.errorMessage
-        })));
-    }
+    
+
+    // Function to calculate optimal map center and zoom for multiple feeders
+    const getMapCenterAndZoom = () => {
+        if (feederInfoData?.feeders && feederInfoData.feeders.length > 1) {
+            // Calculate bounds for multiple feeders
+            const lats = feederInfoData.feeders.map((feeder: any) => feeder.latitude).filter(Boolean);
+            const lngs = feederInfoData.feeders.map((feeder: any) => feeder.longitude).filter(Boolean);
+            
+            if (lats.length > 0 && lngs.length > 0) {
+                const minLat = Math.min(...lats);
+                const maxLat = Math.max(...lats);
+                const minLng = Math.min(...lngs);
+                const maxLng = Math.max(...lngs);
+                
+                const centerLat = (minLat + maxLat) / 2;
+                const centerLng = (minLng + maxLng) / 2;
+                
+                // Calculate zoom based on the span of coordinates
+                const latSpan = maxLat - minLat;
+                const lngSpan = maxLng - minLng;
+                const maxSpan = Math.max(latSpan, lngSpan);
+                
+                let zoom = 13;
+                if (maxSpan > 0.1) zoom = 10;
+                else if (maxSpan > 0.05) zoom = 11;
+                else if (maxSpan > 0.01) zoom = 12;
+                else if (maxSpan > 0.005) zoom = 14;
+                else if (maxSpan > 0.001) zoom = 15;
+                
+                return { center: { lat: centerLat, lng: centerLng }, zoom };
+            }
+        }
+        
+        // Default center and zoom for single feeder or fallback
+        return { center: { lat: mapLatitude, lng: mapLongitude }, zoom: 13 };
+    };
+
+    const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
 
     return (
         <div className=" sticky top-0 ">
@@ -1305,7 +1370,11 @@ const Feeders = () => {
                                                         title: 'Capacity',
                                                         value: `${feederInfoData?.dtr?.capacity || 100} kVA`,
                                                         align: 'start',
-                                                        gap: 'gap-1'
+                                                        gap: 'gap-1',
+                                                        progressBar: true,
+                                                        currentValue: instantaneousStatsData.mdKVA?.toString()|| 0,
+                                                        maxValue: feederInfoData?.dtr?.capacity || 100,
+                                                        progressColor: 'bg-positive'
                                                     },
                                                     {
                                                         title: 'Status',
@@ -1354,7 +1423,7 @@ const Feeders = () => {
                                             rightComponent: { name: 'LastComm', props: { 
                                                 value: (() => {
                                                     const lastComm = instantaneousStatsData?.lastCommDate;
-                                                    console.log('LastComm component - lastCommDate:', lastComm);
+
                                                     if (lastComm && lastComm !== '-' && lastComm !== null) {
                                                         try {
                                                             const date = new Date(lastComm);
@@ -1435,7 +1504,6 @@ const Feeders = () => {
                                             availableTimeRanges: ['Daily', 'Monthly'],
                                             initialTimeRange: consumptionTimeRange,
                                             onTimeRangeChange: (range: string) => {
-                                                console.log('Consumption chart time range changed to:', range);
                                                 setConsumptionTimeRange(range as 'Daily' | 'Monthly');
                                             },
                                             showDownloadButton: true,
@@ -1443,6 +1511,101 @@ const Feeders = () => {
                                             showXAxisLabel: true,
                                             xAxisLabel: 'kWAh',
                                             isLoading: isConsumptionLoading,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+                                {
+                    layout: {
+                        type: 'grid' as const,
+                        columns: 1,
+                        className: '',
+                        rows: [
+                            {
+                                layout: 'row' as const,
+                                columns: [
+                                    {
+                                        name: 'SectionHeader',
+                                        props: {
+                                            title: 'Feeder Location',
+                                            titleLevel: 2,
+                                            titleSize: 'md',
+                                            titleVariant: 'primary',
+                                            titleWeight: 'bold',
+                                            titleAlign: 'left',
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                layout: 'grid' as const,
+                                className:"w-full",
+                                columns: [
+                                    {
+                                        name: 'GoogleMap',
+                                        props: {
+                                            apiKey: 'AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI',
+                                            center: mapCenter,
+                                            zoom: mapZoom,
+                                            libraries: ['places'],
+                                            markers: (() => {
+                                                // If we have specific feeder data, show only that feeder
+                                                if (feederInfoData?.specificFeeder) {
+                                                    return [{
+                                                        position: { 
+                                                            lat: feederInfoData.specificFeeder.latitude || mapLatitude, 
+                                                            lng: feederInfoData.specificFeeder.longitude || mapLongitude 
+                                                        },
+                                                        title: `Feeder: ${feederInfoData.specificFeeder.meterNumber || feederInfoData.specificFeeder.serialNumber}`,
+                                                        infoContent: `<div><strong>Feeder Location</strong><br/>Meter: ${feederInfoData.specificFeeder.meterNumber || 'N/A'}<br/>Serial: ${feederInfoData.specificFeeder.serialNumber || 'N/A'}<br/>Manufacturer: ${feederInfoData.specificFeeder.manufacturer || 'N/A'}<br/>Model: ${feederInfoData.specificFeeder.model || 'N/A'}<br/>Type: ${feederInfoData.specificFeeder.type || 'N/A'}<br/>Phase: ${feederInfoData.specificFeeder.phase || 'N/A'}<br/>Status: ${feederInfoData.specificFeeder.status || 'N/A'}<br/>Location: ${feederInfoData.specificFeeder.location || 'N/A'}<br/>Coordinates: ${feederInfoData.specificFeeder.latitude || mapLatitude}, ${feederInfoData.specificFeeder.longitude || mapLongitude}</div>`,
+                                                    }];
+                                                }
+                                                
+                                                // If we have multiple feeders, show all of them
+                                                if (feederInfoData?.feeders && feederInfoData.feeders.length > 0) {
+                                                    return feederInfoData.feeders.map((feeder: any, index: number) => ({
+                                                        position: { 
+                                                            lat: feeder.latitude || mapLatitude, 
+                                                            lng: feeder.longitude || mapLongitude 
+                                                        },
+                                                        title: `Feeder ${index + 1}: ${feeder.meterNumber || feeder.serialNumber}`,
+                                                        infoContent: `<div><strong>Feeder ${index + 1}</strong><br/>Meter: ${feeder.meterNumber || 'N/A'}<br/>Serial: ${feeder.serialNumber || 'N/A'}<br/>Manufacturer: ${feeder.manufacturer || 'N/A'}<br/>Model: ${feeder.model || 'N/A'}<br/>Type: ${feeder.type || 'N/A'}<br/>Phase: ${feeder.phase || 'N/A'}<br/>Status: ${feeder.status || 'N/A'}<br/>Location: ${feeder.location || 'N/A'}<br/>Coordinates: ${feeder.latitude || mapLatitude}, ${feeder.longitude || mapLongitude}</div>`,
+                                                    }));
+                                                }
+                                                
+                                                // Fallback to single marker at center
+                                                return [{
+                                                    position: { lat: mapLatitude, lng: mapLongitude },
+                                                    title: 'Feeder Location',
+                                                    infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
+                                                }];
+                                            })(),
+                                            mapOptions: {
+                                                disableDefaultUI: false,
+                                                zoomControl: true,
+                                                mapTypeControl: true,
+                                                scaleControl: true,
+                                                streetViewControl: true,
+                                                rotateControl: true,
+                                                fullscreenControl: true,
+                                            },
+                                            onReady: (map: any, google: any) => {
+                                                console.log('Map ready', map, google);
+                                            },
+                                            onClick: (e: any) => {
+                                                const clickedCoords = e.latLng?.toJSON();
+                                                console.log('Map clicked at:', clickedCoords);
+                                                if (clickedCoords) {
+                                                    // You could add a temporary marker here or show coordinates in a tooltip
+                                                    console.log(`Clicked coordinates: ${clickedCoords.lat}, ${clickedCoords.lng}`);
+                                                }
+                                            },
+                                            onIdle: () => {
+                                                console.log('Map idle');
+                                            },
                                         },
                                     },
                                 ],
@@ -1474,7 +1637,6 @@ const Feeders = () => {
                                             availableTimeRanges: ['Daily', 'Monthly',],
                                             initialTimeRange: kvaTimeRange,
                                             onTimeRangeChange: (range: string) => {
-                                                console.log('KVA Metrics chart time range changed to:', range);
                                                 setKvaTimeRange(range as 'Daily' | 'Monthly');
                                             },
                                             showDownloadButton: true,
