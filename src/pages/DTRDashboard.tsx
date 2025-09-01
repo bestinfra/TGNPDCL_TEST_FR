@@ -1827,10 +1827,6 @@ const DTRDashboard: React.FC = () => {
               },
             ],
           },
-
-
-
-          
           // DTR Statistics Cards
           {
             layout: {
@@ -1950,15 +1946,7 @@ const DTRDashboard: React.FC = () => {
                     className:
                       " rounded-3xl  dark:bg-primary-dark-light",
                     columns: [
-                      // {
-                      //   name: "Holder",
-                      //   props: {
-                      //     title: "Communication  Status",
-                      //     subtitle:
-                      //       "Distribution of communicating and non-communicating meters",
-                      //     className: "border-none rounded-t-3xl ",
-                      //   },
-                      // },
+                   
                       {
                         name: "PieChart",
                         props: {
