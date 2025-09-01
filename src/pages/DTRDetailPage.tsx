@@ -434,63 +434,63 @@ const DTRDetailPage = () => {
                     const updatedStats = [
                         {
                             title: 'Total LT Feeders',
-                            value: data.data?.totalLTFeeders || '0',
+                            value: data.data?.totalLTFeeders ? Number(data.data.totalLTFeeders).toFixed(2) : '0',
                             icon: '/icons/feeder.svg',
                             subtitle1: 'Connected to DTR',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kW',
-                            value: data.data?.totalKW || '0',
+                            value: data.data?.totalKW ? Number(data.data.totalKW).toFixed(2) : '0'  ,
                             icon: '/icons/energy.svg',
                             subtitle1: 'Active Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVA',
-                            value: data.data?.totalKVA || '0',
+                            value: data.data?.totalKVA ? Number(data.data.totalKVA).toFixed(2) : '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Apparent Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
-                        {
+                        {   
                             title: 'Total kWh',
-                            value: data.data?.totalKWh || '0',
+                            value: data.data?.totalKWh ? Number(data.data.totalKWh).toFixed(2) : '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Cumulative Active Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVAh',
-                            value: data.data?.totalKVAh || '0',
+                            value: data.data?.totalKVAh ? Number(data.data.totalKVAh).toFixed(2) : '0',
                             icon: '/icons/energy.svg',
                             subtitle1: 'Cumulative Apparent Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'LT Feeders Fuse Blown',
-                            value: data.data?.ltFuseBlown || '0',
+                            value: data.data?.ltFuseBlown ? Number(data.data.ltFuseBlown).toFixed(2) : '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: 'Requires maintenance',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Unbalanced LT Feeders',
-                            value: data.data?.unbalancedLTFeeders || '0',
+                            value: data.data?.unbalancedLTFeeders ? Number(data.data.unbalancedLTFeeders).toFixed(2) : '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: 'Requires attention',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Power On',
-                            value: data.data?.powerOnHours || '0',
+                            value: data.data?.powerOnHours ? Number(data.data.powerOnHours).toFixed(2) : '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: '',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Power Off',
-                            value: data.data?.powerOffHours || '0',
+                            value: data.data?.powerOffHours ? Number(data.data.powerOffHours).toFixed(2) : '0',
                             icon: '/icons/power_failure.svg',
                             subtitle1: '',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -499,7 +499,7 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Status',
-                            value: data.data?.status || '0',
+                            value: data.data?.status ? Number(data.data.status).toFixed(2) : '0',
                             icon: '/icons/units.svg',
                             subtitle1: '0',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -806,6 +806,7 @@ const DTRDetailPage = () => {
                                                         align: 'start',
                                                         gap: 'gap-1',
                                                         statusIndicator: true
+
                                                     },
                                                     {
                                                         title: 'Division',
@@ -843,7 +844,12 @@ const DTRDetailPage = () => {
                                                         title: 'Capacity',
                                                         value: dtr.capacity,
                                                         align: 'start',
-                                                        gap: 'gap-1'
+                                                        gap: 'gap-1',
+                                                        statusIndicator: true,
+                                                        currentValue: dtr.capacity,
+                                                        maxValue: 15.0,
+                                                        progressColor: 'bg-positive'
+
                                                     },
                                                     {
                                                         title: 'Address',

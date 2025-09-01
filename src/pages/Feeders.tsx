@@ -1393,7 +1393,9 @@ const Feeders = () => {
                                     name: 'Card',
                                     props: {
                                         title: stat.title,
-                                        value: stat.value,
+                                        value: stat.value !== undefined && stat.value !== null && !isNaN(Number(stat.value))
+                                            ? Number(stat.value).toFixed(2)
+                                            : stat.value,
                                         subtitle1: stat.subtitle1,
                                         icon: stat.icon,
                                         bg: stat.bg ,

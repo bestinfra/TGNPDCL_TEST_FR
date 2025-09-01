@@ -1781,6 +1781,9 @@ const DTRDashboard: React.FC = () => {
             ],
           },
 
+
+
+          
           // DTR Statistics Cards
           {
             layout: {
@@ -1826,7 +1829,9 @@ const DTRDashboard: React.FC = () => {
                       name: "Card",
                       props: {
                         title: stat.title,
-                        value: stat.value,
+                        value: typeof stat.value === "number"
+                          ? stat.value.toFixed(2)
+                          : (Number(stat.value) ? Number(stat.value).toFixed(2) : stat.value),
                         icon: stat.icon,
                         subtitle1: stat.subtitle1,
                         onValueClick: stat.onValueClick,

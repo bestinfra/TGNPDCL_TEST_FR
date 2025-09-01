@@ -925,12 +925,12 @@ export default function AssetManagment() {
                           { id: "HierarchyView", label: "Hierarchy View" },
                         ],
                         onMenuItemClick: handleMenuClick,
-                        buttonsLabel: "Add Asset",
-                        variant: "primary",
-                        onClick: () => {
-                          console.log("Add Asset");
-                          setIsAddAssetModalOpen(true);
-                        },
+                        // buttonsLabel: "Add Asset",
+                        // variant: "primary",
+                        // onClick: () => {
+                        //   console.log("Add Asset");
+                        //   setIsAddAssetModalOpen(true);
+                        // },
                       },
                     },
                   ],
