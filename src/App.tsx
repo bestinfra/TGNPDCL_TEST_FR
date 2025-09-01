@@ -25,7 +25,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppProvider>
-        <Router>
+        <Router basename="/v2/tgnpdcl_smart">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route

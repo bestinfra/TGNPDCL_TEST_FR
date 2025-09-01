@@ -10,56 +10,56 @@ interface HierarchyNode {
     children?: HierarchyNode[];
 }
 
-interface DiscomOption {
-    id: string | number;
-    name: string;
-    code: string;
-    region: string;
-}
+// interface DiscomOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     region: string;
+// }
 
-interface CircleOption {
-    id: string | number;
-    name: string;
-    code: string;
-    discom_id: string | number;
-}
+// interface CircleOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     discom_id: string | number;
+// }
 
-interface DivisionOption {
-    id: string | number;
-    name: string;
-    code: string;
-    circle_id: string | number;
-}
+// interface DivisionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     circle_id: string | number;
+// }
 
-interface SubDivisionOption {
-    id: string | number;
-    name: string;
-    code: string;
-    division_id: string | number;
-}
+// interface SubDivisionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     division_id: string | number;
+// }
 
-interface SectionOption {
-    id: string | number;
-    name: string;
-    code: string;
-    sub_division_id: string | number;
-}
+// interface SectionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     sub_division_id: string | number;
+// }
 
-interface MeterLocationOption {
-    id: string | number;
-    name: string;
-    code: string;
-    description: string;
-}
+// interface MeterLocationOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     description: string;
+// }
 
-interface DropdownData {
-    discoms: DiscomOption[];
-    circles: CircleOption[];
-    divisions: DivisionOption[];
-    subDivisions: SubDivisionOption[];
-    sections: SectionOption[];
-    meterLocations: MeterLocationOption[];
-}
+// interface DropdownData {
+//     discoms: DiscomOption[];
+//     circles: CircleOption[];
+//     divisions: DivisionOption[];
+//     subDivisions: SubDivisionOption[];
+//     sections: SectionOption[];
+//     meterLocations: MeterLocationOption[];
+// }
 
 // Updated filter options structure to match API response
 const dummyFilterOptions = {
@@ -660,7 +660,7 @@ export default function AssetManagment() {
               }))
           };
 
-          setDropdownData(transformedData);
+          // setDropdownData(transformedData);
           
           // Also update filter options for the new dropdown structure
           setFilterOptions({
@@ -713,6 +713,7 @@ export default function AssetManagment() {
       } catch (error) {
         console.error("Error fetching filter options:", error);
         // Set default data if API fails
+        /*
         setDropdownData({
           discoms: [
             { id: 1, name: 'TANGEDCO', code: 'TANGEDCO', region: 'Tamil Nadu' },
@@ -746,6 +747,7 @@ export default function AssetManagment() {
             { id: 4, name: 'Substation', code: 'SUBST', description: 'Substation installation' }
           ]
         });
+        */
       } finally {
         setDropdownLoading(false);
       }
@@ -756,15 +758,15 @@ export default function AssetManagment() {
   
   const [isSubNodeChecked, setIsSubNodeChecked] = useState(false);
   
-  // Dropdown data state
-  const [dropdownData, setDropdownData] = useState<DropdownData>({
-    discoms: [],
-    circles: [],
-    divisions: [],
-    subDivisions: [],
-    sections: [],
-    meterLocations: []
-  });
+  // Dropdown data state - Commented out as not currently used
+  // const [dropdownData, setDropdownData] = useState<DropdownData>({
+  //   discoms: [],
+  //   circles: [],
+  //   divisions: [],
+  //   subDivisions: [],
+  //   sections: [],
+  //   meterLocations: []
+  // });
   const [dropdownLoading, setDropdownLoading] = useState(false);
 
   // State for filter options from backend
@@ -1044,7 +1046,7 @@ export default function AssetManagment() {
             validation: {
               required: "Asset title is required",
             },
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
           },
           {
             name: "assetName",
@@ -1078,7 +1080,7 @@ export default function AssetManagment() {
             validation: {
               required: "Parent asset is required when creating a sub node",
             },
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
           });
         }
 
@@ -1090,7 +1092,7 @@ export default function AssetManagment() {
             name: "uploadFile",
             type: "chosenfile",
             label: "Upload File",
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
             placeholder: "Drag and drop files here or click to browse",
             required: true,
             validation: {
@@ -1110,7 +1112,7 @@ export default function AssetManagment() {
             label: "Search Templates",
             placeholder: "Asset Title (Ex. Locations)",
             required: false,
-            rightIcon: "/icons/search.svg",
+            rightIcon: "icons/search.svg",
           },
         ];
 
