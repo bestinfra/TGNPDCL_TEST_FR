@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { FILTER_STYLES } from "../contexts/FilterStyleContext";
-import BACKEND_URL from "../config";
+import { apiClient } from "../api/apiUtils";
 
 // Dummy data for fallback
 const dummyDtrStatsData = {
@@ -234,19 +234,11 @@ const DTRDashboard: React.FC = () => {
   const retryStatsAPI = async (lastSelectedId?: string) => {
     setIsStatsLoading(true);
     try {
-      const url = lastSelectedId 
-        ? `${BACKEND_URL}/dtrs/stats?hierarchyId=${lastSelectedId}`
-        : `${BACKEND_URL}/dtrs/stats`;
+      const endpoint = lastSelectedId 
+        ? `/dtrs/stats?hierarchyId=${lastSelectedId}`
+        : '/dtrs/stats';
       
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch DTR stats");
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get(endpoint);
       if (data.success) {
         const row1 = data.data?.row1 || {};
         const row2 = data.data?.row2 || {};
@@ -298,15 +290,7 @@ const DTRDashboard: React.FC = () => {
         params.append("lastSelectedId", lastSelectedId);
       }
 
-      const response = await fetch(`${BACKEND_URL}/dtrs?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch DTR table");
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get(`/dtrs?${params.toString()}`);
 
       if (data.success) {
         setDtrTableData(data.data);
@@ -335,19 +319,11 @@ const DTRDashboard: React.FC = () => {
   const retryAlertsAPI = async (lastSelectedId?: string) => {
     setIsAlertsLoading(true);
     try {
-      const url = lastSelectedId 
-        ? `${BACKEND_URL}/dtrs/alerts?lastSelectedId=${lastSelectedId}`
-        : `${BACKEND_URL}/dtrs/alerts`;
+      const endpoint = lastSelectedId 
+        ? `/dtrs/alerts?lastSelectedId=${lastSelectedId}`
+        : '/dtrs/alerts';
       
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch DTR alerts");
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get(endpoint);
       if (data.success) {
         setAlertsData(data.data);
         setFailedApis((prev) => prev.filter((api) => api.id !== "alerts"));
@@ -367,19 +343,11 @@ const DTRDashboard: React.FC = () => {
   const retryChartAPI = async (lastSelectedId?: string) => {
     setIsChartLoading(true);
     try {
-      const url = lastSelectedId 
-        ? `${BACKEND_URL}/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
-        : `${BACKEND_URL}/dtrs/alerts/trends`;
+      const endpoint = lastSelectedId 
+        ? `/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
+        : '/dtrs/alerts/trends';
       
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch DTR alerts trends");
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get(endpoint);
       if (data.success) {
         const rows = data.data || [];
         const monthsList = rows.map((r: any) => r.month);
@@ -429,14 +397,11 @@ const DTRDashboard: React.FC = () => {
   const retryMeterStatusAPI = async (lastSelectedId?: string) => {
     setIsMeterStatusLoading(true);
     try {
-      const url = lastSelectedId 
-        ? `${BACKEND_URL}/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
-        : `${BACKEND_URL}/dtrs/meter-status`;
+      const endpoint = lastSelectedId 
+        ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
+        : '/dtrs/meter-status';
       
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch meter status");
-
-      const data = await response.json();
+      const data = await apiClient.get(endpoint);
       if (data.success) {
         setMeterStatus(data.data);
         setFailedApis((prev) => prev.filter((api) => api.id !== "meterStatus"));
@@ -466,14 +431,7 @@ const DTRDashboard: React.FC = () => {
     const fetchFilterOptions = async () => {
       setIsFiltersLoading(true);
       try {
-        const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format");
-        }
-
-        const data = await response.json();
+        const data = await apiClient.get('/dtrs/filter/filter-options');
 
         if (data.success) {
           // Transform the API data to match dropdown component format
@@ -547,20 +505,11 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
       try {
-        const url = lastSelectedId 
-          ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
-          : `${BACKEND_URL}/dtrs/stats`;
+        const endpoint = lastSelectedId 
+          ? `/dtrs/stats?lastSelectedId=${lastSelectedId}`
+          : '/dtrs/stats';
         
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch DTR stats");
-        
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format");
-        }
-        
-        const data = await response.json();
+        const data = await apiClient.get(endpoint);
 
         if (data.success) {
           const row1 = data.data?.row1 || {};
@@ -627,18 +576,7 @@ const DTRDashboard: React.FC = () => {
           params.append("lastSelectedId", lastSelectedId);
         }
 
-        const response = await fetch(
-          `${BACKEND_URL}/dtrs?${params.toString()}`
-        );
-        
-        if (!response.ok) throw new Error("Failed to fetch DTR table");
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format");
-        }
-
-        const data = await response.json();
+        const data = await apiClient.get(`/dtrs?${params.toString()}`);
         if (data.success) {
           setDtrTableData(data.data);
           setServerPagination({
@@ -678,19 +616,11 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRAlerts = async () => {
       setIsAlertsLoading(true);
       try {
-        const url = lastSelectedId 
-          ? `${BACKEND_URL}/dtrs/alerts?lastSelectedId=${lastSelectedId}`
-          : `${BACKEND_URL}/dtrs/alerts`;
+        const endpoint = lastSelectedId 
+          ? `/dtrs/alerts?lastSelectedId=${lastSelectedId}`
+          : '/dtrs/alerts';
         
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch DTR alerts");
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format");
-        }
-
-        const data = await response.json();
+        const data = await apiClient.get(endpoint);
         if (data.success) {
           setAlertsData(data.data);
         } else {
@@ -722,19 +652,11 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRAlertsTrends = async () => {
       setIsChartLoading(true);
       try {
-        const url = lastSelectedId 
-          ? `${BACKEND_URL}/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
-          : `${BACKEND_URL}/dtrs/alerts/trends`;
+        const endpoint = lastSelectedId 
+          ? `/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
+          : '/dtrs/alerts/trends';
         
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch DTR alerts trends");
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format");
-        }
-
-        const data = await response.json();
+        const data = await apiClient.get(endpoint);
         if (data.success) {
           const rows = data.data || [];
           const monthsList = rows.map((r: any) => r.month);
@@ -797,14 +719,11 @@ const DTRDashboard: React.FC = () => {
     const fetchMeterStatus = async () => {
       setIsMeterStatusLoading(true);
       try {
-        const url = lastSelectedId 
-          ? `${BACKEND_URL}/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
-          : `${BACKEND_URL}/dtrs/meter-status`;
+        const endpoint = lastSelectedId 
+          ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
+          : '/dtrs/meter-status';
         
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch meter status");
-
-        const data = await response.json();
+        const data = await apiClient.get(endpoint);
         if (data.success) {
           setMeterStatus(data.data);
         } else {
@@ -1034,13 +953,8 @@ const DTRDashboard: React.FC = () => {
       
       const params = new URLSearchParams();
       params.append("parentId", value);
-      const apiUrl = `${BACKEND_URL}/dtrs/filter/filter-options?${params.toString()}`;
       
-      
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error("Failed to fetch filter options");
-
-      const data = await response.json();
+      const data = await apiClient.get(`/dtrs/filter/filter-options?${params.toString()}`);
       
       
       if (data.success) {
