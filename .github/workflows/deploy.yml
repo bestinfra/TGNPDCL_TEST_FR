@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted,tg_test_ft]
+    runs-on: [self-hosted,tg_fr]
 
     steps:
       - name: Checkout Repo
