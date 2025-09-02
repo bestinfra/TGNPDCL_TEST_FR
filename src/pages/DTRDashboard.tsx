@@ -1869,6 +1869,7 @@ const DTRDashboard: React.FC = () => {
                           showLegend: false,
                           showNoDataMessage: false, 
                           showDownloadButton: true,
+                          enableHover:false,
                           availableTimeRanges: [],  
                           className: "",
                              showHeader:true,

@@ -3,7 +3,7 @@ name: TGNPDCL Frontend Deploy to Xampp
 on:
   push:
     branches:
-      - Sandeep
+      - main
 
 jobs:
   deploy:

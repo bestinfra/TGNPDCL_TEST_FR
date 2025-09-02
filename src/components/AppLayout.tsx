@@ -174,7 +174,7 @@ function AppLayout({ children }: AppLayoutProps) {
               collapsedSrc: 'images/changed-logo.svg',
             }}
             clientLogo={{
-              src: 'images/gmr-logo.png',
+              src: 'images/tgnpdcl.png',
               alt: 'GMR Client',
               collapsedSrc: 'images/gmr-logo.png',
             }}

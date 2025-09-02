@@ -1322,7 +1322,7 @@ const Feeders = () => {
                     layout: {
                         type: 'grid' as const,
                         columns: 3,
-                        className: 'border border-primary-border dark:border-dark-border rounded-3xl bg-white p-4 dark:bg-primary-dark-light',
+                        className: 'border border-primary-border dark:border-dark-border rounded-3xl  p-4 dark:bg-primary-dark-light ',
                         rows: [
                             {
                                 layout: 'row' as const,
@@ -1401,7 +1401,7 @@ const Feeders = () => {
                     layout: {
                         type: 'grid' as const,
                         columns: 1,
-                        className: 'w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl dark:bg-primary-dark-light',
+                        className: 'w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary dark:bg-primary-dark-light',
                         rows: [
                             {
                                 layout: 'row' as const,
