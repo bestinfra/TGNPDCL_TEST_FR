@@ -25,7 +25,6 @@ function AppLayout({ children }: AppLayoutProps) {
         return;
       }
 
-      // Handle meter-specific searches
       if (query.toUpperCase().startsWith('METER')) {
         const meterQuery = query.replace(/^METER[-_\s]?/i, '');
         const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(meterQuery)}`);

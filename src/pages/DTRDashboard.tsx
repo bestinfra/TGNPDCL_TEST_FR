@@ -31,7 +31,6 @@ const dummyDtrStatsData = {
   inactivePercentage: "0",
 };
 
-// Updated filter options structure to match API response
 const dummyFilterOptions = {
   discoms: [
     { value: "DISCOM1", label: "DISCOM 1" },
@@ -124,7 +123,6 @@ const DTRDashboard: React.FC = () => {
     "Daily" | "Monthly"
   >("Daily");
 
-  // State for filter values
   const [filterValues, setFilterValues] = useState({
     discom: "all",
     circle: "all",
@@ -461,7 +459,6 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  // Load data on component mount
   useEffect(() => {
     const fetchFilterOptions = async () => {
       setIsFiltersLoading(true);
@@ -476,7 +473,6 @@ const DTRDashboard: React.FC = () => {
         const data = await response.json();
 
         if (data.success) {
-          // Transform the API data to match dropdown component format
           const transformedData = {
             discoms: data.data
               .filter((item: any) => item.levelName === "DISCOM")
@@ -1244,7 +1240,6 @@ const DTRDashboard: React.FC = () => {
 
 
 
-      // Refresh data with new filters
       retryStatsAPI(lastId || undefined);
       retryTableAPI(lastId || undefined);
       retryAlertsAPI(lastId || undefined);
@@ -2001,7 +1996,6 @@ const DTRDashboard: React.FC = () => {
             ],
           },
         
-          // // Latest Alerts section
           {
             layout: {
               type: "grid" as const,
