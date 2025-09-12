@@ -8,6 +8,7 @@ const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { FILTER_STYLES } from "../contexts/FilterStyleContext";
 import { apiClient } from "../api/apiUtils";
+import BACKEND_URL  from "../config";
 
 const dummyDtrStatsData = {
   totalDtrs: "0",

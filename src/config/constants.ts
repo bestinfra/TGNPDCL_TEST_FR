@@ -1,4 +1,3 @@
-// Application Configuration Constants
 export const APP_CONFIG = {
   BASENAME: '/v2/tgnpdcl_smart',
   
@@ -8,11 +7,13 @@ export const APP_CONFIG = {
   // App Information
   APP_NAME: 'TGNPDCL',
   COMPANY_NAME: 'Best Infra',
+
   
   // Feature Flags
   ENABLE_DARK_MODE: true,
   ENABLE_MULTI_LANGUAGE: false,
   ENABLE_LOGGING: true,
+
 } as const;
 
 // Helper function to get full path with basename
