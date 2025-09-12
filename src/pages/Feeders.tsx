@@ -396,7 +396,6 @@ const Feeders = () => {
             
             const response = await fetch(endpoint);
             const data = await response.json();
-            console.log('fetchFeederInfo - API response:', data);
             
             if (data.success) {
                 let feederInfo = data.data;
@@ -414,7 +413,6 @@ const Feeders = () => {
                     
                     if (specificFeeder) {
     
-                        // Create feeder-specific info
                         feederInfo = {
                             dtr: feederInfo.dtr,
                             totalFeeders: 1, // This is now for a specific feeder
@@ -1045,12 +1043,10 @@ const Feeders = () => {
     useEffect(() => {
         // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
         if (!resolvedDtrId && feederId) {
-
             return;
         }
 
         if (resolvedDtrId || dtrId) {
-
             fetchInstantaneousStats();
             fetchConsumptionAnalytics();
             fetchFeederInfo();
@@ -1066,7 +1062,6 @@ const Feeders = () => {
         if (feederInfoData && feederInfoData.feeders && feederInfoData.feeders.length > 0) {
             const firstFeeder = feederInfoData.feeders[0];
             if (firstFeeder.latitude && firstFeeder.longitude) {
-                console.log('Updating map coordinates from feeder data:', firstFeeder.latitude, firstFeeder.longitude);
                 setMapLatitude(firstFeeder.latitude);
                 setMapLongitude(firstFeeder.longitude);
             }
@@ -1075,7 +1070,6 @@ const Feeders = () => {
 
     // Effect to log coordinate changes for debugging
     useEffect(() => {
-        console.log('Map coordinates updated:', mapLatitude, mapLongitude);
     }, [mapLatitude, mapLongitude]);
 
     // Enhanced data for Alerts Table with more entries
@@ -1584,19 +1578,15 @@ const Feeders = () => {
                                                 rotateControl: true,
                                                 fullscreenControl: true,
                                             },
-                                            onReady: (map: any, google: any) => {
-                                                console.log('Map ready', map, google);
+                                            onReady: (_map: any, _google: any) => {
                                             },
                                             onClick: (e: any) => {
                                                 const clickedCoords = e.latLng?.toJSON();
-                                                console.log('Map clicked at:', clickedCoords);
                                                 if (clickedCoords) {
                                                     // You could add a temporary marker here or show coordinates in a tooltip
-                                                    console.log(`Clicked coordinates: ${clickedCoords.lat}, ${clickedCoords.lng}`);
                                                 }
                                             },
                                             onIdle: () => {
-                                                console.log('Map idle');
                                             },
                                         },
                                     },

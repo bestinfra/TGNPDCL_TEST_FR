@@ -58,7 +58,6 @@ export default function DataLogger() {
             if (result.pagination) {
                 setServerPagination(result.pagination);
             }
-            console.log('Data loggers:', result.data);
         } catch (error: any) {
             console.error('Failed to fetch data loggers:', error);
             
@@ -134,10 +133,6 @@ export default function DataLogger() {
                                     backButtonText: 'Back to Dashboard',
                                     buttonsLabel: 'Add Data Logger',
                                     variant: 'primary',
-                                    onClick: () =>
-                                        console.log(
-                                            'Adding new data logger...'
-                                        ),
                                     showMenu: true,
                                     showDropdown: true,
                                     menuItems: [
@@ -163,8 +158,7 @@ export default function DataLogger() {
                                             label: 'Low Battery',
                                         },
                                     ],
-                                    onMenuItemClick: (itemId: string) => {
-                                        console.log(`Filter by: ${itemId}`);    
+                                    onMenuItemClick: (_itemId: string) => {
                                     },
                                 },
                             },
@@ -198,10 +192,6 @@ export default function DataLogger() {
                                                 serverPagination: serverPagination,
                                                 onPageChange: handlePageChange,
                                                 emptyMessage: 'No data logger devices found',
-                                                onEdit: (row: TableData) =>
-                                                    console.log('Edit:', row),
-                                                onDelete: (row: TableData) =>
-                                                    console.log('Delete:', row),
                                                 onView: (row: TableData) => {
                                                     // Navigate to the data logger dashboard with the row ID
                                                     const dataLoggerId = row.modemSlNo || row.sNo?.toString() || '-';

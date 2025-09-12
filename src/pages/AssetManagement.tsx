@@ -89,7 +89,7 @@ const dummyFilterOptions = {
     { value: "SECTION2", label: "Section 2" },
   ],
   meterLocations: [
-    { value: "all", label: "All Locations" },
+    { value: "all", label: "All Meter Locations" },
     { value: "INDOOR", label: "Indoor" },
     { value: "OUTDOOR", label: "Outdoor" },
   ],
@@ -429,7 +429,14 @@ export default function AssetManagment() {
   const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
   const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
   // State for tracking failed APIs
-  const [errorMessages, setErrorMessages] = useState<string[]>([]);
+  const [failedApis, setFailedApis] = useState<
+    Array<{
+      id: string;
+      name: string;
+      retryFunction: (lastSelectedId?: string) => Promise<void>;
+      errorMessage: string;
+    }>
+  >([]);
   const [viewMode, setViewMode] = useState<"hierarchy" | "table">("table");
   const [meterTableData, setMeterTableData] = useState<any[]>([]);
   const [isLoadingMeterData, setIsLoadingMeterData] = useState(false);
@@ -457,36 +464,28 @@ export default function AssetManagment() {
   ];
 
   // Handle asset actions
-  const handleAssetAction = (actionId: string, node: any) => {
-    console.log(`Action: ${actionId} on node:`, node);
+  const handleAssetAction = (actionId: string, _node: any) => {
 
     switch (actionId) {
       case "edit-asset-title":
         // Handle edit asset title
-        console.log("Editing asset title for:", node.name);
         break;
       case "change-node-to-sub-node":
         // Handle change node to sub node
-        console.log("Changing node to sub node for:", node.name);
         break;
       case "download-template":
         // Handle download template
-        console.log("Downloading template for:", node.name);
         break;
       case "duplicate-entire-asset":
         // Handle duplicate asset
-        console.log("Duplicating asset:", node.name);
         break;
       case "remove-sub-node-list":
         // Handle remove sub node list
-        console.log("Removing sub node list for:", node.name);
         break;
       case "delete":
         // Handle delete
-        console.log("Deleting asset:", node.name);
         break;
       default:
-        console.log("Unknown action:", actionId);
     }
   };
 
@@ -500,33 +499,86 @@ export default function AssetManagment() {
         setViewMode("hierarchy");
         break;
       default:
-        console.log("Unknown menu item:", menuId);
+    }
+  };
+
+  // Retry function for assets API
+  const retryAssetsAPI = async (lastSelectedId?: string) => {
+    try {
+      let url = `${BACKEND_URL}/assets`;
+      
+      // Add hierarchy filter if available
+      if (lastSelectedId) {
+        url += `?hierarchyId=${lastSelectedId}`;
+      }
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.success) {
+        setHierarchicalData(data.data || []);
+        setFailedApis((prev) => prev.filter((api) => api.id !== "assets"));
+      } else {
+        throw new Error(data.message || "Failed to fetch assets");
+      }
+    } catch (error) {
+      console.error("Error in Assets API:", error);
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === "assets")) {
+          return [
+            ...prev,
+            {
+              id: "assets",
+              name: "Assets",
+              retryFunction: retryAssetsAPI,
+              errorMessage: "Failed to load Assets. Please try again.",
+            },
+          ];
+        }
+        return prev;
+      });
     }
   };
 
   // Fetch hierarchical assets from API
-  useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/assets`);
-        const data = await response.json();
-
-        if (data.success) {
-          setHierarchicalData(data.data || []);
-        }
-      } catch (error) {
-        console.log("Using dummy data due to API error:", error);
-        // Add error message without adding data
-        setErrorMessages((prev) => {
-          if (!prev.includes("Failed to fetch assets")) {
-            return [...prev, "Failed to fetch assets"];
-          }
-          return prev;
-        });
-        // Keep using dummy data if API fails
+  const fetchAssets = async (lastSelectedId?: string | null) => {
+    try {
+      let url = `${BACKEND_URL}/assets`;
+      
+      // Add hierarchy filter if available
+      if (lastSelectedId) {
+        url += `?hierarchyId=${lastSelectedId}`;
       }
-    };
+      
+      const response = await fetch(url);
+      const data = await response.json();
 
+      if (data.success) {
+        setHierarchicalData(data.data || []);
+        setFailedApis((prev) => prev.filter((api) => api.id !== "assets"));
+      } else {
+        throw new Error(data.message || "Failed to fetch assets");
+      }
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === "assets")) {
+          return [
+            ...prev,
+            {
+              id: "assets",
+              name: "Assets",
+              retryFunction: retryAssetsAPI,
+              errorMessage: "Failed to load Assets. Please try again.",
+            },
+          ];
+        }
+        return prev;
+      });
+    }
+  };
+
+  useEffect(() => {
     if (!useDummyData) {
       // Add initial delay to simulate loading
       setTimeout(() => {
@@ -534,6 +586,60 @@ export default function AssetManagment() {
       }, 1000);
     }
   }, [useDummyData]);
+
+  // Retry function for meter data API
+  const retryMeterDataAPI = async (lastSelectedId?: string) => {
+    setIsLoadingMeterData(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        pageSize: "20",
+      });
+
+      // Add lastSelectedId if available
+      if (lastSelectedId) {
+        queryParams.append("hierarchyId", lastSelectedId);
+      }
+
+      const response = await fetch(`${BACKEND_URL}/dtrs/all-meters?${queryParams}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+
+      if (data.success) {
+        setMeterTableData(data.data || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+        setTotalCount(data.pagination?.totalCount || 0);
+        setCurrentPage(data.pagination?.currentPage || 1);
+        setFailedApis((prev) => prev.filter((api) => api.id !== "meterData"));
+      } else {
+        throw new Error(data.message || "Failed to fetch meter data");
+      }
+    } catch (error) {
+      console.error("Error in Meter Data API:", error);
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === "meterData")) {
+          return [
+            ...prev,
+            {
+              id: "meterData",
+              name: "Meter Data",
+              retryFunction: retryMeterDataAPI,
+              errorMessage: "Failed to load Meter Data. Please try again.",
+            },
+          ];
+        }
+        return prev;
+      });
+    } finally {
+      setIsLoadingMeterData(false);
+    }
+  };
 
   // Fetch meter data from new API endpoint
   const fetchMeterData = async (page = 1, pageSize = 20, search = '', lastSelectedId?: string | null) => {
@@ -565,19 +671,23 @@ export default function AssetManagment() {
         setTotalPages(data.pagination?.totalPages || 1);
         setTotalCount(data.pagination?.totalCount || 0);
         setCurrentPage(data.pagination?.currentPage || 1);
+        setFailedApis((prev) => prev.filter((api) => api.id !== "meterData"));
       } else {
-        setErrorMessages((prev) => {
-          if (!prev.includes("Failed to fetch meter data")) {
-            return [...prev, "Failed to fetch meter data"];
-          }
-          return prev;
-        });
+        throw new Error(data.message || "Failed to fetch meter data");
       }
     } catch (error) {
       console.error("Error fetching meter data:", error);
-      setErrorMessages((prev) => {
-        if (!prev.includes("Failed to fetch meter data")) {
-          return [...prev, "Failed to fetch meter data"];
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === "meterData")) {
+          return [
+            ...prev,
+            {
+              id: "meterData",
+              name: "Meter Data",
+              retryFunction: retryMeterDataAPI,
+              errorMessage: "Failed to load Meter Data. Please try again.",
+            },
+          ];
         }
         return prev;
       });
@@ -593,6 +703,142 @@ export default function AssetManagment() {
     }
   }, [viewMode, currentPage, lastSelectedId]);
   
+  // Retry function for filter options API
+  const retryFilterOptionsAPI = async () => {
+    setDropdownLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid response format");
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOriginalApiData(data.data);
+        
+        const transformedData = {
+          discoms: data.data
+            .filter((item: any) => item.levelName === "DISCOM")
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code || item.name,
+              region: item.region || item.name
+            })),
+          circles: data.data
+            .filter((item: any) => item.levelName === "Circle")
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code || item.name,
+              discom_id: item.parentId || 1
+            })),
+          divisions: data.data
+            .filter((item: any) => item.levelName === "Division")
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code || item.name,
+              circle_id: item.parentId || 1
+            })),
+          subDivisions: data.data
+            .filter((item: any) => item.levelName === "Sub division")
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code || item.name,
+              division_id: item.parentId || 1
+            })),
+          sections: data.data
+            .filter((item: any) => item.levelName === "Section")
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code || item.name,
+              sub_division_id: item.parentId || 1
+            })),
+          meterLocations: data.data
+            .filter((item: any) => item.levelName === "DTR Location")
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code || item.name,
+              description: item.description || item.name
+            }))
+        };
+
+        setFilterOptions({
+          discoms: [
+            { value: "all", label: "All DISCOMs" },
+            ...transformedData.discoms.map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name
+            }))
+          ],
+          circles: [
+            { value: "all", label: "All Circles" },
+            ...transformedData.circles.map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name
+            }))
+          ],
+          divisions: [
+            { value: "all", label: "All Divisions" },
+            ...transformedData.divisions.map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name
+            }))
+          ],
+          subDivisions: [
+            { value: "all", label: "All Sub-Divisions" },
+            ...transformedData.subDivisions.map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name
+            }))
+          ],
+          sections: [
+            { value: "all", label: "All Sections" },
+            ...transformedData.sections.map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name
+            }))
+          ],
+          meterLocations: [
+            { value: "all", label: "All Meter Locations" },
+            ...transformedData.meterLocations.map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name
+            }))
+          ]
+        });
+        setFailedApis((prev) => prev.filter((api) => api.id !== "filterOptions"));
+      } else {
+        throw new Error(data.message || "Failed to fetch filter options");
+      }
+    } catch (error) {
+      console.error("Error in Filter Options API:", error);
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === "filterOptions")) {
+          return [
+            ...prev,
+            {
+              id: "filterOptions",
+              name: "Filter Options",
+              retryFunction: retryFilterOptionsAPI,
+              errorMessage: "Failed to load Filter Options. Please try again.",
+            },
+          ];
+        }
+        return prev;
+      });
+    } finally {
+      setDropdownLoading(false);
+    }
+  };
+
   // Fetch dropdown data from API
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -608,6 +854,9 @@ export default function AssetManagment() {
         const data = await response.json();
 
         if (data.success) {
+          // Store original API data for parent-child relationships
+          setOriginalApiData(data.data);
+          
           // Transform the API data to match dropdown component format
           const transformedData = {
             discoms: data.data
@@ -619,7 +868,7 @@ export default function AssetManagment() {
                 region: item.region || item.name
               })),
             circles: data.data
-              .filter((item: any) => item.levelName === "CIRCLE")
+              .filter((item: any) => item.levelName === "Circle")
               .map((item: any) => ({
                 id: item.id,
                 name: item.name,
@@ -627,7 +876,7 @@ export default function AssetManagment() {
                 discom_id: item.parentId || 1
               })),
             divisions: data.data
-              .filter((item: any) => item.levelName === "DIVISION")
+              .filter((item: any) => item.levelName === "Division")
               .map((item: any) => ({
                 id: item.id,
                 name: item.name,
@@ -635,7 +884,7 @@ export default function AssetManagment() {
                 circle_id: item.parentId || 1
               })),
             subDivisions: data.data
-              .filter((item: any) => item.levelName === "SUB-DIVISION")
+              .filter((item: any) => item.levelName === "Sub division")
               .map((item: any) => ({
                 id: item.id,
                 name: item.name,
@@ -643,7 +892,7 @@ export default function AssetManagment() {
                 division_id: item.parentId || 1
               })),
             sections: data.data
-              .filter((item: any) => item.levelName === "SECTION")
+              .filter((item: any) => item.levelName === "Section")
               .map((item: any) => ({
                 id: item.id,
                 name: item.name,
@@ -651,7 +900,7 @@ export default function AssetManagment() {
                 sub_division_id: item.parentId || 1
               })),
             meterLocations: data.data
-              .filter((item: any) => item.levelName === "METER-LOCATION")
+              .filter((item: any) => item.levelName === "DTR Location")
               .map((item: any) => ({
                 id: item.id,
                 name: item.name,
@@ -700,54 +949,33 @@ export default function AssetManagment() {
               }))
             ],
             meterLocations: [
-              { value: "all", label: "All Locations" },
+              { value: "all", label: "All Meter Locations" },
               ...transformedData.meterLocations.map((item: any) => ({
                 value: item.id.toString(),
                 label: item.name
               }))
             ]
           });
+          setFailedApis((prev) => prev.filter((api) => api.id !== "filterOptions"));
         } else {
           throw new Error(data.message || "Failed to fetch filter options");
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
-        // Set default data if API fails
-        /*
-        setDropdownData({
-          discoms: [
-            { id: 1, name: 'TANGEDCO', code: 'TANGEDCO', region: 'Tamil Nadu' },
-            { id: 2, name: 'TSEDCL', code: 'TSEDCL', region: 'Telangana' },
-            { id: 3, name: 'APSPDCL', code: 'APSPDCL', region: 'Andhra Pradesh' }
-          ],
-          circles: [
-            { id: 1, name: 'Chennai', code: 'CHN', discom_id: 1 },
-            { id: 2, name: 'Coimbatore', code: 'CBE', discom_id: 1 },
-            { id: 3, name: 'Madurai', code: 'MDU', discom_id: 1 }
-          ],
-          divisions: [
-            { id: 1, name: 'Division 1', code: 'DIV1', circle_id: 1 },
-            { id: 2, name: 'Division 2', code: 'DIV2', circle_id: 1 },
-            { id: 3, name: 'Division 3', code: 'DIV3', circle_id: 2 }
-          ],
-          subDivisions: [
-            { id: 1, name: 'Sub-Division 1', code: 'SUBDIV1', division_id: 1 },
-            { id: 2, name: 'Sub-Division 2', code: 'SUBDIV2', division_id: 1 },
-            { id: 3, name: 'Sub-Division 3', code: 'SUBDIV3', division_id: 2 }
-          ],
-          sections: [
-            { id: 1, name: 'Section 1', code: 'SEC1', sub_division_id: 1 },
-            { id: 2, name: 'Section 2', code: 'SEC2', sub_division_id: 1 },
-            { id: 3, name: 'Section 3', code: 'SEC3', sub_division_id: 2 }
-          ],
-          meterLocations: [
-            { id: 1, name: 'Pole', code: 'POLE', description: 'Mounted on pole' },
-            { id: 2, name: 'Building', code: 'BLDG', description: 'Mounted on building' },
-            { id: 3, name: 'Underground', code: 'UNDER', description: 'Underground installation' },
-            { id: 4, name: 'Substation', code: 'SUBST', description: 'Substation installation' }
-          ]
+        setFailedApis((prev) => {
+          if (!prev.find((api) => api.id === "filterOptions")) {
+            return [
+              ...prev,
+              {
+                id: "filterOptions",
+                name: "Filter Options",
+                retryFunction: retryFilterOptionsAPI,
+                errorMessage: "Failed to load Filter Options. Please try again.",
+              },
+            ];
+          }
+          return prev;
         });
-        */
       } finally {
         setDropdownLoading(false);
       }
@@ -772,33 +1000,24 @@ export default function AssetManagment() {
   // State for filter options from backend
   const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
 
+  // Store original API data with parent relationships
+  const [originalApiData, setOriginalApiData] = useState<any[]>([]);
+
   const handleTabChange = (newTabIndex: number) => {
     setActiveTab(newTabIndex);
     setIsSubNodeChecked(false); // Reset checkbox state when switching tabs
-    console.log("Switched to tab:", newTabIndex);
   };
 
   const handleCheckboxChange = (checked: boolean) => {
     setIsSubNodeChecked(checked);
   };
 
-  // Clear all error messages
-  const clearErrors = () => {
-    setErrorMessages([]);
-  };
-
-  // Remove a specific error message
-  const removeError = (indexToRemove: number) => {
-    setErrorMessages((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
-    );
-  };
-
-  // Retry all APIs
-  const retryAllAPIs = () => {
-    clearErrors();
-    // Retry all APIs by refreshing the page
-    window.location.reload();
+  // Retry specific API
+  const retrySpecificAPI = (apiId: string) => {
+    const api = failedApis.find((a) => a.id === apiId);
+    if (api) {
+      api.retryFunction(lastSelectedId || undefined);
+    }
   };
 
   // Function to update filter options based on selection
@@ -958,6 +1177,54 @@ export default function AssetManagment() {
     }
   };
 
+  // Helper function to find all parent values when child is selected
+  const findAllParentValues = (childFilterName: string, childValue: string) => {
+    if (childValue === "all" || !originalApiData.length) return {};
+
+    // Define the complete hierarchy mapping
+    const hierarchyLevels = [
+      { filterName: "discom", levelName: "DISCOM" },
+      { filterName: "circle", levelName: "Circle" },
+      { filterName: "division", levelName: "Division" },
+      { filterName: "subDivision", levelName: "Sub division" },
+      { filterName: "section", levelName: "Section" },
+      { filterName: "meterLocation", levelName: "DTR Location" }
+    ];
+
+    // Find the selected child item
+    const childLevel = hierarchyLevels.find(level => level.filterName === childFilterName);
+    if (!childLevel) return {};
+
+    const childItem = originalApiData.find(
+      (item: any) => item.levelName === childLevel.levelName && item.id.toString() === childValue
+    );
+    
+    if (!childItem) return {};
+
+    // Build the complete hierarchy path
+    const parentValues: { [key: string]: string } = {};
+    let currentItem = childItem;
+    let currentLevelIndex = hierarchyLevels.findIndex(level => level.filterName === childFilterName);
+
+    // Walk up the hierarchy to find all parents
+    while (currentItem && currentItem.parentId && currentLevelIndex > 0) {
+      const parentLevel = hierarchyLevels[currentLevelIndex - 1];
+      const parentItem = originalApiData.find(
+        (item: any) => item.levelName === parentLevel.levelName && item.id === currentItem.parentId
+      );
+      
+      if (parentItem) {
+        parentValues[parentLevel.filterName] = parentItem.id.toString();
+        currentItem = parentItem;
+        currentLevelIndex--;
+      } else {
+        break;
+      }
+    }
+
+    return parentValues;
+  };
+
   // Filter change handlers
   const handleFilterChange = async (
     filterName: string,
@@ -967,9 +1234,18 @@ export default function AssetManagment() {
     const selectedValue =
       typeof value === "string" ? value : value.target.value;
 
+    // Find all parent values if a child is selected
+    const parentValues = findAllParentValues(filterName, selectedValue);
+    
+    // Update filter values with the selected value and all its parents
+    const newFilterValues: any = {
+      [filterName]: selectedValue,
+      ...parentValues, // Spread all parent values
+    };
+
     setFilterValues((prev) => ({
       ...prev,
-      [filterName]: selectedValue,
+      ...newFilterValues,
     }));
 
     // Update dependent filter options - create event-like object for compatibility
@@ -1008,9 +1284,152 @@ export default function AssetManagment() {
       // Refresh data with new filters
       if (viewMode === "table") {
         fetchMeterData(currentPage, 20, '', lastId);
+      } else if (viewMode === "hierarchy") {
+        fetchAssets(lastId);
       }
     } catch (error) {
       console.error("Error applying filters:", error);
+    }
+  };
+
+  // Handle Reset button click
+  const handleResetFilters = async () => {
+    setFilterValues({
+      discom: "all",
+      circle: "all",
+      division: "all",
+      subDivision: "all",
+      section: "all",
+      meterLocation: "all",
+    });
+    setLastSelectedId(null);
+    
+    // Reset filter options to initial state
+    const fetchFilterOptions = async () => {
+      setDropdownLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format");
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setOriginalApiData(data.data);
+          
+          const transformedData = {
+            discoms: data.data
+              .filter((item: any) => item.levelName === "DISCOM")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                region: item.region || item.name
+              })),
+            circles: data.data
+              .filter((item: any) => item.levelName === "Circle")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                discom_id: item.parentId || 1
+              })),
+            divisions: data.data
+              .filter((item: any) => item.levelName === "Division")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                circle_id: item.parentId || 1
+              })),
+            subDivisions: data.data
+              .filter((item: any) => item.levelName === "Sub division")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                division_id: item.parentId || 1
+              })),
+            sections: data.data
+              .filter((item: any) => item.levelName === "Section")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                sub_division_id: item.parentId || 1
+              })),
+            meterLocations: data.data
+              .filter((item: any) => item.levelName === "DTR Location")
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                code: item.code || item.name,
+                description: item.description || item.name
+              }))
+          };
+
+          setFilterOptions({
+            discoms: [
+              { value: "all", label: "All DISCOMs" },
+              ...transformedData.discoms.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            circles: [
+              { value: "all", label: "All Circles" },
+              ...transformedData.circles.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            divisions: [
+              { value: "all", label: "All Divisions" },
+              ...transformedData.divisions.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            subDivisions: [
+              { value: "all", label: "All Sub-Divisions" },
+              ...transformedData.subDivisions.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            sections: [
+              { value: "all", label: "All Sections" },
+              ...transformedData.sections.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ],
+            meterLocations: [
+              { value: "all", label: "All Meter Locations" },
+              ...transformedData.meterLocations.map((item: any) => ({
+                value: item.id.toString(),
+                label: item.name
+              }))
+            ]
+          });
+        }
+      } catch (error) {
+        console.error("Error resetting filter options:", error);
+      } finally {
+        setDropdownLoading(false);
+      }
+    };
+
+    await fetchFilterOptions();
+    
+    // Refresh data with reset filters
+    if (viewMode === "table") {
+      fetchMeterData(1, 20, '', null);
+    } else if (viewMode === "hierarchy") {
+      fetchAssets(null);
     }
   };
 
@@ -1230,7 +1649,7 @@ export default function AssetManagment() {
         sections={[
             
           // Error Section (show when there are failed APIs)
-          ...(errorMessages.length > 0
+          ...(failedApis.length > 0
             ? [
                 {
                   layout: {
@@ -1243,11 +1662,13 @@ export default function AssetManagment() {
                           {
                             name: "Error",
                             props: {
-                              visibleErrors: errorMessages,
+                              visibleErrors: failedApis.map(
+                                (api) => api.errorMessage
+                              ),
                               showRetry: true,
-                              maxVisibleErrors: 3, // Show max 3 errors at once
-                              onRetry: retryAllAPIs, // Pass the retry function
-                              onClose: removeError, // Pass the close function
+                              maxVisibleErrors: 3, 
+                              failedApis: failedApis, 
+                              onRetrySpecific: retrySpecificAPI, 
                             },
                           },
                         ],
@@ -1277,11 +1698,10 @@ export default function AssetManagment() {
                           { id: "HierarchyView", label: "Hierarchy View" },
                         ],
                         onMenuItemClick: handleMenuClick,
-                        buttonsLabel: "Add Asset",
+                        buttonsLabel: "Export",
                         variant: "primary",
                         onClick: () => {
-                          console.log("Add Asset");
-                          setIsAddAssetModalOpen(true);
+                          
                         },
                       },
                     },
@@ -1290,10 +1710,108 @@ export default function AssetManagment() {
               ],
             },
           },
-          // Conditional View Rendering - Show either Hierarchy OR Table view
           ...(viewMode === "hierarchy"
             ? [
-                // HIERARCHY VIEW - Hierarchy and Chart
+                // Filter Section for Hierarchy View
+                {
+                  layout: {
+                    type: "flex" as const,
+                    direction: "row" as const,
+                    gap: "gap-4",
+                    className:
+                      "flex items-center justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
+                  },
+                  components: [
+                    {
+                      name: "Dropdown",
+                      props: {
+                        options: filterOptions.discoms,
+                        value: filterValues.discom,
+                        onChange: (value: string) => handleFilterChange("discom", value),
+                        placeholder: "Select DISCOM",
+                        loading: dropdownLoading,
+                        searchable: false,
+                      },
+                    },
+                    {
+                      name: "Dropdown",
+                      props: {
+                        options: filterOptions.circles,
+                        value: filterValues.circle,
+                        onChange: (value: string) => handleFilterChange("circle", value),
+                        placeholder: "Select Circle",
+                        loading: dropdownLoading,
+                        searchable: false,
+                      },
+                    },
+                    {
+                      name: "Dropdown",
+                      props: {
+                        options: filterOptions.divisions,
+                        value: filterValues.division,
+                        onChange: (value: string) => handleFilterChange("division", value),
+                        placeholder: "Select Division",
+                        loading: dropdownLoading,
+                        searchable: false,
+                      },
+                    },
+                    {
+                      name: "Dropdown",
+                      props: {
+                        options: filterOptions.subDivisions,
+                        value: filterValues.subDivision,
+                        onChange: (value: string) => handleFilterChange("subDivision", value),
+                        placeholder: "Select Sub-Division",
+                        loading: dropdownLoading,
+                        searchable: false,
+                      },
+                    },
+                    {
+                      name: "Dropdown",
+                      props: {
+                        options: filterOptions.sections,
+                        value: filterValues.section,
+                        onChange: (value: string) => handleFilterChange("section", value),
+                        placeholder: "Select Section",
+                        loading: dropdownLoading,
+                        searchable: false,
+                      },
+                    },
+                    {
+                      name: "Dropdown",
+                      props: {
+                        options: filterOptions.meterLocations,
+                        value: filterValues.meterLocation,
+                        onChange: (value: string) => handleFilterChange("meterLocation", value),
+                        placeholder: "Select Meter Location",
+                        loading: dropdownLoading,
+                        searchable: false,
+                      },
+                    },
+                    {
+                      name: "Button",
+                      props: {
+                        variant: "primary",
+                        onClick: handleGetData,
+                        children: "Get Data",
+                        className: "self-end h-100%",
+                        searchable: false
+                      },
+                      align: "center",
+                    },
+                    {
+                      name: "Button",
+                      props: {
+                        variant: "secondary",
+                        onClick: handleResetFilters,
+                        children: "Reset",
+                        className: "self-end h-100%",
+                        searchable: false
+                      },
+                      align: "center",
+                    },
+                  ],
+                },
                 {
                   layout: {
                     type: "grid",
@@ -1435,8 +1953,19 @@ export default function AssetManagment() {
                             name: "Button",
                             props: {
                               onClick: handleGetData,
-                              variant: "secondary",
+                              variant: "primary",
                               children: "Get Data",
+                              className: "h-10 self-end",
+                              searchable: false,
+                            },
+                            align: "center"
+                          },
+                          {
+                            name: "Button",
+                            props: {
+                              onClick: handleResetFilters,
+                              variant: "secondary",
+                              children: "Reset",
                               className: "h-10 self-end",
                               searchable: false,
                             },
@@ -1454,7 +1983,7 @@ export default function AssetManagment() {
                             name: "Table",
                             props: {
                               data: viewMode === "table" ? meterTableData : getFlattenedTableData(),
-                              headerTitle: viewMode === "table" ? "Meters Data Table View" : "Asset Data Table View",
+                              headerTitle: viewMode === "table" ? "Meters" : "Meters",
                               showHeader: true,
                               availableTimeRanges: [],
                               columns: viewMode === "table" ? [
@@ -1661,16 +2190,6 @@ export default function AssetManagment() {
                         showForm: true,
                         formFields: currentFormFields,
                         onSave: async (formData: Record<string, any>) => {
-                          console.log("Asset form data:", formData);
-                          console.log("Active tab:", activeTab);
-                          console.log(
-                            "isSubNodeChecked state:",
-                            isSubNodeChecked
-                          );
-                          console.log(
-                            "formData.isSubNode:",
-                            formData.isSubNode
-                          );
 
                           try {
                             let apiData;
@@ -1688,21 +2207,14 @@ export default function AssetManagment() {
                                       ? formData.parentAssetSearch
                                       : null,
                                 };
-                                console.log("API data being sent:", apiData);
-                                console.log(
-                                  "DUMMY MODE: API call commented out, using dummy data"
-                                );
                                 break;
 
                               case 1: // Upload List
-                                console.log("File upload not implemented yet");
                                 setIsAddAssetModalOpen(false);
                                 return;
 
                               case 2: // Template
-                                console.log(
-                                  "Template download not implemented yet"
-                                );
+                               
                                 setIsAddAssetModalOpen(false);
                                 return;
 
@@ -1724,7 +2236,6 @@ export default function AssetManagment() {
                             const result = await response.json();
 
                             if (result.success) {
-                              console.log("Asset added successfully:", result);
                               window.location.reload();
                             } else {
                               console.error(
