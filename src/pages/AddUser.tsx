@@ -24,7 +24,6 @@ export default function AddUser() {
                 if (rolesResponse.ok) {
                     const rolesData = await rolesResponse.json();
                     setRoles(rolesData.data || []);
-                    console.log('🎭 Fetched roles:', rolesData.data);
                 } else {
                     console.error('❌ Failed to fetch roles:', rolesResponse.status);
                 }
@@ -34,7 +33,6 @@ export default function AddUser() {
                 if (locationsResponse.ok) {
                     const locationsData = await locationsResponse.json();
                     setLocations(locationsData.data || []);
-                    console.log('📍 Fetched locations:', locationsData.data);
                 } else {
                     console.error('❌ Failed to fetch locations:', locationsResponse.status);
                 }
@@ -133,7 +131,6 @@ export default function AddUser() {
         setError(null);
         
         try {
-            console.log('Saving user data:', formData);
             
             // Validate required fields
             if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.roleId || !formData.locationId) {
@@ -207,9 +204,7 @@ export default function AddUser() {
 
             const result = await response.json();
             
-            if (result.success) {
-                console.log('User created successfully:', result.data);
-                
+            if (result.success) {                
                 // Get role and location names for success message
                 const selectedRole = roles.find(r => r.id === userData.roleId);
                 const selectedLocation = locations.find(l => l.id === userData.locationId);

@@ -62,7 +62,6 @@ const MetersList: React.FC = () => {
                 let currentPage = 1;
                 let hasNextPage = true;
                 
-                console.log('Fetching all meters from:', `${BACKEND_URL}/meters`);
                 
                 // Fetch all pages to get all meters
                 while (hasNextPage) {
@@ -70,7 +69,6 @@ const MetersList: React.FC = () => {
                     const data = await response.json();
                     
                     if (data.success) {
-                        console.log(`Page ${currentPage} data:`, data.data);
                         allMeters = [...allMeters, ...data.data];
                         
                         // Check if there are more pages
@@ -82,7 +80,6 @@ const MetersList: React.FC = () => {
                     }
                 }
                 
-                console.log('Total meters fetched:', allMeters.length);
                 
                 // Process all table data to match existing structure
                 const processedData = allMeters.map((meter: any, _index: number) => ({
@@ -97,7 +94,6 @@ const MetersList: React.FC = () => {
                     status: 'Active', // Set default status since backend doesn't provide it
                 }));
                 
-                console.log('Processed meter data:', processedData);
                 setTableData(processedData);
                 
                 // Update meter cards with real data only if we have meters
@@ -322,7 +318,6 @@ const MetersList: React.FC = () => {
                                     { id: 'export', label: 'Export' }
                                 ],
                                 onMenuItemClick: (itemId: string) => {
-                                    console.log(`Filter by: ${itemId}`);
                                     if (itemId === 'active' || itemId === 'inactive') {
                                         setStatus(itemId);
                                     } else if (itemId === 'prepaid' || itemId === 'postpaid') {

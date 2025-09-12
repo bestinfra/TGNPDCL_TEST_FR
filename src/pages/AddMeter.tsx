@@ -125,13 +125,11 @@ export default function AddMeter() {
         },
     ];
 
-    const handleFormSubmit = async (formData: Record<string, any>) => {
+    const handleFormSubmit = async (_formData: Record<string, any>) => {
         setIsSubmitting(true);
         try {
-            console.log('Saving meter data:', formData);
             await new Promise((resolve) => setTimeout(resolve, 2000));
             
-            console.log('Meter created successfully');
             navigate('/meters');
         } catch (error) {
             console.error('Error creating meter:', error);

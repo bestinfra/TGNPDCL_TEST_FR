@@ -335,7 +335,6 @@ const DTRTable: React.FC = () => {
           params.append("search", search);
         }
 
-        console.log('🔍 Fetching overloaded DTRs...');
         const response = await fetch(`${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch overloaded DTRs data");
 
@@ -345,17 +344,12 @@ const DTRTable: React.FC = () => {
         }
 
         const data = await response.json();
-        console.log('📊 API Response for overloaded DTRs:', data);
-        console.log('📊 Data array length:', data.data?.length || 0);
         
         if (data.success) {
-          console.log('✅ Setting table data to:', data.data || []);
           setTableData(data.data || []);
-          console.log('📊 Current tableData state after setTableData:', data.data || []);
           
           // Additional safety check - ensure tableData is empty if API returns empty
           if (!data.data || data.data.length === 0) {
-            console.log('🔒 Force setting tableData to empty array');
             setTableData([]);
           }
           
@@ -428,7 +422,6 @@ const DTRTable: React.FC = () => {
         }
       } else if (cardType === 'ht-fuse-blown') {
         // Use the ht-fuse-blown endpoint for HT side fuse blown incidents
-        console.log('Fetching HT Fuse Blown data from:', `${BACKEND_URL}/dtrs/ht-fuse-blown`);
         const response = await fetch(`${BACKEND_URL}/dtrs/ht-fuse-blown`, {
           method: 'GET',
           credentials: 'include',
@@ -437,14 +430,12 @@ const DTRTable: React.FC = () => {
           },
         });
         
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('API response:', result);
         
         if (result.success) {
           setTableData(result.data || []);
@@ -473,7 +464,6 @@ const DTRTable: React.FC = () => {
           },
         });
         
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -508,19 +498,16 @@ const DTRTable: React.FC = () => {
           },
         });
         
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('API response:', result);
         
         if (result.success) {
           setTableData(result.data || []);
           setHasRealData(true);
-          console.log('✅ Unbalanced DTRs data received:', result.data?.length || 0, 'records');
           // Handle pagination structure
           const paginationData = result.pagination || result;
           setServerPagination({
@@ -537,7 +524,6 @@ const DTRTable: React.FC = () => {
         }
       } else if (cardType === 'power-failure-feeders') {
         // Use the power-failure-feeders endpoint for power failure incidents
-        console.log('Fetching Power Failure Feeders data from:', `${BACKEND_URL}/dtrs/power-failure-feeders`);
         const response = await fetch(`${BACKEND_URL}/dtrs/power-failure-feeders`, {
           method: 'GET',
           credentials: 'include',
@@ -546,19 +532,16 @@ const DTRTable: React.FC = () => {
           },
         });
         
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('API response:', result);
         
         if (result.success) {
           setTableData(result.data || []);
           setHasRealData(true);
-          console.log('✅ Power Failure Feeders data received:', result.data?.length || 0, 'records');
           // Handle pagination structure
           const paginationData = result.pagination || result;
           setServerPagination({
@@ -587,7 +570,6 @@ const DTRTable: React.FC = () => {
       if (!hasRealData) {
         setTableData([]);
       } else {
-        console.log('Keeping real API data despite error');
       }
     } finally {
       setLoading(false);
@@ -624,16 +606,12 @@ const DTRTable: React.FC = () => {
 
   // Monitor tableData changes to debug where data is coming from
   useEffect(() => {
-    console.log('🔄 tableData state changed to:', tableData);
-    console.log('🔄 tableData length:', tableData.length);
     if (tableData.length > 0) {
-      console.log('🔄 tableData content:', JSON.stringify(tableData, null, 2));
     }
   }, [tableData]);
 
   // Handle row actions
   const handleView = (row: TableData) => {
-    console.log('View item:', row);
     // Navigate to detail view based on card type
     if (cardType === 'total-dtrs' && row.dtrId) {
       navigate(`/dtr-detail/${row.dtrId}`);
@@ -652,8 +630,7 @@ const DTRTable: React.FC = () => {
                           }
   };
 
-  const handleEdit = (row: TableData) => {
-    console.log('Edit item:', row);
+  const handleEdit = (_row: TableData) => {
     // Navigate to edit form
     // navigate(`/edit/${row.id}`);
   };
@@ -714,7 +691,6 @@ const DTRTable: React.FC = () => {
                         backButtonText: 'Back to Dashboard',
                         buttonsLabel: 'Add New',
                         variant: 'primary',
-                        onClick: () => console.log('Add New clicked'),
                       },
                     },
                   ],
@@ -735,22 +711,16 @@ const DTRTable: React.FC = () => {
                       name: 'Table',
                       props: {
                         data: (() => {
-                          console.log('🔍 Rendering Table with tableData:', tableData);
-                          console.log('🔍 tableData length:', tableData.length);
-                          console.log('🔍 cardType:', cardType);
                           
                           // Safety check: only show data if it matches the current cardType
                           if (cardType === 'overloaded-feeders' && tableData.length > 0) {
-                            console.log('⚠️ WARNING: Overloaded feeders should be empty, but tableData has items!');
-                            console.log('⚠️ Forcing tableData to empty array');
                             // Force empty array for overloaded feeders
                             return [];
                           }
                           
                           // Safety check: only show data if it matches the current cardType
                           if (cardType === 'underloaded-feeders' && tableData.length > 0) {
-                            console.log('⚠️ WARNING: Underloaded feeders should be empty, but tableData has items!');
-                            console.log('⚠️ Forcing tableData to empty array');
+
                             // Force empty array for underloaded feeders
                             return [];
                           }

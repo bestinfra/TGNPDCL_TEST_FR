@@ -169,7 +169,6 @@ const DTRDetailPage = () => {
         if (locationHierarchy.length > 0) {
             const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
             if (feederLocation) {
-                console.log('Location hierarchy changed, updating address to:', feederLocation.name);
                 setDtr(prev => ({
                     ...prev,
                     address: feederLocation.name || 'N/A'
@@ -218,8 +217,6 @@ const DTRDetailPage = () => {
                         stats: dtr.stats // Keep existing stats for now
                     };
                     
-                    console.log('DTR Address being set to:', transformedDtrData.address);
-                    console.log('First feeder location data:', data.data?.feeders?.[0]?.location);
                     
                     setDtr(transformedDtrData);
                 } else {
@@ -301,7 +298,6 @@ const DTRDetailPage = () => {
                 
 
                 
-                // Call the DTR endpoint to get feeders list
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch feeders data');
                 
@@ -322,29 +318,21 @@ const DTRDetailPage = () => {
                     
                     // Set location hierarchy if available
                     if (data.data?.locationHierarchy) {
-                        console.log('Location Hierarchy received:', data.data.locationHierarchy);
-                        console.log('First feeder location:', data.data?.feeders?.[0]?.location);
                         setLocationHierarchy(data.data.locationHierarchy);
                         
                         // Update the address using the Feeder type from location hierarchy
                         const feederLocation = data.data.locationHierarchy.find((loc: any) => loc.type === 'Feeder');
                         if (feederLocation) {
-                            console.log('Found Feeder location:', feederLocation);
-                            console.log('Setting address to:', feederLocation.name);
                             setDtr(prev => {
-                                console.log('Previous DTR state:', prev);
                                 const updated = {
                                     ...prev,
                                     address: feederLocation.name || 'N/A'
                                 };
-                                console.log('Updated DTR state:', updated);
                                 return updated;
                             });
                         } else {
-                            console.log('No Feeder location found in hierarchy');
                         }
                     } else {
-                        console.log('No location hierarchy data received');
                     }
                 } else {
                     throw new Error(data.message || 'Failed to fetch feeders data');
@@ -418,9 +406,6 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-
-                
-                                // Call the feederStats endpoint to get DTR statistics
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
 

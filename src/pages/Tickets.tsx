@@ -441,19 +441,15 @@ export default function Tickets() {
 
     // Handle ticket actions
     const handleViewTicket = (row: TableData) => {
-        console.log('Viewing ticket:', row);
         navigate(`/tickets/${row.id}`);
     };
 
     const handleEditTicket = (row: TableData) => {
-        console.log('Editing ticket:', row);
         navigate(`/tickets/${row.id}/edit`);
     };
 
     const handleDeleteTicket = (row: TableData) => {
-        console.log('Deleting ticket:', row);
         if (confirm(`Are you sure you want to delete ticket ${row.ticketNumber}?`)) {
-            console.log('Ticket deleted:', row.id);
         }
     };
 
@@ -604,7 +600,6 @@ export default function Tickets() {
                                     { id: 'export', label: 'Export' }
                                 ],
                                 onMenuItemClick: (itemId: string) => {
-                                    console.log(`Filter by: ${itemId}`);
                                     if (itemId === 'add') {
                                         navigate('/add-ticket');
                                     } else if (itemId === 'export') {

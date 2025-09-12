@@ -11,7 +11,6 @@ function AppLayout({ children }: AppLayoutProps) {
   
   // Global search handler
   const handleGlobalSearch = async (query: string) => {
-    console.log('Global search query:', query);
     
     if (!query || query.length < 2) {
       return;
@@ -173,9 +172,9 @@ function AppLayout({ children }: AppLayoutProps) {
               collapsedSrc: 'images/changed-logo.svg',
             }}
             clientLogo={{
-              src: 'images/gmr-logo.png',
-              alt: 'GMR Client',
-              collapsedSrc: 'images/gmr-logo.png',
+              src: 'images/tgnpdcl.png',
+              alt: 'TGNPDCL Client',
+              collapsedSrc: 'images/tgnpdcl.png',
             }}
             footer={{
               copyright: '© 2024 Best Infra',

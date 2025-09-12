@@ -57,7 +57,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Sub-apps use the application-backend authentication
       const endpoint = '/api/sub-app-auth/login';
       const requestBody = { identifier, password, appId: appId || 'TGNPDCL' };
-      console.log('Login attempt:', { endpoint, requestBody });
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -65,13 +64,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
         body: JSON.stringify(requestBody),
       });
-      console.log('Response status:', response.status);
       if (!response.ok) {
         console.error('HTTP Error:', response.status, response.statusText);
         return { success: false, message: `HTTP ${response.status}: ${response.statusText}` };
       }
       const responseText = await response.text();
-      console.log('Response text:', responseText);
       let data;
       try {
         data = JSON.parse(responseText);

@@ -86,7 +86,6 @@ export default function Users() {
             ...prev,
             [name]: value
         }));
-        console.log(`Filter changed: ${name} = ${value}`);
         // Add your filter logic here
     };
 
@@ -184,7 +183,6 @@ export default function Users() {
                     result.message || 'Failed to fetch user stats'
                 );
             setUserStats(result.data);
-            console.log('User stats:', result.data);
             // Remove from failed APIs if successful
             setFailedApis((prev) => prev.filter((api) => api.id !== "stats"));
         } catch (err) {
@@ -258,9 +256,8 @@ export default function Users() {
         setShowInactiveModal(true);
     };
 
-    const handleConfirmInactive = async (data: any) => {
+    const handleConfirmInactive = async (_data: any) => {
         try {
-            console.log('Inactivating user:', userToInactive.sNo, data);
             // Here you would make the actual API call to inactive the user
             // const res = await fetch(`${BACKEND_URL}/users/${userToInactive.sNo}/inactive`, {
             //     method: 'PUT',
@@ -469,9 +466,7 @@ export default function Users() {
                                                 onMenuItemClick: (
                                                     itemId: string
                                                 ) => {
-                                                    console.log(
-                                                        `Filter by: ${itemId}`
-                                                    );
+                                                   
                                                     if (itemId === 'RoleManagement') {
                                                         navigate('/role-management');
                                                     } else if (itemId === 'Export') {
@@ -572,8 +567,6 @@ export default function Users() {
                                                 onSearch: handleSearch,
                                                 headerTitle: 'User Management',
                                                 onView: (row: any) => {
-                                                    console.log('Users: onView triggered', row);
-                                                    console.log('Users: Navigating to', `/user-detail/${row.sNo}`);
                                                     navigate(`/user-detail/${row.sNo}`, {
                                                         state: {
                                                             user: row
@@ -581,7 +574,6 @@ export default function Users() {
                                                     });
                                                 },
                                                 onEdit: (row: any) => {
-                                                    console.log('Edit user:', row);
                                                     // Navigate to edit page or open edit modal
                                                     navigate(`/edit-user/${row.sNo}`, {
                                                         state: {
