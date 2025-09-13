@@ -7,7 +7,7 @@ import { FILTER_STYLES } from '../contexts/FilterStyleContext';
 import BACKEND_URL from '../config';
 
 
-// Dummy data for fallback
+// Dummy data for fallbackf
 const dummyInstantaneousStatsData = {
     rphVolt: "0",
     yphVolt: "0",

@@ -446,7 +446,7 @@ export default function AssetManagment() {
 
   // State for filter values
   const [filterValues, setFilterValues] = useState({
-    discom: "all",
+    discom: "1",
     circle: "all",
     division: "all",
     subDivision: "all",
@@ -459,8 +459,8 @@ export default function AssetManagment() {
 
   // Asset management menu items
   const assetManagementActions = [
-    { id: "edit-asset-title", label: "Edit Asset Title" },
-    { id: "delete", label: "Delete", isDestructive: true },
+    { id: "edit-asset-title", label: "Edit Asset Title", icon: "icons/edit.svg" },
+    { id: "delete", label: "Delete", isDestructive: true, icon: "icons/delete.svg" },
   ];
 
   // Handle asset actions
