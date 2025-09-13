@@ -124,7 +124,7 @@ const DTRDashboard: React.FC = () => {
   >("Daily");
 
   const [filterValues, setFilterValues] = useState({
-    discom: "all",
+   discom: "1", 
     circle: "all",
     division: "all",
     subDivision: "all",
@@ -158,6 +158,7 @@ const DTRDashboard: React.FC = () => {
   const [dtrTableData, setDtrTableData] =
     useState<TableData[]>(dummyDtrTableData);
   const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
+  
   const [serverPagination, setServerPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -770,9 +771,16 @@ const DTRDashboard: React.FC = () => {
   };
 
   const handleViewDTR = (row: TableData) => {
-
+    console.log(row.dtrId);
     navigate(`/dtr-detail/${row.dtrId}`);
   };
+
+  const handleViewFeeder=(row:TableData)=>{
+    console.log(row.feederName);
+    // const feederData = feedersData.find(feeder => feeder.feederName === feederId);
+   navigate(`/feeder/${row.feederName}`);
+  //   // console.log(navigate(`/feeder/${row.feederId}`));
+  }
 
   const handlePageChange = () => {
     retryTableAPI(undefined);
@@ -793,23 +801,28 @@ const DTRDashboard: React.FC = () => {
 
     try {
       const params = new URLSearchParams();
+      console.log(params)
       params.append("parentId", value);
       
       const data = await apiClient.get(`/dtrs/filter/filter-options?${params.toString()}`);
-      
+    
+      console.log(data)
       
       if (data.success) {
         const newOptions = data.data || [];
-
+        
 
         switch (filterName) {
           case "discom":
 
             setFilterOptions(prev => ({
               ...prev,
+
               circles: [
                 { value: "all", label: "All Circles" },
+                console.log(...newOptions),
                 ...newOptions.map((item: any) => ({
+
                   value: item.id.toString(),
                   label: item.name,
                 })),
@@ -1061,7 +1074,7 @@ const DTRDashboard: React.FC = () => {
   // Handle Reset button click
   const handleResetFilters = async () => {
     setFilterValues({
-      discom: "all",
+      discom: "TGNPDCL",
       circle: "all",
       division: "all",
       subDivision: "all",
@@ -1192,8 +1205,8 @@ const DTRDashboard: React.FC = () => {
       subtitle1: `${
         dtrStatsData.powerFailurePercentage ||
         dtrStatsData?.row1?.powerFailurePercentage ||
-        "0"
-      }% of Feeders`,
+        ""
+      }LT Feeders`,
       onValueClick: () =>
         navigate(
           "/dtr-table?type=power-failure-feeders&title=Power%20Failure%20Feeders"
@@ -1373,6 +1386,8 @@ const DTRDashboard: React.FC = () => {
     { key: "occuredOn", label: "Occured On" },
    // { key: "status", label: "Status" },
   ];
+   console.log("Discom options:", filterOptions.discoms);
+
 
   return (
     <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1453,6 +1468,7 @@ const DTRDashboard: React.FC = () => {
                 props: {
                   options: [...filterOptions.discoms],
                   value: filterValues.discom,
+                  
                   onChange: (value: string) =>
                     handleFilterChange("discom", value),
                   placeholder: "Select DISCOM",
@@ -1710,15 +1726,18 @@ const DTRDashboard: React.FC = () => {
                           headerTitle: "Latest Alerts",
                           headerClickable: true,
                           onHeaderClick: () => navigate("/dtr-table?tab=alerts"),
-                          showActions: false,
+                          showActions: true,
                           searchable: true,
                           pagination: true,
+                          onView:handleViewFeeder,
                           availableTimeRanges: [],
                           initialRowsPerPage: 3,
                           emptyMessage: "No alerts found",
                           loading: isAlertsLoading,
-                          onRowClick: () =>
-                            navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
+                          // onRowClick: () =>
+                          //   navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
+                          onRowClick: (row: TableData) =>
+                            handleViewFeeder(row),
                         },
                       },
                     ],
