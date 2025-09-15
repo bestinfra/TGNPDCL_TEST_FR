@@ -1137,7 +1137,7 @@ const DTRDashboard: React.FC = () => {
         if (count === 0) {
           return "No DTRs with load > 90%";
         }
-        return `${dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}% of Total Feeders`;
+        return `${dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}% of Total DTRS`;
       })(),
       onValueClick: () =>
         navigate(

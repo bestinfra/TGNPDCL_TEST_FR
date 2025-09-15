@@ -93,7 +93,8 @@ function AppLayout({ children }: AppLayoutProps) {
 ,
       ],
     },
-,
+
+       { title: 'MeterManagment', icon: 'icons/meter-bolt.svg', link: '/asset-management' },
     { title: 'Assets', icon: 'icons/workflow-setting-alt.svg', link: '/asset-management' },
     {
       title: 'User Management',
@@ -120,14 +121,14 @@ function AppLayout({ children }: AppLayoutProps) {
           title: 'Role Management',
           link: '/role-management',
         },
-,
+
       ],
     },
 ,
     { title: 'Users', icon: 'icons/user.svg', link: '/users' },
     { title: 'Role Management', icon: 'icons/roles.svg', link: '/role-management' },
     { title: 'All Tickets', icon: 'icons/customer-service.svg', link: '/tickets' },
-    {
+    { 
       title: 'Meter Management',
       icon: 'icons/meter-bolt.svg',
       hasSubmenu: true,
@@ -135,7 +136,7 @@ function AppLayout({ children }: AppLayoutProps) {
 ,
         {
           title: 'Data Logger',
-          link: '/data-logger',
+          link: '/asset-managment',
         },
 ,
         {
@@ -155,9 +156,9 @@ function AppLayout({ children }: AppLayoutProps) {
 ,
       ],
     },
-,
     { title: 'Data Logger', icon: 'icons/meter-bolt.svg', link: '/data-logger' },
     { title: 'Meter List', icon: 'icons/meter-bolt.svg', link: '/meters' }
+
   ];
   return (
       <div className="flex h-screen bg-white">
