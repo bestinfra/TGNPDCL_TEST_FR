@@ -148,6 +148,64 @@ const DTRDetailPage = () => {
     // Simple error state like Prepaid.tsx
     const [errorMessages, setErrors] = useState<any[]>([]);
 
+    // DTR Status dropdown state
+    const [dtrStatusValue, setDtrStatusValue] = useState<string>('na'); // Default to N/A
+    const isDtrDropdownDisabled = false; // Can be made dynamic if needed
+    const dtrStatusOptions = [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+    ];
+
+    // Handle DTR status change
+    const handleDtrStatusChange = async (value: string) => {
+        console.log('DTR Status changed to:', value);
+        setDtrStatusValue(value);
+        
+        // Don't make API call if N/A is selected
+        if (value === 'na') {
+            console.log('N/A selected - no API call needed');
+            return;
+        }
+        
+        try {
+            // Extract numeric DTR ID from the URL parameter
+            const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+            if (!numericDtrId) {
+                throw new Error('Invalid DTR ID format');
+            }
+
+            // Call the API to update DTR status
+            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: value
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('DTR status updated successfully:', data);
+                // Update the DTR condition in the local state
+                setDtr(prev => ({
+                    ...prev,
+                    condition: data.data.status
+                }));
+            } else {
+                console.error('Failed to update DTR status:', data.message);
+                // Revert the dropdown value on error
+                setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+            }
+        } catch (error) {
+            console.error('Error updating DTR status:', error);
+            // Revert the dropdown value on error
+            setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+        }
+    };
+
     // Clear all error messages
     const clearErrors = () => {
         setErrors([]);
@@ -176,6 +234,28 @@ const DTRDetailPage = () => {
             }
         }
     }, [locationHierarchy]);
+
+    // Set initial DTR status based on DTR data
+    useEffect(() => {
+        if (dtr.condition && dtr.condition !== 'N/A' && dtr.condition !== '0') {
+            // Map DTR condition to dropdown value - more robust mapping
+            const condition = dtr.condition.toLowerCase();
+            let statusValue = 'active'; // default
+            
+            if (condition.includes('inactive') || condition.includes('off') || condition.includes('disabled')) {
+                statusValue = 'inactive';
+            } else if (condition.includes('active') || condition.includes('on') || condition.includes('enabled')) {
+                statusValue = 'active';
+            }
+            
+            setDtrStatusValue(statusValue);
+            console.log('Initial DTR Status set to:', statusValue, 'based on condition:', dtr.condition);
+        } else {
+            // If no valid condition data, keep N/A as default
+            setDtrStatusValue('na');
+            console.log('No valid DTR condition data, keeping N/A as default');
+        }
+    }, [dtr.condition]);
 
     // Load data on component mount
     useEffect(() => {
@@ -715,7 +795,7 @@ const DTRDetailPage = () => {
                         rows: [
                             {
                                 layout: 'row' as const,
-                                className: 'w-full',
+                                className: 'w-full', 
                                 columns: [
                                     {
                                         name: 'PageHeader',
@@ -748,6 +828,7 @@ const DTRDetailPage = () => {
                                         name: 'SectionHeader',  
                                         props: {
                                             title: 'DTR Information',
+
                                             titleLevel: 2,
                                             titleSize: 'lg',
                                             titleVariant: 'primary',
@@ -755,7 +836,20 @@ const DTRDetailPage = () => {
                                             titleAlign: 'left',
                                             defaultTitleHeight:'0',
                                             className:'w-full',
-                                            rightComponent: { name: 'LastComm', props: { value: lastComm } },
+                                            showDropdown: true,
+                                            dropdownOptions: dtrStatusOptions,
+                                            dropdownValue: dtrStatusValue,
+                                            dropdownPlaceholder: dtrStatusValue === 'na' ? 'N/A' : 'Select Status',
+                                            dropdownName: 'dtrStatus',
+                                            onDropdownChange: handleDtrStatusChange,
+                                            dropdownDisabled: isDtrDropdownDisabled,
+                                            dropdownClassName: 'w-30',
+                                            searchable: false,
+                                            rightComponent: {
+                                                 name: 'LastComm', props: { value: lastComm } ,
+                                                
+                                                },
+                                            
                                         },
                                        
                                     },
