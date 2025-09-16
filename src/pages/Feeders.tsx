@@ -190,8 +190,10 @@ const Feeders = () => {
     const [feederInfoData, setFeederInfoData] = useState<any>(dummyFeederInfoData);
     const [alertsData, setAlertsData] = useState(dummyAlertsData);
     const [kvaMetricsData, setKvaMetricsData] = useState<any>({
-        xAxisData: [],
-        seriesData: [{ name: 'kVA', data: [] }]
+        dailyData: { xAxisData: [], sums: [] },
+        monthlyData: { xAxisData: [], sums: [] },
+        capacityInfo: { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
+        highestKVA: { daily: null, monthly: null }
     });
 
     // State for map coordinates - initialized with default coordinates
@@ -566,8 +568,6 @@ const Feeders = () => {
             return;
         }
 
-
-
         setIsKvaMetricsLoading(true);
         try {
             const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
@@ -580,43 +580,24 @@ const Feeders = () => {
             const response = await fetch(endpoint);
             const data = await response.json();
             
-            
             if (data.status === 'success') {
-                // Transform the data to match frontend expectations
-
-                let transformedData = {
-                    xAxisData: data.data?.dailyData?.xAxisData || [],
-                    seriesData: [{
-                        name: 'kVA',
-                        data: data.data?.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || []
-                    }],
-                    monthly: {
-                        xAxisData: data.data?.monthlyData?.xAxisData || [],
-                        seriesData: [{
-                            name: 'kVA',
-                            data: data.data?.monthlyData?.sums?.map((sum: string) => parseFloat(sum)) || []
-                        }]
-                    }
-                };
-                
-
-                
-                // If this is for a specific feeder, we might need to adjust the data
-                if (effectiveFeederData?.feederName) {
-    
-                    // For now, use the DTR-level data, but this could be enhanced
-                    // when backend supports individual meter KVA metrics
-                }
-                
-                setKvaMetricsData(transformedData);
+                // Store the complete KVA metrics data with capacity info
+                setKvaMetricsData({
+                    dailyData: data.data?.dailyData || { xAxisData: [], sums: [] },
+                    monthlyData: data.data?.monthlyData || { xAxisData: [], sums: [] },
+                    capacityInfo: data.data?.capacityInfo || { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
+                    highestKVA: data.data?.highestKVA || { daily: null, monthly: null }
+                });
             } else {
                 throw new Error(data.message || 'Failed to fetch KVA metrics');
             }
         } catch (error: any) {
             console.error('Error fetching KVA metrics:', error);
             setKvaMetricsData({
-                xAxisData: [],
-                seriesData: [{ name: 'kVA', data: [] }]
+                dailyData: { xAxisData: [], sums: [] },
+                monthlyData: { xAxisData: [], sums: [] },
+                capacityInfo: { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
+                highestKVA: { daily: null, monthly: null }
             });
             setFailedApis(prev => [...prev, {
                 id: 'kvaMetrics',
@@ -685,24 +666,26 @@ const Feeders = () => {
 
     // Get KVA metrics data based on selected time range
     const getKvaMetricsData = () => {
-
-        
         if (kvaTimeRange === 'Daily') {
-            if (kvaMetricsData && kvaMetricsData.xAxisData) {
+            if (kvaMetricsData && kvaMetricsData.dailyData) {
                 const data = {
-                    xAxisData: kvaMetricsData.xAxisData || [],
-                    seriesData: kvaMetricsData.seriesData || [{ name: 'kVA', data: [] }],
+                    xAxisData: kvaMetricsData.dailyData.xAxisData || [],
+                    seriesData: [{
+                        name: 'kVA',
+                        data: kvaMetricsData.dailyData.sums?.map((sum: string) => parseFloat(sum)) || []
+                    }],
                 };
-
                 return data;
             }
         } else if (kvaTimeRange === 'Monthly') {
-            if (kvaMetricsData && kvaMetricsData.monthly) {
+            if (kvaMetricsData && kvaMetricsData.monthlyData) {
                 const data = {
-                    xAxisData: kvaMetricsData.monthly.xAxisData || [],
-                    seriesData: kvaMetricsData.monthly.seriesData || [{ name: 'kVA', data: [] }],
+                    xAxisData: kvaMetricsData.monthlyData.xAxisData || [],
+                    seriesData: [{
+                        name: 'kVA',
+                        data: kvaMetricsData.monthlyData.sums?.map((sum: string) => parseFloat(sum)) || []
+                    }],
                 };
-
                 return data;
             }
         }
@@ -1596,43 +1579,43 @@ const Feeders = () => {
                     },
                 },
                 {
-                    layout: {
-                        type: 'grid' as const,
-                        columns: 1,
-                        rows: [
-                            {
-                                layout: 'grid' as const,
-                                gridColumns:1,
-                                columns: [
-                                    {
-                                        name: 'BarChart',
-                                        props: {
-                                            xAxisData: getKvaMetricsData().xAxisData,
-                                            seriesData: getKvaMetricsData().seriesData,
-                                            height: 320,
-                                            ariaLabel: ' kVA Metrics Bar Chart',
-                                            showHeader: true,
-                                            handleDownload: handleDailyChartDownload,
-                                            headerTitle: `${kvaTimeRange} kVA Metrics`,
-                                            className: 'w-full',
-                                            dateRange: 'Last 30 days',
-                                            availableTimeRanges: ['Daily', 'Monthly',],
-                                            initialTimeRange: kvaTimeRange,
-                                            onTimeRangeChange: (range: string) => {
-                                                setKvaTimeRange(range as 'Daily' | 'Monthly');
-                                            },
-                                            showDownloadButton: true,
-                                            onDownload: () => handleKvaMetricsChartDownload(),
-                                            showXAxisLabel: true,
-                                            xAxisLabel: 'kVA',
-                                            isLoading: isKvaMetricsLoading,
-                                        },
-                                        span: { col: 1, row: 1 },
-                                    },
-                                ],
-                            },
-                        ],
-                    },
+                    // layout: {
+                    //     type: 'grid' as const,
+                    //     columns: 1,
+                    //     rows: [
+                    //         {
+                    //             layout: 'grid' as const,
+                    //             gridColumns:1,
+                    //             columns: [
+                    //                 {
+                    //                     name: 'BarChart',
+                    //                     props: {
+                    //                         xAxisData: getKvaMetricsData().xAxisData,
+                    //                         seriesData: getKvaMetricsData().seriesData,
+                    //                         height: 320,
+                    //                         ariaLabel: ' kVA Metrics Bar Chart',
+                    //                         showHeader: true,
+                    //                         handleDownload: handleDailyChartDownload,
+                    //                         headerTitle: `${kvaTimeRange} kVA Metrics`,
+                    //                         className: 'w-full',
+                    //                         dateRange: 'Last 30 days',
+                    //                         availableTimeRanges: ['Daily', 'Monthly',],
+                    //                         initialTimeRange: kvaTimeRange,
+                    //                         onTimeRangeChange: (range: string) => {
+                    //                             setKvaTimeRange(range as 'Daily' | 'Monthly');
+                    //                         },
+                    //                         showDownloadButton: true,
+                    //                         onDownload: () => handleKvaMetricsChartDownload(),
+                    //                         showXAxisLabel: true,
+                    //                         xAxisLabel: 'kVA',
+                    //                         isLoading: isKvaMetricsLoading,
+                    //                     },
+                    //                     span: { col: 1, row: 1 },
+                    //                 },
+                    //             ],
+                    //         },
+                    //     ],
+                    // },
                 },
                 {
                     layout: {
@@ -1663,15 +1646,24 @@ const Feeders = () => {
                                     {
                                         name: 'ThresholdChart',
                                         props: {
-                                                data:[120, 200, 150, 80, 70, 110, 130], 
-                                                threshold:100       ,                      
-                                                ratingKVA:50      ,                         
-                                                title:"Test Chart",
-                                                chartType:"bar",
-                                                availableTimeRanges:[],
-                                            },
+                                            data: getKvaMetricsData().seriesData[0]?.data || [],
+                                            threshold: kvaMetricsData.capacityInfo?.feederCapacity || 100,
+                                            ratingKVA: kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+                                            title: `KVA Metrics - ${kvaTimeRange}`,
+                                            chartType: "bar",
+                                            availableTimeRanges: ['Daily', 'Monthly'],
+                                            selectedTimeRange: kvaTimeRange,
+                                            onTimeRangeChange: (range: 'Daily' | 'Monthly') => setKvaTimeRange(range),
+                                            loading: isKvaMetricsLoading,
+                                            highestKVA: kvaTimeRange === 'Daily' 
+                                                ? kvaMetricsData.highestKVA?.daily 
+                                                : kvaMetricsData.highestKVA?.monthly,
+                                            capacityInfo: kvaMetricsData.capacityInfo,
+                                            xAxisData: getKvaMetricsData().xAxisData || [],
+                                            showCapacityInfo: true,
+                                            showHighestKVA: true,
+                                        },
                                         span: { col: 1, row: 1 },
-                                       
                                     }
                                 ]
                             }
