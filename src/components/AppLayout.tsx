@@ -339,7 +339,6 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
   
   // Global search handler
   const handleGlobalSearch = async (query: string) => {
-    console.log('Global search query:', query);
     
     if (!query || query.length < 2) {
       return;
@@ -353,7 +352,6 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
         return;
       }
 
-      // Handle meter-specific searches
       if (query.toUpperCase().startsWith('METER')) {
         const meterQuery = query.replace(/^METER[-_\s]?/i, '');
         const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(meterQuery)}`);
@@ -423,7 +421,8 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
 ,
       ],
     },
-,
+
+       { title: 'MeterManagment', icon: 'icons/meter-bolt.svg', link: '/asset-management' },
     { title: 'Assets', icon: 'icons/workflow-setting-alt.svg', link: '/asset-management' },
     {
       title: 'User Management',
@@ -450,14 +449,14 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
           title: 'Role Management',
           link: '/role-management',
         },
-,
+
       ],
     },
 ,
     { title: 'Users', icon: 'icons/user.svg', link: '/users' },
     { title: 'Role Management', icon: 'icons/roles.svg', link: '/role-management' },
     { title: 'All Tickets', icon: 'icons/customer-service.svg', link: '/tickets' },
-    {
+    { 
       title: 'Meter Management',
       icon: 'icons/meter-bolt.svg',
       hasSubmenu: true,
@@ -465,7 +464,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
 ,
         {
           title: 'Data Logger',
-          link: '/data-logger',
+          link: '/asset-managment',
         },
 ,
         {
@@ -485,9 +484,9 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
 ,
       ],
     },
-,
     { title: 'Data Logger', icon: 'icons/meter-bolt.svg', link: '/data-logger' },
     { title: 'Meter List', icon: 'icons/meter-bolt.svg', link: '/meters' }
+
   ];
   return (
       <div className="flex h-screen bg-white">
@@ -502,9 +501,9 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
               collapsedSrc: 'images/changed-logo.svg',
             }}
             clientLogo={{
-              src: 'images/gmr-logo.png',
-              alt: 'GMR Client',
-              collapsedSrc: 'images/gmr-logo.png',
+              src: 'images/tgnpdcl.png',
+              alt: 'TGNPDCL Client',
+              collapsedSrc: 'images/tgnpdcl.png',
             }}
             footer={{
               copyright: '© 2024 Best Infra',

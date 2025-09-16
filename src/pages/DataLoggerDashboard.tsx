@@ -184,7 +184,6 @@ const DataLoggerDashboard: React.FC = () => {
                                 backButtonText: 'Back to Data Logger',
                                 buttonsLabel: dataLogger ? 'Edit Data Logger' : '',
                                 variant: 'primary',
-                                onClick: dataLogger ? () => console.log('Edit data logger:', dataLogger) : undefined,
                                 showMenu: dataLogger ? true : false,
                                 showDropdown: dataLogger ? true : false,
                                 menuItems: dataLogger ? [
@@ -194,9 +193,6 @@ const DataLoggerDashboard: React.FC = () => {
                                     { id: 'maintenance', label: 'Schedule Maintenance' },
                                     { id: 'export', label: 'Export Data' },
                                 ] : [],
-                                onMenuItemClick: (itemId: string) => {
-                                    console.log(`Action: ${itemId} for data logger ${dataLogger?.modemSlNo}`);
-                                },
                             },
                         },
                     ],
@@ -252,7 +248,6 @@ const DataLoggerDashboard: React.FC = () => {
                                             showActions: true,
                                             text: 'Meters connected to this data logger',
                                             emptyMessage: 'No meters connected to this data logger',
-                                            onView: (row: any) => console.log('View meter:', row),
                                         },
                                     },
                                 ],

@@ -295,8 +295,7 @@ const DTRTable: React.FC = () => {
         }
   
         const data = await response.json();
-        console.log(`[DTRTable] ${cardType} response:`, data);
-  
+        
         if (data.success) {
           safeSetTableData(data.data || []);
   

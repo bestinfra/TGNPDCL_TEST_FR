@@ -120,7 +120,6 @@ If you have any questions about this Privacy Policy, please contact us.`;
         appId: window.location.hostname || 'sub-app',
         rememberMe: data.rememberMe as boolean
       });
-      console.log('result: ', result);
       if (result.success && result.data) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
@@ -136,12 +135,11 @@ If you have any questions about this Privacy Policy, please contact us.`;
     }
   };
 
-  const handleForgotPasswordSubmit = async (data: Record<string, FormInputValue>) => {
+  const handleForgotPasswordSubmit = async (_data: Record<string, FormInputValue>) => {
     setError("");
     setLoading(true);
     
     try {
-      console.log('Forgot password for:', data.email);
       await new Promise(resolve => setTimeout(resolve, 1000));
       setError("Password reset link sent to your email!");
     } catch (error) {
@@ -313,9 +311,6 @@ If you have any questions about this Privacy Policy, please contact us.`;
                           suffix: 'Contact Support',
                           suffixVariant: 'success',
                           suffixClassName: 'cursor-pointer',
-                          suffixOnClick: () => {
-                            console.log('Contact Support clicked');
-                          }
                         },
                         rightLabels: [
                           {

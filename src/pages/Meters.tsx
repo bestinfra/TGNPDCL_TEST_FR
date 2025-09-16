@@ -293,7 +293,6 @@ export default function Meters() {
                         },
                     ];
                     setMeterData(cards);
-                    console.log('Meter stats:', stats);
                 } else {
                     throw new Error(data.message || 'Failed to fetch meter stats');
                 }
@@ -365,7 +364,6 @@ export default function Meters() {
         setIsLoading(true);
         try {
             // Here you would typically make an API call to update the meter
-            console.log('Saving meter data:', formData);
             
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -473,8 +471,6 @@ export default function Meters() {
                                     onBackClick: () => window.history.back(),
                                     backButtonText: 'Back to Dashboard',
                                     variant: 'primary',
-                                    onClick: () =>
-                                        console.log('Adding new meter...'),
                                     showMenu: true,
                                     showDropdown: false,
                                     menuItems: [
@@ -497,8 +493,7 @@ export default function Meters() {
                                             label: 'Digital Meters',
                                         },
                                     ],
-                                    onMenuItemClick: (itemId: string) => {
-                                        console.log(`Filter by: ${itemId}`);
+                                    onMenuItemClick: (_itemId: string) => {
                                     },
                                 },
                             },

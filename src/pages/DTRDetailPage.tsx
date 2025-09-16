@@ -148,6 +148,64 @@ const DTRDetailPage = () => {
     // Simple error state like Prepaid.tsx
     const [errorMessages, setErrors] = useState<any[]>([]);
 
+    // DTR Status dropdown state
+    const [dtrStatusValue, setDtrStatusValue] = useState<string>('na'); // Default to N/A
+    const isDtrDropdownDisabled = false; // Can be made dynamic if needed
+    const dtrStatusOptions = [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+    ];
+
+    // Handle DTR status change
+    const handleDtrStatusChange = async (value: string) => {
+        console.log('DTR Status changed to:', value);
+        setDtrStatusValue(value);
+        
+        // Don't make API call if N/A is selected
+        if (value === 'na') {
+            console.log('N/A selected - no API call needed');
+            return;
+        }
+        
+        try {
+            // Extract numeric DTR ID from the URL parameter
+            const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+            if (!numericDtrId) {
+                throw new Error('Invalid DTR ID format');
+            }
+
+            // Call the API to update DTR status
+            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: value
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('DTR status updated successfully:', data);
+                // Update the DTR condition in the local state
+                setDtr(prev => ({
+                    ...prev,
+                    condition: data.data.status
+                }));
+            } else {
+                console.error('Failed to update DTR status:', data.message);
+                // Revert the dropdown value on error
+                setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+            }
+        } catch (error) {
+            console.error('Error updating DTR status:', error);
+            // Revert the dropdown value on error
+            setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+        }
+    };
+
     // Clear all error messages
     const clearErrors = () => {
         setErrors([]);
@@ -169,7 +227,6 @@ const DTRDetailPage = () => {
         if (locationHierarchy.length > 0) {
             const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
             if (feederLocation) {
-                console.log('Location hierarchy changed, updating address to:', feederLocation.name);
                 setDtr(prev => ({
                     ...prev,
                     address: feederLocation.name || 'N/A'
@@ -177,6 +234,28 @@ const DTRDetailPage = () => {
             }
         }
     }, [locationHierarchy]);
+
+    // Set initial DTR status based on DTR data
+    useEffect(() => {
+        if (dtr.condition && dtr.condition !== 'N/A' && dtr.condition !== '0') {
+            // Map DTR condition to dropdown value - more robust mapping
+            const condition = dtr.condition.toLowerCase();
+            let statusValue = 'active'; // default
+            
+            if (condition.includes('inactive') || condition.includes('off') || condition.includes('disabled')) {
+                statusValue = 'inactive';
+            } else if (condition.includes('active') || condition.includes('on') || condition.includes('enabled')) {
+                statusValue = 'active';
+            }
+            
+            setDtrStatusValue(statusValue);
+            console.log('Initial DTR Status set to:', statusValue, 'based on condition:', dtr.condition);
+        } else {
+            // If no valid condition data, keep N/A as default
+            setDtrStatusValue('na');
+            console.log('No valid DTR condition data, keeping N/A as default');
+        }
+    }, [dtr.condition]);
 
     // Load data on component mount
     useEffect(() => {
@@ -218,8 +297,6 @@ const DTRDetailPage = () => {
                         stats: dtr.stats // Keep existing stats for now
                     };
                     
-                    console.log('DTR Address being set to:', transformedDtrData.address);
-                    console.log('First feeder location data:', data.data?.feeders?.[0]?.location);
                     
                     setDtr(transformedDtrData);
                 } else {
@@ -301,7 +378,6 @@ const DTRDetailPage = () => {
                 
 
                 
-                // Call the DTR endpoint to get feeders list
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch feeders data');
                 
@@ -322,29 +398,21 @@ const DTRDetailPage = () => {
                     
                     // Set location hierarchy if available
                     if (data.data?.locationHierarchy) {
-                        console.log('Location Hierarchy received:', data.data.locationHierarchy);
-                        console.log('First feeder location:', data.data?.feeders?.[0]?.location);
                         setLocationHierarchy(data.data.locationHierarchy);
                         
                         // Update the address using the Feeder type from location hierarchy
                         const feederLocation = data.data.locationHierarchy.find((loc: any) => loc.type === 'Feeder');
                         if (feederLocation) {
-                            console.log('Found Feeder location:', feederLocation);
-                            console.log('Setting address to:', feederLocation.name);
                             setDtr(prev => {
-                                console.log('Previous DTR state:', prev);
                                 const updated = {
                                     ...prev,
                                     address: feederLocation.name || 'N/A'
                                 };
-                                console.log('Updated DTR state:', updated);
                                 return updated;
                             });
                         } else {
-                            console.log('No Feeder location found in hierarchy');
                         }
                     } else {
-                        console.log('No location hierarchy data received');
                     }
                 } else {
                     throw new Error(data.message || 'Failed to fetch feeders data');
@@ -418,9 +486,6 @@ const DTRDetailPage = () => {
                     throw new Error('Invalid DTR ID format');
                 }
                 
-
-                
-                                // Call the feederStats endpoint to get DTR statistics
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
 
@@ -438,7 +503,9 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Total kW',
-                            value: data.data?.totalKW || '0',
+                            value: data.data?.totalKW !== undefined && data.data?.totalKW !== null
+                                ? Number(data.data.totalKW).toFixed(2)
+                                : '0',
                             icon: 'icons/energy.svg',
                             subtitle1: 'Active Power',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -452,14 +519,18 @@ const DTRDetailPage = () => {
                         },
                         {
                             title: 'Total kWh',
-                            value: data.data?.totalKWh || '0',
+                            value: data.data?.totalKWh !== undefined && data.data?.totalKWh !== null
+                                ? Number(data.data.totalKWh).toFixed(2)
+                                : '0',
                             icon: 'icons/energy.svg',
                             subtitle1: 'Cumulative Active Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                         },
                         {
                             title: 'Total kVAh',
-                            value: data.data?.totalKVAh || '0',
+                            value: data.data?.totalKVAh !== undefined && data.data?.totalKVAh !== null
+                                ? Number(data.data.totalKVAh).toFixed(2)
+                                : '0',
                             icon: 'icons/energy.svg',
                             subtitle1: 'Cumulative Apparent Energy',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
@@ -724,7 +795,7 @@ const DTRDetailPage = () => {
                         rows: [
                             {
                                 layout: 'row' as const,
-                                className: 'w-full',
+                                className: 'w-full', 
                                 columns: [
                                     {
                                         name: 'PageHeader',
@@ -757,6 +828,7 @@ const DTRDetailPage = () => {
                                         name: 'SectionHeader',  
                                         props: {
                                             title: 'DTR Information',
+
                                             titleLevel: 2,
                                             titleSize: 'lg',
                                             titleVariant: 'primary',
@@ -764,7 +836,20 @@ const DTRDetailPage = () => {
                                             titleAlign: 'left',
                                             defaultTitleHeight:'0',
                                             className:'w-full',
-                                            rightComponent: { name: 'LastComm', props: { value: lastComm } },
+                                            showDropdown: true,
+                                            dropdownOptions: dtrStatusOptions,
+                                            dropdownValue: dtrStatusValue,
+                                            dropdownPlaceholder: dtrStatusValue === 'na' ? 'N/A' : 'Select Status',
+                                            dropdownName: 'dtrStatus',
+                                            onDropdownChange: handleDtrStatusChange,
+                                            dropdownDisabled: isDtrDropdownDisabled,
+                                            dropdownClassName: 'w-30',
+                                            searchable: false,
+                                            rightComponent: {
+                                                 name: 'LastComm', props: { value: lastComm } ,
+                                                
+                                                },
+                                            
                                         },
                                        
                                     },

@@ -92,7 +92,6 @@ export default function RoleManagement() {
                     hasNextPage: data.pagination?.hasNextPage || false,
                     hasPrevPage: data.pagination?.hasPrevPage || false,
                 });
-                console.log('Roles data:', data.data);
             } else {
                 throw new Error(data.message || 'Failed to fetch roles');
             }
@@ -564,7 +563,6 @@ export default function RoleManagement() {
                                         },
                                     ],
                                     onMenuItemClick: (itemId: string) => {
-                                        console.log(`Filter by: ${itemId}`);
                                         if (itemId === 'export') {
                                             handleExportData();
                                         }

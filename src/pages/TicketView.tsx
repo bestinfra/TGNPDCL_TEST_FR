@@ -135,7 +135,6 @@ const TicketView: React.FC = () => {
                     mobile: ticketData.mobile || '-',
                     connectionType: ticketData.connectionType || '-',
                 });
-                console.log('Ticket data:', ticketData);
             } else {
                 throw new Error(result.message || 'Failed to fetch ticket data');
             }
@@ -197,7 +196,6 @@ const TicketView: React.FC = () => {
                     subText: item.subText || '-',
                     author: item.author || '-',
                 })));
-                console.log('Activity log:', activityData);
             } else {
                 throw new Error(result.message || 'Failed to fetch activity log');
             }
@@ -234,7 +232,6 @@ const TicketView: React.FC = () => {
 
     const handleOpenTicket = () => {
         // Handle opening the ticket
-        console.log('Opening ticket #', ticket.ticketNumber);
         // Add your ticket opening logic here
     };
 
