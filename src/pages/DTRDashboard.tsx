@@ -87,6 +87,7 @@ const dummyAlertsData = [
     type: "Overload",
     feederName: "D1F1(32500114)",
     dtrNumber: "DTR-201",
+    dtrId: "201",
     occuredOn: "2024-01-15 14:30:00",
     status: "Active",
   },
@@ -95,6 +96,7 @@ const dummyAlertsData = [
     type: "Power Failure",
     feederName: "D1F2(32500115)",
     dtrNumber: "DTR-202",
+    dtrId: "202",
     occuredOn: "2024-01-15 12:15:00",
     status: "Resolved",
   },
@@ -157,6 +159,8 @@ const DTRDashboard: React.FC = () => {
   }>(dummyDtrConsumptionData);
   const [dtrTableData, setDtrTableData] =
     useState<TableData[]>(dummyDtrTableData);
+
+    console.log("Distributiin Transformer ",dtrTableData);
   const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
 
   const [serverPagination, setServerPagination] = useState({
@@ -173,7 +177,7 @@ const DTRDashboard: React.FC = () => {
   const [chartSeries, setChartSeries] = useState<
     { name: string; data: number[] }[]
   >(dummyChartData.series);
-  const alertColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#d62728", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+  const alertColors = ["#163b7c", "#ed8c22", "#55b56c", "#9467bd", "#dc272c", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
   const statsRange = selectedTimeRange;
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -508,6 +512,7 @@ const DTRDashboard: React.FC = () => {
         }
 
         const data = await response.json();
+        console.log(data);
 
         if (data.success) {
           const row1 = data.data?.row1 || {};
@@ -772,14 +777,43 @@ const DTRDashboard: React.FC = () => {
 
   const handleViewDTR = (row: TableData) => {
     console.log(row.dtrId);
-    navigate(`/dtr-detail/${row.dtrId}`);
+    // navigate(`/dtr-detail/${row.dtrId}`);
   };
 
   const handleViewFeeder = (row: TableData) => {
-    console.log(row.feederName);
-    // const feederData = feedersData.find(feeder => feeder.feederName === feederId);
-    navigate(`/feeder/${row.feederName}`);
-    //   // console.log(navigate(`/feeder/${row.feederId}`));
+    console.log("View Feeder - Row data:", row);
+    console.log("Feeder Name:", row.feederName);
+    console.log("DTR Number:", row.dtrNumber);
+    console.log("DTR ID:", row.dtrId);
+    
+    // Extract DTR ID from dtrNumber if dtrId is not available
+    const dtrId = row.dtrId || (row.dtrNumber ? String(row.dtrNumber).replace('DTR-', '') : null);
+    
+    if (!dtrId) {
+      console.error("No DTR ID available for navigation");
+      return;
+    }
+    
+    // Navigate to feeders page with DTR ID and feeder data
+    navigate(`/feeder/${dtrId}`, {
+      state: {
+        feederData: {
+          feederName: row.feederName,
+          dtrNumber: row.dtrNumber,
+          dtrId: dtrId,
+          alertType: row.type,
+          alertId: row.alertId,
+          occuredOn: row.occuredOn
+        },
+        dtrId: dtrId,
+        dtrName: row.dtrNumber
+      }
+    });
+  }
+
+  const handleViewAllAlerts = () => {
+    // Navigate to DTR table with alerts tab
+    navigate("/dtr-table?tab=alerts");
   }
 
   const handlePageChange = () => {
@@ -1120,7 +1154,7 @@ const DTRDashboard: React.FC = () => {
       subtitle1: `${dtrStatsData.fuseBlownPercentage ||
         dtrStatsData?.row1?.fuseBlownPercentage ||
         "0"
-        }% of Total DTRs`,
+        }% of Total Feeders`,
       onValueClick: () =>
         navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
       loading: isStatsLoading,
@@ -1134,10 +1168,12 @@ const DTRDashboard: React.FC = () => {
       icon: "icons/dtr.svg",
       subtitle1: (() => {
         const count = dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0;
+        console.log(count);
         if (count === 0) {
           return "No DTRs with load > 90%";
         }
-        return `${dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}% of Total DTRS`;
+        return `No of DTRs with load > 90%`;
+        // {dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}
       })(),
       onValueClick: () =>
         navigate(
@@ -1155,7 +1191,7 @@ const DTRDashboard: React.FC = () => {
       subtitle1: (() => {
         const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
         if (count === 0) {
-          return "No DTRs with load < 30%";
+          return "No of DTRs with load < 30%";
         }
         return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
       })(),
@@ -1201,10 +1237,11 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData?.row1?.powerFailureFeeders ||
         "0",
       icon: "icons/power_failure.svg",
-      subtitle1: `${dtrStatsData.powerFailurePercentage ||
-        dtrStatsData?.row1?.powerFailurePercentage ||
-        ""
-        }LT Feeders`,
+      subtitle1: `
+        LT Feeders`,
+        // {dtrStatsData.powerFailurePercentage ||
+        // dtrStatsData?.row1?.powerFailurePercentage ||
+        // ""}
       onValueClick: () =>
         navigate(
           "/dtr-table?type=power-failure-feeders&title=Power%20Failure%20Feeders"
@@ -1368,7 +1405,7 @@ const DTRDashboard: React.FC = () => {
     // { key: "city", label: "City" },
     {
       key: "commStatus",
-      label: "Communication-Status",
+      label: "Communication Status",
       statusIndicator: {},
       isActive: (value: string | number | boolean | null | undefined) =>
         String(value).toLowerCase() === "active",
@@ -1580,7 +1617,7 @@ const DTRDashboard: React.FC = () => {
                         title: "Distribution Transformer (DTR) Statistics",
                         titleLevel: 2,
                         titleSize: "md",
-                        titleVariant: "primary",
+                        titleVariant: "",
                         titleWeight: "medium",
                         titleAlign: "left",
                         rightComponent: {
@@ -1629,7 +1666,7 @@ const DTRDashboard: React.FC = () => {
                         title: "Consumption & Energies",
                         titleLevel: 2,
                         titleSize: "md",
-                        titleVariant: "primary",
+                        titleVariant: "",
                         titleWeight: "medium",
                         titleAlign: "left",
                         rightComponent: {
@@ -1679,7 +1716,7 @@ const DTRDashboard: React.FC = () => {
                     " rounded-3xl  dark:bg-primary-dark-light",
                   columns: [
                     // {
-                    //   name: "Holder",
+                    //   name: "Holder",ss
                     //   props: {
                     //     title: "Communication  Status",
                     //     subtitle:
@@ -1726,7 +1763,7 @@ const DTRDashboard: React.FC = () => {
                         showHeader: true,
                         headerTitle: "Latest Alerts",
                         headerClickable: true,
-                        onHeaderClick: () => navigate("/dtr-table?tab=alerts"),
+                        onHeaderClick: handleViewAllAlerts,
                         showActions: true,
                         searchable: true,
                         pagination: true,
@@ -1735,8 +1772,6 @@ const DTRDashboard: React.FC = () => {
                         initialRowsPerPage: 3,
                         emptyMessage: "No alerts found",
                         loading: isAlertsLoading,
-                        // onRowClick: () =>
-                        //   navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
                         onRowClick: (row: TableData) =>
                           handleViewFeeder(row),
                       },
