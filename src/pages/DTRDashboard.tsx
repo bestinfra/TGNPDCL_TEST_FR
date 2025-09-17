@@ -158,6 +158,14 @@ const DTRDashboard: React.FC = () => {
   const [dtrTableData, setDtrTableData] =
     useState<TableData[]>(dummyDtrTableData);
   const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
+  const [alertsPagination, setAlertsPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 4,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
   
   const [serverPagination, setServerPagination] = useState({
     currentPage: 1,
@@ -264,12 +272,12 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryTableAPI = async (lastSelectedId?: string) => {
+  const retryTableAPI = async (lastSelectedId?: string, page?: number, limit?: number) => {
     setIsTableLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append("page", "1");
-      params.append("pageSize", "10");
+      params.append("page", String(page ?? serverPagination.currentPage));
+      params.append("pageSize", String(limit ?? serverPagination.limit));
       
       // Add lastSelectedId if available
       if (lastSelectedId) {
@@ -280,14 +288,16 @@ const DTRDashboard: React.FC = () => {
 
       if (data.success) {
         setDtrTableData(data.data);
-        setServerPagination({
-          currentPage: data.page || 1,
-          totalPages: Math.ceil(data.total / data.pageSize) || 1,
-          totalCount: data.total || 0,
-          limit: data.pageSize || 10,
-          hasNextPage: data.hasNextPage || false,
-          hasPrevPage: data.hasPrevPage || false,
-        });
+        if (data.pagination) {
+          setServerPagination({
+            currentPage: data.pagination.currentPage ?? serverPagination.currentPage,
+            totalPages: data.pagination.totalPages ?? serverPagination.totalPages,
+            totalCount: data.pagination.totalCount ?? serverPagination.totalCount,
+            limit: data.pagination.limit ?? serverPagination.limit,
+            hasNextPage: data.pagination.hasNextPage ?? serverPagination.hasNextPage,
+            hasPrevPage: data.pagination.hasPrevPage ?? serverPagination.hasPrevPage,
+          });
+        }
         setFailedApis((prev) => prev.filter((api) => api.id !== "table"));
       } else {
         throw new Error(data.message || "Failed to fetch DTR table");
@@ -302,16 +312,30 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryAlertsAPI = async (lastSelectedId?: string) => {
+  const retryAlertsAPI = async (lastSelectedId?: string, page?: number, limit?: number) => {
     setIsAlertsLoading(true);
     try {
-      const endpoint = lastSelectedId 
-        ? `/dtrs/alerts?lastSelectedId=${lastSelectedId}`
-        : '/dtrs/alerts';
+      const params = new URLSearchParams();
+      params.append("page", String(page ?? alertsPagination.currentPage));
+      params.append("limit", String(limit ?? alertsPagination.limit));
+      if (lastSelectedId) {
+        params.append("lastSelectedId", lastSelectedId);
+      }
+      const endpoint = `/dtrs/alerts?${params.toString()}`;
       
       const data = await apiClient.get(endpoint);
       if (data.success) {
         setAlertsData(data.data);
+        if (data.pagination) {
+          setAlertsPagination({
+            currentPage: data.pagination.currentPage ?? alertsPagination.currentPage,
+            totalPages: data.pagination.totalPages ?? alertsPagination.totalPages,
+            totalCount: data.pagination.totalCount ?? alertsPagination.totalCount,
+            limit: data.pagination.limit ?? alertsPagination.limit,
+            hasNextPage: data.pagination.hasNextPage ?? alertsPagination.hasNextPage,
+            hasPrevPage: data.pagination.hasPrevPage ?? alertsPagination.hasPrevPage,
+          });
+        }
         setFailedApis((prev) => prev.filter((api) => api.id !== "alerts"));
       } else {
         throw new Error(data.message || "Failed to fetch DTR alerts");
@@ -324,6 +348,17 @@ const DTRDashboard: React.FC = () => {
         setIsAlertsLoading(false);
       }, 1000);
     }
+  };
+
+  console.log(alertsPagination, "alertsPagination");
+
+  const handleAlertsPageChange = (page: number, limit: number) => {
+    setAlertsPagination((prev) => ({
+      ...prev,
+      currentPage: page,
+      limit: limit,
+    }));
+    retryAlertsAPI(lastSelectedId ?? undefined, page, limit);
   };
 
   const retryChartAPI = async (lastSelectedId?: string) => {
@@ -564,8 +599,8 @@ const DTRDashboard: React.FC = () => {
       setIsTableLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("page", "1");
-        params.append("pageSize", "10");
+        params.append("page", String(serverPagination.currentPage));
+        params.append("pageSize", String(serverPagination.limit));
         
         // Add lastSelectedId if available
         if (lastSelectedId) {
@@ -575,14 +610,16 @@ const DTRDashboard: React.FC = () => {
         const data = await apiClient.get(`/dtrs?${params.toString()}`);
         if (data.success) {
           setDtrTableData(data.data);
-          setServerPagination({
-            currentPage: data.page || 1,
-            totalPages: Math.ceil(data.total / data.pageSize) || 1,
-            totalCount: data.total || 0,
-            limit: data.pageSize || 10,
-            hasNextPage: data.hasNextPage || false,
-            hasPrevPage: data.hasPrevPage || false,
-          });
+          if (data.pagination) {
+            setServerPagination({
+              currentPage: data.pagination.currentPage ?? serverPagination.currentPage,
+              totalPages: data.pagination.totalPages ?? serverPagination.totalPages,
+              totalCount: data.pagination.totalCount ?? serverPagination.totalCount,
+              limit: data.pagination.limit ?? serverPagination.limit,
+              hasNextPage: data.pagination.hasNextPage ?? serverPagination.hasNextPage,
+              hasPrevPage: data.pagination.hasPrevPage ?? serverPagination.hasPrevPage,
+            });
+          }
         } else {
           throw new Error(data.message || "Failed to fetch DTR table");
         }
@@ -612,13 +649,25 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRAlerts = async () => {
       setIsAlertsLoading(true);
       try {
-        const endpoint = lastSelectedId 
-          ? `/dtrs/alerts?lastSelectedId=${lastSelectedId}`
-          : '/dtrs/alerts';
-        
-        const data = await apiClient.get(endpoint);
+        const params = new URLSearchParams();
+        params.append("page", String(alertsPagination.currentPage));
+        params.append("limit", String(alertsPagination.limit));
+        if (lastSelectedId) {
+          params.append("lastSelectedId", lastSelectedId);
+        }
+        const data = await apiClient.get(`/dtrs/alerts?${params.toString()}`);
         if (data.success) {
           setAlertsData(data.data);
+          if (data.pagination) {
+            setAlertsPagination({
+              currentPage: data.pagination.currentPage ?? alertsPagination.currentPage,
+              totalPages: data.pagination.totalPages ?? alertsPagination.totalPages,
+              totalCount: data.pagination.totalCount ?? alertsPagination.totalCount,
+              limit: data.pagination.limit ?? alertsPagination.limit,
+              hasNextPage: data.pagination.hasNextPage ?? alertsPagination.hasNextPage,
+              hasPrevPage: data.pagination.hasPrevPage ?? alertsPagination.hasPrevPage,
+            });
+          }
         } else {
           throw new Error(data.message || "Failed to fetch DTR alerts");
         }
@@ -782,8 +831,13 @@ const DTRDashboard: React.FC = () => {
   //   // console.log(navigate(`/feeder/${row.feederId}`));
   }
 
-  const handlePageChange = () => {
-    retryTableAPI(undefined);
+  const handlePageChange = (page: number, limit: number) => {
+    setServerPagination((prev) => ({
+      ...prev,
+      currentPage: page,
+      limit: limit,
+    }));
+    retryTableAPI(lastSelectedId ?? undefined, page, limit);
   };
 
   const handleSearch = () => {
@@ -1363,6 +1417,7 @@ const DTRDashboard: React.FC = () => {
 
   // Dummy data for DTRs table
   const dtrTableColumns = [
+    { key: "sNo", label: "S No" },
     { key: "dtrId", label: "DTR ID" },
     { key: "dtrName", label: "DTR Name" },
     { key: "feedersCount", label: "Feeders Count" },
@@ -1379,6 +1434,7 @@ const DTRDashboard: React.FC = () => {
   ];
 
   const alertsTableColumns = [
+    { key: "serialNumber", label: "S No" },
     { key: "alertId", label: "Alert ID" },
     { key: "type", label: "Type" },
     { key: "feederName", label: "Meter Number" },
@@ -1729,13 +1785,13 @@ const DTRDashboard: React.FC = () => {
                           showActions: true,
                           searchable: true,
                           pagination: true,
+                          serverPagination: alertsPagination,
+                          onPageChange: handleAlertsPageChange,
                           onView:handleViewFeeder,
                           availableTimeRanges: [],
-                          initialRowsPerPage: 3,
+                          initialRowsPerPage: 4,
                           emptyMessage: "No alerts found",
                           loading: isAlertsLoading,
-                          // onRowClick: () =>
-                          //   navigate("/dtr-table?type=alerts&title=Latest%20Alerts"),
                           onRowClick: (row: TableData) =>
                             handleViewFeeder(row),
                         },

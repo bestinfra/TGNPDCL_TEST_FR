@@ -131,19 +131,27 @@ const DTRDetailPage = () => {
     const navigate = useNavigate();
     
 
-    
-    // State for API data
     const [dtr, setDtr] = useState(dummyDTRData);
     const [dailyConsumptionData, setDailyConsumptionData] = useState(dummyDailyConsumptionData);
     const [feedersData, setFeedersData] = useState(dummyFeedersData);
     const [alertsData, setAlertsData] = useState(dummyAlertsData);
+    const [alertsPagination, setAlertsPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 10,
+        hasNextPage: false,
+        hasPrevPage: false,
+    });
     const [locationHierarchy, setLocationHierarchy] = useState<any[]>([]);
 
     // Loading states
-    const [isDtrLoading, setIsDtrLoading] = useState(true);
+    const [_isDtrLoading, setIsDtrLoading] = useState(true);
     const [_isConsumptionLoading, setIsConsumptionLoading] = useState(true);
     const [isFeedersLoading, setIsFeedersLoading] = useState(true);
     const [isAlertsLoading, setIsAlertsLoading] = useState(true);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
+    const [stats, setStats] = useState(dummyDTRData.stats);
 
     // Simple error state like Prepaid.tsx
     const [errorMessages, setErrors] = useState<any[]>([]);
@@ -223,6 +231,63 @@ const DTRDetailPage = () => {
         window.location.reload();
     };
 
+    // Fetch Alerts data (reusable across initial load and pagination changes)
+    const fetchAlertsData = async (pageOverride?: number, limitOverride?: number) => {
+        setIsAlertsLoading(true);
+        try {
+            // Extract numeric DTR ID from the URL parameter
+            const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+            if (!numericDtrId) {
+                throw new Error('Invalid DTR ID format');
+            }
+
+            const params = new URLSearchParams();
+            const pageToUse = pageOverride ?? alertsPagination.currentPage;
+            const limitToUse = limitOverride ?? alertsPagination.limit;
+            params.append('page', String(pageToUse));
+            params.append('limit', String(limitToUse));
+            const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts?${params.toString()}`);
+            if (!response.ok) throw new Error('Failed to fetch alerts data');
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const transformedAlerts = data.data?.map((alert: any) => ({
+                    ...alert,
+                    feederName: alert.feederName || 'N/A'
+                })) || [];
+                
+                setAlertsData(transformedAlerts);
+                if (data.pagination) {
+                    setAlertsPagination({
+                        currentPage: data.pagination.currentPage ?? pageToUse,
+                        totalPages: data.pagination.totalPages ?? alertsPagination.totalPages,
+                        totalCount: data.pagination.totalCount ?? alertsPagination.totalCount,
+                        limit: data.pagination.limit ?? limitToUse,
+                        hasNextPage: data.pagination.hasNextPage ?? alertsPagination.hasNextPage,
+                        hasPrevPage: data.pagination.hasPrevPage ?? alertsPagination.hasPrevPage,
+                    });
+                }
+            } else {
+                throw new Error(data.message || 'Failed to fetch alerts data');
+            }
+        } catch (error) {
+            console.error('Error fetching alerts data:', error);
+            setAlertsData(dummyAlertsData);
+            setErrors(prev => {
+                if (!prev.includes("Failed to fetch alerts data")) {
+                    const updated = [...prev, "Failed to fetch alerts data"];
+                    return updated;
+                }
+                return prev;
+            });
+        } finally {
+            setTimeout(() => {
+                setIsAlertsLoading(false);
+            }, 1000);
+        }
+    };
+
     useEffect(() => {
         if (locationHierarchy.length > 0) {
             const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
@@ -257,12 +322,10 @@ const DTRDetailPage = () => {
         }
     }, [dtr.condition]);
 
-    // Load data on component mount
     useEffect(() => {
         const fetchDtrData = async () => {
             setIsDtrLoading(true);
             try {
-                // Extract numeric DTR ID from the URL parameter
                 const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
@@ -270,14 +333,12 @@ const DTRDetailPage = () => {
                 
 
                 
-                // Call the DTR endpoint to get DTR info
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch DTR data');
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Transform the API response to match the expected structure
                     const transformedDtrData = {
                         name: data.data?.dtr?.serialNumber || 'N/A',
                         dtrNo: data.data?.dtr?.dtrNumber || 'N/A',
@@ -294,7 +355,7 @@ const DTRDetailPage = () => {
                             lng: data.data?.feeders?.[0]?.longitude || 0 
                         },
                         lastCommunication: data.data?.dtr?.lastCommunication || null,
-                        stats: dtr.stats // Keep existing stats for now
+                        stats: dtr.stats,
                     };
                     
                     
@@ -322,7 +383,6 @@ const DTRDetailPage = () => {
         const fetchConsumptionData = async () => {
             setIsConsumptionLoading(true);
             try {
-                // Extract numeric DTR ID from the URL parameter
                 const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
@@ -330,14 +390,12 @@ const DTRDetailPage = () => {
                 
 
                 
-                // Call the consumptionAnalytics endpoint to get consumption data
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
                 if (!response.ok) throw new Error('Failed to fetch consumption data');
                 
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    // Transform the API response to match the expected structure
                     const transformedConsumptionData = {
                         xAxisData: data.data?.dailyData?.xAxisData || [],
                         seriesData: [{
@@ -434,51 +492,10 @@ const DTRDetailPage = () => {
             }
         };
 
-        const fetchAlertsData = async () => {
-            setIsAlertsLoading(true);
-            try {
-                // Extract numeric DTR ID from the URL parameter
-                const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
-                if (!numericDtrId) {
-                    throw new Error('Invalid DTR ID format');
-                }
-                
-
-                
-                // Call the alerts endpoint
-                const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
-                if (!response.ok) throw new Error('Failed to fetch alerts data');
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    const transformedAlerts = data.data?.map((alert: any) => ({
-                        ...alert,
-                        feederName: alert.feederName || 'N/A'
-                    })) || [];
-                    
-                    setAlertsData(transformedAlerts);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch alerts data');
-                }
-            } catch (error) {
-                console.error('Error fetching alerts data:', error);
-                setAlertsData(dummyAlertsData);
-                setErrors(prev => {
-                    if (!prev.includes("Failed to fetch alerts data")) {
-                        const updated = [...prev, "Failed to fetch alerts data"];
-                        return updated;
-                    }
-                    return prev;
-                });
-            } finally {
-                setTimeout(() => {
-                    setIsAlertsLoading(false);
-                }, 1000);
-            }
-        };
+        // fetchAlertsData removed here to reuse the hoisted version
         
         const fetchFeederStats = async () => {
+            setIsStatsLoading(true);
             try {
                 // Extract numeric DTR ID from the URL parameter
                 const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
@@ -490,6 +507,7 @@ const DTRDetailPage = () => {
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
 
                 const data = await response.json();
+                console.log(data, "data");
                 
                 if (data.success) {
                     // Update the DTR stats with real data from the API
@@ -576,15 +594,15 @@ const DTRDetailPage = () => {
                         },
                     ];
                     
-                    // Update the DTR stats
-                    setDtr(prev => ({
-                        ...prev,
-                        stats: updatedStats
-                    }));
+                    setStats(updatedStats);
                 }
             } catch (error) {
                 console.error('Error fetching feeder stats:', error);
                 // Don't add to errors since this is supplementary data
+            } finally {
+                setTimeout(() => {
+                    setIsStatsLoading(false);
+                }, 1000);
             }
         };
         
@@ -592,11 +610,19 @@ const DTRDetailPage = () => {
         fetchConsumptionData();
         fetchFeedersData();
         fetchAlertsData();
-        
-        // Also fetch feeder stats to update DTR statistics
         fetchFeederStats();
     }, [dtrId]);
 
+    const handleAlertsPageChange = async (page: number, limit: number) => {
+        setAlertsPagination((prev) => ({
+            ...prev,
+            currentPage: page,
+            limit: limit,
+        }));
+        await fetchAlertsData(page, limit);
+    };
+
+    console.log(dtr, "dtr");
     const lastComm = dtr.lastCommunication ? new Date(dtr.lastCommunication).toLocaleString('en-IN', {
         year: 'numeric',
         month: '2-digit',
@@ -635,7 +661,7 @@ const DTRDetailPage = () => {
             ];
 
             // Prepare DTR Statistics data with S.No
-            const dtrStatsData = dtr.stats.map((stat, index) => ({
+            const dtrStatsData = stats.map((stat, index) => ({
                 'S.No': index + 1,
                 'Metric': stat.title,
                 'Value': stat.value || 'N/A',
@@ -896,12 +922,12 @@ const DTRDetailPage = () => {
                                                         align: 'start',
                                                         gap: 'gap-1'
                                                     },
-                                                    {
-                                                        title: 'Substation',
-                                                        value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    }
+                                                    // {
+                                                    //     title: 'Substation',
+                                                    //     value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
+                                                    //     align: 'start',
+                                                    //     gap: 'gap-1'
+                                                    // }
                                                 ]
                                             },
                                             {
@@ -910,12 +936,12 @@ const DTRDetailPage = () => {
                                                 span: { col: 5, row: 1 },
                                                 items: [
                                                     
-                                                    {
-                                                        title: 'Condition',
-                                                        value: dtr.condition,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
+                                                    // {
+                                                    //     title: 'Condition',
+                                                    //     value: dtr.condition,
+                                                    //     align: 'start',
+                                                    //     gap: 'gap-1'
+                                                    // },
                                                     {
                                                         title: 'Capacity',
                                                         value: dtr.capacity,
@@ -982,7 +1008,7 @@ const DTRDetailPage = () => {
                                 layout: 'grid' as const,
                                 gridColumns: 5,
                                 className: 'w-full gap-4',
-                                columns: dtr.stats.map((stat) => ({
+                                columns: stats.map((stat) => ({
                                     name: 'Card',
                                     props: {
                                         title: stat.title,
@@ -992,7 +1018,7 @@ const DTRDetailPage = () => {
                                         bg: stat.bg || 'bg-stat-icon-gradient',
                                         valueFontSize: stat.valueFontSize || 'text-lg lg:text-xl md:text-lg sm:text-base',
                                         iconStyle: stat.iconStyle || FILTER_STYLES.BRAND_GREEN,
-                                        loading: isDtrLoading,
+                                        loading: isStatsLoading,
                                     },
                                     span: { col: 1, row: 1 },
                                 })),
@@ -1018,9 +1044,9 @@ const DTRDetailPage = () => {
                                                 { key: 'sNo', label: 'S.No' },
                                                 { key: 'feederName', label: 'Feeder Name' },
                                                 { key: 'loadStatus', label: 'Load Status' },
-                                                { key: 'condition', label: 'Condition' },
-                                                { key: 'capacity', label: 'Capacity' },
-                                                { key: 'address', label: 'Address' },
+                                                // { key: 'condition', label: 'Condition' },
+                                                // { key: 'capacity', label: 'Capacity' },
+                                                // { key: 'address', label: 'Address' },
                                             ],
                                             data: feedersData,
                                             searchable: true,
@@ -1067,9 +1093,9 @@ const DTRDetailPage = () => {
                                 columns: [
                                     {
                                         name: 'Table',
-                                        
                                         props: {
                                             columns: [
+                                                { key: 'serialNumber', label: 'S.No' },
                                                 { key: 'alertId', label: 'Alert ID' },
                                                 { key: 'type', label: 'Type' },
                                                 { key: 'feederName', label: 'Feeder Name' },
@@ -1088,6 +1114,8 @@ const DTRDetailPage = () => {
                                             showPaginationInfo: true,
                                             showRowsPerPageSelector: true,
                                             className: 'w-full',
+                                            serverPagination: alertsPagination,
+                                            onPageChange: handleAlertsPageChange,
                                             loading: isAlertsLoading,
                                         },
                                     },
