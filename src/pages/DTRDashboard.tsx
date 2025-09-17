@@ -122,6 +122,10 @@ const DTRDashboard: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<
     "Daily" | "Monthly"
   >("Daily");
+  
+  const [selectedChartTimeRange, setSelectedChartTimeRange] = useState<
+    "Daily" | "Weekly" | "Monthly"
+  >("Daily");
 
   const [filterValues, setFilterValues] = useState({
    discom: "1", 
@@ -174,7 +178,6 @@ const DTRDashboard: React.FC = () => {
     { name: string; data: number[] }[]
   >(dummyChartData.series);
   const alertColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#d62728", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
-  const statsRange = selectedTimeRange;
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(true);
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
@@ -326,23 +329,32 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryChartAPI = async (lastSelectedId?: string) => {
+  const retryChartAPI = async (lastSelectedId?: string, timeRange?: string) => {
     setIsChartLoading(true);
     try {
-      const endpoint = lastSelectedId 
-        ? `/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
-        : '/dtrs/alerts/trends';
+      const params = new URLSearchParams();
+      if (lastSelectedId) {
+        params.append('lastSelectedId', lastSelectedId);
+      }
+      if (timeRange) {
+        params.append('timeRange', timeRange);
+      }
       
+      const endpoint = `/dtrs/alerts/trends?${params.toString()}`;
       const data = await apiClient.get(endpoint);
+      
       if (data.success) {
         const rows = data.data || [];
-        const monthsList = rows.map((r: any) => r.month);
+        console.log('Chart data received:', rows.length, 'rows');
+        console.log('Time range:', timeRange);
+        const periodsList = rows.map((r: any) => r.period);
+        console.log('Periods list:', periodsList);
         
         // Extract all possible alert types from the data
         const allAlertTypes = new Set<string>();
         rows.forEach((row: any) => {
           Object.keys(row).forEach(key => {
-            if (key.endsWith('_count') && key !== 'month') {
+            if (key.endsWith('_count') && key !== 'period') {
               const alertType = key.replace('_count', '').replace(/\s+/g, ' ').toUpperCase();
               allAlertTypes.add(alertType);
             }
@@ -363,7 +375,7 @@ const DTRDashboard: React.FC = () => {
           };
         });
 
-        setChartMonths(monthsList);
+        setChartMonths(periodsList);
         setChartSeries(seriesData);
         setFailedApis((prev) => prev.filter((api) => api.id !== "chart"));
       } else {
@@ -495,20 +507,12 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
       try {
-        const url = lastSelectedId 
-          ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
-          : `${BACKEND_URL}/dtrs/stats`;
-          
-          const response = await fetch(url);
-          if (!response.ok) throw new Error("Failed to fetch DTR stats");
-          
-          const contentType = response.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("Invalid response format");
-          }
-          
-          const data = await response.json();
-          
+        const endpoint = lastSelectedId
+          ? `/dtrs/stats?hierarchyId=${lastSelectedId}`
+          : `/dtrs/stats`;
+
+        const data = await apiClient.get(endpoint);
+           
           if (data.success) {
             const row1 = data.data?.row1 || {};
           const row2 = data.data?.row2 || {};
@@ -648,42 +652,48 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRAlertsTrends = async () => {
       setIsChartLoading(true);
       try {
-        const endpoint = lastSelectedId 
-          ? `/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
-          : '/dtrs/alerts/trends';
+        const params = new URLSearchParams();
+        if (lastSelectedId) {
+          params.append('lastSelectedId', lastSelectedId);
+        }
+        params.append('timeRange', selectedChartTimeRange.toLowerCase());
         
+        const endpoint = `/dtrs/alerts/trends?${params.toString()}`;
         const data = await apiClient.get(endpoint);
+        
         if (data.success) {
           const rows = data.data || [];
-          const monthsList = rows.map((r: any) => r.month);
+          console.log('Chart data received (fetchDTRAlertsTrends):', rows.length, 'rows');
+          console.log('Time range:', selectedChartTimeRange);
+          const periodsList = rows.map((r: any) => r.period);
+          console.log('Periods list:', periodsList);
           
-          // Extract all possible alert types from the data
-          const allAlertTypes = new Set<string>();
-          rows.forEach((row: any) => {
-            Object.keys(row).forEach(key => {
-              if (key.endsWith('_count') && key !== 'month') {
-                const alertType = key.replace('_count', '').replace(/_/g, ' ').toUpperCase();
-                allAlertTypes.add(alertType);
-              }
-            });
+        // Extract all possible alert types from the data
+        const allAlertTypes = new Set<string>();
+        rows.forEach((row: any) => {
+          Object.keys(row).forEach(key => {
+            if (key.endsWith('_count') && key !== 'period') {
+              const alertType = key.replace('_count', '').replace(/_/g, ' ').toUpperCase();
+              allAlertTypes.add(alertType);
+            }
           });
-          
-          const alertTypesArray = Array.from(allAlertTypes);
-          // setAlertTypes(alertTypesArray);
-          
-          // Create dynamic series data based on actual alert types
-          const seriesData = alertTypesArray.map((alertType, index) => {
-            const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
-            const data = rows.map((r: any) => r[dataKey] || 0);
-            return {
-              name: alertType,
-              data: data,
-              color: alertColors[index % alertColors.length]
-            };
-          });
+        });
+        
+        const alertTypesArray = Array.from(allAlertTypes);
+        
+        // Create dynamic series data based on actual alert types
+        const seriesData = alertTypesArray.map((alertType, index) => {
+          const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
+          const data = rows.map((r: any) => r[dataKey] || 0);
+          return {
+            name: alertType,
+            data: data,
+            color: alertColors[index % alertColors.length]
+          };
+        });
 
-          setChartMonths(monthsList);
-          setChartSeries(seriesData);
+        setChartMonths(periodsList);
+        setChartSeries(seriesData);
         } else {
           throw new Error(data.message || "Failed to fetch DTR alerts trends");
         }
@@ -757,13 +767,12 @@ const DTRDashboard: React.FC = () => {
     fetchMeterStatus();
   }, []);
 
-  // Refetch stats when lastSelectedId changes
-  // useEffect(() => {
-
-  //   if (lastSelectedId !== null) {
-  //     retryStatsAPI();
-  //   }
-  // }, [lastSelectedId]);
+  // Refetch chart data when chart time range changes
+  useEffect(() => {
+    if (selectedChartTimeRange) {
+      retryChartAPI(lastSelectedId || undefined, selectedChartTimeRange.toLowerCase());
+    }
+  }, [selectedChartTimeRange]);
 
 
   const handleChartDownload = () => {
@@ -792,6 +801,12 @@ const DTRDashboard: React.FC = () => {
 
   const handleTimeRangeChange = (range: string) => {
     setSelectedTimeRange(range as "Daily" | "Monthly");
+  };
+
+  const handleChartTimeRangeChange = (range: string) => {
+    setSelectedChartTimeRange(range as "Daily" | "Weekly" | "Monthly");
+    // Refetch chart data with new time range
+    retryChartAPI(lastSelectedId || undefined, range.toLowerCase());
   };
 
   const updateFilterOptions = async (filterName: string, selectedValue: any) => {
@@ -1065,7 +1080,7 @@ const DTRDashboard: React.FC = () => {
       retryStatsAPI(lastId || undefined);
       retryTableAPI(lastId || undefined);
       retryAlertsAPI(lastId || undefined);
-      retryChartAPI(lastId || undefined);
+      retryChartAPI(lastId || undefined, selectedChartTimeRange.toLowerCase());
     } catch (error) {
       console.error("Error applying filters:", error);
     }
@@ -1797,7 +1812,10 @@ const DTRDashboard: React.FC = () => {
                   seriesColors: alertColors,
                   height: 300,
                   showLegendInteractions: true,
-                  timeRange: statsRange,
+                  timeRange: selectedChartTimeRange,
+                  availableTimeRanges: ["Daily", "Weekly", "Monthly"],
+                  defaultTimeRange: "Daily",
+                  onTimeRangeChange: handleChartTimeRangeChange,
                   showHeader: true,
                   headerTitle: "DTR Alert Statistics",
                   showDownloadButton: true,
