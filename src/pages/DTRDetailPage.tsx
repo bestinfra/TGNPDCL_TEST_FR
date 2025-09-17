@@ -119,7 +119,7 @@ const dummyFeedersData = [
 
 const dummyAlertsData = [
     {
-            alertId: 'NA',
+        alertId: 'NA',
         type: 'N/A',
         feederName: 'NA',
         occuredOn: 'NA',
@@ -129,9 +129,9 @@ const dummyAlertsData = [
 const DTRDetailPage = () => {
     const { dtrId } = useParams();
     const navigate = useNavigate();
-    
 
-    
+
+
     // State for API data
     const [dtr, setDtr] = useState(dummyDTRData);
     const [dailyConsumptionData, setDailyConsumptionData] = useState(dummyDailyConsumptionData);
@@ -160,13 +160,13 @@ const DTRDetailPage = () => {
     const handleDtrStatusChange = async (value: string) => {
         console.log('DTR Status changed to:', value);
         setDtrStatusValue(value);
-        
+
         // Don't make API call if N/A is selected
         if (value === 'na') {
             console.log('N/A selected - no API call needed');
             return;
         }
-        
+
         try {
             // Extract numeric DTR ID from the URL parameter
             const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
@@ -241,13 +241,13 @@ const DTRDetailPage = () => {
             // Map DTR condition to dropdown value - more robust mapping
             const condition = dtr.condition.toLowerCase();
             let statusValue = 'active'; // default
-            
+
             if (condition.includes('inactive') || condition.includes('off') || condition.includes('disabled')) {
                 statusValue = 'inactive';
             } else if (condition.includes('active') || condition.includes('on') || condition.includes('enabled')) {
                 statusValue = 'active';
             }
-            
+
             setDtrStatusValue(statusValue);
             console.log('Initial DTR Status set to:', statusValue, 'based on condition:', dtr.condition);
         } else {
@@ -267,15 +267,15 @@ const DTRDetailPage = () => {
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
                 }
-                
 
-                
+
+
                 // Call the DTR endpoint to get DTR info
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch DTR data');
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Transform the API response to match the expected structure
                     const transformedDtrData = {
@@ -289,15 +289,15 @@ const DTRDetailPage = () => {
                         condition: data.data?.dtr?.status || 'N/A',
                         capacity: data.data?.dtr?.capacity || 'N/A',
                         address: data.data?.feeders?.[0]?.location?.name || data.data?.feeders?.[0]?.city || 'N/A',
-                        location: { 
-                            lat: data.data?.feeders?.[0]?.latitude || 0, 
-                            lng: data.data?.feeders?.[0]?.longitude || 0 
+                        location: {
+                            lat: data.data?.feeders?.[0]?.latitude || 0,
+                            lng: data.data?.feeders?.[0]?.longitude || 0
                         },
                         lastCommunication: data.data?.dtr?.lastCommunication || null,
                         stats: dtr.stats // Keep existing stats for now
                     };
-                    
-                    
+
+
                     setDtr(transformedDtrData);
                 } else {
                     throw new Error(data.message || 'Failed to fetch DTR data');
@@ -327,15 +327,15 @@ const DTRDetailPage = () => {
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
                 }
-                
 
-                
+
+
                 // Call the consumptionAnalytics endpoint to get consumption data
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
                 if (!response.ok) throw new Error('Failed to fetch consumption data');
-                
+
                 const data = await response.json();
-                
+
                 if (data.status === 'success') {
                     // Transform the API response to match the expected structure
                     const transformedConsumptionData = {
@@ -345,7 +345,7 @@ const DTRDetailPage = () => {
                             data: data.data?.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || []
                         }]
                     };
-                    
+
                     setDailyConsumptionData(transformedConsumptionData);
                 } else {
                     throw new Error(data.message || 'Failed to fetch consumption data');
@@ -375,14 +375,14 @@ const DTRDetailPage = () => {
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
                 }
-                
 
-                
+
+
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
                 if (!response.ok) throw new Error('Failed to fetch feeders data');
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Transform the API response to match the expected structure
                     const transformedFeedersData = data.data?.feeders?.map((feeder: any, index: number) => ({
@@ -393,13 +393,13 @@ const DTRDetailPage = () => {
                         capacity: 'N/A', // Not available in current API
                         address: feeder.location?.name || feeder.city || 'N/A',
                     })) || [];
-                    
+
                     setFeedersData(transformedFeedersData);
-                    
+
                     // Set location hierarchy if available
                     if (data.data?.locationHierarchy) {
                         setLocationHierarchy(data.data.locationHierarchy);
-                        
+
                         // Update the address using the Feeder type from location hierarchy
                         const feederLocation = data.data.locationHierarchy.find((loc: any) => loc.type === 'Feeder');
                         if (feederLocation) {
@@ -442,21 +442,21 @@ const DTRDetailPage = () => {
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
                 }
-                
 
-                
+
+
                 // Call the alerts endpoint
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts`);
                 if (!response.ok) throw new Error('Failed to fetch alerts data');
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     const transformedAlerts = data.data?.map((alert: any) => ({
                         ...alert,
                         feederName: alert.feederName || 'N/A'
                     })) || [];
-                    
+
                     setAlertsData(transformedAlerts);
                 } else {
                     throw new Error(data.message || 'Failed to fetch alerts data');
@@ -477,7 +477,7 @@ const DTRDetailPage = () => {
                 }, 1000);
             }
         };
-        
+
         const fetchFeederStats = async () => {
             try {
                 // Extract numeric DTR ID from the URL parameter
@@ -485,12 +485,12 @@ const DTRDetailPage = () => {
                 if (!numericDtrId) {
                     throw new Error('Invalid DTR ID format');
                 }
-                
+
                 const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
                 if (!response.ok) throw new Error('Failed to fetch feeder stats');
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Update the DTR stats with real data from the API
                     const updatedStats = [
@@ -575,7 +575,7 @@ const DTRDetailPage = () => {
                             iconStyle: FILTER_STYLES.WHITE,
                         },
                     ];
-                    
+
                     // Update the DTR stats
                     setDtr(prev => ({
                         ...prev,
@@ -587,12 +587,12 @@ const DTRDetailPage = () => {
                 // Don't add to errors since this is supplementary data
             }
         };
-        
+
         fetchDtrData();
         fetchConsumptionData();
         fetchFeedersData();
         fetchAlertsData();
-        
+
         // Also fetch feeder stats to update DTR statistics
         fetchFeederStats();
     }, [dtrId]);
@@ -638,6 +638,9 @@ const DTRDetailPage = () => {
             const dtrStatsData = dtr.stats.map((stat, index) => ({
                 'S.No': index + 1,
                 'Metric': stat.title,
+
+
+                
                 'Value': stat.value || 'N/A',
                 'Subtitle': stat.subtitle1 || '',
             }));
@@ -711,7 +714,7 @@ const DTRDetailPage = () => {
 
             // Generate Excel file
             const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            
+
             // Create blob and download
             const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = window.URL.createObjectURL(blob);
@@ -727,7 +730,7 @@ const DTRDetailPage = () => {
 
     // Handle feeders export
     const handleFeedersExport = () => {
-    
+
         // Add feeders export logic here
     };
 
@@ -736,26 +739,26 @@ const DTRDetailPage = () => {
         // Find the feeder data for the clicked feeder
         const feederData = feedersData.find(feeder => feeder.feederName === feederId);
         if (feederData) {
-            navigate(`/feeder/${feederId}`, { 
-                state: { 
+            navigate(`/feeder/${feederId}`, {
+                state: {
                     feederData,
                     dtrId: dtrId,
                     dtrName: dtr.name
-                } 
+                }
             });
         }
     };
 
     // Handle feeder view action
     const handleFeederView = (row: any) => {
-        navigate(`/feeder/${row.feederName}`, { 
-            state: { 
+        navigate(`/feeder/${row.feederName}`, {
+            state: {
                 feederData: row,
                 dtrId: dtrId,
                 dtrName: dtr.name
-            } 
+            }
         }
-    );
+        );
     };
 
 
@@ -795,7 +798,7 @@ const DTRDetailPage = () => {
                         rows: [
                             {
                                 layout: 'row' as const,
-                                className: 'w-full', 
+                                className: 'w-full',
                                 columns: [
                                     {
                                         name: 'PageHeader',
@@ -825,17 +828,17 @@ const DTRDetailPage = () => {
                                 span: { col: 3, row: 1 },
                                 columns: [
                                     {
-                                        name: 'SectionHeader',  
+                                        name: 'SectionHeader',
                                         props: {
                                             title: 'DTR Information',
 
                                             titleLevel: 2,
                                             titleSize: 'lg',
-                                            titleVariant: 'primary',
+                                            titleVariant: '',
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
-                                            defaultTitleHeight:'0',
-                                            className:'w-full',
+                                            defaultTitleHeight: '0',
+                                            className: 'w-full',
                                             showDropdown: true,
                                             dropdownOptions: dtrStatusOptions,
                                             dropdownValue: dtrStatusValue,
@@ -845,13 +848,17 @@ const DTRDetailPage = () => {
                                             dropdownDisabled: isDtrDropdownDisabled,
                                             dropdownClassName: 'w-30',
                                             searchable: false,
+                                            lastSync: true,
+                                            lastSyncLabel: "Last Sync",
+                                            lastSyncValue: "2025-09-16 12:45 PM",
                                             rightComponent: {
-                                                 name: 'LastComm', props: { value: lastComm } ,
-                                                
-                                                },
-                                            
+                                                name: 'LastComm', props: { value: lastComm },
+
+
+                                            },
+
                                         },
-                                       
+
                                     },
                                 ],
                             },
@@ -861,90 +868,90 @@ const DTRDetailPage = () => {
                                 span: { col: 3, row: 1 },
 
                                 columns: [
-                                    {   
-                                       name: 'PageInformation',
-                                       props: {
-                                        gridColumns: 5,
-                                        rows: [
-                                            {
-                                                layout: 'row',
-                                                className: 'justify-between w-full',
-                                                span: { col: 5, row: 1 },
-                                                items: [
-                                                    {
-                                                        title: 'DTR No',
-                                                        value: dtr.dtrNo,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'DTR Name',
-                                                        value: dtr.name,
-                                                        align: 'start',
-                                                        gap: 'gap-1',
-                                                        statusIndicator: true
-                                                    },
-                                                    {
-                                                        title: 'Division',
-                                                        value: locationHierarchy.find(loc => loc.type === 'Division')?.name || 'N/A',
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Sub-Division',
-                                                        value: locationHierarchy.find(loc => loc.type === 'Sub-Division')?.name || 'N/A',
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Substation',
-                                                        value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                layout: 'row',
-                                                className: 'justify-between w-full',
-                                                span: { col: 5, row: 1 },
-                                                items: [
-                                                    
-                                                    {
-                                                        title: 'Condition',
-                                                        value: dtr.condition,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Capacity',
-                                                        value: dtr.capacity,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Address',
-                                                        value: dtr.address,
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Latitude',
-                                                        value: dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    },
-                                                    {
-                                                        title: 'Longitude',
-                                                        value: dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
-                                                        align: 'start',
-                                                        gap: 'gap-1'
-                                                    }
-                                                ]
-                                            },
-                                            
-                                        ]
-                                       }
+                                    {
+                                        name: 'PageInformation',
+                                        props: {
+                                            gridColumns: 5,
+                                            rows: [
+                                                {
+                                                    layout: 'row',
+                                                    className: 'justify-between w-full',
+                                                    span: { col: 5, row: 1 },
+                                                    items: [
+                                                        {
+                                                            title: 'DTR No',
+                                                            value: dtr.dtrNo,
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'DTR Name',
+                                                            value: dtr.name,
+                                                            align: 'start',
+                                                            gap: 'gap-1',
+                                                            statusIndicator: true
+                                                        },
+                                                        {
+                                                            title: 'Division',
+                                                            value: locationHierarchy.find(loc => loc.type === 'Division')?.name || 'N/A',
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'Sub-Division',
+                                                            value: locationHierarchy.find(loc => loc.type === 'Sub-Division')?.name || 'N/A',
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'Substation',
+                                                            value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    layout: 'row',
+                                                    className: 'justify-between w-full',
+                                                    span: { col: 5, row: 1 },
+                                                    items: [
+
+                                                        {
+                                                            title: 'Condition',
+                                                            value: dtr.condition,
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'Capacity',
+                                                            value: dtr.capacity,
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'Address',
+                                                            value: dtr.address,
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'Latitude',
+                                                            value: dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        },
+                                                        {
+                                                            title: 'Longitude',
+                                                            value: dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
+                                                            align: 'start',
+                                                            gap: 'gap-1'
+                                                        }
+                                                    ]
+                                                },
+
+                                            ]
+                                        }
                                     }
                                 ]
                             }
@@ -967,11 +974,11 @@ const DTRDetailPage = () => {
                                         props: {
                                             title: 'Distribution Transformer (DTR) Statistics',
                                             titleLevel: 2,
-                                                titleSize: 'lg',
-                                            titleVariant: 'primary',
+                                            titleSize: 'lg',
+                                            titleVariant: '',
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
-                                            className:'w-full',
+                                            className: 'w-full',
                                             // rightComponent: { name: 'LastComm', props: { value: lastComm } },
                                         },
                                         span: { col: 1, row: 1 },
@@ -1000,7 +1007,7 @@ const DTRDetailPage = () => {
                         ],
                     },
                 },
-               
+
                 {
                     layout: {
                         type: 'grid' as const,
@@ -1063,11 +1070,11 @@ const DTRDetailPage = () => {
                             {
                                 layout: 'grid' as const,
                                 gridColumns: 1,
-                                className:'pb-4',
+                                className: 'pb-4',
                                 columns: [
                                     {
                                         name: 'Table',
-                                        
+
                                         props: {
                                             columns: [
                                                 { key: 'alertId', label: 'Alert ID' },

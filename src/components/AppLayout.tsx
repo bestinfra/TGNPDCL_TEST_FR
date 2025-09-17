@@ -500,6 +500,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
               alt: 'Best Infra',
               collapsedSrc: 'images/changed-logo.svg',
             }}
+
             clientLogo={{
               src: 'images/tgnpdcl.png',
               alt: 'TGNPDCL Client',
@@ -511,14 +512,16 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
               showShareButton: false,
             }}
             showAppDownload={false}
+            onToggleTariff={false}
           />
         <div className="flex flex-col flex-1">
           {/* Header */}
-            <Header 
+            <Header
              // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
               title={pageTitles[location.pathname] || 'Dashboard'} 
               onSearch={handleGlobalSearch}
               apiBaseUrl={apiBaseUrl}
+              tariff={false}
               // Notification props
             //  notificationCount={notificationStats.unread}
              // notificationStats={notificationStats}

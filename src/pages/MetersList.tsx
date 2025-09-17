@@ -143,7 +143,7 @@ const MetersList: React.FC = () => {
     const tableColumns = [
         { key: 'slNo', label: 'Sl No' },
         { key: 'meterSlNo', label: 'Meter SI No' },
-        { key: 'modemSlNo', label: 'Modem SI No' },
+        // { key: 'modemSlNo', label: 'Modem SI No' },
         { key: 'meterType', label: 'Meter Type' },
         { key: 'meterMake', label: 'Meter Make' },
         // { key: 'consumerName', label: 'Consumer Name' },
