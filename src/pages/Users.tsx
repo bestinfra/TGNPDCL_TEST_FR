@@ -216,32 +216,32 @@ export default function Users() {
     const userWidgets = [
         {
             title: 'Total Users',
-            value: userStats?.totalUsers || '-',
+            value: userStats?.totalUsers || '0',
             icon: 'icons/total-users.svg',
             subtitle1: userStats ? `${userStats.activeUsers} Active Users` : '- Active Users',
             subtitle2: userStats ? `${userStats.inactiveUsers} Inactive Users` : '- Inactive Users',
         },
         {
             title: 'Total Admins',
-            value: userStats?.roleBreakdown?.Admin || '-',
+            value: userStats?.roleBreakdown?.Admin || '0',
             icon: 'icons/admin.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Accountants',
-            value: userStats?.roleBreakdown?.Accountant || '-',
+            value: userStats?.roleBreakdown?.Accountant || '0',
             icon: 'icons/accountant.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Moderators',
-            value: userStats?.roleBreakdown?.Moderator || '-',
+            value: userStats?.roleBreakdown?.Moderator || '0',
             icon: 'icons/moderator.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active moderators
         },
         {
             title: 'Total Roles',
-            value: userStats?.totalRoles || '-',
+            value: userStats?.totalRoles || '0',
             icon: 'icons/roles.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active roles
         },

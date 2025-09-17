@@ -8,7 +8,7 @@ const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { FILTER_STYLES } from "../contexts/FilterStyleContext";
 import { apiClient } from "../api/apiUtils";
-import BACKEND_URL  from "../config";
+import BACKEND_URL from "../config";
 
 const dummyDtrStatsData = {
   totalDtrs: "0",
@@ -87,6 +87,7 @@ const dummyAlertsData = [
     type: "Overload",
     feederName: "D1F1(32500114)",
     dtrNumber: "DTR-201",
+    dtrId: "201",
     occuredOn: "2024-01-15 14:30:00",
     status: "Active",
   },
@@ -95,6 +96,7 @@ const dummyAlertsData = [
     type: "Power Failure",
     feederName: "D1F2(32500115)",
     dtrNumber: "DTR-202",
+    dtrId: "202",
     occuredOn: "2024-01-15 12:15:00",
     status: "Resolved",
   },
@@ -122,9 +124,13 @@ const DTRDashboard: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<
     "Daily" | "Monthly"
   >("Daily");
+  
+  const [selectedChartTimeRange, setSelectedChartTimeRange] = useState<
+    "Daily" | "Weekly" | "Monthly"
+  >("Daily");
 
   const [filterValues, setFilterValues] = useState({
-   discom: "1", 
+    discom: "1",
     circle: "all",
     division: "all",
     subDivision: "all",
@@ -157,6 +163,8 @@ const DTRDashboard: React.FC = () => {
   }>(dummyDtrConsumptionData);
   const [dtrTableData, setDtrTableData] =
     useState<TableData[]>(dummyDtrTableData);
+
+    console.log("Distributiin Transformer ",dtrTableData);
   const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
   const [alertsPagination, setAlertsPagination] = useState({
     currentPage: 1,
@@ -181,7 +189,7 @@ const DTRDashboard: React.FC = () => {
   const [chartSeries, setChartSeries] = useState<
     { name: string; data: number[] }[]
   >(dummyChartData.series);
-  const alertColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#d62728", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+  const alertColors = ["#163b7c", "#ed8c22", "#55b56c", "#9467bd", "#dc272c", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
   const statsRange = selectedTimeRange;
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -228,10 +236,10 @@ const DTRDashboard: React.FC = () => {
   const retryStatsAPI = async (lastSelectedId?: string) => {
     setIsStatsLoading(true);
     try {
-      const endpoint = lastSelectedId 
+      const endpoint = lastSelectedId
         ? `/dtrs/stats?hierarchyId=${lastSelectedId}`
         : '/dtrs/stats';
-      
+
       const data = await apiClient.get(endpoint);
       if (data.success) {
         const row1 = data.data?.row1 || {};
@@ -350,43 +358,41 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  console.log(alertsPagination, "alertsPagination");
-
-  const handleAlertsPageChange = (page: number, limit: number) => {
-    setAlertsPagination((prev) => ({
-      ...prev,
-      currentPage: page,
-      limit: limit,
-    }));
-    retryAlertsAPI(lastSelectedId ?? undefined, page, limit);
-  };
-
   const retryChartAPI = async (lastSelectedId?: string) => {
     setIsChartLoading(true);
     try {
-      const endpoint = lastSelectedId 
-        ? `/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
-        : '/dtrs/alerts/trends';
+      const params = new URLSearchParams();
+      if (lastSelectedId) {
+        params.append('lastSelectedId', lastSelectedId);
+      }
+      if (timeRange) {
+        params.append('timeRange', timeRange);
+      }
       
+      const endpoint = `/dtrs/alerts/trends?${params.toString()}`;
       const data = await apiClient.get(endpoint);
+      
       if (data.success) {
         const rows = data.data || [];
-        const monthsList = rows.map((r: any) => r.month);
+        console.log('Chart data received:', rows.length, 'rows');
+        console.log('Time range:', timeRange);
+        const periodsList = rows.map((r: any) => r.period);
+        console.log('Periods list:', periodsList);
         
         // Extract all possible alert types from the data
         const allAlertTypes = new Set<string>();
         rows.forEach((row: any) => {
           Object.keys(row).forEach(key => {
-            if (key.endsWith('_count') && key !== 'month') {
+            if (key.endsWith('_count') && key !== 'period') {
               const alertType = key.replace('_count', '').replace(/\s+/g, ' ').toUpperCase();
               allAlertTypes.add(alertType);
             }
           });
         });
-        
+
         const alertTypesArray = Array.from(allAlertTypes);
         // setAlertTypes(alertTypesArray);
-        
+
         // Create dynamic series data based on actual alert types
         const seriesData = alertTypesArray.map((alertType, index) => {
           const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
@@ -398,7 +404,7 @@ const DTRDashboard: React.FC = () => {
           };
         });
 
-        setChartMonths(monthsList);
+        setChartMonths(periodsList);
         setChartSeries(seriesData);
         setFailedApis((prev) => prev.filter((api) => api.id !== "chart"));
       } else {
@@ -418,10 +424,10 @@ const DTRDashboard: React.FC = () => {
   const retryMeterStatusAPI = async (lastSelectedId?: string) => {
     setIsMeterStatusLoading(true);
     try {
-      const endpoint = lastSelectedId 
+      const endpoint = lastSelectedId
         ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
         : '/dtrs/meter-status';
-      
+
       const data = await apiClient.get(endpoint);
       if (data.success) {
         setMeterStatus(data.data);
@@ -447,82 +453,82 @@ const DTRDashboard: React.FC = () => {
   };
 
   const fetchFilterOptions = async () => {
-      setIsFiltersLoading(true);
-      try {
-        const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
+    setIsFiltersLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
 
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format");
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          setOriginalApiData(data.data);
-          
-          const transformedData = {
-            discoms: data.data
-              .filter((item: any) => item.levelName === "DISCOM")
-              .map((item: any) => ({
-                value: item.id.toString(),
-                label: item.name,
-              })),
-            circles: data.data
-              .filter((item: any) => item.levelName === "Circle")
-              .map((item: any) => ({
-                value: item.id.toString(),
-                label: item.name,
-              })),
-            divisions: data.data
-              .filter((item: any) => item.levelName === "Division")
-              .map((item: any) => ({
-                value: item.id.toString(),
-                label: item.name,
-              })),
-            subDivisions: data.data
-              .filter((item: any) => item.levelName === "Sub division")
-              .map((item: any) => ({
-                value: item.id.toString(),
-                label: item.name,
-              })),
-            sections: data.data
-              .filter((item: any) => item.levelName === "Section")
-              .map((item: any) => ({
-                value: item.id.toString(),
-                label: item.name,
-              })),
-            meterLocations: data.data
-              .filter((item: any) => item.levelName === "DTR Location")
-              .map((item: any) => ({
-                value: item.id.toString(),
-                label: item.name,
-              })),
-          };
-
-          setFilterOptions(transformedData);
-        } else {
-          throw new Error(data.message || "Failed to fetch filter options");
-        }
-      } catch (error) {
-        console.error("Error fetching filter options:", error);
-        setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "filters")) {
-            return [
-              ...prev,
-              {
-                id: "filters",
-                name: "Filter Options",
-                retryFunction: retryFiltersAPI,
-                errorMessage:
-                  "Failed to load Filter Options. Please try again.",
-              },
-            ];
-          }
-          return prev;
-        });
-      } finally {
-        setIsFiltersLoading(false);
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid response format");
       }
+
+      const data = await response.json();
+      if (data.success) {
+        setOriginalApiData(data.data);
+
+        const transformedData = {
+          discoms: data.data
+            .filter((item: any) => item.levelName === "DISCOM")
+            .map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name,
+            })),
+          circles: data.data
+            .filter((item: any) => item.levelName === "Circle")
+            .map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name,
+            })),
+          divisions: data.data
+            .filter((item: any) => item.levelName === "Division")
+            .map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name,
+            })),
+          subDivisions: data.data
+            .filter((item: any) => item.levelName === "Sub division")
+            .map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name,
+            })),
+          sections: data.data
+            .filter((item: any) => item.levelName === "Section")
+            .map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name,
+            })),
+          meterLocations: data.data
+            .filter((item: any) => item.levelName === "DTR Location")
+            .map((item: any) => ({
+              value: item.id.toString(),
+              label: item.name,
+            })),
+        };
+
+        setFilterOptions(transformedData);
+      } else {
+        throw new Error(data.message || "Failed to fetch filter options");
+      }
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === "filters")) {
+          return [
+            ...prev,
+            {
+              id: "filters",
+              name: "Filter Options",
+              retryFunction: retryFiltersAPI,
+              errorMessage:
+                "Failed to load Filter Options. Please try again.",
+            },
+          ];
+        }
+        return prev;
+      });
+    } finally {
+      setIsFiltersLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -530,20 +536,12 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
       try {
-        const url = lastSelectedId 
-          ? `${BACKEND_URL}/dtrs/stats?lastSelectedId=${lastSelectedId}`
-          : `${BACKEND_URL}/dtrs/stats`;
-          
-          const response = await fetch(url);
-          if (!response.ok) throw new Error("Failed to fetch DTR stats");
-          
-          const contentType = response.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("Invalid response format");
-          }
-          
-          const data = await response.json();
-          
+        const endpoint = lastSelectedId
+          ? `/dtrs/stats?hierarchyId=${lastSelectedId}`
+          : `/dtrs/stats`;
+
+        const data = await apiClient.get(endpoint);
+           
           if (data.success) {
             const row1 = data.data?.row1 || {};
           const row2 = data.data?.row2 || {};
@@ -697,42 +695,48 @@ const DTRDashboard: React.FC = () => {
     const fetchDTRAlertsTrends = async () => {
       setIsChartLoading(true);
       try {
-        const endpoint = lastSelectedId 
-          ? `/dtrs/alerts/trends?lastSelectedId=${lastSelectedId}`
-          : '/dtrs/alerts/trends';
+        const params = new URLSearchParams();
+        if (lastSelectedId) {
+          params.append('lastSelectedId', lastSelectedId);
+        }
+        params.append('timeRange', selectedChartTimeRange.toLowerCase());
         
+        const endpoint = `/dtrs/alerts/trends?${params.toString()}`;
         const data = await apiClient.get(endpoint);
+        
         if (data.success) {
           const rows = data.data || [];
-          const monthsList = rows.map((r: any) => r.month);
+          console.log('Chart data received (fetchDTRAlertsTrends):', rows.length, 'rows');
+          console.log('Time range:', selectedChartTimeRange);
+          const periodsList = rows.map((r: any) => r.period);
+          console.log('Periods list:', periodsList);
           
-          // Extract all possible alert types from the data
-          const allAlertTypes = new Set<string>();
-          rows.forEach((row: any) => {
-            Object.keys(row).forEach(key => {
-              if (key.endsWith('_count') && key !== 'month') {
-                const alertType = key.replace('_count', '').replace(/_/g, ' ').toUpperCase();
-                allAlertTypes.add(alertType);
-              }
-            });
+        // Extract all possible alert types from the data
+        const allAlertTypes = new Set<string>();
+        rows.forEach((row: any) => {
+          Object.keys(row).forEach(key => {
+            if (key.endsWith('_count') && key !== 'period') {
+              const alertType = key.replace('_count', '').replace(/_/g, ' ').toUpperCase();
+              allAlertTypes.add(alertType);
+            }
           });
-          
-          const alertTypesArray = Array.from(allAlertTypes);
-          // setAlertTypes(alertTypesArray);
-          
-          // Create dynamic series data based on actual alert types
-          const seriesData = alertTypesArray.map((alertType, index) => {
-            const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
-            const data = rows.map((r: any) => r[dataKey] || 0);
-            return {
-              name: alertType,
-              data: data,
-              color: alertColors[index % alertColors.length]
-            };
-          });
+        });
+        
+        const alertTypesArray = Array.from(allAlertTypes);
+        
+        // Create dynamic series data based on actual alert types
+        const seriesData = alertTypesArray.map((alertType, index) => {
+          const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
+          const data = rows.map((r: any) => r[dataKey] || 0);
+          return {
+            name: alertType,
+            data: data,
+            color: alertColors[index % alertColors.length]
+          };
+        });
 
-          setChartMonths(monthsList);
-          setChartSeries(seriesData);
+        setChartMonths(periodsList);
+        setChartSeries(seriesData);
         } else {
           throw new Error(data.message || "Failed to fetch DTR alerts trends");
         }
@@ -764,10 +768,10 @@ const DTRDashboard: React.FC = () => {
     const fetchMeterStatus = async () => {
       setIsMeterStatusLoading(true);
       try {
-        const endpoint = lastSelectedId 
+        const endpoint = lastSelectedId
           ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
           : '/dtrs/meter-status';
-        
+
         const data = await apiClient.get(endpoint);
         if (data.success) {
           setMeterStatus(data.data);
@@ -806,13 +810,12 @@ const DTRDashboard: React.FC = () => {
     fetchMeterStatus();
   }, []);
 
-  // Refetch stats when lastSelectedId changes
-  // useEffect(() => {
-
-  //   if (lastSelectedId !== null) {
-  //     retryStatsAPI();
-  //   }
-  // }, [lastSelectedId]);
+  // Refetch chart data when chart time range changes
+  useEffect(() => {
+    if (selectedChartTimeRange) {
+      retryChartAPI(lastSelectedId || undefined, selectedChartTimeRange.toLowerCase());
+    }
+  }, [selectedChartTimeRange]);
 
 
   const handleChartDownload = () => {
@@ -821,14 +824,43 @@ const DTRDashboard: React.FC = () => {
 
   const handleViewDTR = (row: TableData) => {
     console.log(row.dtrId);
-    navigate(`/dtr-detail/${row.dtrId}`);
+    // navigate(`/dtr-detail/${row.dtrId}`);
   };
 
-  const handleViewFeeder=(row:TableData)=>{
-    console.log(row.feederName);
-    // const feederData = feedersData.find(feeder => feeder.feederName === feederId);
-   navigate(`/feeder/${row.feederName}`);
-  //   // console.log(navigate(`/feeder/${row.feederId}`));
+  const handleViewFeeder = (row: TableData) => {
+    console.log("View Feeder - Row data:", row);
+    console.log("Feeder Name:", row.feederName);
+    console.log("DTR Number:", row.dtrNumber);
+    console.log("DTR ID:", row.dtrId);
+    
+    // Extract DTR ID from dtrNumber if dtrId is not available
+    const dtrId = row.dtrId || (row.dtrNumber ? String(row.dtrNumber).replace('DTR-', '') : null);
+    
+    if (!dtrId) {
+      console.error("No DTR ID available for navigation");
+      return;
+    }
+    
+    // Navigate to feeders page with DTR ID and feeder data
+    navigate(`/feeder/${dtrId}`, {
+      state: {
+        feederData: {
+          feederName: row.feederName,
+          dtrNumber: row.dtrNumber,
+          dtrId: dtrId,
+          alertType: row.type,
+          alertId: row.alertId,
+          occuredOn: row.occuredOn
+        },
+        dtrId: dtrId,
+        dtrName: row.dtrNumber
+      }
+    });
+  }
+
+  const handleViewAllAlerts = () => {
+    // Navigate to DTR table with alerts tab
+    navigate("/dtr-table?tab=alerts");
   }
 
   const handlePageChange = (page: number, limit: number) => {
@@ -848,6 +880,12 @@ const DTRDashboard: React.FC = () => {
     setSelectedTimeRange(range as "Daily" | "Monthly");
   };
 
+  const handleChartTimeRangeChange = (range: string) => {
+    setSelectedChartTimeRange(range as "Daily" | "Weekly" | "Monthly");
+    // Refetch chart data with new time range
+    retryChartAPI(lastSelectedId || undefined, range.toLowerCase());
+  };
+
   const updateFilterOptions = async (filterName: string, selectedValue: any) => {
     const name = selectedValue.target?.value || selectedValue;
     const value = selectedValue.target?.value || selectedValue;
@@ -857,14 +895,14 @@ const DTRDashboard: React.FC = () => {
       const params = new URLSearchParams();
       console.log(params)
       params.append("parentId", value);
-      
+
       const data = await apiClient.get(`/dtrs/filter/filter-options?${params.toString()}`);
-    
+
       console.log(data)
-      
+
       if (data.success) {
         const newOptions = data.data || [];
-        
+
 
         switch (filterName) {
           case "discom":
@@ -1001,7 +1039,7 @@ const DTRDashboard: React.FC = () => {
             }));
             break;
         }
-        
+
 
       }
     } catch (error) {
@@ -1043,8 +1081,9 @@ const DTRDashboard: React.FC = () => {
       const parentLevel = hierarchyLevels[currentLevelIndex - 1];
 
       const parentItem = originalApiData.find(
-        (item: any) => { 
-          return item.levelName === parentLevel.levelName && item.id === currentItem.parentId }
+        (item: any) => {
+          return item.levelName === parentLevel.levelName && item.id === currentItem.parentId
+        }
       );
       if (parentItem) {
         parentValues[parentLevel.filterName] = parentItem.id.toString();
@@ -1067,7 +1106,7 @@ const DTRDashboard: React.FC = () => {
       typeof value === "string" ? value : value.target.value;
 
     const parentValues = findAllParentValues(filterName, selectedValue);
-    
+
     const newFilterValues: any = {
       [filterName]: selectedValue,
       ...parentValues, // Spread all parent values
@@ -1088,7 +1127,7 @@ const DTRDashboard: React.FC = () => {
   const handleGetData = async () => {
 
     let lastId: string | null = null;
-    
+
     if (filterValues.meterLocation !== "all") {
       lastId = filterValues.meterLocation;
     } else if (filterValues.section !== "all") {
@@ -1102,10 +1141,10 @@ const DTRDashboard: React.FC = () => {
     } else if (filterValues.discom !== "all") {
       lastId = filterValues.discom;
     }
-    
+
     setLastSelectedId(lastId);
 
-    
+
     try {
       const params = new URLSearchParams();
       Object.entries(filterValues).forEach(([key, value]) => {
@@ -1119,7 +1158,7 @@ const DTRDashboard: React.FC = () => {
       retryStatsAPI(lastId || undefined);
       retryTableAPI(lastId || undefined);
       retryAlertsAPI(lastId || undefined);
-      retryChartAPI(lastId || undefined);
+      retryChartAPI(lastId || undefined, selectedChartTimeRange.toLowerCase());
     } catch (error) {
       console.error("Error applying filters:", error);
     }
@@ -1170,11 +1209,10 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData?.row1?.totalFuseBlown ||
         "0",
       icon: "icons/power_failure.svg",
-      subtitle1: `${
-        dtrStatsData.fuseBlownPercentage ||
+      subtitle1: `${dtrStatsData.fuseBlownPercentage ||
         dtrStatsData?.row1?.fuseBlownPercentage ||
         "0"
-      }% of Total DTRs`,
+        }% of Total Feeders`,
       onValueClick: () =>
         navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
       loading: isStatsLoading,
@@ -1188,10 +1226,12 @@ const DTRDashboard: React.FC = () => {
       icon: "icons/dtr.svg",
       subtitle1: (() => {
         const count = dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0;
+        console.log(count);
         if (count === 0) {
           return "No DTRs with load > 90%";
         }
-        return `${dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}% of Total DTRS`;
+        return `No of DTRs with load > 90%`;
+        // {dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}
       })(),
       onValueClick: () =>
         navigate(
@@ -1209,7 +1249,7 @@ const DTRDashboard: React.FC = () => {
       subtitle1: (() => {
         const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
         if (count === 0) {
-          return "No DTRs with load < 30%";
+          return "No of DTRs with load < 30%";
         }
         return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
       })(),
@@ -1240,11 +1280,10 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData?.row1?.unbalancedDtrs ||
         "0",
       icon: "icons/dtr.svg",
-      subtitle1: `${
-        dtrStatsData.unbalancedPercentage ||
+      subtitle1: `${dtrStatsData.unbalancedPercentage ||
         dtrStatsData?.row1?.unbalancedPercentage ||
         "0"
-      }% of Total DTRs`,
+        }% of Total DTRs`,
       onValueClick: () =>
         navigate("/dtr-table?type=unbalanced-dtrs&title=Unbalanced%20DTRs"),
       loading: isStatsLoading,
@@ -1256,11 +1295,11 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData?.row1?.powerFailureFeeders ||
         "0",
       icon: "icons/power_failure.svg",
-      subtitle1: `${
-        dtrStatsData.powerFailurePercentage ||
-        dtrStatsData?.row1?.powerFailurePercentage ||
-        ""
-      }LT Feeders`,
+      subtitle1: `
+        LT Feeders`,
+        // {dtrStatsData.powerFailurePercentage ||
+        // dtrStatsData?.row1?.powerFailurePercentage ||
+        // ""}
       onValueClick: () =>
         navigate(
           "/dtr-table?type=power-failure-feeders&title=Power%20Failure%20Feeders"
@@ -1344,11 +1383,11 @@ const DTRDashboard: React.FC = () => {
     },
   ];
 
-      // Get current consumption cards data based on selected time range
-    const getCurrentConsumptionCards = () => {
-      if (selectedTimeRange === "Daily") {
-        // For daily, use currentDay data if available, otherwise fall back to daily
-        const currentDayData = dtrConsumptionData.currentDay || dtrConsumptionData.daily;
+  // Get current consumption cards data based on selected time range
+  const getCurrentConsumptionCards = () => {
+    if (selectedTimeRange === "Daily") {
+      // For daily, use currentDay data if available, otherwise fall back to daily
+      const currentDayData = dtrConsumptionData.currentDay || dtrConsumptionData.daily;
       return [
         {
           title: "Total kWh",
@@ -1409,10 +1448,10 @@ const DTRDashboard: React.FC = () => {
           loading: isStatsLoading,
         },
       ];
-          } else {
-        // For monthly, use monthly data
-        return monthlyConsumptionCards;
-      }
+    } else {
+      // For monthly, use monthly data
+      return monthlyConsumptionCards;
+    }
   };
 
   // Dummy data for DTRs table
@@ -1425,7 +1464,7 @@ const DTRDashboard: React.FC = () => {
     // { key: "city", label: "City" },
     {
       key: "commStatus",
-      label: "Communication-Status",
+      label: "Communication Status",
       statusIndicator: {},
       isActive: (value: string | number | boolean | null | undefined) =>
         String(value).toLowerCase() === "active",
@@ -1440,9 +1479,9 @@ const DTRDashboard: React.FC = () => {
     { key: "feederName", label: "Meter Number" },
     { key: "dtrNumber", label: "DTR Number" },
     { key: "occuredOn", label: "Occured On" },
-   // { key: "status", label: "Status" },
+    // { key: "status", label: "Status" },
   ];
-   console.log("Discom options:", filterOptions.discoms);
+  console.log("Discom options:", filterOptions.discoms);
 
 
   return (
@@ -1452,32 +1491,32 @@ const DTRDashboard: React.FC = () => {
           // Error Section - Above PageHeader
           ...(failedApis.length > 0
             ? [
-                {
-                  layout: {
-                    type: "column" as const,
-                    gap: "gap-4",
-                    rows: [
-                      {
-                        layout: "column" as const,
-                        columns: [
-                          {
-                            name: "Error",
-                            props: {
-                              visibleErrors: failedApis.map(
-                                (api) => api.errorMessage
-                              ),
-                              showRetry: true,
-                              maxVisibleErrors: 3, 
-                              failedApis: failedApis, 
-                              onRetrySpecific: retrySpecificAPI, 
-                            },
+              {
+                layout: {
+                  type: "column" as const,
+                  gap: "gap-4",
+                  rows: [
+                    {
+                      layout: "column" as const,
+                      columns: [
+                        {
+                          name: "Error",
+                          props: {
+                            visibleErrors: failedApis.map(
+                              (api) => api.errorMessage
+                            ),
+                            showRetry: true,
+                            maxVisibleErrors: 3,
+                            failedApis: failedApis,
+                            onRetrySpecific: retrySpecificAPI,
                           },
-                        ],
-                      },
-                    ],
-                  },
+                        },
+                      ],
+                    },
+                  ],
                 },
-              ]
+              },
+            ]
             : []),
 
           // Header section
@@ -1495,7 +1534,7 @@ const DTRDashboard: React.FC = () => {
                   onBackClick: () => window.history.back(),
                   // buttonsLabel: "Export",
                   // variant: "primary",
-                  backButtonText:'',
+                  backButtonText: '',
                   // onClick: () => handleExportData(),
                   showMenu: false,
                   showDropdown: true,
@@ -1524,7 +1563,7 @@ const DTRDashboard: React.FC = () => {
                 props: {
                   options: [...filterOptions.discoms],
                   value: filterValues.discom,
-                  
+
                   onChange: (value: string) =>
                     handleFilterChange("discom", value),
                   placeholder: "Select DISCOM",
@@ -1638,7 +1677,7 @@ const DTRDashboard: React.FC = () => {
                         title: "Distribution Transformer (DTR) Statistics",
                         titleLevel: 2,
                         titleSize: "md",
-                        titleVariant: "primary",
+                        titleVariant: "",
                         titleWeight: "medium",
                         titleAlign: "left",
                         rightComponent: {
@@ -1687,7 +1726,7 @@ const DTRDashboard: React.FC = () => {
                         title: "Consumption & Energies",
                         titleLevel: 2,
                         titleSize: "md",
-                        titleVariant: "primary",
+                        titleVariant: "",
                         titleWeight: "medium",
                         titleAlign: "left",
                         rightComponent: {
@@ -1753,6 +1792,9 @@ const DTRDashboard: React.FC = () => {
                           showLegend: false,
                           showNoDataMessage: false, 
                           showDownloadButton: true,
+                          showStatsSection: true,
+                          valueUnit1: "Communicating", // Unit for first category (e.g., "Meter")
+                          valueUnit2: "Non-Communicating",
                           className: "",
                              showHeader:true,
                              headerTitle:"Communication Status",
@@ -1810,7 +1852,7 @@ const DTRDashboard: React.FC = () => {
             },
             components: [
               {
-                
+
                 name: "Table",
                 props: {
                   data: dtrTableData,
@@ -1833,11 +1875,11 @@ const DTRDashboard: React.FC = () => {
                   serverPagination: serverPagination,
                   loading: isTableLoading,
                 },
-                span:{col:2,row:1}
+                span: { col: 2, row: 1 }
               },
             ],
           },
-        
+
           {
             layout: {
               type: "grid" as const,
@@ -1853,7 +1895,10 @@ const DTRDashboard: React.FC = () => {
                   seriesColors: alertColors,
                   height: 300,
                   showLegendInteractions: true,
-                  timeRange: statsRange,
+                  timeRange: selectedChartTimeRange,
+                  availableTimeRanges: ["Daily", "Weekly", "Monthly"],
+                  defaultTimeRange: "Daily",
+                  onTimeRangeChange: handleChartTimeRangeChange,
                   showHeader: true,
                   headerTitle: "DTR Alert Statistics",
                   showDownloadButton: true,
