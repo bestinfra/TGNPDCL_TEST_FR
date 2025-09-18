@@ -533,30 +533,30 @@ export default function RoleManagement() {
                                     showMenu: true,
                                     showDropdown: true,
                                     menuItems: [
-                                        {
-                                            id: 'all',
-                                            label: 'All Roles',
-                                        },
-                                        {
-                                            id: 'admin',
-                                            label: 'Administrative Roles',
-                                        },
-                                        {
-                                            id: 'user',
-                                            label: 'User Roles',
-                                        },
-                                        {
-                                            id: 'support',
-                                            label: 'Support Roles',
-                                        },
-                                        {
-                                            id: 'financial',
-                                            label: 'Financial Roles',
-                                        },
-                                        {
-                                            id: 'system',
-                                            label: 'System Roles',
-                                        },
+                                        // {
+                                        //     id: 'all',
+                                        //     label: 'All Roles',
+                                        // },
+                                        // {
+                                        //     id: 'admin',
+                                        //     label: 'Administrative Roles',
+                                        // },
+                                        // {
+                                        //     id: 'user',
+                                        //     label: 'User Roles',
+                                        // },
+                                        // {
+                                        //     id: 'support',
+                                        //     label: 'Support Roles',
+                                        // },
+                                        // {
+                                        //     id: 'financial',
+                                        //     label: 'Financial Roles',
+                                        // },
+                                        // {
+                                        //     id: 'system',
+                                        //     label: 'System Roles',
+                                        // },
                                         {
                                             id: 'export',
                                             label: 'Export',
@@ -588,7 +588,7 @@ export default function RoleManagement() {
                                                 loading: loading,
                                                 emptyMessage: 'No roles found',
                                                 searchable: true,
-                                                pagination: true,
+                                                pagination: false,
                                                 showActions: true,
                                                 actions: tableActions,
                                                 onPageChange: handlePageChange,

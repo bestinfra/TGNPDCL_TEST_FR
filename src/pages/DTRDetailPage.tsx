@@ -87,7 +87,7 @@ const dummyDTRData = {
         {
             title: 'Status',
             value: '0',
-            icon: 'icons/units.svg',
+            icon: 'icons/status.svg',
             subtitle1: '0',
             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             bg: 'bg-[var(--color-secondary)]',
@@ -156,16 +156,53 @@ const DTRDetailPage = () => {
         { label: 'Inactive', value: 'inactive' },
     ];
 
-    // Handle DTR status change
+    // Modal states for activation/deactivation confirmation
+    const [showInactiveModal, setShowInactiveModal] = useState(false);
+    const [showActiveModal, setShowActiveModal] = useState(false);
+    const [pendingStatusChange, setPendingStatusChange] = useState<string | null>(null);
+
+    // Handle DTR status change - show confirmation modal first
     const handleDtrStatusChange = async (value: string) => {
         console.log('DTR Status changed to:', value);
-        setDtrStatusValue(value);
-
+        
         // Don't make API call if N/A is selected
         if (value === 'na') {
             console.log('N/A selected - no API call needed');
+            setDtrStatusValue(value);
             return;
         }
+
+        // Store the pending status change and show appropriate modal
+        setPendingStatusChange(value);
+        
+        if (value === 'inactive') {
+            setShowInactiveModal(true);
+        } else if (value === 'active') {
+            setShowActiveModal(true);
+        }
+        
+        // Revert the dropdown to current status until confirmed
+        setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+    };
+
+    // Modal handler functions
+    const handleCancelInactive = () => {
+        setShowInactiveModal(false);
+        setPendingStatusChange(null);
+        // Keep current status in dropdown
+        setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+    };
+
+    const handleCancelActive = () => {
+        setShowActiveModal(false);
+        setPendingStatusChange(null);
+        // Keep current status in dropdown
+        setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+    };
+
+    // Confirm status change after modal confirmation
+    const handleConfirmStatusChange = async () => {
+        if (!pendingStatusChange) return;
 
         try {
             // Extract numeric DTR ID from the URL parameter
@@ -181,7 +218,7 @@ const DTRDetailPage = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    status: value
+                    status: pendingStatusChange
                 })
             });
 
@@ -194,15 +231,22 @@ const DTRDetailPage = () => {
                     ...prev,
                     condition: data.data.status
                 }));
+                // Update dropdown to reflect new status
+                setDtrStatusValue(pendingStatusChange);
             } else {
                 console.error('Failed to update DTR status:', data.message);
-                // Revert the dropdown value on error
+                // Keep current status in dropdown
                 setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
             }
         } catch (error) {
             console.error('Error updating DTR status:', error);
-            // Revert the dropdown value on error
+            // Keep current status in dropdown
             setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+        } finally {
+            // Close modals and reset pending status
+            setShowInactiveModal(false);
+            setShowActiveModal(false);
+            setPendingStatusChange(null);
         }
     };
 
@@ -568,7 +612,7 @@ const DTRDetailPage = () => {
                         {
                             title: 'Status',
                             value: data.data?.status || '0',
-                            icon: 'icons/units.svg',
+                            icon: 'icons/status.svg',
                             subtitle1: '0',
                             valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
                             bg: 'bg-[var(--color-secondary)]',
@@ -889,7 +933,8 @@ const DTRDetailPage = () => {
                                                             value: dtr.name,
                                                             align: 'start',
                                                             gap: 'gap-1',
-                                                            statusIndicator: true
+                                                            statusIndicator: true,
+                                                            statusType: dtr.condition
                                                         },
                                                         {
                                                             title: 'Division',
@@ -949,13 +994,46 @@ const DTRDetailPage = () => {
                                                         }
                                                     ]
                                                 },
+                                               
 
                                             ]
+                                        }
+                                    },
+                                    {
+                                        name: 'Modal',
+                                        props: {
+                                            isOpen: showInactiveModal,
+                                            onClose: handleCancelInactive,
+                                            title: 'Set DTR to Inactive',
+                                            size: 'md',
+                                            showConfirmButton: true,
+                                            confirmButtonLabel: 'Set Inactive',
+                                            confirmButtonVariant: 'danger',
+                                            onConfirm: handleConfirmStatusChange,
+                                            message: 'Are you sure you want to set this DTR to inactive status?',
+                                            warningMessage: 'This action will change the DTR status and may affect connected feeders. This action can be reversed later.',
+                                        }
+                                    },
+                                    {
+                                        name: 'Modal',
+                                        props: {
+                                            isOpen: showActiveModal,
+                                            onClose: handleCancelActive,
+                                            title: 'Set DTR to Active',
+                                            size: 'md',
+                                            showConfirmButton: true,
+                                            confirmButtonLabel: 'Set Active',
+                                            confirmButtonVariant: 'primary',
+                                            onConfirm: handleConfirmStatusChange,
+                                            message: 'Are you sure you want to set this DTR to active status?',
+                                            warningMessage: 'This action will activate the DTR and may affect monitoring and control operations.',
                                         }
                                     }
                                 ]
                             }
                         ],
+
+                        
                     },
                 },
                 {

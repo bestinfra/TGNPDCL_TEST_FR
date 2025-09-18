@@ -1716,46 +1716,46 @@ const Feeders = () => {
                         ],
                     },
                 },
-                {
-                    layout: {
-                        type: 'grid' as const,
-                        columns: 1,
-                        className: '',
-                        rows: [
-                            {
-                                layout: 'grid' as const,
-                                gridColumns:1,
-                                className:'pb-4',
-                                columns: [
-                                    {
-                                        name: 'Table',
-                                        props: {
-                                            columns: [
-                                                { key: 'alertId', label: 'Alert ID' },
-                                                { key: 'type', label: 'Type' },
-                                                { key: 'feederName', label: 'Feeder Name' },
-                                                { key: 'occuredOn', label: 'Occured On' },
-                                            ],
-                                            data: alertsData,
-                                            searchable: true,
-                                            pagination: true,
-                                            initialRowsPerPage: 10,
-                                            rowsPerPageOptions: [5, 10, 15, 20, 25],
-                                            emptyMessage: 'No Alerts Found',
-                                            showActions: true,
-                                            showHeader: 'true',
-                                            headerTitle: 'Feeder Latest Alerts',
-                                            showPaginationInfo: true,
-                                            showRowsPerPageSelector: true,
-                                            className: 'w-full',
-                                            loading: isAlertsLoading,
-                                        },
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
+                // {
+                //     layout: {
+                //         type: 'grid' as const,
+                //         columns: 1,
+                //         className: '',
+                //         rows: [
+                //             {
+                //                 layout: 'grid' as const,
+                //                 gridColumns:1,
+                //                 className:'pb-4',
+                //                 columns: [
+                //                     {
+                //                         name: 'Table',
+                //                         props: {
+                //                             columns: [
+                //                                 { key: 'alertId', label: 'Alert ID' },
+                //                                 { key: 'type', label: 'Type' },
+                //                                 { key: 'feederName', label: 'Feeder Name' },
+                //                                 { key: 'occuredOn', label: 'Occured On' },
+                //                             ],
+                //                             data: alertsData,
+                //                             searchable: true,
+                //                             pagination: true,
+                //                             initialRowsPerPage: 10,
+                //                             rowsPerPageOptions: [5, 10, 15, 20, 25],
+                //                             emptyMessage: 'No Alerts Found',
+                //                             showActions: true,
+                //                             showHeader: 'true',
+                //                             headerTitle: 'Feeder Latest Alerts',
+                //                             showPaginationInfo: true,
+                //                             showRowsPerPageSelector: true,
+                //                             className: 'w-full',
+                //                             loading: isAlertsLoading,
+                //                         },
+                //                     },
+                //                 ],
+                //             },
+                //         ],
+                //     },
+                // },
                 {
                     layout: {
                         type: 'grid' as const,

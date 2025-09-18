@@ -786,7 +786,7 @@ const DTRDashboard: React.FC = () => {
 
   const handleViewDTR = (row: TableData) => {
     console.log(row.dtrId);
-    // navigate(`/dtr-detail/${row.dtrId}`);
+    navigate(`/dtr-detail/${row.dtrId}`);
   };
 
   const handleViewFeeder = (row: TableData) => {
