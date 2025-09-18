@@ -422,7 +422,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
       ],
     },
 
-       { title: 'MeterManagment', icon: 'icons/meter-bolt.svg', link: '/asset-management' },
+       { title: 'MeterManagment', icon: 'icons/meter-bolt.svg', link: '/meters' },
     { title: 'Assets', icon: 'icons/workflow-setting-alt.svg', link: '/asset-management' },
     {
       title: 'User Management',
