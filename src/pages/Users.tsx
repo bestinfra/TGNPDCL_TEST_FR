@@ -567,17 +567,19 @@ export default function Users() {
                                                 onSearch: handleSearch,
                                                 headerTitle: 'User Management',
                                                 onView: (row: any) => {
-                                                    navigate(`/user-detail/${row.sNo}`, {
+                                                    console.log(row);
+                                                    navigate(`/users/${row.sNo}`, {
                                                         state: {
                                                             user: row
                                                         }
                                                     });
                                                 },
                                                 onEdit: (row: any) => {
-                                                    // Navigate to edit page or open edit modal
-                                                    navigate(`/edit-user/${row.sNo}`, {
+                                                    // Navigate to add-user page in edit mode
+                                                    navigate(`/add-user`, {
                                                         state: {
-                                                            user: row
+                                                            user: row,
+                                                            mode: 'edit'
                                                         }
                                                     });
                                                 },
