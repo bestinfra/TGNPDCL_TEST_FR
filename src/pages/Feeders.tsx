@@ -1521,7 +1521,7 @@ const Feeders = () => {
                                             showDownloadButton: true,
                                             onDownload: () => handleConsumptionChartDownload(),
                                             showXAxisLabel: true,
-                                            xAxisLabel: 'kWAh',
+                                            xAxisLabel: 'kWh',
                                             isLoading: isConsumptionLoading,
                                         },
                                     },
