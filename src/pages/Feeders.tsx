@@ -298,7 +298,8 @@ const Feeders = () => {
                 
                 // No further adjustment needed; backend filters by meter when feederId provided
                 
-
+                console.log("i m here");
+                console.log("InstantaneousStatsData:", apiData);
                 setInstantaneousStatsData(apiData);
             } else {
                 throw new Error(data.message || 'Failed to fetch instantaneous stats');
@@ -432,7 +433,7 @@ const Feeders = () => {
             
             if (data.success) {
                 let feederInfo = data.data;
-                
+                console.log("feederInfo000000000000000",feederInfo);
                 // If this is for a specific feeder, we need to filter the data
                 if (effectiveFeederData?.feederName) {
                     const feederName = effectiveFeederData.feederName;
@@ -643,6 +644,7 @@ const Feeders = () => {
 
     // Generate stats from API data or use defaults
     const getStats = () => {
+        console.log("getStats - instantaneousStatsData:", instantaneousStatsData);
         if (instantaneousStatsData && Object.keys(instantaneousStatsData).length > 0 && instantaneousStatsData.rphVolt !== '-') {
             return [
                 { title: 'R-Phase Voltage', value: instantaneousStatsData.rphVolt?.toString() || '257.686', icon: 'icons/r-phase-voltage.svg', subtitle1: 'Volts', bg: 'bg-[var(--color-danger)]', iconClassName: 'w-3 h-3', width: 'w-8', height: 'h-8', valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',iconStyle: FILTER_STYLES.WHITE, loading: isStatsLoading },
@@ -667,8 +669,6 @@ const Feeders = () => {
 
         // Get consumption data based on selected time range
     const getConsumptionData = () => {
-
-        
         if (consumptionTimeRange === 'Daily') {
             if (consumptionAnalyticsData && consumptionAnalyticsData.xAxisData) {
                 const data = {
@@ -1355,10 +1355,28 @@ const Feeders = () => {
                                             title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId} Information` : (effectiveFeederData?.feederName ? `Feeder ${effectiveFeederData.feederName} Information` : 'DTR Information'),
                                             titleLevel: 2,
                                             titleSize: 'md',
-                                            titleVariant: 'primary',
+                                            titleVariant: '',
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
                                             defaultTitleHeight:'0',
+                                            className:'w-full justify-between',
+                                            // rightComponent: { 
+                                            //     name: 'LastComm', 
+                                                
+                                            //     props: { 
+                                            //         lastSync: true,
+                                            //         internalIcon: 'icons/feeder.svg',
+                                            //         internalValue: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId}` : 'DTR Feeders',
+                                            //         internalTitle: 'Feeder',
+
+                                            //         delayedIcon: 'icons/power-factor.svg',
+                                            //         delayedValue: feederInfoData?.dtr?.status || 'ACTIVE',
+                                            //         delayedTitle: 'Status',
+                                            //         dateIcon: 'icons/consumption.svg',
+                                            //         dateValue: `${feederInfoData?.dtr?.capacity || 100} kVA`,
+                                            //         dateTitle: 'Capacity'
+                                            //     } 
+                                            // },
                                         },
                                     },
                                 ],
@@ -1388,13 +1406,19 @@ const Feeders = () => {
                                                         title: 'Capacity',
                                                         value: `${feederInfoData?.dtr?.capacity || 100} kVA`,
                                                         align: 'start',
-                                                        gap: 'gap-1'
+                                                        gap: 'gap-1',
+                                                        // progressBar: true,
+                                                        // currentValue: 75,
+                                                        // maxValue: feederInfoData?.dtr?.capacity || 100,
+                                                        // progressColor: 'bg-secondary from-primary to-secondary'
                                                     },
                                                     {
                                                         title: 'Status',
                                                         value: feederInfoData?.dtr?.status || 'ACTIVE',
                                                         align: 'start',
-                                                        gap: 'gap-1'
+                                                        gap: 'gap-1',
+                                                        statusIndicator: true,
+                                                        statusType: feederInfoData?.dtr?.status
                                                     },
                                                     {
                                                         title: 'Total Feeders',
@@ -1430,39 +1454,60 @@ const Feeders = () => {
                                             title: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId} Information` : (effectiveFeederData?.feederName ? `Feeder ${effectiveFeederData.feederName} Information` : 'Instantaneous Stats'),
                                             titleLevel: 2,
                                             titleSize: 'md',
-                                            titleVariant: 'primary',
+                                            titleVariant: '',
                                             titleWeight: 'bold',
                                             titleAlign: 'left',
-                                            className:'w-full',
-                                            rightComponent: { name: 'LastComm', props: { 
-                                                value: (() => {
-                                                    const lastComm = instantaneousStatsData?.lastCommDate;
+                                            className:'w-full justify-between',
+                                            // rightComponent: { name: 'LastComm', props: { 
+                                            //     value: (() => {
+                                            //         const lastComm = instantaneousStatsData?.lastCommDate;
 
-                                                    if (lastComm && lastComm !== '-' && lastComm !== null) {
-                                                        try {
-                                                            const date = new Date(lastComm);
-                                                            if (!isNaN(date.getTime())) {
-                                                                return date.toLocaleString('en-IN', { 
-                                                                    year: 'numeric', 
-                                                                    month: '2-digit', 
-                                                                    day: '2-digit',
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit',
-                                                                    second: '2-digit',
-                                                                    hour12: false
-                                                                });
-                                                            } else {
-                                                                console.warn('Invalid date from lastCommDate:', lastComm);
-                                                                return `Raw: ${lastComm}`;
-                                                            }
-                                                        } catch (error) {
-                                                            console.error('Error parsing lastCommDate:', error);
-                                                            return `Raw: ${lastComm}`;
+                                            //         if (lastComm && lastComm !== '-' && lastComm !== null) {
+                                            //             try {
+                                            //                 const date = new Date(lastComm);
+                                            //                 if (!isNaN(date.getTime())) {
+                                            //                     return date.toLocaleString('en-IN', { 
+                                            //                         year: 'numeric', 
+                                            //                         month: '2-digit', 
+                                            //                         day: '2-digit',
+                                            //                         hour: '2-digit',
+                                            //                         minute: '2-digit',
+                                            //                         second: '2-digit',
+                                            //                         hour12: false
+                                            //                     });
+                                            //                 } else {
+                                            //                     console.warn('Invalid date from lastCommDate:', lastComm);
+                                            //                     return `Raw: ${lastComm}`;
+                                            //                 }
+                                            //             } catch (error) {
+                                            //                 console.error('Error parsing lastCommDate:', error);
+                                            //                 return `Raw: ${lastComm}`;
+                                            //             }
+                                            //         }
+                                            //         return '2024-01-15 14:30:00';
+                                            //     })()
+                                            // } },
+                                            rightComponent: { 
+                                                name: 'LastComm', 
+                                                props: { 
+                                                    label: 'Last Communication',
+                                                    labelVariant: '',
+                                                    value: (() => {
+                                                        const rawDateTime = instantaneousStatsData?.lastCommDate || '2024-01-15 14:30:00';
+                                                        let datePart = '';
+                                                        let timePart = '';
+                                                        
+                                                        if (rawDateTime.includes(' ')) {
+                                                            [datePart, timePart] = rawDateTime.split(' ');
+                                                        } else if (rawDateTime.includes('T')) {
+                                                            [datePart, timePart] = rawDateTime.split('T');
+                                                            timePart = timePart?.split('.')[0];
                                                         }
-                                                    }
-                                                    return '2024-01-15 14:30:00';
-                                                })()
-                                            } },
+                                                        
+                                                        return `${datePart} ${timePart}`;
+                                                    })()
+                                                } 
+                                            },
                                         },
                                         span: { col: 1, row: 1 },
                                     },
@@ -1508,6 +1553,7 @@ const Feeders = () => {
                                         props: {
                                             xAxisData: getConsumptionData().xAxisData,
                                             seriesData: getConsumptionData().seriesData,
+                                            seriesColors: ['#163b7c', '#55b56c'], // Force brand colors
                                             height: 320,
                                             showHeader: true,  
                                             headerTitle: `${consumptionTimeRange} Consumption Metrics Bar Chart`,
@@ -1537,28 +1583,14 @@ const Feeders = () => {
                         className: '',
                         rows: [
                             {
-                                layout: 'row' as const,
-                                columns: [
-                                    {
-                                        name: 'SectionHeader',
-                                        props: {
-                                            title: 'Feeder Location',
-                                            titleLevel: 2,
-                                            titleSize: 'md',
-                                            titleVariant: 'primary',
-                                            titleWeight: 'bold',
-                                            titleAlign: 'left',
-                                        },
-                                    },
-                                ],
-                            },
-                            {
                                 layout: 'grid' as const,
                                 className:"w-full",
                                 columns: [
                                     {
                                         name: 'GoogleMap',
                                         props: {
+                                            title: "Feeder Location",
+                                            hasDownload:true,
                                             apiKey: 'AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI',
                                             center: mapCenter,
                                             zoom: mapZoom,
@@ -1716,46 +1748,7 @@ const Feeders = () => {
                         ],
                     },
                 },
-                // {
-                //     layout: {
-                //         type: 'grid' as const,
-                //         columns: 1,
-                //         className: '',
-                //         rows: [
-                //             {
-                //                 layout: 'grid' as const,
-                //                 gridColumns:1,
-                //                 className:'pb-4',
-                //                 columns: [
-                //                     {
-                //                         name: 'Table',
-                //                         props: {
-                //                             columns: [
-                //                                 { key: 'alertId', label: 'Alert ID' },
-                //                                 { key: 'type', label: 'Type' },
-                //                                 { key: 'feederName', label: 'Feeder Name' },
-                //                                 { key: 'occuredOn', label: 'Occured On' },
-                //                             ],
-                //                             data: alertsData,
-                //                             searchable: true,
-                //                             pagination: true,
-                //                             initialRowsPerPage: 10,
-                //                             rowsPerPageOptions: [5, 10, 15, 20, 25],
-                //                             emptyMessage: 'No Alerts Found',
-                //                             showActions: true,
-                //                             showHeader: 'true',
-                //                             headerTitle: 'Feeder Latest Alerts',
-                //                             showPaginationInfo: true,
-                //                             showRowsPerPageSelector: true,
-                //                             className: 'w-full',
-                //                             loading: isAlertsLoading,
-                //                         },
-                //                     },
-                //                 ],
-                //             },
-                //         ],
-                //     },
-                // },
+               
                 {
                     layout: {
                         type: 'grid' as const,
