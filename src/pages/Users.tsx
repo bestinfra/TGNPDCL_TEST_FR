@@ -214,7 +214,7 @@ export default function Users() {
     const userWidgets = [
         {
             title: 'Total Users',
-            value: userStats?.totalUsers || '-',
+            value: userStats?.totalUsers || '0',
             icon: 'icons/total-users.svg',
             subtitle1: userStats ? `${userStats.activeUsers} Active Users` : '- Active Users',
             subtitle2: userStats ? `${userStats.inactiveUsers} Inactive Users` : '- Inactive Users',
@@ -227,19 +227,19 @@ export default function Users() {
         },
         {
             title: 'Total Accountants',
-            value: userStats?.roleBreakdown?.Accountant || '-',
+            value: userStats?.roleBreakdown?.Accountant || '0',
             icon: 'icons/accountant.svg',
             subtitle1: 'This Month',
         },
         {
             title: 'Total Moderators',
-            value: userStats?.roleBreakdown?.Moderator || '-',
+            value: userStats?.roleBreakdown?.Moderator || '0',
             icon: 'icons/moderator.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active moderators
         },
         {
             title: 'Total Roles',
-            value: userStats?.totalRoles || '-',
+            value: userStats?.totalRoles || '0',
             icon: 'icons/roles.svg',
             subtitle1: '1 Active Users', // Adjust if you want to show actual active roles
         },
@@ -565,17 +565,19 @@ export default function Users() {
                                                 onSearch: handleSearch,
                                                 headerTitle: 'User Management',
                                                 onView: (row: any) => {
-                                                    navigate(`/user-detail/${row.sNo}`, {
+                                                    console.log(row);
+                                                    navigate(`/users/${row.sNo}`, {
                                                         state: {
                                                             user: row
                                                         }
                                                     });
                                                 },
                                                 onEdit: (row: any) => {
-                                                    // Navigate to edit page or open edit modal
-                                                    navigate(`/edit-user/${row.sNo}`, {
+                                                    // Navigate to add-user page in edit mode
+                                                    navigate(`/add-user`, {
                                                         state: {
-                                                            user: row
+                                                            user: row,
+                                                            mode: 'edit'
                                                         }
                                                     });
                                                 },

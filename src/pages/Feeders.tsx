@@ -94,12 +94,22 @@ const Feeders = () => {
             loadStatus: string;
             rating: string;
             address: string;
+            dtrId?: string;
+            dtrNumber?: string;
+            alertType?: string;
+            alertId?: string;
+            occuredOn?: string;
         };
         dtrId?: string;
         dtrName?: string;
         dtrNumber?: string;
         feederId?: string;
     } | null;
+    
+    // Debug logging
+    console.log("Feeders Page - Location state:", location.state);
+    console.log("Feeders Page - Passed data:", passedData);
+    console.log("Feeders Page - URL params - dtrId:", dtrId, "feederId:", feederId);
     
     // Determine if this is an individual feeder page or DTR page
     const isIndividualFeeder = !!feederId;
@@ -117,22 +127,29 @@ const Feeders = () => {
 
     // Determine the effective DTR ID to use for API calls
     const getEffectiveDtrId = () => {
-        // First try passedData.dtrId
+        console.log("getEffectiveDtrId - passedData.dtrId:", passedData?.dtrId);
+        console.log("getEffectiveDtrId - dtrId param:", dtrId);
+        console.log("getEffectiveDtrId - feederId param:", feederId);
+        
+        // First try passedData.dtrId (from navigation state)
         if (passedData?.dtrId) {
+            console.log("Using passedData.dtrId:", passedData.dtrId);
             return passedData.dtrId;
         }
         
         // Then try to extract from dtrId parameter
         if (dtrId && dtrId.match(/\d+/)?.[0]) {
+            console.log("Using extracted dtrId from URL param:", dtrId.match(/\d+/)?.[0]);
             return dtrId.match(/\d+/)?.[0];
         }
         
         // If we have a feederId, we need to find the DTR ID from the backend
-        // For now, return null and handle this case in the API calls
         if (feederId) {
+            console.log("Need to find DTR ID for feederId:", feederId);
             return null; // We'll need to handle this specially
         }
         
+        console.log("Using dtrId directly:", dtrId);
         return dtrId;
     };
 
@@ -183,6 +200,9 @@ const Feeders = () => {
 
     // State to store the resolved DTR ID when we find it from feeder ID
     const [resolvedDtrId, setResolvedDtrId] = useState<string | null>(effectiveDtrId || null);
+    
+    console.log("Feeders Page - Initial effectiveDtrId:", effectiveDtrId);
+    console.log("Feeders Page - Initial resolvedDtrId:", resolvedDtrId);
 
     // State for API data - initialized with dummy data
     const [instantaneousStatsData, setInstantaneousStatsData] = useState<any>(dummyInstantaneousStatsData);
@@ -220,41 +240,52 @@ const Feeders = () => {
 
     // API Functions
     const fetchInstantaneousStats = async () => {
+        console.log("fetchInstantaneousStats - Starting with resolvedDtrId:", resolvedDtrId);
+        console.log("fetchInstantaneousStats - feederId:", feederId);
+        console.log("fetchInstantaneousStats - passedData:", passedData);
+        
         // Use resolved DTR ID
         let numericDtrId = resolvedDtrId;
         
         // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
         if (!numericDtrId && feederId) {
-
+            console.log("fetchInstantaneousStats - Looking for DTR ID for feeder:", feederId);
             const foundDtrId = await findDtrIdFromFeederId(feederId);
             if (foundDtrId) {
+                console.log("fetchInstantaneousStats - Found DTR ID:", foundDtrId);
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-
+                console.log("fetchInstantaneousStats - Could not find DTR ID for feeder");
                 return;
             }
         }
         
         if (!numericDtrId) {
-
+            console.log("fetchInstantaneousStats - No DTR ID available, skipping");
             return;
         }
 
-
+        console.log("fetchInstantaneousStats - Using DTR ID:", numericDtrId);
 
         setIsStatsLoading(true);
         try {
             // Build endpoint; pass feederId (meter identifier) when available
             const meterIdentifier = passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
+            console.log("fetchInstantaneousStats - Meter identifier:", meterIdentifier);
+            
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
             if (meterIdentifier) {
                 const qp = new URLSearchParams({ feederId: meterIdentifier });
                 endpoint = `${endpoint}?${qp.toString()}`;
             }
             
+            console.log("fetchInstantaneousStats - Endpoint:", endpoint);
+            
             const response = await fetch(endpoint);
             const data = await response.json();
+            
+            console.log("fetchInstantaneousStats - API Response:", data);
             
             if (data.success) {
                 
@@ -999,14 +1030,22 @@ const Feeders = () => {
         }
     };
 
+    // Effect to update resolvedDtrId when effectiveDtrId changes
+    useEffect(() => {
+        if (effectiveDtrId && effectiveDtrId !== resolvedDtrId) {
+            console.log("Updating resolvedDtrId from effectiveDtrId:", effectiveDtrId);
+            setResolvedDtrId(effectiveDtrId);
+        }
+    }, [effectiveDtrId]);
+
     // Effect to resolve DTR ID from feeder ID when needed
     useEffect(() => {
         const resolveDtrId = async () => {
             if (!resolvedDtrId && feederId) {
-
+                console.log("useEffect - resolveDtrId - Looking for DTR ID for feeder:", feederId);
                 const foundDtrId = await findDtrIdFromFeederId(feederId);
                 if (foundDtrId) {
-
+                    console.log("useEffect - resolveDtrId - Found DTR ID:", foundDtrId);
                     setResolvedDtrId(foundDtrId);
                 } else {
                     console.warn('useEffect - resolveDtrId - Could not find DTR ID for feeder:', feederId);
@@ -1024,19 +1063,23 @@ const Feeders = () => {
 
     // Load data on component mount
     useEffect(() => {
+        console.log("Main data loading useEffect - resolvedDtrId:", resolvedDtrId, "dtrId:", dtrId, "feederId:", feederId);
+        
         // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
         if (!resolvedDtrId && feederId) {
+            console.log("Skipping data fetch - no resolved DTR ID for feeder");
             return;
         }
 
         if (resolvedDtrId || dtrId) {
+            console.log("Starting data fetch with DTR ID:", resolvedDtrId || dtrId);
             fetchInstantaneousStats();
             fetchConsumptionAnalytics();
             fetchFeederInfo();
             fetchAlerts();
             fetchKVAMetrics();
-                } else {
-            
+        } else {
+            console.log("No DTR ID available for data fetch");
         }
     }, [resolvedDtrId, dtrId]);
 
@@ -1673,6 +1716,46 @@ const Feeders = () => {
                         ],
                     },
                 },
+                // {
+                //     layout: {
+                //         type: 'grid' as const,
+                //         columns: 1,
+                //         className: '',
+                //         rows: [
+                //             {
+                //                 layout: 'grid' as const,
+                //                 gridColumns:1,
+                //                 className:'pb-4',
+                //                 columns: [
+                //                     {
+                //                         name: 'Table',
+                //                         props: {
+                //                             columns: [
+                //                                 { key: 'alertId', label: 'Alert ID' },
+                //                                 { key: 'type', label: 'Type' },
+                //                                 { key: 'feederName', label: 'Feeder Name' },
+                //                                 { key: 'occuredOn', label: 'Occured On' },
+                //                             ],
+                //                             data: alertsData,
+                //                             searchable: true,
+                //                             pagination: true,
+                //                             initialRowsPerPage: 10,
+                //                             rowsPerPageOptions: [5, 10, 15, 20, 25],
+                //                             emptyMessage: 'No Alerts Found',
+                //                             showActions: true,
+                //                             showHeader: 'true',
+                //                             headerTitle: 'Feeder Latest Alerts',
+                //                             showPaginationInfo: true,
+                //                             showRowsPerPageSelector: true,
+                //                             className: 'w-full',
+                //                             loading: isAlertsLoading,
+                //                         },
+                //                     },
+                //                 ],
+                //             },
+                //         ],
+                //     },
+                // },
                 {
                     layout: {
                         type: 'grid' as const,
