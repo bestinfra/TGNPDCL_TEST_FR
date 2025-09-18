@@ -170,7 +170,7 @@ const DTRDashboard: React.FC = () => {
     currentPage: 1,
     totalPages: 1,
     totalCount: 0,
-    limit: 4,
+    limit: 3,
     hasNextPage: false,
     hasPrevPage: false,
   });
@@ -190,7 +190,6 @@ const DTRDashboard: React.FC = () => {
     { name: string; data: number[] }[]
   >(dummyChartData.series);
   const alertColors = ["#163b7c", "#ed8c22", "#55b56c", "#9467bd", "#dc272c", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
-  const statsRange = selectedTimeRange;
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(true);
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
@@ -320,6 +319,15 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
+  const handleAlertsPageChange = async (page: number, limit: number) => {
+    setAlertsPagination((prev) => ({
+        ...prev,
+        currentPage: page,
+        limit: limit,
+    }));
+    await retryAlertsAPI(lastSelectedId ?? undefined, page, limit);
+};
+
   const retryAlertsAPI = async (lastSelectedId?: string, page?: number, limit?: number) => {
     setIsAlertsLoading(true);
     try {
@@ -358,7 +366,7 @@ const DTRDashboard: React.FC = () => {
     }
   };
 
-  const retryChartAPI = async (lastSelectedId?: string) => {
+  const retryChartAPI = async (lastSelectedId?: string, timeRange?: string) => {
     setIsChartLoading(true);
     try {
       const params = new URLSearchParams();
@@ -856,11 +864,6 @@ const DTRDashboard: React.FC = () => {
         dtrName: row.dtrNumber
       }
     });
-  }
-
-  const handleViewAllAlerts = () => {
-    // Navigate to DTR table with alerts tab
-    navigate("/dtr-table?tab=alerts");
   }
 
   const handlePageChange = (page: number, limit: number) => {
@@ -1831,7 +1834,7 @@ const DTRDashboard: React.FC = () => {
                           onPageChange: handleAlertsPageChange,
                           onView:handleViewFeeder,
                           availableTimeRanges: [],
-                          initialRowsPerPage: 4,
+                          initialRowsPerPage: 3,
                           emptyMessage: "No alerts found",
                           loading: isAlertsLoading,
                           onRowClick: (row: TableData) =>

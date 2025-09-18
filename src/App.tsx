@@ -55,8 +55,7 @@ const App: React.FC = () => {
                   </Routes>
                 </Suspense>
               </AppLayout>
-           
-                </ProtectedRoute>
+              </ProtectedRoute>
               }
             />
           </Routes>
