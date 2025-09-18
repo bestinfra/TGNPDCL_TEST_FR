@@ -514,7 +514,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
           />
         <div className="flex flex-col flex-1">
           {/* Header */}
-            <Header 
+            {/* <Header 
              // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
               title={pageTitles[location.pathname] || 'Dashboard'} 
               onSearch={handleGlobalSearch}
@@ -531,6 +531,13 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
             //  onRefreshNotifications={fetchNotificationStats}
               onFetchNotifications={getCurrentNotifications}
               onMarkAsRead={markNotificationAsRead}
+            /> */}
+            <Header
+              title={pageTitles[location.pathname] || 'Dashboard'}
+              apiBaseUrl={apiBaseUrl}   // enables built-in global search
+              onFetchNotifications={getCurrentNotifications}
+              onMarkNotificationAsRead={markNotificationAsRead}
+              onMarkAllNotificationsAsRead={markAllNotificationsAsReadList}
             />
           {/* Main Content */}
           <main className="flex-1 p-6 bg-white overflow-auto dark:bg-primary-dark">
