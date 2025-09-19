@@ -832,7 +832,7 @@ const DTRDashboard: React.FC = () => {
 
   const handleViewDTR = (row: TableData) => {
     console.log(row.dtrId);
-    // navigate(`/dtr-detail/${row.dtrId}`);
+    navigate(`/dtr-detail/${row.dtrId}`);
   };
 
   const handleViewFeeder = (row: TableData) => {
@@ -1254,7 +1254,7 @@ const DTRDashboard: React.FC = () => {
         if (count === 0) {
           return "No of DTRs with load < 30%";
         }
-        return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
+        return `No of DTRs with load < 30%`;
       })(),
       onValueClick: () =>
         navigate(
