@@ -897,7 +897,7 @@ const DTRDetailPage = () => {
                                     {   
                                        name: 'PageInformation',
                                        props: {
-                                        gridColumns: 5,
+                                        gridColumns: 4,
                                         rows: [
                                             {
                                                 layout: 'row',

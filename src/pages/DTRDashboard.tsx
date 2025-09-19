@@ -1782,6 +1782,7 @@ const DTRDashboard: React.FC = () => {
                         showActions: true,
                         searchable: true,
                         pagination: true,
+                        // selectable: true,
                         onView: handleViewFeeder,
                         availableTimeRanges: [],
                         initialRowsPerPage: 3,
@@ -1816,6 +1817,7 @@ const DTRDashboard: React.FC = () => {
                   searchable: false,
                   sortable: true,
                   initialRowsPerPage: 10,
+                  // selectable: true,
                   showActions: true,
                   text: "DTR Management Table",
                   onRowClick: (row: TableData) =>

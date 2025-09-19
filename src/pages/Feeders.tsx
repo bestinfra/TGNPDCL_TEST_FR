@@ -1388,7 +1388,7 @@ const Feeders = () => {
                                     {   
                                        name: 'PageInformation',
                                        props: {
-                                        gridColumns: 3,
+                                        gridColumns:4,
                                         rows: [
                                             {
                                                 layout: 'row',
