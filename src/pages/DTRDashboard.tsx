@@ -1486,7 +1486,7 @@ const DTRDashboard: React.FC = () => {
                 name: "PageHeader",
                 props: {
                   title: "DTR Dashboard",
-                  onBackClick: () => window.history.back(),
+                  // onBackClick: () => window.history.back(),
                   // buttonsLabel: "Export",
                   // variant: "primary",
                   backButtonText: '',
