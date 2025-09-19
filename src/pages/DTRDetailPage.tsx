@@ -895,11 +895,12 @@ const DTRDetailPage = () => {
                                             lastSync: true,
                                             lastSyncLabel: "Last Sync",
                                             lastSyncValue: "2025-09-16 12:45 PM",
-                                            rightComponent: {
-                                                name: 'LastComm', props: { value: lastComm },
-
-
-                                            },
+                                            // rightComponent: {
+                                            //     name: 'LastComm', props: { value: lastComm },
+                                            // },
+                                            // rightComponent: {
+                                            //     name: 'LastComm', props: { value: lastComm },
+                                            // },
 
                                         },
 

@@ -40,7 +40,7 @@ const dummyFeederInfoData = {
     dtr: {
         dtrNumber: "0",
         capacity: "0",
-        status: "0"
+        status: "N/A"
     },
     totalFeeders: "0"
 };
@@ -1360,23 +1360,22 @@ const Feeders = () => {
                                             titleAlign: 'left',
                                             defaultTitleHeight:'0',
                                             className:'w-full justify-between',
-                                            // rightComponent: { 
-                                            //     name: 'LastComm', 
+                                            rightComponent: { 
+                                                name: 'LastComm', 
                                                 
-                                            //     props: { 
-                                            //         lastSync: true,
-                                            //         internalIcon: 'icons/feeder.svg',
-                                            //         internalValue: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId}` : 'DTR Feeders',
-                                            //         internalTitle: 'Feeder',
-
-                                            //         delayedIcon: 'icons/power-factor.svg',
-                                            //         delayedValue: feederInfoData?.dtr?.status || 'ACTIVE',
-                                            //         delayedTitle: 'Status',
-                                            //         dateIcon: 'icons/consumption.svg',
-                                            //         dateValue: `${feederInfoData?.dtr?.capacity || 100} kVA`,
-                                            //         dateTitle: 'Capacity'
-                                            //     } 
-                                            // },
+                                                props: { 
+                                                    lastSync: true,
+                                                    internalIcon: 'icons/feeder.svg',
+                                                    internalValue: isIndividualFeeder ? `Feeder ${feederData?.feederName || currentFeederId}` : 'DTR Feeders',
+                                                    internalTitle: 'Feeder',
+                                                    delayedIcon: 'icons/power-factor.svg',
+                                                    delayedValue: feederInfoData?.dtr?.status || 'ACTIVE',
+                                                    delayedTitle: 'Status',
+                                                    dateIcon: 'icons/consumption.svg',
+                                                    dateValue: `${feederInfoData?.dtr?.capacity || 100} kVA`,
+                                                    dateTitle: 'Capacity'
+                                                } 
+                                            },
                                         },
                                     },
                                 ],
