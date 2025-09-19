@@ -182,7 +182,6 @@ const DTRDashboard: React.FC = () => {
     { name: string; data: number[] }[]
   >(dummyChartData.series);
   const alertColors = ["#163b7c", "#ed8c22", "#55b56c", "#9467bd", "#dc272c", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
-  const statsRange = selectedTimeRange;
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(true);
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
@@ -1843,22 +1842,21 @@ const DTRDashboard: React.FC = () => {
             },
             components: [
               {
-                name: "StackedBarChart",
+                name: "BarChart",
                 props: {
                   xAxisData: chartMonths,
                   seriesData: chartSeries,
                   seriesColors: alertColors,
                   height: 300,
-                  showLegendInteractions: true,
-                  timeRange: selectedChartTimeRange,
-                  availableTimeRanges: ["Daily", "Weekly", "Monthly"],
-                  defaultTimeRange: "Daily",
-                  onTimeRangeChange: handleChartTimeRangeChange,
                   showHeader: true,
                   headerTitle: "DTR Alert Statistics",
+                  availableTimeRanges: ["Daily", "Weekly", "Monthly"],
+                  initialTimeRange: selectedChartTimeRange,
+                  onTimeRangeChange: handleChartTimeRangeChange,
                   showDownloadButton: true,
                   onDownload: () => handleChartDownload(),
                   isLoading: isChartLoading,
+                  showLegendInteractions: true,
                 },
                 span: { col: 2, row: 1 },
               },
