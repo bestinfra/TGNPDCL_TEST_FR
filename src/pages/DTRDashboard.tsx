@@ -1485,7 +1485,7 @@ const DTRDashboard: React.FC = () => {
                 name: "PageHeader",
                 props: {
                   title: "DTR Dashboard",
-                  onBackClick: () => window.history.back(),
+                  // onBackClick: () => window.history.back(),
                   // buttonsLabel: "Export",
                   // variant: "primary",
                   backButtonText: '',
@@ -1781,6 +1781,7 @@ const DTRDashboard: React.FC = () => {
                         showActions: true,
                         searchable: true,
                         pagination: true,
+                        // selectable: true,
                         onView: handleViewFeeder,
                         availableTimeRanges: [],
                         initialRowsPerPage: 3,
@@ -1815,6 +1816,7 @@ const DTRDashboard: React.FC = () => {
                   searchable: false,
                   sortable: true,
                   initialRowsPerPage: 10,
+                  // selectable: true,
                   showActions: true,
                   text: "DTR Management Table",
                   onRowClick: (row: TableData) =>
