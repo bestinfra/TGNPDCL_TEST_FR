@@ -213,7 +213,8 @@ const Feeders = () => {
         dailyData: { xAxisData: [], sums: [] },
         monthlyData: { xAxisData: [], sums: [] },
         capacityInfo: { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
-        highestKVA: { daily: null, monthly: null }
+        highestKVA: { daily: null, monthly: null },
+        thresholdValue: 0
     });
 
     // State for map coordinates - initialized with default coordinates
@@ -618,7 +619,8 @@ const Feeders = () => {
                     dailyData: data.data?.dailyData || { xAxisData: [], sums: [] },
                     monthlyData: data.data?.monthlyData || { xAxisData: [], sums: [] },
                     capacityInfo: data.data?.capacityInfo || { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
-                    highestKVA: data.data?.highestKVA || { daily: null, monthly: null }
+                    highestKVA: data.data?.highestKVA || { daily: null, monthly: null },
+                    thresholdValue: data.data?.thresholdValue || 0
                 });
             } else {
                 throw new Error(data.message || 'Failed to fetch KVA metrics');
@@ -629,7 +631,8 @@ const Feeders = () => {
                 dailyData: { xAxisData: [], sums: [] },
                 monthlyData: { xAxisData: [], sums: [] },
                 capacityInfo: { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
-                highestKVA: { daily: null, monthly: null }
+                highestKVA: { daily: null, monthly: null },
+                thresholdValue: 0
             });
             setFailedApis(prev => [...prev, {
                 id: 'kvaMetrics',
@@ -1722,7 +1725,7 @@ const Feeders = () => {
                                         name: 'ThresholdChart',
                                         props: {
                                             data: getKvaMetricsData().seriesData[0]?.data || [],
-                                            threshold: kvaMetricsData.capacityInfo?.feederCapacity || 100,
+                                            threshold: kvaMetricsData.thresholdValue || 0,
                                             ratingKVA: kvaMetricsData.capacityInfo?.dtrCapacity || 50,
                                             title: `KVA Metrics - ${kvaTimeRange}`,
                                             chartType: "bar",
