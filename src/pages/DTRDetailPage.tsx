@@ -366,7 +366,7 @@ const DTRDetailPage = () => {
       params.append("page", String(pageToUse));
       params.append("limit", String(limitToUse));
       const response = await fetch(
-        `${BACKEND_URL}/dtrs/${numericDtrId}/alerts?${params.toString()}`
+        `${BACKEND_URL}/dtrs/${dtrId}/alerts?${params.toString()}`
       );
       if (!response.ok) throw new Error("Failed to fetch alerts data");
 
@@ -1442,6 +1442,7 @@ const DTRDetailPage = () => {
                         xAxisData: getKvaMetricsData().xAxisData || [],
                         showCapacityInfo: true,
                         showHighestKVA: true,
+                        seriesColors: ['#163b7c', '#55b56c', '#dc272c', '#ed8c22'],
                       },
                       span: { col: 1, row: 1 },
                     },
