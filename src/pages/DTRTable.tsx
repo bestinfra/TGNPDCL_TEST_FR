@@ -20,10 +20,11 @@ interface Pagination {
 }
 
 const nonActionableCardTypes = [
-  'daily-kwh','monthly-kwh',
-  'daily-kvah','monthly-kvah',
-  'daily-kw','monthly-kw',
-  'daily-kva','monthly-kva'
+  // Consumption-related tables are now actionable (can navigate to DTR detail)
+  // 'daily-kwh','monthly-kwh',
+  // 'daily-kvah','monthly-kvah',
+  // 'daily-kw','monthly-kw',
+  // 'daily-kva','monthly-kva'
 ];
 
 const DTRTable: React.FC = () => {
@@ -110,7 +111,7 @@ const DTRTable: React.FC = () => {
           { key: 'manufacturer', label: 'Manufacturer' },
           { key: 'model', label: 'Model' },
           { key: 'capacity', label: 'Capacity' },
-          //{ key: 'loadPercentage', label: 'Load %' },
+          { key: 'loadPercentage', label: 'Load %' },
           { key: 'feedersCount', label: 'Feeders Count' },
           { key: 'location', label: 'Location' },
           { key: 'status', label: 'Status' },
@@ -306,10 +307,34 @@ const DTRTable: React.FC = () => {
 
   const handleView = (row: TableData) => {
     if (!row) return;
-    if (cardType === 'total-dtrs' && row.dtrId != null) navigate(`/dtr-detail/${row.dtrId}`);
-    else if (cardType === 'total-lt-feeders' && row.meterSerialNumber != null) navigate(`/meters?search=${row.meterSerialNumber}`);
-    else if (cardType === 'fuse-blown' && row.meterNo != null) navigate(`/meters?search=${row.meterNo}`);
-   // else if (['overloaded-feeders', 'underloaded-feeders'].includes(cardType) && row.dtrId != null) navigate(`/dtr-detail/${row.dtrId}`);
+    
+    // For DTR-related tables, navigate to DTR detail page
+    if (['total-dtrs', 'overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
+      const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
+      if (dtrId != null) {
+        navigate(`/dtr-detail/${dtrId}`);
+        return;
+      }
+    }
+    
+    // For meter-related tables, navigate to meter search
+    if (cardType === 'total-lt-feeders' && row.meterSerialNumber != null) {
+      navigate(`/meters?search=${row.meterSerialNumber}`);
+      return;
+    }
+    
+    if (cardType === 'fuse-blown' && row.meterNo != null) {
+      navigate(`/meters?search=${row.meterNo}`);
+      return;
+    }
+    
+    // For consumption-related tables, navigate to DTR detail if dtrId is available
+    if (['daily-kwh', 'monthly-kwh', 'daily-kvah', 'monthly-kvah', 'daily-kw', 'monthly-kw', 'daily-kva', 'monthly-kva'].includes(cardType || '')) {
+      if (row.dtrId != null) {
+        navigate(`/dtr-detail/${row.dtrId}`);
+        return;
+      }
+    }
   };
 
   const handleEdit = (_row: TableData) => {};
@@ -391,7 +416,7 @@ const DTRTable: React.FC = () => {
                         showHeader: true,
                         showActions: !nonActionableCardTypes.includes(cardType || ''),
                         onView: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
-                        onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
+                       // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
                         onRowClick: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
                         text: cardTitle,
                         className: 'w-full',

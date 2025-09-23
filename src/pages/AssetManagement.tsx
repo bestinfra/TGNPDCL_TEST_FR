@@ -2168,15 +2168,15 @@ export default function AssetManagment() {
                                 {
                                   key: "communicationStatus",
                                   label: "Communication Status",
-                                  statusIndicator: {},
-                                  isActive: (
-                                    value:
-                                      | string
-                                      | number
-                                      | boolean
-                                      | null
-                                      | undefined
-                                  ) => String(value).toLowerCase() === "communicating",
+                                  // statusIndicator: {},
+                                  // isActive: (
+                                  //   value:
+                                  //     | string
+                                  //     | number
+                                  //     | boolean
+                                  //     | null
+                                  //     | undefined
+                                  // ) => String(value).toLowerCase() === "communicating",
                                 },
                                 {
                                   key: "lastCommunicationDate",

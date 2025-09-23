@@ -2,7 +2,6 @@ import { lazy } from 'react';
 import { useState, useEffect, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 const Page = lazy(() => import('SuperAdmin/Page'));
-import BACKEND_URL from '../config';
 import { apiClient } from '../api/apiUtils';
 
 const tableColumns = [
@@ -11,7 +10,7 @@ const tableColumns = [
     { key: 'email', label: 'Email Address' },
     { key: 'phone', label: 'Phone Number' },
     { key: 'role', label: 'Role' },
-    { key: 'client', label: 'Client' },
+   // { key: 'client', label: 'Client' },
     // { key: 'lastActive', label: 'Last Active' },
     { key: 'createdDate', label: 'Created Date' },
     // Add actions column if you want to show action buttons

@@ -167,14 +167,14 @@ const DTRDetailPage = () => {
   const [errorMessages, setErrors] = useState<any[]>([]);
 
   // State for tracking failed APIs
-  const [failedApis, setFailedApis] = useState<
-    Array<{
-      id: string;
-      name: string;
-      retryFunction: () => Promise<void>;
-      errorMessage: string;
-    }>
-  >([]);
+//   const [failedApis, setFailedApis] = useState<
+//     Array<{
+//       id: string;
+//       name: string;
+//       retryFunction: () => Promise<void>;
+//       errorMessage: string;
+//     }>
+//   >([]);
   // google map
   // State for map coordinates - initialized with default coordinates
   const getMapCenterAndZoom = () => {
@@ -323,12 +323,12 @@ const DTRDetailPage = () => {
   };
 
   // Retry specific API
-  const retrySpecificAPI = (apiId: string) => {
-    const api = failedApis.find((a) => a.id === apiId);
-    if (api) {
-      api.retryFunction();
-    }
-  };
+//   const retrySpecificAPI = (apiId: string) => {
+//     const api = failedApis.find((a) => a.id === apiId);
+//     if (api) {
+//       api.retryFunction();
+//     }
+//   };
 
   // Clear all error messages
   const clearErrors = () => {
@@ -688,15 +688,15 @@ const DTRDetailPage = () => {
           highestKVA: { daily: null, monthly: null },
           thresholdValue: 0,
         });
-        setFailedApis((prev) => [
-          ...prev,
-          {
-            id: "kvaMetrics",
-            name: "KVA Metrics",
-            retryFunction: fetchKVAMetrics,
-            errorMessage: error.message || "Failed to fetch KVA metrics",
-          },
-        ]);
+        // setFailedApis((prev) => [
+        //   ...prev,
+        //   {
+        //     id: "kvaMetrics",
+        //     name: "KVA Metrics",
+        //     retryFunction: fetchKVAMetrics,
+        //     errorMessage: error.message || "Failed to fetch KVA metrics",
+        //   },
+        // ]);
       } finally {
         setIsKvaMetricsLoading(false);
       }
@@ -1466,11 +1466,11 @@ const DTRDetailPage = () => {
                     name: "Table",
                     props: {
                       columns: [
-                        { key: "serialNumber", label: "S.No" },
                         { key: "alertId", label: "Alert ID" },
                         { key: "type", label: "Type" },
-                        { key: "feederName", label: "Feeder Name" },
+                        { key: "feederName", label: "Meter Number" },
                         { key: "occuredOn", label: "Occured On" },
+                        { key: "status", label: "Status" },
                       ],
                       data: alertsData,
                       searchable: true,
