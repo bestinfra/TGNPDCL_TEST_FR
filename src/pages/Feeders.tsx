@@ -384,6 +384,7 @@ const Feeders = () => {
   const [isStatsLoading, setIsStatsLoading] = useState(false);
   const [isConsumptionLoading, setIsConsumptionLoading] = useState(false);
   const [isAlertsLoading, setIsAlertsLoading] = useState(false);
+  //const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
   const [_isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
 
   // State for tracking failed APIs
@@ -816,7 +817,7 @@ const Feeders = () => {
       return;
     }
 
-    setIsKvaMetricsLoading(true);
+   // setIsKvaMetricsLoading(true);
     try {
       const meterIdentifier =
         passedData?.feederId ||
@@ -867,7 +868,7 @@ const Feeders = () => {
         },
       ]);
     } finally {
-      setIsKvaMetricsLoading(false);
+     // setIsKvaMetricsLoading(false);
     }
   };
 
@@ -1470,7 +1471,7 @@ const Feeders = () => {
   }, [feederId, resolvedDtrId]);
 
   // Effect to log time range changes for debugging
-  useEffect(() => {}, [consumptionTimeRange, kvaTimeRange]);
+ // useEffect(() => {}, [consumptionTimeRange, kvaTimeRange]);
 
   // Load data on component mount
   useEffect(() => {
@@ -2314,8 +2315,9 @@ const Feeders = () => {
                         columns: [
                           { key: "alertId", label: "Alert ID" },
                           { key: "type", label: "Type" },
-                          { key: "feederName", label: "Feeder Name" },
+                          { key: "feederName", label: "Meter Number" },
                           { key: "occuredOn", label: "Occured On" },
+                          { key: "status", label: "Status" },
                         ],
                         data: alertsData,
                         searchable: true,
