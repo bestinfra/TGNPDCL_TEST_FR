@@ -323,12 +323,12 @@ const DTRDetailPage = () => {
   };
 
   // Retry specific API
-//   const retrySpecificAPI = (apiId: string) => {
-//     const api = failedApis.find((a) => a.id === apiId);
-//     if (api) {
-//       api.retryFunction();
-//     }
-//   };
+  // const retrySpecificAPI = (apiId: string) => {
+  //   const api = failedApis.find((a) => a.id === apiId);
+  //   if (api) {
+  //     api.retryFunction();
+  //   }
+  // };
 
   // Clear all error messages
   const clearErrors = () => {
