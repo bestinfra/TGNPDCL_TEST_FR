@@ -385,6 +385,7 @@ const Feeders = () => {
   const [isConsumptionLoading, setIsConsumptionLoading] = useState(false);
   const [isAlertsLoading, setIsAlertsLoading] = useState(false);
   //const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
+  const [_isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
 
   // State for tracking failed APIs
   const [failedApis, setFailedApis] = useState<
@@ -400,9 +401,9 @@ const Feeders = () => {
   const [consumptionTimeRange, setConsumptionTimeRange] = useState<
     "Daily" | "Monthly"
   >("Daily");
-//   const [kvaTimeRange, setKvaTimeRange] = useState<"Daily" | "Monthly">(
-//     "Daily"
-//   );
+  const [kvaTimeRange, _setKvaTimeRange] = useState<"Daily" | "Monthly">(
+    "Daily"
+  );
 
   // API Functions
   const fetchInstantaneousStats = async () => {
@@ -1090,46 +1091,46 @@ const Feeders = () => {
   };
 
   // Get KVA metrics data based on selected time range
-//   const getKvaMetricsData = () => {
-//     if (kvaTimeRange === "Daily") {
-//       if (kvaMetricsData && kvaMetricsData.dailyData) {
-//         const data = {
-//           xAxisData: kvaMetricsData.dailyData.xAxisData || [],
-//           seriesData: [
-//             {
-//               name: "kVA",
-//               data:
-//                 kvaMetricsData.dailyData.sums?.map((sum: string) =>
-//                   parseFloat(sum)
-//                 ) || [],
-//             },
-//           ],
-//         };
-//         return data;
-//       }
-//     } else if (kvaTimeRange === "Monthly") {
-//       if (kvaMetricsData && kvaMetricsData.monthlyData) {
-//         const data = {
-//           xAxisData: kvaMetricsData.monthlyData.xAxisData || [],
-//           seriesData: [
-//             {
-//               name: "kVA",
-//               data:
-//                 kvaMetricsData.monthlyData.sums?.map((sum: string) =>
-//                   parseFloat(sum)
-//                 ) || [],
-//             },
-//           ],
-//         };
-//         return data;
-//       }
-//     }
+  // const getKvaMetricsData = () => {
+  //   if (kvaTimeRange === "Daily") {
+  //     if (kvaMetricsData && kvaMetricsData.dailyData) {
+  //       const data = {
+  //         xAxisData: kvaMetricsData.dailyData.xAxisData || [],
+  //         seriesData: [
+  //           {
+  //             name: "kVA",
+  //             data:
+  //               kvaMetricsData.dailyData.sums?.map((sum: string) =>
+  //                 parseFloat(sum)
+  //               ) || [],
+  //           },
+  //         ],
+  //       };
+  //       return data;
+  //     }
+  //   } else if (kvaTimeRange === "Monthly") {
+  //     if (kvaMetricsData && kvaMetricsData.monthlyData) {
+  //       const data = {
+  //         xAxisData: kvaMetricsData.monthlyData.xAxisData || [],
+  //         seriesData: [
+  //           {
+  //             name: "kVA",
+  //             data:
+  //               kvaMetricsData.monthlyData.sums?.map((sum: string) =>
+  //                 parseFloat(sum)
+  //               ) || [],
+  //           },
+  //         ],
+  //       };
+  //       return data;
+  //     }
+  //   }
 
-//     return {
-//       xAxisData: [],
-//       seriesData: [{ name: "kVA", data: [] }],
-//     };
-//   };
+  //   return {
+  //     xAxisData: [],
+  //     seriesData: [{ name: "kVA", data: [] }],
+  //   };
+  // };
 
   // Retry functions for each API - Commented out as not currently used
   /*
@@ -1663,12 +1664,12 @@ const Feeders = () => {
   };
 
   // Handle Excel download for daily consumption chart (legacy function - keeping for backward compatibility)
-//   const handleDailyChartDownload = () => {
-//     // Use KVA metrics data if available, otherwise use empty data
-//     const xAxisData = kvaMetricsData.xAxisData || [];
-//     const seriesData = kvaMetricsData.seriesData || [{ name: "kVA", data: [] }];
-//     exportChartData(xAxisData, seriesData, "feeder-kva-metrics-data");
-//   };
+  // const handleDailyChartDownload = () => {
+  //   // Use KVA metrics data if available, otherwise use empty data
+  //   const xAxisData = kvaMetricsData.xAxisData || [];
+  //   const seriesData = kvaMetricsData.seriesData || [{ name: "kVA", data: [] }];
+  //   exportChartData(xAxisData, seriesData, "feeder-kva-metrics-data");
+  // };
 
   // Handle Excel download for consumption chart based on current time range
   const handleConsumptionChartDownload = () => {
@@ -1682,57 +1683,57 @@ const Feeders = () => {
   };
 
   // Handle Excel download for KVA metrics chart based on current time range
-//   const handleKvaMetricsChartDownload = () => {
-//     const data = getKvaMetricsData();
-//     const timeRange = kvaTimeRange.toLowerCase();
-//     exportChartData(
-//       data.xAxisData,
-//       data.seriesData,
-//       `feeder-${timeRange}-kva-metrics-data`
-//     );
-//   };
+  // const handleKvaMetricsChartDownload = () => {
+  //   const data = getKvaMetricsData();
+  //   const timeRange = kvaTimeRange.toLowerCase();
+  //   exportChartData(
+  //     data.xAxisData,
+  //     data.seriesData,
+  //     `feeder-${timeRange}-kva-metrics-data`
+  //   );
+  // };
 
   // Debug: Log failedApis state
 
   // Function to calculate optimal map center and zoom for multiple feeders
-//   const getMapCenterAndZoom = () => {
-//     if (feederInfoData?.feeders && feederInfoData.feeders.length > 1) {
-//       // Calculate bounds for multiple feeders
-//       const lats = feederInfoData.feeders
-//         .map((feeder: any) => feeder.latitude)
-//         .filter(Boolean);
-//       const lngs = feederInfoData.feeders
-//         .map((feeder: any) => feeder.longitude)
-//         .filter(Boolean);
+  // const getMapCenterAndZoom = () => {
+  //   if (feederInfoData?.feeders && feederInfoData.feeders.length > 1) {
+  //     // Calculate bounds for multiple feeders
+  //     const lats = feederInfoData.feeders
+  //       .map((feeder: any) => feeder.latitude)
+  //       .filter(Boolean);
+  //     const lngs = feederInfoData.feeders
+  //       .map((feeder: any) => feeder.longitude)
+  //       .filter(Boolean);
 
-//       if (lats.length > 0 && lngs.length > 0) {
-//         const minLat = Math.min(...lats);
-//         const maxLat = Math.max(...lats);
-//         const minLng = Math.min(...lngs);
-//         const maxLng = Math.max(...lngs);
+  //     if (lats.length > 0 && lngs.length > 0) {
+  //       const minLat = Math.min(...lats);
+  //       const maxLat = Math.max(...lats);
+  //       const minLng = Math.min(...lngs);
+  //       const maxLng = Math.max(...lngs);
 
-//         const centerLat = (minLat + maxLat) / 2;
-//         const centerLng = (minLng + maxLng) / 2;
+  //       const centerLat = (minLat + maxLat) / 2;
+  //       const centerLng = (minLng + maxLng) / 2;
 
-//         // Calculate zoom based on the span of coordinates
-//         const latSpan = maxLat - minLat;
-//         const lngSpan = maxLng - minLng;
-//         const maxSpan = Math.max(latSpan, lngSpan);
+  //       // Calculate zoom based on the span of coordinates
+  //       const latSpan = maxLat - minLat;
+  //       const lngSpan = maxLng - minLng;
+  //       const maxSpan = Math.max(latSpan, lngSpan);
 
-//         let zoom = 13;
-//         if (maxSpan > 0.1) zoom = 10;
-//         else if (maxSpan > 0.05) zoom = 11;
-//         else if (maxSpan > 0.01) zoom = 12;
-//         else if (maxSpan > 0.005) zoom = 14;
-//         else if (maxSpan > 0.001) zoom = 15;
+  //       let zoom = 13;
+  //       if (maxSpan > 0.1) zoom = 10;
+  //       else if (maxSpan > 0.05) zoom = 11;
+  //       else if (maxSpan > 0.01) zoom = 12;
+  //       else if (maxSpan > 0.005) zoom = 14;
+  //       else if (maxSpan > 0.001) zoom = 15;
 
-//         return { center: { lat: centerLat, lng: centerLng }, zoom };
-//       }
-//     }
+  //       return { center: { lat: centerLat, lng: centerLng }, zoom };
+  //     }
+  //   }
 
-//     // Default center and zoom for single feeder or fallback
-//     return { center: { lat: mapLatitude, lng: mapLongitude }, zoom: 13 };
-//   };
+  //   // Default center and zoom for single feeder or fallback
+  //   return { center: { lat: mapLatitude, lng: mapLongitude }, zoom: 13 };
+  // };
 
 //   const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
 

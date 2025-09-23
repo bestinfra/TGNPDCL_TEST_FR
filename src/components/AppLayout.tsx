@@ -35,7 +35,7 @@ declare global {
 function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Notification state
   const [notifications, setNotifications] = useState<any[]>([]);
   // const [notificationStats, setNotificationStats] = useState<NotificationStats>({
@@ -49,7 +49,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
   //   byLevel: {}
   // });
   //const [isNotificationLoading, setIsNotificationLoading] = useState(false);
-  
+
   // Fetch notification stats
   // const fetchNotificationStats = async () => {
   //   try {
@@ -61,7 +61,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
   //         'Content-Type': 'application/json',
   //       },
   //     });
-      
+
   //     if (response.ok) {
   //       const result = await response.json();
   //       if (result.success) {
@@ -86,23 +86,23 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && result.data.notifications) {
           const dbNotifications = result.data.notifications;
-          
+
           // Transform notifications to match expected format
           const transformedNotifications = dbNotifications.map((notification: any) => ({
             ...notification,
             created_at: notification.created_at ? new Date(notification.created_at).toISOString() : new Date().toISOString()
           }));
-          
+
           setNotifications(transformedNotifications);
           return transformedNotifications;
         }
       }
-      
+
       // Return dummy data as fallback
       return getDummyNotifications();
     } catch (error) {
@@ -121,11 +121,11 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
-        setNotifications(prev => 
-          prev.map(notif => 
-            notif.id === notificationId 
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif.id === notificationId
               ? { ...notif, is_read: true }
               : notif
           )
@@ -149,9 +149,9 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(notif => ({ ...notif, is_read: true }))
         );
         return true;
@@ -178,7 +178,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
         status: "active"
       },
       {
-        id: "2", 
+        id: "2",
         type: "METER_ABNORMALITY",
         title: "Meter Abnormality",
         message: "Abnormal reading detected on meter MTR-123",
@@ -193,15 +193,15 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
 
   // Load notification stats and notifications on component mount
   useEffect(() => {
-   // fetchNotificationStats();
+    // fetchNotificationStats();
     fetchNotificationsList();
-    
+
     // Set up polling for notification stats every 30 seconds
     const interval = setInterval(() => {
-     // fetchNotificationStats();
+      // fetchNotificationStats();
       fetchNotificationsList();
     }, 30000);
-    
+
     // Set up WebSocket listener for real-time notifications (if available)
     const setupWebSocketListener = () => {
       // Check if socket.io is available
@@ -209,31 +209,31 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
         try {
           // Connect to socket server on port 4250
           const socket = window.io('http://localhost:4250');
-          
+
           socket.on('escalation_notification', (notification: any) => {
             console.log('New escalation notification received:', notification);
             // Refresh notification stats when new notification arrives
-           // fetchNotificationStats();
+            // fetchNotificationStats();
           });
-          
+
           socket.on('notification_resolved', (data: any) => {
             console.log('Notification resolved:', data);
             // Refresh notification stats when notification is resolved
-          //  fetchNotificationStats();
+            //  fetchNotificationStats();
           });
-          
+
           socket.on('connect', () => {
             console.log('🔌 [SOCKET] Connected to notification server');
           });
-          
+
           socket.on('disconnect', () => {
             console.log('🔌 [SOCKET] Disconnected from notification server');
           });
-          
+
           socket.on('connect_error', (error: any) => {
             console.warn('🔌 [SOCKET] Connection error:', error);
           });
-          
+
           // Store socket reference for cleanup
           (window as any).notificationSocket = socket;
         } catch (error) {
@@ -243,9 +243,9 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
         console.log('🔌 [SOCKET] Socket.io not available, using polling only');
       }
     };
-    
+
     setupWebSocketListener();
-    
+
     return () => {
       clearInterval(interval);
       // Clean up WebSocket listeners if needed
@@ -264,10 +264,10 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
     // Store notifications globally so Header can access them
     (window as any).globalNotifications = notifications;
     (window as any).globalNotificationCount = notifications.length;
-    
+
     // Dispatch custom event to notify Header about notification changes
-    const event = new CustomEvent('notificationsUpdated', { 
-      detail: { notifications, count: notifications.length } 
+    const event = new CustomEvent('notificationsUpdated', {
+      detail: { notifications, count: notifications.length }
     });
     window.dispatchEvent(event);
   }, [notifications]);
@@ -278,7 +278,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
     if (notifications.length > 0) {
       return notifications;
     }
-    
+
     // If no notifications, try to fetch them
     try {
       const freshNotifications = await fetchNotificationsList();
@@ -295,16 +295,16 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
     const transformedNotifications = notifications.map((notification: any) => {
       return {
         id: notification.id.toString(),
-        type: notification.type === 'HT_FUSE_BLOWN' ? 'warning' : 
-              notification.type === 'METER_ABNORMALITY' ? 'error' :
-              notification.type === 'BILLING' ? 'info' :
+        type: notification.type === 'HT_FUSE_BLOWN' ? 'warning' :
+          notification.type === 'METER_ABNORMALITY' ? 'error' :
+            notification.type === 'BILLING' ? 'info' :
               notification.type === 'TICKET' ? 'ticket' :
-              notification.type === 'SYSTEM' ? 'success' : 'info',
+                notification.type === 'SYSTEM' ? 'success' : 'info',
         label: notification.type === 'HT_FUSE_BLOWN' ? 'HT Fuse Alert' :
-               notification.type === 'METER_ABNORMALITY' ? 'Meter Alert' :
-               notification.type === 'BILLING' ? 'Billing' :
-               notification.type === 'TICKET' ? 'Support' :
-               notification.type === 'SYSTEM' ? 'System' : 'Notification',
+          notification.type === 'METER_ABNORMALITY' ? 'Meter Alert' :
+            notification.type === 'BILLING' ? 'Billing' :
+              notification.type === 'TICKET' ? 'Support' :
+                notification.type === 'SYSTEM' ? 'System' : 'Notification',
         title: notification.title,
         dateTime: notification.created_at ? new Date(notification.created_at).toLocaleString() : new Date().toLocaleString(),
         isUnread: !notification.is_read,
@@ -312,19 +312,19 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
         redirectUrl: notification.redirect_url || '/dashboard',
         message: notification.message,
         category: notification.type === 'HT_FUSE_BLOWN' ? 'HT Fuse' :
-                 notification.type === 'METER_ABNORMALITY' ? 'Meter' :
-                 notification.type === 'BILLING' ? 'Billing' :
-                 notification.type === 'TICKET' ? 'Support' :
-                 notification.type === 'SYSTEM' ? 'System' : 'General'
+          notification.type === 'METER_ABNORMALITY' ? 'Meter' :
+            notification.type === 'BILLING' ? 'Billing' :
+              notification.type === 'TICKET' ? 'Support' :
+                notification.type === 'SYSTEM' ? 'System' : 'General'
       };
     });
-    
+
     // Store transformed notifications globally
     (window as any).headerTransformedNotifications = transformedNotifications;
-    
+
     // Dispatch event to Header with transformed notifications
-    const event = new CustomEvent('setNotifications', { 
-      detail: { notifications: transformedNotifications } 
+    const event = new CustomEvent('setNotifications', {
+      detail: { notifications: transformedNotifications }
     });
     window.dispatchEvent(event);
   }, [notifications]);
@@ -336,10 +336,10 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
     const diffInHours = (now.getTime() - notificationDate.getTime()) / (1000 * 60 * 60);
     return diffInHours < 24;
   }
-  
+
   // Global search handler
   const handleGlobalSearch = async (query: string) => {
-    
+
     if (!query || query.length < 2) {
       return;
     }
@@ -356,7 +356,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
         const meterQuery = query.replace(/^METER[-_\s]?/i, '');
         const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(meterQuery)}`);
         const result = await response.json();
-        
+
         if (result.success && result.data.length > 0) {
           const firstResult = result.data[0];
           navigate(`/dtr-detail/${firstResult.dtrNumber || firstResult.id}`);
@@ -370,7 +370,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
       // For other queries, search the database
       const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(query)}`);
       const result = await response.json();
-      
+
       if (result.success && result.data.length > 0) {
         // Take the first result and navigate to DTR details
         const firstResult = result.data[0];
@@ -408,43 +408,43 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
       icon: 'icons/dashboard.svg',
       hasSubmenu: true,
       submenu: [
-,
+        ,
         {
           title: 'Consumer Dashboard',
           link: '/consumer-dashboard',
         },
-,
+        ,
         {
           title: 'DTR Dashboard',
           link: '/dtr-dashboard',
         },
-,
+        ,
       ],
     },
 
-       { title: 'MeterManagment', icon: 'icons/meter-bolt.svg', link: '/meters' },
+    { title: 'MeterManagment', icon: 'icons/meter-bolt.svg', link: '/meters' },
     { title: 'Assets', icon: 'icons/workflow-setting-alt.svg', link: '/asset-management' },
     {
       title: 'User Management',
       icon: 'icons/user.svg',
       hasSubmenu: true,
       submenu: [
-,
+        ,
         {
           title: 'Users',
           link: '/users',
         },
-,
+        ,
         {
           title: 'User Detail',
           link: '/users/:userId',
         },
-,
+        ,
         {
           title: 'Add User',
           link: '/add-user',
         },
-,
+        ,
         {
           title: 'Role Management',
           link: '/role-management',
@@ -452,36 +452,36 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
 
       ],
     },
-,
+    ,
     { title: 'Users', icon: 'icons/user.svg', link: '/users' },
     { title: 'Role Management', icon: 'icons/roles.svg', link: '/role-management' },
     { title: 'All Tickets', icon: 'icons/customer-service.svg', link: '/tickets' },
-    { 
+    {
       title: 'Meter Management',
       icon: 'icons/meter-bolt.svg',
       hasSubmenu: true,
       submenu: [
-,
+        ,
         {
           title: 'Data Logger',
           link: '/asset-managment',
         },
-,
+        ,
         {
           title: 'Meter List',
           link: '/meters',
         },
-,
+        ,
         {
           title: 'Meter Details',
           link: '/meter-details/:meterId',
         },
-,
+        ,
         {
           title: 'Add Meter',
           link: '/add-meter',
         },
-,
+        ,
       ],
     },
     { title: 'Data Logger', icon: 'icons/meter-bolt.svg', link: '/data-logger' },
@@ -489,58 +489,60 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
 
   ];
   return (
-      <div className="flex h-screen bg-white">
-        {/* Sidebar */}
-          <Sidebar 
-            currentPath={location.pathname}
-            onNavigate={(path: string) => navigate(path)}
-            menus={[{ category: 'GENERAL', items: menuItems }]}
-            logo={{
-              src: 'images/bi-logo-latest.svg',
-              alt: 'Best Infra',
-              collapsedSrc: 'images/changed-logo.svg',
-            }}
+    <div className="flex h-screen bg-white">
+      {/* Sidebar */}
+      <Sidebar
+        currentPath={location.pathname}
+        onNavigate={(path: string) => navigate(path)}
+        menus={[{ category: 'GENERAL', items: menuItems }]}
+        logo={{
+          src: 'images/bi-logo-latest.svg',
+          alt: 'Best Infra',
+          collapsedSrc: 'images/changed-logo.svg',
+        }}
 
-            clientLogo={{
-              src: 'images/tgnpdcl.png',
-              alt: 'TGNPDCL Client',
-              collapsedSrc: 'images/tgnpdcl.png',
-            }}
-            footer={{
-              copyright: '© 2024 Best Infra',
-              showThemeToggle: true,
-              showShareButton: false,
-            }}
-            showAppDownload={false}
-            onToggleTariff={false}
-          />
-        <div className="flex flex-col flex-1">
-          {/* Header */}
-            <Header
-             // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
-              title={pageTitles[location.pathname] || 'Dashboard'} 
-              onSearch={handleGlobalSearch}
-              apiBaseUrl={apiBaseUrl}
-              tariff={false}
-              // Notification props
-            //  notificationCount={notificationStats.unread}
-             // notificationStats={notificationStats}
-             // isNotificationLoading={isNotificationLoading}
-              onNotificationClick={() => {
-                // Navigate to notifications page or show notification panel
-                console.log('Notification clicked');
-              }}
-              onMarkAllAsRead={markAllNotificationsAsReadList}
-            //  onRefreshNotifications={fetchNotificationStats}
-              onFetchNotifications={getCurrentNotifications}
-              onMarkAsRead={markNotificationAsRead}
-            />
-          {/* Main Content */}
-          <main className="flex-1 p-6 bg-white overflow-auto dark:bg-primary-dark">
-            {children}
-          </main>
-        </div>
+        clientLogo={{
+          src: 'images/tgnpdcl.png',
+          alt: 'TGNPDCL Client',
+          collapsedSrc: 'images/tgnpdcl.png',
+        }}
+        footer={{
+          copyright: '© 2024 Best Infra',
+          showThemeToggle: true,
+          showShareButton: false,
+        }}
+        showAppDownload={false}
+        onToggleTariff={false}
+        enableSubAppThemeBridge={true}
+      />
+      <div className="flex flex-col flex-1">
+        {/* Header */}
+        <Header
+          // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
+          title={pageTitles[location.pathname] || 'Dashboard'}
+          onSearch={handleGlobalSearch}
+          apiBaseUrl={apiBaseUrl}
+          tariff={false}
+          // Notification props
+          //  notificationCount={notificationStats.unread}
+          // notificationStats={notificationStats}
+          // isNotificationLoading={isNotificationLoading}
+          onNotificationClick={() => {
+            // Navigate to notifications page or show notification panel
+            console.log('Notification clicked');
+          }}
+          onMarkAllAsRead={markAllNotificationsAsReadList}
+          //  onRefreshNotifications={fetchNotificationStats}
+          onFetchNotifications={getCurrentNotifications}
+          onMarkAsRead={markNotificationAsRead}
+          logoutRoute="/v2/tgnpdcl_smart/login"
+        />
+        {/* Main Content */}
+        <main className="flex-1 p-6 bg-white overflow-auto dark:bg-primary-dark">
+          {children}
+        </main>
       </div>
+    </div>
   );
 }
 export default AppLayout;
