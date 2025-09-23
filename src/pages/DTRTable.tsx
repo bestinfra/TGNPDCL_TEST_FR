@@ -65,6 +65,17 @@ const DTRTable: React.FC = () => {
 
   const getTableColumns = () => {
     switch (cardType) {
+      case 'communicating-meters':
+      case 'non-communicating-meters':
+        return [
+          { key: 'slNo', label: 'S.No' },
+          { key: 'meterNo', label: 'Meter Number' },
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'location', label: 'Location' },
+          { key: 'communicationStatus', label: 'Communication Status' },
+          { key: 'lastCommunicationDate', label: 'Last Communication' },
+        ];
       case 'total-dtrs':
         return [
           { key: 'dtrId', label: 'DTR ID' },
@@ -210,6 +221,12 @@ const DTRTable: React.FC = () => {
           case "total-dtrs":
             url = `${BACKEND_URL}/dtrs?${params.toString()}`;
             break;
+          case 'communicating-meters':
+            url = `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
+            break;
+          case 'non-communicating-meters':
+            url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
+            break;
           case "total-lt-feeders":
             url = `${BACKEND_URL}/meters?page=${page}&limit=${pageSize}`;
             break;
@@ -255,6 +272,7 @@ const DTRTable: React.FC = () => {
         }
 
         console.log(`[DTRTable] Fetching data for ${cardType} from: ${url}`);
+        console.log(`[DTRTable] Request params:`, { page, pageSize, search });
 
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error(`Failed to fetch data for ${cardType}`);
@@ -263,17 +281,26 @@ const DTRTable: React.FC = () => {
         if (!contentType?.includes("application/json")) throw new Error("Invalid response format");
 
         const data = await response.json();
+        console.log(`[DTRTable] Full API response for ${cardType}:`, data);
 
         if (data.success) {
-          safeSetTableData(data.data || []);
-          const paginationData = data.pagination || data;
+          let rows = data.data || [];
+          console.log(`[DTRTable] Raw data for ${cardType}:`, rows.length, 'rows');
+          console.log(`[DTRTable] Sample row:`, rows[0]);
+          
+          // No client-side filter needed; backend returns filtered rows
+
+          safeSetTableData(rows);
+
+          // Derive pagination after filter
+          const totalFiltered = rows.length;
           setServerPagination({
-            currentPage: paginationData.currentPage || paginationData.page || 1,
-            totalPages: paginationData.totalPages || Math.ceil((paginationData.total || 0) / (paginationData.pageSize || pageSize)),
-            totalCount: paginationData.totalCount || paginationData.total || 0,
-            limit: paginationData.limit || paginationData.pageSize || pageSize,
-            hasNextPage: paginationData.hasNextPage || false,
-            hasPrevPage: paginationData.hasPrevPage || false,
+            currentPage: 1,
+            totalPages: 1,
+            totalCount: totalFiltered,
+            limit: totalFiltered,
+            hasNextPage: false,
+            hasPrevPage: false,
           });
           setError(null);
         } else {
@@ -320,6 +347,10 @@ const DTRTable: React.FC = () => {
     // For meter-related tables, navigate to meter search
     if (cardType === 'total-lt-feeders' && row.meterSerialNumber != null) {
       navigate(`/meters?search=${row.meterSerialNumber}`);
+      return;
+    }
+    if ((cardType === 'communicating-meters' || cardType === 'non-communicating-meters') && row.meterNo != null) {
+      navigate(`/meters?search=${row.meterNo}`);
       return;
     }
     
