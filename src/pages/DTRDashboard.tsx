@@ -66,7 +66,14 @@ const dummyDtrConsumptionData = {
     totalKw: "0",
     totalKva: "0",
   },
-  currentDay: { totalKwh: "0", totalKvah: "0", totalKw: "0", totalKva: "0" },
+  currentDay: { 
+    totalKwh: "0", 
+    totalKvah: "0", 
+    totalKw: "0", 
+    totalKva: "0",
+    latestKwTimestamp: null,
+    latestKvaTimestamp: null
+  },
 };
 
 const dummyDtrTableData = [
@@ -118,6 +125,32 @@ const dummyMeterStatusData = [
   { value: 0, name: "Non-Communicating" },
 ];
 
+// Utility function to format timestamp
+const formatTimestamp = (timestamp: string | null | undefined): string => {
+  if (!timestamp) return "No data available";
+  
+  try {
+    // Parse the ISO string and format it to show the time as it appears in the string
+    const date = new Date(timestamp);
+    
+    // Extract date components
+    const day = date.getUTCDate().toString().padStart(2, '0');
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    
+    // Format time in 12-hour format
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    
+    return `${day}/${month}/${year}, ${displayHours}:${minutes} ${ampm}`;
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    return "Invalid timestamp";
+  }
+};
+
 const DTRDashboard: React.FC = () => {
   const navigate = useNavigate();
 
@@ -159,6 +192,8 @@ const DTRDashboard: React.FC = () => {
       totalKvah: string | number;
       totalKw: string | number;
       totalKva: string | number;
+      latestKwTimestamp?: string | null;
+      latestKvaTimestamp?: string | null;
     };
   }>(dummyDtrConsumptionData);
   const [dtrTableData, setDtrTableData] =
@@ -236,6 +271,8 @@ const DTRDashboard: React.FC = () => {
         const row1 = data.data?.row1 || {};
         const row2 = data.data?.row2 || {};
         setDtrStatsData(row1);
+        console.log('🔍 [Frontend] Retry API response row2 data:', row2);
+        
         setDtrConsumptionData({
           daily: row2.daily || {
             totalKwh: 0,
@@ -254,6 +291,8 @@ const DTRDashboard: React.FC = () => {
             totalKvah: 0,
             totalKw: 0,
             totalKva: 0,
+            latestKwTimestamp: null,
+            latestKvaTimestamp: null,
           },
         });
         setFailedApis((prev) => prev.filter((api) => api.id !== "stats"));
@@ -521,6 +560,8 @@ const DTRDashboard: React.FC = () => {
             const row1 = data.data?.row1 || {};
           const row2 = data.data?.row2 || {};
           setDtrStatsData(row1);
+          console.log('🔍 [Frontend] API response row2 data:', row2);
+          
           setDtrConsumptionData({
             daily: row2.daily || {
               totalKwh: 0,
@@ -539,6 +580,8 @@ const DTRDashboard: React.FC = () => {
               totalKvah: 0,
               totalKw: 0,
               totalKva: 0,
+              latestKwTimestamp: null,
+              latestKvaTimestamp: null,
             },
           });
         } else {
@@ -1343,7 +1386,11 @@ const DTRDashboard: React.FC = () => {
   const getCurrentConsumptionCards = () => {
     if (selectedTimeRange === "Daily") {
       // For daily, use currentDay data if available, otherwise fall back to daily
-      const currentDayData = dtrConsumptionData.currentDay || dtrConsumptionData.daily;
+      const currentDayData = dtrConsumptionData.currentDay || {
+        ...dtrConsumptionData.daily,
+        latestKwTimestamp: null,
+        latestKvaTimestamp: null
+      };
       return [
         {
           title: "Total kWh",
@@ -1369,7 +1416,8 @@ const DTRDashboard: React.FC = () => {
           title: "Total kW",
           value: String(currentDayData.totalKw || "0"),
           icon: "icons/energy.svg",
-          subtitle1: "Current Active Power",
+          //subtitle1: `Current Active Power${currentDayData.latestKwTimestamp ? ` (${formatTimestamp(currentDayData.latestKwTimestamp)})` : ""}`,
+          subtitle1: `${currentDayData.latestKwTimestamp ? ` ${formatTimestamp(currentDayData.latestKwTimestamp)}` : ""}`,
           bg: "bg-stat-icon-gradient",
           loading: isStatsLoading,
           onValueClick: () =>
@@ -1379,7 +1427,8 @@ const DTRDashboard: React.FC = () => {
           title: "Total kVA",
           value: String(currentDayData.totalKva || "0"),
           icon: "icons/energy.svg",
-          subtitle1: "Current Apparent Power",
+          //subtitle1: `Current Apparent Power${currentDayData.latestKvaTimestamp ? ` (${formatTimestamp(currentDayData.latestKvaTimestamp)})` : ""}`,
+          subtitle1: `${currentDayData.latestKvaTimestamp ? ` ${formatTimestamp(currentDayData.latestKvaTimestamp)}` : ""}`,
           bg: "bg-stat-icon-gradient",
           loading: isStatsLoading,
           onValueClick: () =>
@@ -1842,7 +1891,7 @@ const DTRDashboard: React.FC = () => {
             },
             components: [
               {
-                name: "BarChart",
+                name: "StackedBarChart",
                 props: {
                   xAxisData: chartMonths,
                   seriesData: chartSeries,
