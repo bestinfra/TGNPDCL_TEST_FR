@@ -1245,13 +1245,15 @@ const DTRDashboard: React.FC = () => {
         dtrStatsData?.row1?.underloadedFeeders ||
         0,
       icon: "icons/dtr.svg",
-      subtitle1: (() => {
-        const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
-        if (count === 0) {
-          return "No of DTRs with load < 30%";
-        }
-        return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
-      })(),
+      subtitle1:'No of DTRs with load < 30%',
+      // subtitle1: (() => {
+      //   const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
+      //   if (count === 0) {
+      //     return "No of DTRs with load < 30%";
+      //   }
+      //   return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
+      // })(),
+
       onValueClick: () =>
         navigate(
           "/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"
