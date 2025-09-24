@@ -87,7 +87,7 @@ const dummyDTRData = {
     {
       title: "Status",
       value: "0",
-      icon: "icons/units.svg",
+      icon: "icons/status.svg",
       subtitle1: "0",
       valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
       bg: "bg-[var(--color-secondary)]",
@@ -161,20 +161,22 @@ const DTRDetailPage = () => {
     highestKVA: { daily: null, monthly: null },
     thresholdValue: 0,
   });
-  const [kvaTimeRange, setKvaTimeRange] = useState<"Daily" | "Monthly">("Daily");
+  const [kvaTimeRange, setKvaTimeRange] = useState<"Daily" | "Monthly">(
+    "Daily"
+  );
 
   // Simple error state like Prepaid.tsx
   const [errorMessages, setErrors] = useState<any[]>([]);
 
   // State for tracking failed APIs
-//   const [failedApis, setFailedApis] = useState<
-//     Array<{
-//       id: string;
-//       name: string;
-//       retryFunction: () => Promise<void>;
-//       errorMessage: string;
-//     }>
-//   >([]);
+  //   const [failedApis, setFailedApis] = useState<
+  //     Array<{
+  //       id: string;
+  //       name: string;
+  //       retryFunction: () => Promise<void>;
+  //       errorMessage: string;
+  //     }>
+  //   >([]);
   // google map
   // State for map coordinates - initialized with default coordinates
   const getMapCenterAndZoom = () => {
@@ -749,7 +751,7 @@ const DTRDetailPage = () => {
               title: "Total kWh",
               value:
                 data.data?.totalKWh !== undefined &&
-                data.data?.totalKWh !== null
+                  data.data?.totalKWh !== null
                   ? Number(data.data.totalKWh).toFixed(2)
                   : "0",
               icon: "icons/energy.svg",
@@ -760,7 +762,7 @@ const DTRDetailPage = () => {
               title: "Total kVAh",
               value:
                 data.data?.totalKVAh !== undefined &&
-                data.data?.totalKVAh !== null
+                  data.data?.totalKVAh !== null
                   ? Number(data.data.totalKVAh).toFixed(2)
                   : "0",
               icon: "icons/energy.svg",
@@ -800,7 +802,7 @@ const DTRDetailPage = () => {
             {
               title: "Status",
               value: data.data?.status || "0",
-              icon: "icons/units.svg",
+              icon: "icons/status.svg",
               subtitle1: "0",
               valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
               bg: "bg-[var(--color-secondary)]",
@@ -840,14 +842,14 @@ const DTRDetailPage = () => {
   console.log(dtr, "dtr");
   const lastComm = dtr.lastCommunication
     ? new Date(dtr.lastCommunication).toLocaleString("en-IN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      })
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    })
     : "N/A";
 
   // Handle Excel download for all DTR data in a single file
@@ -1028,11 +1030,11 @@ const DTRDetailPage = () => {
 
   return (
     <div className=" sticky top-0 ">
-    <Page
-      sections={[
-        // Error Section - Above PageHeader
-        ...(errorMessages.length > 0
-          ? [
+      <Page
+        sections={[
+          // Error Section - Above PageHeader
+          ...(errorMessages.length > 0
+            ? [
               {
                 layout: {
                   type: "column" as const,
@@ -1057,360 +1059,393 @@ const DTRDetailPage = () => {
                 },
               },
             ]
-          : []),
-        {
-          layout: {
-            type: "grid" as const,
-            columns: 1,
-            className: "w-full",
-            rows: [
-              {
-                layout: "row" as const,
-                className: "w-full",
-                columns: [
-                  {
-                    name: "PageHeader",
-                    props: {
-                      title: "DTR Details",
-                      onBackClick: () => navigate("/dtr-dashboard"),
-                      backButtonText: "Back to Dashboard",
-                      buttonsLabel: "Export Data",
-                      variant: "primary",
-                      onClick: () => handleExportData(),
+            : []),
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className: "w-full",
+              rows: [
+                {
+                  layout: "row" as const,
+                  className: "w-full",
+                  columns: [
+                    {
+                      name: "PageHeader",
+                      props: {
+                        title: "DTR Details",
+                        onBackClick: () => navigate("/dtr-dashboard"),
+                        backButtonText: "Back to Dashboard",
+                        buttonsLabel: "Export Data",
+                        variant: "primary",
+                        onClick: () => handleExportData(),
+                      },
                     },
-                  },
-                ],
-              },
-            ],
+                  ],
+                },
+              ],
+            },
           },
-        },
-        {
-          layout: {
-            type: "grid" as const,
-            columns: 3,
-            className:
-              "border border-primary-border dark:border-dark-border rounded-3xl bg-white dark:bg-primary-dark-light p-4",
-            rows: [
-              {
-                layout: "row" as const,
-                className: "justify-between w-full",
-                span: { col: 3, row: 1 },
-                columns: [
-                  {
-                    name: "SectionHeader",
-                    props: {
-                      title: "DTR Information",
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 3,
+              className:
+                "border border-primary-border dark:border-dark-border rounded-3xl bg-white dark:bg-primary-dark-light p-4",
+              rows: [
+                {
+                  layout: "row" as const,
+                  className: "justify-between w-full",
+                  span: { col: 3, row: 1 },
+                  columns: [
+                    {
+                      name: "SectionHeader",
+                      props: {
+                        title: "DTR Information",
 
-                      titleLevel: 2,
-                      titleSize: "lg",
-                      titleVariant: "",
-                      titleWeight: "bold",
-                      titleAlign: "left",
-                      defaultTitleHeight: "0",
-                      className: "w-full",
-                      showDropdown: true,
-                      dropdownOptions: dtrStatusOptions,
-                      dropdownValue: dtrStatusValue,
-                      dropdownPlaceholder:
-                        dtrStatusValue === "na" ? "N/A" : "Select Status",
-                      dropdownName: "dtrStatus",
-                      onDropdownChange: handleDtrStatusChange,
-                      dropdownDisabled: isDtrDropdownDisabled,
-                      dropdownClassName: "w-30",
-                      searchable: false,
-                      lastSync: true,
-                      lastSyncLabel: "Last Sync",
-                      lastSyncValue: "2025-09-16 12:45 PM",
-                      // rightComponent: {
-                      //     name: 'LastComm', props: { value: lastComm },
-                      // },
-                      // rightComponent: {
-                      //     name: 'LastComm', props: { value: lastComm },
-                      // },
+                        titleLevel: 2,
+                        titleSize: "lg",
+                        titleVariant: "",
+                        titleWeight: "bold",
+                        titleAlign: "left",
+                        defaultTitleHeight: "0",
+                        className: "w-full",
+                        showDropdown: true,
+                        dropdownOptions: dtrStatusOptions,
+                        dropdownValue: dtrStatusValue,
+                        dropdownPlaceholder:
+                          dtrStatusValue === "na" ? "N/A" : "Select Status",
+                        dropdownName: "dtrStatus",
+                        onDropdownChange: handleDtrStatusChange,
+                        dropdownDisabled: isDtrDropdownDisabled,
+                        dropdownClassName: "w-30",
+                        searchable: false,
+                        lastSync: true,
+                        lastSyncLabel: "Last Sync",
+                        lastSyncValue: "2025-09-16 12:45 PM",
+                        // rightComponent: {
+                        //     name: 'LastComm', props: { value: lastComm },
+                        // },
+                        // rightComponent: {
+                        //     name: 'LastComm', props: { value: lastComm },
+                        // },
+                      },
                     },
-                  },
-                ],
-              },
-              {
-                layout: "row" as const,
-                className: "justify-between w-full",
-                span: { col: 3, row: 1 },
+                  ],
+                },
+                {
+                  layout: "row" as const,
+                  className: "justify-between w-full",
+                  span: { col: 3, row: 1 },
 
-                columns: [
-                  {
-                    name: "PageInformation",
-                    props: {
-                      gridColumns: 4,
-                      rows: [
-                        {
-                          layout: "row",
-                          className: "justify-between w-full",
-                          span: { col: 5, row: 1 },
-                          items: [
-                            {
-                              title: "DTR No",
-                              value: dtr.dtrNo,
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                            {
-                              title: "DTR Name",
-                              value: dtr.name,
-                              align: "start",
-                              gap: "gap-1",
-                              statusIndicator: true,
-                            },
-                            {
-                              title: "Division",
-                              value:
-                                locationHierarchy.find(
-                                  (loc) => loc.type === "Division"
-                                )?.name || "N/A",
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                            {
-                              title: "Sub-Division",
-                              value:
-                                locationHierarchy.find(
-                                  (loc) => loc.type === "Sub-Division"
-                                )?.name || "N/A",
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                            // {
-                            //     title: 'Substation',
-                            //     value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
-                            //     align: 'start',
-                            //     gap: 'gap-1'
-                            // }
-                          ],
-                        },
-                        {
-                          layout: "row",
-                          className: "justify-between w-full",
-                          span: { col: 5, row: 1 },
-                          items: [
-                            // {
-                            //     title: 'Condition',
-                            //     value: dtr.condition,
-                            //     align: 'start',
-                            //     gap: 'gap-1'
-                            // },
-                            {
-                              title: "Capacity",
-                              value: dtr.capacity,
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                            {
-                              title: "Address",
-                              value: dtr.address,
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                            {
-                              title: "Latitude",
-                              value:
-                                dtr.location.lat !== 0
-                                  ? dtr.location.lat.toFixed(6)
-                                  : "N/A",
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                            {
-                              title: "Longitude",
-                              value:
-                                dtr.location.lng !== 0
-                                  ? dtr.location.lng.toFixed(6)
-                                  : "N/A",
-                              align: "start",
-                              gap: "gap-1",
-                            },
-                          ],
-                        },
-                      ],
+                  columns: [
+                    {
+                      name: "PageInformation",
+                      props: {
+                        gridColumns: 4,
+                        rows: [
+                          {
+                            layout: "row",
+                            className: "justify-between w-full",
+                            span: { col: 5, row: 1 },
+                            items: [
+                              {
+                                title: "DTR No",
+                                value: dtr.dtrNo,
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "DTR Name",
+                                value: dtr.name,
+                                align: "start",
+                                gap: "gap-1",
+                                statusIndicator: true,
+                              },
+                              {
+                                title: "Division",
+                                value:
+                                  locationHierarchy.find(
+                                    (loc) => loc.type === "Division"
+                                  )?.name || "N/A",
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "Sub-Division",
+                                value:
+                                  locationHierarchy.find(
+                                    (loc) => loc.type === "Sub-Division"
+                                  )?.name || "N/A",
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              // {
+                              //     title: 'Substation',
+                              //     value: locationHierarchy.find(loc => loc.type === 'Substation')?.name || 'N/A',
+                              //     align: 'start',
+                              //     gap: 'gap-1'
+                              // }
+                            ],
+                          },
+                          {
+                            layout: "row",
+                            className: "justify-between w-full",
+                            span: { col: 5, row: 1 },
+                            items: [
+                              // {
+                              //     title: 'Condition',
+                              //     value: dtr.condiztion,
+                              //     align: 'start',
+                              //     gap: 'gap-1'
+                              // },
+                              {
+                                title: "Capacity",
+                                value: dtr.capacity,
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "Address",
+                                value: dtr.address,
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "Latitude",
+                                value:
+                                  dtr.location.lat !== 0
+                                    ? dtr.location.lat.toFixed(6)
+                                    : "N/A",
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "Longitude",
+                                value:
+                                  dtr.location.lng !== 0
+                                    ? dtr.location.lng.toFixed(6)
+                                    : "N/A",
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                            ],
+                          },
+                        ],
+                      },
                     },
-                  },
-                ],
-              },
-            ],
+                  ],
+                },
+              ],
+            },
           },
-        },
-        {
-          layout: {
-            type: "grid" as const,
-            columns: 1,
-            className:
-              "w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary dark:bg-primary-dark-light",
-            rows: [
-              {
-                layout: "row" as const,
-                className: "justify-between w-full ",
-                span: { col: 1, row: 1 },
-                columns: [
-                  {
-                    name: "SectionHeader",
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className:
+                "w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary dark:bg-primary-dark-light",
+              rows: [
+                {
+                  layout: "row" as const,
+                  className: "justify-between w-full ",
+                  span: { col: 1, row: 1 },
+                  columns: [
+                    {
+                      name: "SectionHeader",
+                      props: {
+                        title: "Distribution Transformer (DTR) Statistics",
+                        titleLevel: 2,
+                        titleSize: "lg",
+                        titleVariant: "",
+                        titleWeight: "bold",
+                        titleAlign: "left",
+                        className: "w-full",
+                        // rightComponent: { name: 'LastComm', props: { value: lastComm } },
+                      },
+                      span: { col: 1, row: 1 },
+                    },
+                  ],
+                },
+                {
+                  layout: "grid" as const,
+                  gridColumns: 5,
+                  className: "w-full gap-4",
+                  columns: stats.map((stat) => ({
+                    name: "Card",
                     props: {
-                      title: "Distribution Transformer (DTR) Statistics",
-                      titleLevel: 2,
-                      titleSize: "lg",
-                      titleVariant: "",
-                      titleWeight: "bold",
-                      titleAlign: "left",
-                      className: "w-full",
-                      // rightComponent: { name: 'LastComm', props: { value: lastComm } },
+                      title: stat.title,
+                      value: stat.value,
+                      subtitle1: stat.subtitle1,
+                      icon: stat.icon,
+                      bg: stat.bg || "bg-stat-icon-gradient",
+                      valueFontSize:
+                        stat.valueFontSize ||
+                        "text-lg lg:text-xl md:text-lg sm:text-base",
+                      iconStyle: stat.iconStyle || FILTER_STYLES.BRAND_GREEN,
+                      loading: isStatsLoading,
                     },
                     span: { col: 1, row: 1 },
-                  },
-                ],
-              },
-              {
-                layout: "grid" as const,
-                gridColumns: 5,
-                className: "w-full gap-4",
-                columns: stats.map((stat) => ({
-                  name: "Card",
-                  props: {
-                    title: stat.title,
-                    value: stat.value,
-                    subtitle1: stat.subtitle1,
-                    icon: stat.icon,
-                    bg: stat.bg || "bg-stat-icon-gradient",
-                    valueFontSize:
-                      stat.valueFontSize ||
-                      "text-lg lg:text-xl md:text-lg sm:text-base",
-                    iconStyle: stat.iconStyle || FILTER_STYLES.BRAND_GREEN,
-                    loading: isStatsLoading,
-                  },
-                  span: { col: 1, row: 1 },
-                })),
-              },
-            ],
+                  })),
+                },
+              ],
+            },
           },
-        },
-        {
-          layout: {
-            type: "grid" as const,
-            columns: 1,
-            className: "",
-            rows: [
-              {
-                layout: "grid" as const,
-                gridColumns: 1,
-                columns: [
-                  {
-                    name: "Table",
-                    props: {
-                      columns: [
-                        { key: "sNo", label: "S.No" },
-                        { key: "feederName", label: "Feeder Name" },
-                        { key: "loadStatus", label: "Load Status" },
-                        // { key: 'condition', label: 'Condition' },
-                        // { key: 'capacity', label: 'Capacity' },
-                        // { key: 'address', label: 'Address' },
-                      ],
-                      data: feedersData,
-                      searchable: true,
-                      pagination: true,
-                      initialRowsPerPage: 10,
-                      rowsPerPageOptions: [5, 10, 15, 20, 25],
-                      emptyMessage: "No Feeders Found",
-                      showActions: true,
-                      title: "DTR Feeders",
-                      headerTitle: "DTR Feeders",
-                      showHeader: true,
-                      showPaginationInfo: true,
-                      showRowsPerPageSelector: true,
-                      className: "w-full",
-                      onExport: handleFeedersExport,
-                      onRowClick: (row: any) =>
-                        handleFeederClick(row.feederName),
-                      actions: [
-                        {
-                          label: "View",
-                          icon: "icons/eye.svg",
-                          onClick: handleFeederView,
-                          variant: "primary",
-                          size: "sm",
-                        },
-                      ],
-                      loading: isFeedersLoading,
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className: "",
+              rows: [
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: "Table",
+                      props: {
+                        columns: [
+                          { key: "sNo", label: "S.No" },
+                          { key: "feederName", label: "Feeder Name" },
+                          { key: "loadStatus", label: "Load Status" },
+                          // { key: 'condition', label: 'Condition' },
+                          // { key: 'capacity', label: 'Capacity' },
+                          // { key: 'address', label: 'Address' },
+                        ],
+                        data: feedersData,
+                        searchable: true,
+                        pagination: true,
+                        initialRowsPerPage: 10,
+                        rowsPerPageOptions: [5, 10, 15, 20, 25],
+                        emptyMessage: "No Feeders Found",
+                        showActions: true,
+                        title: "DTR Feeders",
+                        headerTitle: "DTR Feeders",
+                        showHeader: true,
+                        showPaginationInfo: true,
+                        showRowsPerPageSelector: true,
+                        className: "w-full",
+                        onExport: handleFeedersExport,
+                        onRowClick: (row: any) =>
+                          handleFeederClick(row.feederName),
+                        actions: [
+                          {
+                            label: "View",
+                            icon: "icons/eye.svg",
+                            onClick: handleFeederView,
+                            variant: "primary",
+                            size: "sm",
+                          },
+                        ],
+                        loading: isFeedersLoading,
+                      },
                     },
-                  },
-                ],
-              },
-            ],
+                  ],
+                },
+              ],
+            },
           },
-        },
-        {
-          layout: {
-            type: "grid" as const,
-            columns: 1,
-            className: "",
-            rows: [
-              {
-                layout: "grid" as const,
-                className: "w-full",
-                columns: [
-                  {
-                    name: "GoogleMap",
-                    props: {
-                      title: "Feeder Location",
-                      hasDownload: true,
-                      apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
-                      center: mapCenter,
-                      zoom: mapZoom,
-                      libraries: ["places"],
-                      markers: (() => {
-                        // If we have specific feeder data, show only that feeder
-                        if (dtr?.location) {
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className: "",
+              rows: [
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: "CapacityGauge",
+                      props: {
+                        size: 200,
+                        strokeWidth: 20,
+                        data: getKvaMetricsData().seriesData[0]?.data || [],
+                        threshold: kvaMetricsData.thresholdValue || 0,
+                        ratingKVA:
+                          kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+                        showHeader: true,
+                        showDownloadButton: true,
+                        enableAnimation: true,
+                        animationDuration: 2000,
+                        enableHover: true,
+                        centerLabelFontSize: 20,
+                        percentageFontSize: 32,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className: "",
+              rows: [
+                {
+                  layout: "grid" as const,
+                  className: "w-full",
+                  columns: [
+                    {
+                      name: "GoogleMap",
+                      props: {
+                        title: "Feeder Location",
+                        hasDownload: true,
+                        apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
+                        center: mapCenter,
+                        zoom: mapZoom,
+                        libraries: ["places"],
+                        markers: (() => {
+                          // If we have specific feeder data, show only that feeder
+                          if (dtr?.location) {
+                            return [
+                              {
+                                position: {
+                                  lat: dtr.location.lat || mapLatitude,
+                                  lng: dtr.location.lng || mapLongitude,
+                                },
+                              },
+                            ];
+                          }
+
+                          // This section was removed because dtr.location is an object, not an array
+
+                          // Fallback to single marker at center
                           return [
                             {
-                              position: {
-                                lat: dtr.location.lat || mapLatitude,
-                                lng: dtr.location.lng || mapLongitude,
-                              },
+                              position: { lat: mapLatitude, lng: mapLongitude },
+                              title: "Feeder Location",
+                              infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
                             },
                           ];
-                        }
-
-                        // This section was removed because dtr.location is an object, not an array
-
-                        // Fallback to single marker at center
-                        return [
-                          {
-                            position: { lat: mapLatitude, lng: mapLongitude },
-                            title: "Feeder Location",
-                            infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
-                          },
-                        ];
-                      })(),
-                      mapOptions: {
-                        disableDefaultUI: false,
-                        zoomControl: true,
-                        mapTypeControl: true,
-                        scaleControl: true,
-                        streetViewControl: true,
-                        rotateControl: true,
-                        fullscreenControl: true,
+                        })(),
+                        mapOptions: {
+                          disableDefaultUI: false,
+                          zoomControl: true,
+                          mapTypeControl: true,
+                          scaleControl: true,
+                          streetViewControl: true,
+                          rotateControl: true,
+                          fullscreenControl: true,
+                        },
+                        onReady: (_map: any, _google: any) => { },
+                        onClick: (e: any) => {
+                          const clickedCoords = e.latLng?.toJSON();
+                          if (clickedCoords) {
+                            // You could add a temporary marker here or show coordinates in a tooltip
+                          }
+                        },
+                        onIdle: () => { },
                       },
-                      onReady: (_map: any, _google: any) => {},
-                      onClick: (e: any) => {
-                        const clickedCoords = e.latLng?.toJSON();
-                        if (clickedCoords) {
-                          // You could add a temporary marker here or show coordinates in a tooltip
-                        }
-                      },
-                      onIdle: () => {},
                     },
-                  },
-                ],
-              },
-            ],
+                  ],
+                },
+              ],
+            },
           },
-        },
-        {
+          {
             layout: {
               type: "grid" as const,
               columns: 1,
@@ -1442,7 +1477,12 @@ const DTRDetailPage = () => {
                         xAxisData: getKvaMetricsData().xAxisData || [],
                         showCapacityInfo: true,
                         showHighestKVA: true,
-                        seriesColors: ['#163b7c', '#55b56c', '#dc272c', '#ed8c22'],
+                        seriesColors: [
+                          "#163b7c",
+                          "#55b56c",
+                          "#dc272c",
+                          "#ed8c22",
+                        ],
                       },
                       span: { col: 1, row: 1 },
                     },
@@ -1451,52 +1491,52 @@ const DTRDetailPage = () => {
               ],
             },
           },
-        {
-          layout: {
-            type: "grid" as const,
-            columns: 1,
-            className: "",
-            rows: [
-              {
-                layout: "grid" as const,
-                gridColumns: 1,
-                className: "pb-4",
-                columns: [
-                  {
-                    name: "Table",
-                    props: {
-                      columns: [
-                        { key: "alertId", label: "Alert ID" },
-                        { key: "type", label: "Type" },
-                        { key: "feederName", label: "Meter Number" },
-                        { key: "occuredOn", label: "Occured On" },
-                        { key: "status", label: "Status" },
-                      ],
-                      data: alertsData,
-                      searchable: true,
-                      pagination: true,
-                      initialRowsPerPage: 10,
-                      rowsPerPageOptions: [5, 10, 15, 20, 25],
-                      emptyMessage: "No Alerts Found",
-                      showActions: false,
-                      title: "DTR Alerts",
-                      headerTitle: "DTR Alerts",
-                      showHeader: true,
-                      showPaginationInfo: true,
-                      showRowsPerPageSelector: true,
-                      className: "w-full",
-                      serverPagination: alertsPagination,
-                      onPageChange: handleAlertsPageChange,
-                      loading: isAlertsLoading,
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className: "",
+              rows: [
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  className: "pb-4",
+                  columns: [
+                    {
+                      name: "Table",
+                      props: {
+                        columns: [
+                          { key: "alertId", label: "Alert ID" },
+                          { key: "type", label: "Type" },
+                          { key: "feederName", label: "Meter Number" },
+                          { key: "occuredOn", label: "Occured On" },
+                          { key: "status", label: "Status" },
+                        ],
+                        data: alertsData,
+                        searchable: true,
+                        pagination: true,
+                        initialRowsPerPage: 10,
+                        rowsPerPageOptions: [5, 10, 15, 20, 25],
+                        emptyMessage: "No Alerts Found",
+                        showActions: false,
+                        title: "DTR Alerts",
+                        headerTitle: "DTR Alerts",
+                        showHeader: true,
+                        showPaginationInfo: true,
+                        showRowsPerPageSelector: true,
+                        className: "w-full",
+                        serverPagination: alertsPagination,
+                        onPageChange: handleAlertsPageChange,
+                        loading: isAlertsLoading,
+                      },
                     },
-                  },
-                ],
-              },
-            ],
+                  ],
+                },
+              ],
+            },
           },
-        },
-      ]}
-    />
+        ]}
+      />
     </div>
   );
 };
