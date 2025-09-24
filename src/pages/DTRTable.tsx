@@ -19,7 +19,7 @@ interface Pagination {
   hasPrevPage: boolean;
 }
 
-const nonActionableCardTypes = [
+const nonActionableCardTypes: string[] = [
   // Consumption-related tables are now actionable (can navigate to DTR detail)
   // 'daily-kwh','monthly-kwh',
   // 'daily-kvah','monthly-kvah',
@@ -60,7 +60,6 @@ const DTRTable: React.FC = () => {
     const title = urlParams.get('title');
 
     if (type) setCardType(type);
-    console.log("titles", type);
     if (title) setCardTitle(decodeURIComponent(title));
   }, []);
 
@@ -79,6 +78,7 @@ const DTRTable: React.FC = () => {
         ];
       case 'total-dtrs':
         return [
+          { key: 'sNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'feedersCount', label: 'Feeders Count' },
@@ -94,25 +94,26 @@ const DTRTable: React.FC = () => {
       case 'total-lt-feeders':
         return [
           { key: 'sNo', label: 'S.No' },
-          { key: 'meterSerialNumber', label: 'Meter Number' },
-          { key: 'modemSerialNumber', label: 'Modem Serial Number' },
-          { key: 'meterType', label: 'Meter Type' },
-          { key: 'meterMake', label: 'Meter Make' },
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'meterNo', label: 'Meter Number' },
+          { key: 'communicationStatus', label: 'Communication Status' },
           { key: 'location', label: 'Location' },
-          { key: 'installationDate', label: 'Installation Date' },
+          { key: 'lastCommunicationDate', label: 'Last Communication Date' },
+
+          //{ key: 'installationDate', label: 'Installation Date' },
         ];
       case 'fuse-blown':
       case 'lt-fuse-blown':
       case 'ht-fuse-blown':
         return [
           { key: 'slNo', label: 'S.No' },
-          { key: 'meterNo', label: 'Meter Number' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
+          { key: 'meterNo', label: 'Meter Number' },
           { key: 'location', label: 'Location' },
           { key: 'fuseType', label: 'Fuse Type' },
-          { key: 'blownTime', label: 'Blown Time' },
-          { key: 'lastReadingDate', label: 'Last Reading Date' },
+          { key: 'lastReadingDate', label: 'Last Communication Date' },
         ];
       case 'overloaded-feeders':
       case 'underloaded-feeders':
@@ -121,31 +122,33 @@ const DTRTable: React.FC = () => {
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
           { key: 'manufacturer', label: 'Manufacturer' },
-          { key: 'model', label: 'Model' },
+          { key: 'communicationStatus', label: 'Communication Status' },
+          { key: 'feedersCount', label: 'Feeders Count' },
           { key: 'capacity', label: 'Capacity' },
           { key: 'loadPercentage', label: 'Load %' },
-          { key: 'feedersCount', label: 'Feeders Count' },
           { key: 'location', label: 'Location' },
-          { key: 'status', label: 'Status' },
+          { key: 'lastCommunication', label: 'Last Communication' },
         ];
       case 'unbalanced-dtrs':
         return [
+          { key: 'slNo', label: 'S.No' },
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
-          { key: 'phaseA', label: 'Current (R Phase)' },
-          { key: 'phaseB', label: 'Current (Y Phase)' },
-          { key: 'phaseC', label: 'Current (B Phase)' },
-          //{ key: 'imbalance', label: 'Imbalance %' },
           { key: 'location', label: 'Location' },
+          { key: 'communicationStatus', label: 'Communication Status' },
+          { key: 'neutralCurrent', label: 'Neutral Current' },
+          { key: 'lastCommunication', label: 'Last Communication' },
         ];
       case 'power-failure-feeders':
         return [
-          { key: 'feederId', label: 'Feeder ID' },
-          { key: 'feederName', label: 'Feeder Name' },
-          { key: 'failureTime', label: 'Failure Time' },
-          // { key: 'affectedConsumers', label: 'Affected Consumers' },
-          { key: 'estimatedRestoration', label: 'Est. Restoration' },
+          { key: 'slNo', label: 'S.No' },
+          { key: 'feederId', label: 'DTR ID' },
+          { key: 'feederName', label: 'DTR Name' },
+          { key: 'meterNo', label: 'Meter Number' },
+          { key: 'communicationStatus', label: 'Communication Status' },
           { key: 'location', label: 'Location' },
+          { key: 'failureTime', label: 'Failure Time' },
+          { key: 'lastCommunication', label: 'Last Communication' },
         ];
       case 'daily-kwh':
       case 'monthly-kwh':
@@ -229,7 +232,7 @@ const DTRTable: React.FC = () => {
             url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
             break;
           case "total-lt-feeders":
-            url = `${BACKEND_URL}/meters?page=${page}&limit=${pageSize}`;
+            url = `${BACKEND_URL}/dtrs/all-meters?page=${page}&limit=${pageSize}`;
             break;
           case "fuse-blown":
             url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
@@ -288,7 +291,7 @@ const DTRTable: React.FC = () => {
           let rows = data.data || [];
           console.log(`[DTRTable] Raw data for ${cardType}:`, rows.length, 'rows');
           console.log(`[DTRTable] Sample row:`, rows[0]);
-
+          
           // No client-side filter needed; backend returns filtered rows
 
           safeSetTableData(rows);
@@ -335,16 +338,16 @@ const DTRTable: React.FC = () => {
 
   const handleView = (row: TableData) => {
     if (!row) return;
-
+    
     // For DTR-related tables, navigate to DTR detail page
-    if (['total-dtrs', 'overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
+    if (['total-dtrs','total-lt-feeders', 'overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
       const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
       if (dtrId != null) {
         navigate(`/dtr-detail/${dtrId}`);
         return;
       }
     }
-
+    
     // For meter-related tables, navigate to meter search
     if (cardType === 'total-lt-feeders' && row.meterSerialNumber != null) {
       navigate(`/meters?search=${row.meterSerialNumber}`);
@@ -354,12 +357,12 @@ const DTRTable: React.FC = () => {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
-
+    
     if (cardType === 'fuse-blown' && row.meterNo != null) {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
-
+    
     // For consumption-related tables, navigate to DTR detail if dtrId is available
     if (['daily-kwh', 'monthly-kwh', 'daily-kvah', 'monthly-kvah', 'daily-kw', 'monthly-kw', 'daily-kva', 'monthly-kva'].includes(cardType || '')) {
       if (row.dtrId != null) {
@@ -369,7 +372,7 @@ const DTRTable: React.FC = () => {
     }
   };
 
-  const handleEdit = (_row: TableData) => { };
+  const handleEdit = (_row: TableData) => {};
 
   const handlePageChange = (page: number) => fetchData(page, serverPagination.limit);
   const handleSearch = (searchTerm: string) => fetchData(1, serverPagination.limit, searchTerm);
@@ -380,28 +383,28 @@ const DTRTable: React.FC = () => {
         sections={[
           ...(error
             ? [
-              {
-                layout: {
-                  type: 'column',
-                  gap: 'gap-4',
-                  rows: [
-                    {
-                      layout: 'column',
-                      columns: [
-                        {
-                          name: 'Error',
-                          props: {
-                            visibleErrors: [error],
-                            showRetry: true,
-                            onRetry: () => fetchData(),
+                {
+                  layout: {
+                    type: 'column',
+                    gap: 'gap-4',
+                    rows: [
+                      {
+                        layout: 'column',
+                        columns: [
+                          {
+                            name: 'Error',
+                            props: {
+                              visibleErrors: [error],
+                              showRetry: true,
+                              onRetry: () => fetchData(),
+                            },
                           },
-                        },
-                      ],
-                    },
-                  ],
+                        ],
+                      },
+                    ],
+                  },
                 },
-              },
-            ]
+              ]
             : []),
           {
             layout: {
@@ -448,7 +451,7 @@ const DTRTable: React.FC = () => {
                         showHeader: true,
                         showActions: !nonActionableCardTypes.includes(cardType || ''),
                         onView: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
-                        // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
+                       // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
                         onRowClick: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
                         text: cardTitle,
                         className: 'w-full',
