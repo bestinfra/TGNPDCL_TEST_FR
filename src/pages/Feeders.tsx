@@ -1991,20 +1991,30 @@ const Feeders = () => {
                             label: "Last Communication",
                             labelVariant: "",
                             value: (() => {
-                              const rawDateTime =
-                                instantaneousStatsData?.lastCommDate ||
-                                "2024-01-15 14:30:00";
-                              let datePart = "";
-                              let timePart = "";
-
-                              if (rawDateTime.includes(" ")) {
-                                [datePart, timePart] = rawDateTime.split(" ");
-                              } else if (rawDateTime.includes("T")) {
-                                [datePart, timePart] = rawDateTime.split("T");
-                                timePart = timePart?.split(".")[0];
+                              const raw = instantaneousStatsData?.lastCommDate;
+                              if (!raw || typeof raw !== 'string') {
+                                return "N/A";
                               }
-
-                              return `${datePart} ${timePart}`;
+                              try {
+                                // Try to parse robustly: handle both "YYYY-MM-DD HH:mm:ss" and ISO forms
+                                const parseSource = raw.includes('T') ? raw : raw.replace(' ', 'T');
+                                const d = new Date(parseSource);
+                                if (!isNaN(d.getTime())) {
+                                  return d.toLocaleString("en-IN", {
+                                    year: "numeric",
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    hour12: true,
+                                  });
+                                }
+                                // If parsing fails, fall back to raw
+                                return raw;
+                              } catch {
+                                return raw;
+                              }
                             })(),
                           },
                         },
