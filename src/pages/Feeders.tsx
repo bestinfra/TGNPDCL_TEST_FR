@@ -1803,14 +1803,14 @@ const Feeders = () => {
                             window.history.back();
                           }
                         },
-                        backButtonText: isIndividualFeeder
-                          ? passedData?.dtrName
-                            ? `Back to ${passedData.dtrName}`
-                            : "Back to DTR Dashboard"
-                          : "Back to Dashboard",
-                        buttonsLabel: "Export Data",
-                        variant: "primary",
-                        onClick: () => handleExportData(),
+                        // backButtonText: isIndividualFeeder
+                        //   ? passedData?.dtrName
+                        //     ? `Back to ${passedData.dtrName}`
+                        //     : "Back to DTR Dashboard"
+                        //   : "Back to Dashboard",
+                        // buttonsLabel: "Export Data",
+                        // variant: "primary",
+                        // onClick: () => handleExportData(),
                       },
                     },
                   ],
@@ -2325,7 +2325,7 @@ const Feeders = () => {
                         initialRowsPerPage: 10,
                         rowsPerPageOptions: [5, 10, 15, 20, 25],
                         emptyMessage: "No Alerts Found",
-                        showActions: true,
+                        showActions: false,
                         showHeader: "true",
                         headerTitle: "Alerts",
                         showPaginationInfo: true,
