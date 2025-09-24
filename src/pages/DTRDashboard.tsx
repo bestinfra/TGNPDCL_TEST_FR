@@ -1801,12 +1801,14 @@ const DTRDashboard: React.FC = () => {
                         className: "",
                         showHeader: true,
                         headerTitle: "Communication Status",
-                        onClick: (segmentName?: string) => {
-                          if (segmentName === "Communicating")
-                            navigate("/connect-disconnect/communicating");
-                          else if (segmentName === "Non-Communicating")
-                            navigate("/connect-disconnect/non-communicating");
-                          else navigate("/connect-disconnect");
+                    onClick: (segmentName?: string) => {
+                          if (segmentName === "Communicating") {
+                            navigate("/dtr-table?type=communicating-meters&title=Communicating%20Meters");
+                          } else if (segmentName === "Non-Communicating") {
+                            navigate("/dtr-table?type=non-communicating-meters&title=Non-Communicating%20Meters");
+                          } else {
+                            navigate("/dtr-table?type=communicating-meters&title=Communicating%20Meters");
+                          }
                         },
                         isLoading: isMeterStatusLoading,
                       },
