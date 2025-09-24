@@ -1234,7 +1234,7 @@ const DTRDashboard: React.FC = () => {
       })(),
       onValueClick: () =>
         navigate(
-          "/dtr-table?type=overloaded-feeders&title=Overloaded%20Feeders"
+          "/dtr-table?type=overloaded-feeders&title=Overloaded%20DTRs"
         ),
       loading: isStatsLoading,
     },
@@ -1256,7 +1256,7 @@ const DTRDashboard: React.FC = () => {
 
       onValueClick: () =>
         navigate(
-          "/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"
+          "/dtr-table?type=underloaded-feeders&title=Underloaded%20DTRs"
         ),
       loading: isStatsLoading,
     },

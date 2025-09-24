@@ -60,6 +60,7 @@ const DTRTable: React.FC = () => {
     const title = urlParams.get('title');
 
     if (type) setCardType(type);
+    console.log("titles", type);
     if (title) setCardTitle(decodeURIComponent(title));
   }, []);
 
@@ -131,9 +132,9 @@ const DTRTable: React.FC = () => {
         return [
           { key: 'dtrId', label: 'DTR ID' },
           { key: 'dtrName', label: 'DTR Name' },
-          { key: 'phaseA', label: 'Phase A (A)' },
-          { key: 'phaseB', label: 'Phase B (A)' },
-          { key: 'phaseC', label: 'Phase C (A)' },
+          { key: 'phaseA', label: 'Current (R Phase)' },
+          { key: 'phaseB', label: 'Current (Y Phase)' },
+          { key: 'phaseC', label: 'Current (B Phase)' },
           //{ key: 'imbalance', label: 'Imbalance %' },
           { key: 'location', label: 'Location' },
         ];
@@ -142,7 +143,7 @@ const DTRTable: React.FC = () => {
           { key: 'feederId', label: 'Feeder ID' },
           { key: 'feederName', label: 'Feeder Name' },
           { key: 'failureTime', label: 'Failure Time' },
-          { key: 'affectedConsumers', label: 'Affected Consumers' },
+          // { key: 'affectedConsumers', label: 'Affected Consumers' },
           { key: 'estimatedRestoration', label: 'Est. Restoration' },
           { key: 'location', label: 'Location' },
         ];
@@ -287,7 +288,7 @@ const DTRTable: React.FC = () => {
           let rows = data.data || [];
           console.log(`[DTRTable] Raw data for ${cardType}:`, rows.length, 'rows');
           console.log(`[DTRTable] Sample row:`, rows[0]);
-          
+
           // No client-side filter needed; backend returns filtered rows
 
           safeSetTableData(rows);
@@ -334,7 +335,7 @@ const DTRTable: React.FC = () => {
 
   const handleView = (row: TableData) => {
     if (!row) return;
-    
+
     // For DTR-related tables, navigate to DTR detail page
     if (['total-dtrs', 'overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
       const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
@@ -343,7 +344,7 @@ const DTRTable: React.FC = () => {
         return;
       }
     }
-    
+
     // For meter-related tables, navigate to meter search
     if (cardType === 'total-lt-feeders' && row.meterSerialNumber != null) {
       navigate(`/meters?search=${row.meterSerialNumber}`);
@@ -353,12 +354,12 @@ const DTRTable: React.FC = () => {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
-    
+
     if (cardType === 'fuse-blown' && row.meterNo != null) {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
-    
+
     // For consumption-related tables, navigate to DTR detail if dtrId is available
     if (['daily-kwh', 'monthly-kwh', 'daily-kvah', 'monthly-kvah', 'daily-kw', 'monthly-kw', 'daily-kva', 'monthly-kva'].includes(cardType || '')) {
       if (row.dtrId != null) {
@@ -368,7 +369,7 @@ const DTRTable: React.FC = () => {
     }
   };
 
-  const handleEdit = (_row: TableData) => {};
+  const handleEdit = (_row: TableData) => { };
 
   const handlePageChange = (page: number) => fetchData(page, serverPagination.limit);
   const handleSearch = (searchTerm: string) => fetchData(1, serverPagination.limit, searchTerm);
@@ -379,28 +380,28 @@ const DTRTable: React.FC = () => {
         sections={[
           ...(error
             ? [
-                {
-                  layout: {
-                    type: 'column',
-                    gap: 'gap-4',
-                    rows: [
-                      {
-                        layout: 'column',
-                        columns: [
-                          {
-                            name: 'Error',
-                            props: {
-                              visibleErrors: [error],
-                              showRetry: true,
-                              onRetry: () => fetchData(),
-                            },
+              {
+                layout: {
+                  type: 'column',
+                  gap: 'gap-4',
+                  rows: [
+                    {
+                      layout: 'column',
+                      columns: [
+                        {
+                          name: 'Error',
+                          props: {
+                            visibleErrors: [error],
+                            showRetry: true,
+                            onRetry: () => fetchData(),
                           },
-                        ],
-                      },
-                    ],
-                  },
+                        },
+                      ],
+                    },
+                  ],
                 },
-              ]
+              },
+            ]
             : []),
           {
             layout: {
@@ -447,7 +448,7 @@ const DTRTable: React.FC = () => {
                         showHeader: true,
                         showActions: !nonActionableCardTypes.includes(cardType || ''),
                         onView: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
-                       // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
+                        // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
                         onRowClick: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
                         text: cardTitle,
                         className: 'w-full',
