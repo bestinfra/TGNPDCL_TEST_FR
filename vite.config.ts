@@ -9,8 +9,8 @@ export default defineConfig({
     federation({
       name: 'tgnpdcl',
       remotes: {
-        //  SuperAdmin: 'http://localhost:4173/admin/assets/remoteEntry.js',
-       SuperAdmin: 'https://bestinfra.app/admin/assets/remoteEntry.js',
+          SuperAdmin: 'http://localhost:4173/admin/assets/remoteEntry.js',
+       //SuperAdmin: 'https://bestinfra.app/admin/assets/remoteEntry.js',
       },
       shared: ['react', 'react-dom', 'react-router', 'react-router-dom'],
     }),
