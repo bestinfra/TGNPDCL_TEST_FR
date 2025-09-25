@@ -1,7 +1,7 @@
 // API Utilities for TGNPDCL
 // This file provides utilities to connect to the backend API
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4249';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /**
  * Make API requests to the backend
