@@ -1463,6 +1463,7 @@ const DTRDashboard: React.FC = () => {
 
   // Dummy data for DTRs table
   const dtrTableColumns = [
+    { key: 'sNo', label: 'S.No' },
     { key: "dtrId", label: "DTR ID" },
     { key: "dtrName", label: "DTR Name" },
     { key: "feedersCount", label: "Feeders Count" },
@@ -1479,6 +1480,7 @@ const DTRDashboard: React.FC = () => {
   ];
 
   const alertsTableColumns = [
+    { key: 'sNo', label: 'S.No' },
     { key: "alertId", label: "Alert ID" },
     { key: "type", label: "Type" },
     { key: "feederName", label: "Meter Number" },

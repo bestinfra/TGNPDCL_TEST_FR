@@ -103,14 +103,14 @@ export default function Tickets() {
             subtitle2: ticketStats ? 'Last 24 hours' : '0', 
             iconStyle: brandGreenIconStyle 
         },
-        { 
-            key: 'open', 
-            label: 'Open Tickets', 
-            icon: 'icons/check-circle.svg', 
-            subtitle1: ticketStats ? `Successfully resolved` : '- resolved', 
-            subtitle2: ticketStats ? 'Today' : '0', 
-            iconStyle: brandGreenIconStyle 
-        },
+        // { 
+        //     key: 'open', 
+        //     label: 'Open Tickets', 
+        //     icon: 'icons/check-circle.svg', 
+        //     subtitle1: ticketStats ? `Successfully resolved` : '- resolved', 
+        //     subtitle2: ticketStats ? 'Today' : '0', 
+        //     iconStyle: brandGreenIconStyle 
+        // },
         { 
             key: 'inProgress', 
             label: 'In Progress Tickets', 
@@ -127,14 +127,14 @@ export default function Tickets() {
             subtitle2: ticketStats ? 'High priority' : '- priority', 
             iconStyle: brandGreenIconStyle 
         },
-        { 
-            key: 'closed', 
-            label: 'Closed Tickets', 
-            icon: 'icons/closed.svg', 
-            subtitle1: ticketStats ? `Based on ${ticketStats.total || '0'} reviews` : 'Based on - reviews', 
-            subtitle2: ticketStats ? 'This month' : '- month', 
-            iconStyle: brandGreenIconStyle  
-        },
+        // { 
+        //     key: 'closed', 
+        //     label: 'Closed Tickets', 
+        //     icon: 'icons/closed.svg', 
+        //     subtitle1: ticketStats ? `Based on ${ticketStats.total || '0'} reviews` : 'Based on - reviews', 
+        //     subtitle2: ticketStats ? 'This month' : '- month', 
+        //     iconStyle: brandGreenIconStyle  
+        // },
     ];
 
     // Retry function for Stats API
@@ -454,6 +454,7 @@ export default function Tickets() {
     };
 
     const [tableColumns] = useState([
+        { key: 'sNo', label: 'S.No' },
         { key: 'ticketNumber', label: 'Ticket ID' },
         { key: 'dtrNumber', label: 'DTR Number' },
         { key: 'subject', label: 'Subject' },

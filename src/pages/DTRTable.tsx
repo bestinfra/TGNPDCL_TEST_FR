@@ -339,8 +339,29 @@ const DTRTable: React.FC = () => {
   const handleView = (row: TableData) => {
     if (!row) return;
     
+    if (cardType === 'total-lt-feeders') {
+      const dtrId = row.dtrId;
+      if (dtrId != null) {
+        navigate(`/feeder/${dtrId}`, {
+          state: {
+            feederData: {
+              meterNumber: row.meterNo,
+              dtrId: dtrId,
+              dtrName: row.dtrName,
+              location: row.location,
+              communicationStatus: row.communicationStatus,
+              lastCommunicationDate: row.lastCommunicationDate
+            },
+            dtrId: dtrId,
+            dtrName: row.dtrName
+          }
+        });
+        return;
+      }
+    }
+    
     // For DTR-related tables, navigate to DTR detail page
-    if (['total-dtrs','total-lt-feeders', 'overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
+    if (['total-dtrs','fuse-blown','ht-fuse-blown','lt-fuse-blown','overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
       const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
       if (dtrId != null) {
         navigate(`/dtr-detail/${dtrId}`);
@@ -349,10 +370,6 @@ const DTRTable: React.FC = () => {
     }
     
     // For meter-related tables, navigate to meter search
-    if (cardType === 'total-lt-feeders' && row.meterSerialNumber != null) {
-      navigate(`/meters?search=${row.meterSerialNumber}`);
-      return;
-    }
     if ((cardType === 'communicating-meters' || cardType === 'non-communicating-meters') && row.meterNo != null) {
       navigate(`/meters?search=${row.meterNo}`);
       return;

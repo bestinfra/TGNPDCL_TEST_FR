@@ -382,6 +382,7 @@ export default function RoleManagement() {
 
     // Table columns configuration - Updated to match the image
     const tableColumns = [
+        { key: 'sNo', label: 'S.No' },
         { key: 'fullName', label: 'Full Name' },
         { key: 'roleName', label: 'Role Name' },
         { key: 'client', label: 'Client' },

@@ -32,9 +32,12 @@ declare global {
   }
 }
 
-function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLayoutProps) {
+function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+
+	// Resolve API base URL: prop -> env -> default '/api'
+	const baseApiUrl = apiBaseUrl ?? (import.meta.env?.VITE_API_BASE_URL || '/api');
 
   // Notification state
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -79,7 +82,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
   // Fetch notifications list
   const fetchNotificationsList = async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/notifications`, {
+		const response = await fetch(`${baseApiUrl}/notifications`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -114,7 +117,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
   // Mark notification as read
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`${apiBaseUrl}/notifications/${notificationId}/read`, {
+		const response = await fetch(`${baseApiUrl}/notifications/${notificationId}/read`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -142,7 +145,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
   // Mark all notifications as read
   const markAllNotificationsAsReadList = async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/notifications/mark-all-read`, {
+		const response = await fetch(`${baseApiUrl}/notifications/mark-all-read`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -521,7 +524,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
           // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
           title={pageTitles[location.pathname] || 'Dashboard'}
           onSearch={handleGlobalSearch}
-          apiBaseUrl={apiBaseUrl}
+			apiBaseUrl={baseApiUrl}
           tariff={false}
           // Notification props
           //  notificationCount={notificationStats.unread}

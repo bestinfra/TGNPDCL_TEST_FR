@@ -2323,6 +2323,7 @@ const Feeders = () => {
                       name: "Table",
                       props: {
                         columns: [
+                          { key: "sNo", label: "S.No" },
                           { key: "alertId", label: "Alert ID" },
                           { key: "type", label: "Type" },
                           { key: "feederName", label: "Meter Number" },

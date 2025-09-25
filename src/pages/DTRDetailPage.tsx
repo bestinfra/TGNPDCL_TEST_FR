@@ -369,20 +369,30 @@ const DTRDetailPage = () => {
       const pageToUse = pageOverride ?? alertsPagination.currentPage;
       const limitToUse = limitOverride ?? alertsPagination.limit;
       params.append("page", String(pageToUse));
-      params.append("limit", String(limitToUse));
+      params.append("pageSize", String(limitToUse));
+      
+      console.log('🔍 [DTRDetailPage] Fetching alerts with:', { pageToUse, limitToUse, pageOverride, limitOverride });
+      
       const response = await fetch(
         `${BACKEND_URL}/dtrs/${dtrId}/alerts?${params.toString()}`
       );
       if (!response.ok) throw new Error("Failed to fetch alerts data");
 
       const data = await response.json();
+      console.log(data);
 
       if (data.success) {
         const transformedAlerts =
-          data.data?.map((alert: any) => ({
-            ...alert,
-            feederName: alert.feederName || "N/A",
-          })) || [];
+  data.data?.map((alert: any, index: number) => {
+    // Use the sNo directly from backend - it's already calculated correctly
+    console.log(`🔍 [DTRDetailPage] Alert ${index}: Using backend sNo = ${alert.sNo}`);
+    return {
+      ...alert,
+      feederName: alert.feederName || "N/A",
+      // Keep the sNo from backend as-is
+    };
+  }) || [];
+
 
         setAlertsData(transformedAlerts);
         if (data.pagination) {
@@ -1532,6 +1542,8 @@ const DTRDetailPage = () => {
                       name: "Table",
                       props: {
                         columns: [
+                          // Use non-special key to avoid auto-numbering; render backend sNo explicitly
+                          { key: 'serialNo', label: 'S.No', render: (_value: any, row: any) => (row && row.sNo !== undefined && row.sNo !== null) ? row.sNo : '' },
                           { key: "alertId", label: "Alert ID" },
                           { key: "type", label: "Type" },
                           { key: "feederName", label: "Meter Number" },
