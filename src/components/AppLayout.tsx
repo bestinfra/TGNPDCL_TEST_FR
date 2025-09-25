@@ -513,6 +513,7 @@ function AppLayout({ children, apiBaseUrl = "http://localhost:4249/api" }: AppLa
             }}
             showAppDownload={false}
             onToggleTariff={false}
+            tokenName="token"
           />
         <div className="flex flex-col flex-1">
           {/* Header */}
