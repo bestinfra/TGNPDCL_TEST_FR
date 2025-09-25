@@ -389,7 +389,6 @@ const DTRTable: React.FC = () => {
     }
   };
 
-  const handleEdit = (_row: TableData) => {};
 
   const handlePageChange = (page: number) => fetchData(page, serverPagination.limit);
   const handleSearch = (searchTerm: string) => fetchData(1, serverPagination.limit, searchTerm);

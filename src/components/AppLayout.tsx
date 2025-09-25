@@ -517,6 +517,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         showAppDownload={false}
         onToggleTariff={false}
         enableSubAppThemeBridge={true}
+        tokenName="token"
       />
       <div className="flex flex-col flex-1">
         {/* Header */}
