@@ -443,7 +443,6 @@ export default function AssetManagment() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [isExporting, setIsExporting] = useState(false);
 
   // State for filter values
   const [filterValues, setFilterValues] = useState({
@@ -1293,155 +1292,6 @@ export default function AssetManagment() {
     }
   };
 
-  // Handle Export button click
-  const handleExportData = async () => {
-    if (isExporting) return; // Prevent multiple exports
-    
-    setIsExporting(true);
-    
-    try {
-      const XLSX = await import("xlsx");
-      const workbook = XLSX.utils.book_new();
-
-      if (viewMode === "table") {
-        // Check if there's data to export
-        if (!meterTableData || meterTableData.length === 0) {
-          alert("No data available to export. Please load data first.");
-          return;
-        }
-
-        // Export meter table data
-        const metersExportData = meterTableData.map((meter, index) => ({
-          "S.No": meter.slNo || index + 1,
-          "DTR ID": meter.dtrId || "-",
-          "Meter No": meter.meterNo || "-",
-          "DTR Name": meter.dtrName || "-",
-          "Location": meter.location || "-",
-          "Communication Status": meter.communicationStatus || "-",
-          "Last Communication Date": meter.lastCommunicationDate || "-"
-        }));
-
-        const metersSheet = XLSX.utils.json_to_sheet(metersExportData);
-        
-        // Auto-size columns for better readability
-        const setAutoWidth = (worksheet: any) => {
-          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
-          const colWidths: any[] = [];
-          
-          for (let C = range.s.c; C <= range.e.c; ++C) {
-            let maxWidth = 10;
-            for (let R = range.s.r; R <= range.e.r; ++R) {
-              const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-              const cell = worksheet[cellAddress];
-              if (cell && cell.v) {
-                const cellLength = cell.v.toString().length;
-                maxWidth = Math.max(maxWidth, cellLength);
-              }
-            }
-            colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
-          }
-          worksheet['!cols'] = colWidths;
-        };
-
-        setAutoWidth(metersSheet);
-        XLSX.utils.book_append_sheet(workbook, metersSheet, "Meters Data");
-
-        // Generate filename with current date
-        const currentDate = new Date().toISOString().split('T')[0];
-        const fileName = `meters-data-${currentDate}.xlsx`;
-
-        // Create and download the file
-        const excelBuffer = XLSX.write(workbook, {
-          bookType: "xlsx",
-          type: "array",
-        });
-
-        const blob = new Blob([excelBuffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-      } else if (viewMode === "hierarchy") {
-        // Check if there's data to export
-        const flattenedData = getFlattenedTableData();
-        if (!flattenedData || flattenedData.length === 0) {
-          alert("No hierarchy data available to export. Please load data first.");
-          return;
-        }
-
-        // Export hierarchy data
-        const hierarchyExportData = flattenedData.map((asset, index) => ({
-          "S.No": index + 1,
-          "Asset Name": asset.name || "-",
-          "Asset Type": asset.type || "-",
-          "Hierarchy Level": asset.level || 0,
-          "Full Path": asset.path || "-",
-          "Count": asset.count || 0,
-          "Parent": asset.parent || "Root"
-        }));
-
-        const hierarchySheet = XLSX.utils.json_to_sheet(hierarchyExportData);
-        
-        // Auto-size columns for better readability
-        const setAutoWidth = (worksheet: any) => {
-          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
-          const colWidths: any[] = [];
-          
-          for (let C = range.s.c; C <= range.e.c; ++C) {
-            let maxWidth = 10;
-            for (let R = range.s.r; R <= range.e.r; ++R) {
-              const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-              const cell = worksheet[cellAddress];
-              if (cell && cell.v) {
-                const cellLength = cell.v.toString().length;
-                maxWidth = Math.max(maxWidth, cellLength);
-              }
-            }
-            colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
-          }
-          worksheet['!cols'] = colWidths;
-        };
-
-        setAutoWidth(hierarchySheet);
-        XLSX.utils.book_append_sheet(workbook, hierarchySheet, "Asset Hierarchy");
-
-        // Generate filename with current date
-        const currentDate = new Date().toISOString().split('T')[0];
-        const fileName = `asset-hierarchy-${currentDate}.xlsx`;
-
-        // Create and download the file
-        const excelBuffer = XLSX.write(workbook, {
-          bookType: "xlsx",
-          type: "array",
-        });
-
-        const blob = new Blob([excelBuffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error("Error exporting data:", error);
-      alert("Failed to export data. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   // Handle Reset button click
   const handleResetFilters = async () => {
     setFilterValues({
@@ -1848,10 +1698,11 @@ export default function AssetManagment() {
                           { id: "HierarchyView", label: "Hierarchy View" },
                         ],
                         onMenuItemClick: handleMenuClick,
-                        buttonsLabel: isExporting ? "Exporting..." : "Export",
+                        buttonsLabel: "Export",
                         variant: "primary",
-                        onClick: handleExportData,
-                        disabled: isExporting,
+                        onClick: () => {
+                          
+                        },
                       },
                     },
                   ],
@@ -2168,15 +2019,15 @@ export default function AssetManagment() {
                                 {
                                   key: "communicationStatus",
                                   label: "Communication Status",
-                                  // statusIndicator: {},
-                                  // isActive: (
-                                  //   value:
-                                  //     | string
-                                  //     | number
-                                  //     | boolean
-                                  //     | null
-                                  //     | undefined
-                                  // ) => String(value).toLowerCase() === "communicating",
+                                  statusIndicator: {},
+                                  isActive: (
+                                    value:
+                                      | string
+                                      | number
+                                      | boolean
+                                      | null
+                                      | undefined
+                                  ) => String(value).toLowerCase() === "communicating",
                                 },
                                 {
                                   key: "lastCommunicationDate",

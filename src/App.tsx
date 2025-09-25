@@ -14,13 +14,12 @@ import Tickets from '@/pages/Tickets';
 import TicketView from '@/pages/TicketView';
 import AddTicket from '@/pages/AddTicket';
 import DataLogger from '@/pages/DataLogger';
-// import MetersList from '@/pages/MetersList';
+import MetersList from '@/pages/MetersList';
 import MeterDetails from '@/pages/MeterDetails';
 import Feeders from '@/pages/Feeders';
 import DTRDetailPage from './pages/DTRDetailPage';
 import DTRTable from './pages/DTRTable';
 import ProtectedRoute from './components/auth/LocalProtectedRoute';
-import RolesPermissions from './pages/RolesPermissions';
 
 const App: React.FC = () => {
   return (
@@ -42,13 +41,12 @@ const App: React.FC = () => {
                     <Route path="/users/:userId" element={<UserDetail />} />
                     <Route path="/add-user" element={<AddUser />} />
                     <Route path="/role-management" element={<RoleManagement />} />
-                    <Route path="/roles-permissions" element={<RolesPermissions />} />
                     <Route path="/tickets" element={<Tickets />} />
-                    <Route path="/tickets/:ticketId" element={<TicketView />} />  
+                    <Route path="/tickets/:ticketId" element={<TicketView />} />
                     <Route path="/tickets/:ticketId/edit" element={<AddTicket />} />
                     <Route path="/add-ticket" element={<AddTicket />} />
                     <Route path="/data-logger" element={<DataLogger />} />
-                    {/* <Route path="/meters" element={<MetersList />} /> */}
+                    <Route path="/meters" element={<MetersList />} />
                     <Route path="/meter-details/:meterId" element={<MeterDetails />} />
                     <Route path="/dtr-detail/:dtrId" element={<DTRDetailPage />} />
                     <Route path="/feeder/:feederId" element={<Feeders />} />

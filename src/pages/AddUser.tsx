@@ -173,7 +173,6 @@ export default function AddUser() {
                 isActive: true,
                 username: formData.email.toLowerCase().trim().split('@')[0] // Generate username from email
             };
-            console.log(userData);
 
             // Additional validation for role and location
             if (!userData.roleId || isNaN(userData.roleId)) {
@@ -292,6 +291,9 @@ export default function AddUser() {
                                                 submitLabel: isSubmitting ? 'Creating User...' : 'Create User',
                                                 cancelLabel: 'Cancel',
                                                 showFormActions: true,
+                                                submitAction: () => {
+                                                    // This will be handled by the form's internal submit
+                                                },
                                                 cancelAction: handleFormCancel,
                                                 gridLayout: {
                                                     gridRows: 3,

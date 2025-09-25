@@ -45,16 +45,16 @@ const dummyTicketTrends = {
 const dummyTickets = [
   {
     id: 1,
-    ticketNumber: '0',
-    dtrNumber: '0',
-    subject: '0',
-    priority: '0',
-    status: '0',
-    assignedTo: '0',
-    createdAt: '0',
-    category: '0',
-    meterSerialNo: '0',
-    description: '0',
+    ticketNumber: '-',
+    dtrNumber: '-',
+    subject: '-',
+    priority: '-',
+    status: '-',
+    assignedTo: '-',
+    createdAt: '-',
+    category: '-',
+    meterSerialNo: '-',
+    description: '-',
   }
 ];
 
@@ -100,7 +100,7 @@ export default function Tickets() {
             label: 'Total Tickets', 
             icon: 'icons/open-tickets.svg', 
             subtitle1: ticketStats ? `Total active tickets` : '- active tickets', 
-            subtitle2: ticketStats ? 'Last 24 hours' : '0', 
+            subtitle2: ticketStats ? 'Last 24 hours' : '-', 
             iconStyle: brandGreenIconStyle 
         },
         { 
@@ -108,7 +108,7 @@ export default function Tickets() {
             label: 'Open Tickets', 
             icon: 'icons/check-circle.svg', 
             subtitle1: ticketStats ? `Successfully resolved` : '- resolved', 
-            subtitle2: ticketStats ? 'Today' : '0', 
+            subtitle2: ticketStats ? 'Today' : '-', 
             iconStyle: brandGreenIconStyle 
         },
         { 
@@ -131,7 +131,7 @@ export default function Tickets() {
             key: 'closed', 
             label: 'Closed Tickets', 
             icon: 'icons/closed.svg', 
-            subtitle1: ticketStats ? `Based on ${ticketStats.total || '0'} reviews` : 'Based on - reviews', 
+            subtitle1: ticketStats ? `Based on ${ticketStats.total || '-'} reviews` : 'Based on - reviews', 
             subtitle2: ticketStats ? 'This month' : '- month', 
             iconStyle: brandGreenIconStyle  
         },
@@ -480,7 +480,7 @@ export default function Tickets() {
             // 1. Ticket Statistics Cards
             const ticketStatsExportData = statsArray.map((stat) => ({
                 Metric: stat.label,
-                Value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? '0' : ticketStats[stat.key as keyof typeof ticketStats]) : '0',
+                Value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? '-' : ticketStats[stat.key as keyof typeof ticketStats]) : '-',
                 Subtitle1: stat.subtitle1,
                 Subtitle2: stat.subtitle2,
             }));
@@ -620,7 +620,7 @@ export default function Tickets() {
                                     name: 'Card',
                                     props: {
                                         title: stat.label,
-                                        value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? '0' : ticketStats[stat.key as keyof typeof ticketStats]) : '0',
+                                        value: ticketStats ? (ticketStats[stat.key as keyof typeof ticketStats] === 0 ? '-' : ticketStats[stat.key as keyof typeof ticketStats]) : '-',
                                         icon: stat.icon,
                                         subtitle1: stat.subtitle1,
                                         subtitle2: stat.subtitle2,

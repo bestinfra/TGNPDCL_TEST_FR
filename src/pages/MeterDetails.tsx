@@ -376,7 +376,7 @@ const MeterDetails: React.FC = () => {
         { key: 'modemSlNo', label: 'Modem SI No' },
         { key: 'meterType', label: 'Meter Type' },
         { key: 'meterMake', label: 'Meter Make' },
-        // { key: 'consumerName', label: 'Consumer Name' },
+        { key: 'consumerName', label: 'Consumer Name' },
         { key: 'location', label: 'Location' },
         { key: 'installationDate', label: 'Installation Date' },
     ];
