@@ -223,8 +223,6 @@ const DTRDashboard: React.FC = () => {
   const [isChartLoading, setIsChartLoading] = useState(true);
   const [isFiltersLoading, setIsFiltersLoading] = useState(true);
   const [isMeterStatusLoading, setIsMeterStatusLoading] = useState(true);
-  // State to trigger main page reload
-  const [reloadKey, setReloadKey] = useState(0);
   const [meterStatus, setMeterStatus] = useState<any>(null);
   const [failedApis, setFailedApis] = useState<
     Array<{
@@ -814,9 +812,7 @@ const DTRDashboard: React.FC = () => {
     fetchDTRAlerts();
     fetchDTRAlertsTrends();
     fetchMeterStatus();
-  }, [reloadKey, lastSelectedId]);
-
-
+  }, []);
 
   // Refetch chart data when chart time range changes
   useEffect(() => {
@@ -1168,38 +1164,17 @@ const DTRDashboard: React.FC = () => {
   };
 
   // Handle Reset button click
-  const initializePage = async () => {
-    const defaultDiscom = "TGNPDCL";
-
-    // reset filters
+  const handleResetFilters = async () => {
     setFilterValues({
-      discom: defaultDiscom,
+      discom: "TGNPDCL",
       circle: "all",
       division: "all",
       subDivision: "all",
       section: "all",
       meterLocation: "all",
     });
-
-    setFilterOptions({
-      discoms: [{ value: defaultDiscom, label: defaultDiscom }],
-      circles: [{ value: "all", label: "All Circles" }],
-      divisions: [{ value: "all", label: "All Divisions" }],
-      subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
-      sections: [{ value: "all", label: "All Sections" }],
-      meterLocations: [{ value: "all", label: "All Meter Locations" }],
-    });
-
     setLastSelectedId(null);
-
-    // fetch filter options + page data
-    await updateFilterOptions("discom", defaultDiscom);
-    // trigger main effect
-    setReloadKey(prev => prev + 1);
-  };
-
-  const handleResetFilters = () => {
-    initializePage();
+    await fetchFilterOptions();
   };
 
   // DTR statistics cards data - Using API data
