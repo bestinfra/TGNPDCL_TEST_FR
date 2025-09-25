@@ -819,7 +819,7 @@ const DTRDashboard: React.FC = () => {
     if (selectedChartTimeRange) {
       retryChartAPI(lastSelectedId || undefined, selectedChartTimeRange.toLowerCase());
     }
-  }, [selectedChartTimeRange]);
+  }, [selectedChartTimeRange, lastSelectedId]);
 
 
   const handleChartDownload = () => {
@@ -1175,6 +1175,13 @@ const DTRDashboard: React.FC = () => {
     });
     setLastSelectedId(null);
     await fetchFilterOptions();
+    
+    // Automatically refetch all data after reset
+    retryStatsAPI();
+    // retryTableAPI();c
+    // retryAlertsAPI();
+    // retryChartAPI(undefined, selectedChartTimeRange.toLowerCase());/
+    // retryMeterStatusAPI();
   };
 
   // DTR statistics cards data - Using API data
