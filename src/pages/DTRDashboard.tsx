@@ -134,6 +134,8 @@ const DTRDashboard: React.FC = () => {
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
   const [originalApiData, setOriginalApiData] = useState<any[]>([]);
+  // State to trigger main page reload
+  const [reloadKey, setReloadKey] = useState(0);
   const [dtrStatsData, setDtrStatsData] = useState<any>(dummyDtrStatsData);
   const [dtrConsumptionData, setDtrConsumptionData] = useState<{
     daily: {
@@ -755,7 +757,7 @@ const DTRDashboard: React.FC = () => {
     fetchDTRAlerts();
     fetchDTRAlertsTrends();
     fetchMeterStatus();
-  }, []);
+  }, [reloadKey, lastSelectedId]);
 
   // Refetch stats when lastSelectedId changes
   // useEffect(() => {
@@ -1072,18 +1074,36 @@ const DTRDashboard: React.FC = () => {
   };
 
   // Handle Reset button click
-  const handleResetFilters = async () => {
-    setFilterValues({
-      discom: "TGNPDCL",
-      circle: "all",
-      division: "all",
-      subDivision: "all",
-      section: "all",
-      meterLocation: "all",
-    });
-    setLastSelectedId(null);
-    await fetchFilterOptions();
-  };
+  // Handle Reset button click
+const handleResetFilters = () => {
+  const defaultDiscom = "TGNPDCL";
+
+  // Reset filters
+  setFilterValues({
+    discom: defaultDiscom,
+    circle: "all",
+    division: "all",
+    subDivision: "all",
+    section: "all",
+    meterLocation: "all",
+  });
+
+  // Reset filter options
+  setFilterOptions({
+    discoms: [{ value: defaultDiscom, label: defaultDiscom }],
+    circles: [{ value: "all", label: "All Circles" }],
+    divisions: [{ value: "all", label: "All Divisions" }],
+    subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+    sections: [{ value: "all", label: "All Sections" }],
+    meterLocations: [{ value: "all", label: "All Meter Locations" }],
+  });
+
+  // Clear selection
+  setLastSelectedId(null);
+
+  // Trigger page reload via useEffect
+  setReloadKey(prev => prev + 1);
+};
 
   // DTR statistics cards data - Using API data
   const dtrStatsCards = [
