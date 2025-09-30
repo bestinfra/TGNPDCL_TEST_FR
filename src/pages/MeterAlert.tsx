@@ -1,6 +1,7 @@
 import React, { useState, useEffect,lazy } from "react";
 import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
+import BACKEND_URL from '../config';
 
 // Dummy data for fallback
 const dummyAlertStats = {
@@ -304,6 +305,56 @@ const MeterAlert: React.FC = () => {
     setActiveComponents(components);
     setHasActiveFilters(components.length > 0);
   }, [filterValues, filterOptions]);
+  useEffect(() => {
+    const fetchData = async () => {
+      _setIsStatsLoading(true);
+      _setIsTableLoading(true);
+
+      try {
+        const queryParams = new URLSearchParams({
+          status: filterValues.status === "all" ? "" : filterValues.status,
+          meterId: filterValues.meterId || "",
+          alertType: filterValues.alertType === "all" ? "" : filterValues.alertType,
+          startDate: filterValues.dateRange.start || "",
+          endDate: filterValues.dateRange.end || "",
+        }).toString();
+
+        const res = await fetch(`${BACKEND_URL}/alerts?${queryParams}`);
+        if (!res.ok) throw new Error("Failed to fetch alerts");
+
+        const data = await res.json();
+
+        // Update stats
+        _setAlertStats({
+          totalAlerts: data.stats.totalAlerts || "0",
+          activeAlerts: data.stats.activeAlerts || "0",
+          resolvedAlerts: data.stats.resolvedAlerts || "0",
+          todayOccurred: data.stats.todayOccurred || "0",
+        });
+
+        // Map table data
+        _setAlertTableData(
+          data.events.map((event: any, idx: number) => ({
+            sNo: idx + 1,
+            dtrId: event.dtrId ?? "N/A",       
+            meter: event.meter ?? "N/A",      
+            tamperType: event.tamperType,
+            status: event.status,
+            duration: event.duration,
+          }))
+        );
+
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch alert data. Please try again.");
+      } finally {
+        _setIsStatsLoading(false);
+        _setIsTableLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [filterValues]);
 
   return (
     <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
