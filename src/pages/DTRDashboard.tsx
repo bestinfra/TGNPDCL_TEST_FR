@@ -78,13 +78,24 @@ const dummyDtrConsumptionData = {
 
 const dummyDtrTableData = [
   {
-    dtrId: "0",
-    dtrName: "0",
-    feedersCount: "0",
-    streetName: "0",
-    city: "0",
-    commStatus: "0",
-    lastCommunication: "0",
+    dtrId: "1",
+    dtrName: "DTR-001",
+    feedersCount: "3",
+    streetName: "Main Street",
+    city: "Hyderabad",
+    commStatus: "Active",
+    lastCommunication: "2024-01-15 14:30:00",
+    meterlocation: "17.9964, 79.5336",
+  },
+  {
+    dtrId: "2", 
+    dtrName: "DTR-002",
+    feedersCount: "2",
+    streetName: "Tech Park Road",
+    city: "Hyderabad",
+    commStatus: "Active",
+    lastCommunication: "2024-01-15 12:15:00",
+    meterlocation: "17.3850, 78.4867",
   },
 ];
 
@@ -232,6 +243,164 @@ const DTRDashboard: React.FC = () => {
       errorMessage: string;
     }>
   >([]);
+
+  // Map-related state
+  const [mapCenter, setMapCenter] = useState({ lat: 17.992887, lng: 79.550835 });
+  const [mapZoom, setMapZoom] = useState(13);
+
+  // Function to calculate map center and zoom based on DTR locations
+  const calculateMapCenterAndZoom = (dtrData: any[]) => {
+    const validLocations = dtrData.filter(dtr => {
+      // Check direct coordinates
+      const lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
+      const lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
+      
+      // Also check meterlocation string format
+      const meterlocationCoords = parseCoordinates(dtr.meterlocation);
+      
+      return (lat && lng && lat !== 0 && lng !== 0) || meterlocationCoords;
+    });
+
+    if (validLocations.length === 0) {
+      return { center: { lat: 17.992887, lng: 79.550835 }, zoom: 13 };
+    }
+
+    if (validLocations.length === 1) {
+      // Try direct coordinates first
+      let lat = validLocations[0].latitude || validLocations[0].lat || validLocations[0].lat_coordinate || validLocations[0].latitude_coordinate;
+      let lng = validLocations[0].longitude || validLocations[0].lng || validLocations[0].lng_coordinate || validLocations[0].longitude_coordinate;
+      
+      // If no direct coordinates, try parsing meterlocation
+      if ((!lat || !lng || lat === 0 || lng === 0)) {
+        const meterlocationCoords = parseCoordinates(validLocations[0].meterlocation);
+        if (meterlocationCoords) {
+          lat = meterlocationCoords.lat;
+          lng = meterlocationCoords.lng;
+        }
+      }
+      
+      return { 
+        center: { lat: lat, lng: lng }, 
+        zoom: 15 
+      };
+    }
+
+    // Calculate bounds for multiple locations
+    const lats = validLocations.map(dtr => {
+      // Try direct coordinates first
+      let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
+      let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
+      
+      // If no direct coordinates, try parsing meterlocation
+      if ((!lat || !lng || lat === 0 || lng === 0)) {
+        const meterlocationCoords = parseCoordinates(dtr.meterlocation);
+        if (meterlocationCoords) {
+          lat = meterlocationCoords.lat;
+        }
+      }
+      
+      return lat;
+    });
+    
+    const lngs = validLocations.map(dtr => {
+      // Try direct coordinates first
+      let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
+      let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
+      
+      // If no direct coordinates, try parsing meterlocation
+      if ((!lat || !lng || lat === 0 || lng === 0)) {
+        const meterlocationCoords = parseCoordinates(dtr.meterlocation);
+        if (meterlocationCoords) {
+          lng = meterlocationCoords.lng;
+        }
+      }
+      
+      return lng;
+    });
+
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+
+    // Calculate zoom based on the span of coordinates
+    const latSpan = maxLat - minLat;
+    const lngSpan = maxLng - minLng;
+    const maxSpan = Math.max(latSpan, lngSpan);
+
+    let zoom = 13;
+    if (maxSpan > 0.1) zoom = 10;
+    else if (maxSpan > 0.05) zoom = 11;
+    else if (maxSpan > 0.01) zoom = 12;
+    else if (maxSpan > 0.005) zoom = 14;
+    else if (maxSpan > 0.001) zoom = 15;
+
+    return { center: { lat: centerLat, lng: centerLng }, zoom };
+  };
+
+  // Function to parse coordinates from meterlocation string
+  const parseCoordinates = (meterlocation: string) => {
+    if (!meterlocation || typeof meterlocation !== 'string') return null;
+    
+    // Handle format: "17.9964, 79.5336" (lat, lng)
+    const parts = meterlocation.split(',').map(part => part.trim());
+    if (parts.length === 2) {
+      const lat = parseFloat(parts[0]);
+      const lng = parseFloat(parts[1]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return { lat, lng };
+      }
+    }
+    return null;
+  };
+
+  // Function to generate markers from DTR data
+  const generateDTRMarkers = (dtrData: any[]) => {
+    
+    return dtrData
+      .filter(dtr => {
+        // Check for various possible latitude/longitude field names
+        const lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
+        const lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
+        
+        // Also check meterlocation string format
+        const meterlocationCoords = parseCoordinates(dtr.meterlocation);
+        
+        return (lat && lng && lat !== 0 && lng !== 0) || meterlocationCoords;
+      })
+      .map((dtr, index) => {
+        // Try direct coordinates first
+        let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
+        let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
+        
+        // If no direct coordinates, try parsing meterlocation
+        if ((!lat || !lng || lat === 0 || lng === 0)) {
+          const meterlocationCoords = parseCoordinates(dtr.meterlocation);
+          if (meterlocationCoords) {
+            lat = meterlocationCoords.lat;
+            lng = meterlocationCoords.lng;
+          }
+        }
+        
+        return {
+          position: { lat: lat, lng: lng },
+          title: dtr.dtrName || `DTR ${dtr.dtrId}`,
+          infoContent: `
+            <div>
+              <strong>${dtr.dtrName || `DTR ${dtr.dtrId}`}</strong><br/>
+              <strong>DTR ID:</strong> ${dtr.dtrId}<br/>
+              <strong>Feeders:</strong> ${dtr.feedersCount || 'N/A'}<br/>
+              <strong>Status:</strong> ${dtr.commStatus || 'N/A'}<br/>
+              <strong>Location:</strong> ${dtr.meterlocation || 'N/A'}<br/>
+              <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            </div>
+          `,
+        };
+      });
+  };
 
   const retryFiltersAPI = async () => {
     // setIsFiltersLoading(true);
@@ -820,6 +989,15 @@ const DTRDashboard: React.FC = () => {
       retryChartAPI(lastSelectedId || undefined, selectedChartTimeRange.toLowerCase());
     }
   }, [selectedChartTimeRange, lastSelectedId]);
+
+  // Update map center and zoom when DTR table data changes
+  useEffect(() => {
+    if (dtrTableData && dtrTableData.length > 0) {
+      const { center, zoom } = calculateMapCenterAndZoom(dtrTableData);
+      setMapCenter(center);
+      setMapZoom(zoom);
+    }
+  }, [dtrTableData]);
 
 
   const handleChartDownload = () => {
@@ -1898,9 +2076,8 @@ const DTRDashboard: React.FC = () => {
 
           {
             layout: {
-              type: "grid" as const,
+              type: "row" as const,
               className: "",
-              columns: 2,
             },
             components: [
               {
@@ -1920,10 +2097,50 @@ const DTRDashboard: React.FC = () => {
                   isLoading: isChartLoading,
                   showLegendInteractions: true,
                 },
-                span: { col: 2, row: 1 },
+                span: { col: 1, row: 1 },
               },
+             
             ],
           },
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              className: "",
+            },
+            components: [
+              {
+                name: "GoogleMap",
+                props: {
+                  title: "DTR Locations",
+                  hasDownload: true,
+                  apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
+                  center: mapCenter,
+                  zoom: mapZoom,
+                  libraries: ["places"],
+                  markers: generateDTRMarkers(dtrTableData),
+                  mapOptions: {
+                    disableDefaultUI: false,
+                    zoomControl: true,
+                    mapTypeControl: true,
+                    scaleControl: true,
+                    streetViewControl: true,
+                    rotateControl: true,
+                    fullscreenControl: true,
+                  },
+                  onReady: (_map: any, _google: any) => { },
+                  onClick: (e: any) => {
+                    const clickedCoords = e.latLng?.toJSON();
+                    if (clickedCoords) {
+                      // You could add a temporary marker here or show coordinates in a tooltip
+                    }
+                  },
+                  onIdle: () => { },
+                },
+                span: { col: 1, row: 1 },
+              },
+            ]
+          }
         ]}
       />
     </div>

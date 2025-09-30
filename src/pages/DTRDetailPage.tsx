@@ -104,6 +104,9 @@ const dummyDailyConsumptionData = {
       data: [0],
     },
   ],
+  totalKwh: 0,
+  totalKvah: 0,
+  totalKvarh: 0,
 };
 
 const dummyFeedersData = [
@@ -134,6 +137,13 @@ const DTRDetailPage = () => {
   const [dailyConsumptionData, setDailyConsumptionData] = useState(
     dummyDailyConsumptionData
   );
+  const [dtrConsumptionData, setDtrConsumptionData] = useState<any>({
+    daily: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
+    monthly: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
+  });
+  const [selectedTimeRange, setSelectedTimeRange] = useState<
+    "Daily" | "Monthly"
+  >("Daily");
   const [feedersData, setFeedersData] = useState(dummyFeedersData);
   const [alertsData, setAlertsData] = useState(dummyAlertsData);
   const [alertsPagination, setAlertsPagination] = useState({
@@ -170,55 +180,6 @@ const DTRDetailPage = () => {
 
   // Simple error state like Prepaid.tsx
   const [errorMessages, setErrors] = useState<any[]>([]);
-
-  // State for tracking failed APIs
-  //   const [failedApis, setFailedApis] = useState<
-  //     Array<{
-  //       id: string;
-  //       name: string;
-  //       retryFunction: () => Promise<void>;
-  //       errorMessage: string;
-  //     }>
-  //   >([]);
-  // google map
-  // State for map coordinates - initialized with default coordinates
-  const getMapCenterAndZoom = () => {
-    if (dtr?.location && dtr.location.lat && dtr.location.lng) {
-      // Calculate bounds for multiple feeders
-      const lats = [dtr.location.lat].filter(Boolean);
-      const lngs = [dtr.location.lng].filter(Boolean);
-
-      if (lats.length > 0 && lngs.length > 0) {
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
-        const minLng = Math.min(...lngs);
-        const maxLng = Math.max(...lngs);
-
-        const centerLat = (minLat + maxLat) / 2;
-        const centerLng = (minLng + maxLng) / 2;
-
-        // Calculate zoom based on the span of coordinates
-        const latSpan = maxLat - minLat;
-        const lngSpan = maxLng - minLng;
-        const maxSpan = Math.max(latSpan, lngSpan);
-
-        let zoom = 13;
-        if (maxSpan > 0.1) zoom = 10;
-        else if (maxSpan > 0.05) zoom = 11;
-        else if (maxSpan > 0.01) zoom = 12;
-        else if (maxSpan > 0.005) zoom = 14;
-        else if (maxSpan > 0.001) zoom = 15;
-
-        return { center: { lat: centerLat, lng: centerLng }, zoom };
-      }
-    }
-
-    // Default center and zoom for single feeder or fallback
-    return { center: { lat: mapLatitude, lng: mapLongitude }, zoom: 13 };
-  };
-  const [mapLatitude, setMapLatitude] = useState<number>(17.992887);
-  const [mapLongitude, setMapLongitude] = useState<number>(79.550835);
-  const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
 
   // DTR Status dropdown state
   const [dtrStatusValue, setDtrStatusValue] = useState<string>("na"); // Default to N/A
@@ -327,13 +288,7 @@ const DTRDetailPage = () => {
     };
   };
 
-  // Retry specific API
-  // const retrySpecificAPI = (apiId: string) => {
-  //   const api = failedApis.find((a) => a.id === apiId);
-  //   if (api) {
-  //     api.retryFunction();
-  //   }
-  // };
+
 
   // Clear all error messages
   const clearErrors = () => {
@@ -370,9 +325,7 @@ const DTRDetailPage = () => {
       const limitToUse = limitOverride ?? alertsPagination.limit;
       params.append("page", String(pageToUse));
       params.append("pageSize", String(limitToUse));
-      
-      console.log('🔍 [DTRDetailPage] Fetching alerts with:', { pageToUse, limitToUse, pageOverride, limitOverride });
-      
+
       const response = await fetch(
         `${BACKEND_URL}/dtrs/${dtrId}/alerts?${params.toString()}`
       );
@@ -383,16 +336,14 @@ const DTRDetailPage = () => {
 
       if (data.success) {
         const transformedAlerts =
-  data.data?.map((alert: any, index: number) => {
-    // Use the sNo directly from backend - it's already calculated correctly
-    console.log(`🔍 [DTRDetailPage] Alert ${index}: Using backend sNo = ${alert.sNo}`);
-    return {
-      ...alert,
-      feederName: alert.feederName || "N/A",
-      // Keep the sNo from backend as-is
-    };
-  }) || [];
-
+          data.data?.map((alert: any) => {
+            // Use the sNo directly from backend - it's already calculated correctly
+            return {
+              ...alert,
+              feederName: alert.feederName || "N/A",
+              // Keep the sNo from backend as-is
+            };
+          }) || [];
 
         setAlertsData(transformedAlerts);
         if (data.pagination) {
@@ -478,14 +429,6 @@ const DTRDetailPage = () => {
     }
   }, [dtr.condition]);
 
-  // Update map coordinates when DTR location changes
-  useEffect(() => {
-    if (dtr.location.lat !== 0 && dtr.location.lng !== 0) {
-      setMapLatitude(dtr.location.lat);
-      setMapLongitude(dtr.location.lng);
-    }
-  }, [dtr.location.lat, dtr.location.lng]);
-
   useEffect(() => {
     const fetchDtrData = async () => {
       setIsDtrLoading(true);
@@ -504,11 +447,11 @@ const DTRDetailPage = () => {
           const transformedDtrData = {
             name: data.data?.dtr?.serialNumber || "N/A",
             dtrNo: data.data?.dtr?.dtrNumber || "N/A",
-            division: "N/A", // Not available in current API
-            subDivision: "N/A", // Not available in current API
-            substation: "N/A", // Not available in current API
-            feeder: "N/A", // Not available in current API
-            feederNo: "N/A", // Not available in current API
+            division: "N/A",
+            subDivision: "N/A",
+            substation: "N/A",
+            feeder: "N/A",
+            feederNo: "N/A",
             condition: data.data?.dtr?.status || "N/A",
             capacity: data.data?.dtr?.capacity || "N/A",
             address:
@@ -571,9 +514,41 @@ const DTRDetailPage = () => {
                   ) || [],
               },
             ],
+            totalKwh: data.data?.dailyData?.totalKwh || 0,
+            totalKvah: data.data?.dailyData?.totalKvah || 0,
+            totalKvarh: data.data?.dailyData?.totalKvarh || 0,
           };
 
           setDailyConsumptionData(transformedConsumptionData);
+
+          // Store consumption data for RightAngle component
+          setDtrConsumptionData({
+            daily: {
+              totalKwh: data.data?.dailyData?.totalKwh || 0,
+              totalKvah: data.data?.dailyData?.totalKvah || 0,
+              totalKvarh: data.data?.dailyData?.totalKvarh || 0,
+            },
+            monthly: {
+              totalKwh: data.data?.monthlyData?.totalKwh || 0,
+              totalKvah: data.data?.monthlyData?.totalKvah || 0,
+              totalKvarh: data.data?.monthlyData?.totalKvarh || 0,
+            },
+          });
+
+          console.log("📊 [DTR Consumption] Daily Data:", {
+            totalKwh: data.data?.dailyData?.totalKwh,
+            totalKvah: data.data?.dailyData?.totalKvah,
+            totalKvarh: data.data?.dailyData?.totalKvarh,
+          });
+          console.log("📊 [DTR Consumption] Monthly Data:", {
+            totalKwh: data.data?.monthlyData?.totalKwh,
+            totalKvah: data.data?.monthlyData?.totalKvah,
+            totalKvarh: data.data?.monthlyData?.totalKvarh,
+          });
+          console.log(
+            "📊 [RightAngle] Data for component:",
+            dtrConsumptionData
+          );
         } else {
           throw new Error(data.message || "Failed to fetch consumption data");
         }
@@ -678,35 +653,35 @@ const DTRDetailPage = () => {
         );
         const data = await response.json();
 
-         if (data.status === "success") {
-           // Store the complete KVA metrics data with capacity info
-           setKvaMetricsData({
-             dailyData: data.data?.dailyData || { xAxisData: [], sums: [] },
-             monthlyData: data.data?.monthlyData || { xAxisData: [], sums: [] },
-             capacityInfo: data.data?.capacityInfo || {
-               dtrCapacity: 0,
-               feederCapacity: 0,
-               feederCount: 0,
-             },
-             highestKVA: data.data?.highestKVA || { daily: null, monthly: null },
-             thresholdValue: data.data?.thresholdValue || 0,
-             overloadThreshold: data.data?.overloadThreshold || 0,
-             underloadThreshold: data.data?.underloadThreshold || 0,
-           });
+        if (data.status === "success") {
+          // Store the complete KVA metrics data with capacity info
+          setKvaMetricsData({
+            dailyData: data.data?.dailyData || { xAxisData: [], sums: [] },
+            monthlyData: data.data?.monthlyData || { xAxisData: [], sums: [] },
+            capacityInfo: data.data?.capacityInfo || {
+              dtrCapacity: 0,
+              feederCapacity: 0,
+              feederCount: 0,
+            },
+            highestKVA: data.data?.highestKVA || { daily: null, monthly: null },
+            thresholdValue: data.data?.thresholdValue || 0,
+            overloadThreshold: data.data?.overloadThreshold || 0,
+            underloadThreshold: data.data?.underloadThreshold || 0,
+          });
         } else {
           throw new Error(data.message || "Failed to fetch KVA metrics");
         }
       } catch (error: any) {
         console.error("Error fetching KVA metrics:", error);
-         setKvaMetricsData({
-           dailyData: { xAxisData: [], sums: [] },
-           monthlyData: { xAxisData: [], sums: [] },
-           capacityInfo: { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
-           highestKVA: { daily: null, monthly: null },
-           thresholdValue: 0,
-           overloadThreshold: 0,
-           underloadThreshold: 0,
-         });
+        setKvaMetricsData({
+          dailyData: { xAxisData: [], sums: [] },
+          monthlyData: { xAxisData: [], sums: [] },
+          capacityInfo: { dtrCapacity: 0, feederCapacity: 0, feederCount: 0 },
+          highestKVA: { daily: null, monthly: null },
+          thresholdValue: 0,
+          overloadThreshold: 0,
+          underloadThreshold: 0,
+        });
         // setFailedApis((prev) => [
         //   ...prev,
         //   {
@@ -736,9 +711,9 @@ const DTRDetailPage = () => {
         if (!response.ok) throw new Error("Failed to fetch feeder stats");
 
         const data = await response.json();
+        console.log(" 000000000000000000", data);
 
         if (data.success) {
-          // Update the DTR stats with real data from the API
           const updatedStats = [
             {
               title: "Total LT Feeders",
@@ -768,7 +743,7 @@ const DTRDetailPage = () => {
               title: "Total kWh",
               value:
                 data.data?.totalKWh !== undefined &&
-                  data.data?.totalKWh !== null
+                data.data?.totalKWh !== null
                   ? Number(data.data.totalKWh).toFixed(2)
                   : "0",
               icon: "icons/energy.svg",
@@ -779,7 +754,7 @@ const DTRDetailPage = () => {
               title: "Total kVAh",
               value:
                 data.data?.totalKVAh !== undefined &&
-                  data.data?.totalKVAh !== null
+                data.data?.totalKVAh !== null
                   ? Number(data.data.totalKVAh).toFixed(2)
                   : "0",
               icon: "icons/energy.svg",
@@ -827,8 +802,10 @@ const DTRDetailPage = () => {
             },
           ];
 
+          console.log("📊 [DTR Statistics] Final Stats Array:", updatedStats);
+
           setStats(updatedStats);
-          
+
           // Set capacity usage for the gauge
           setCapacityUsage(data.data?.capacityUsage || 0);
         }
@@ -862,14 +839,14 @@ const DTRDetailPage = () => {
   console.log(dtr, "dtr");
   const lastComm = dtr.lastCommunication
     ? new Date(dtr.lastCommunication).toLocaleString("en-IN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    })
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      })
     : "N/A";
 
   // Handle Excel download for all DTR data in a single file
@@ -1055,30 +1032,30 @@ const DTRDetailPage = () => {
           // Error Section - Above PageHeader
           ...(errorMessages.length > 0
             ? [
-              {
-                layout: {
-                  type: "column" as const,
-                  gap: "gap-4",
-                  rows: [
-                    {
-                      layout: "column" as const,
-                      columns: [
-                        {
-                          name: "Error",
-                          props: {
-                            visibleErrors: errorMessages,
-                            onRetry: retryAllAPIs,
-                            onClose: () => removeError(0), // Remove the top error
-                            showRetry: true,
-                            maxVisibleErrors: 4, // Show max 4 errors at once
+                {
+                  layout: {
+                    type: "column" as const,
+                    gap: "gap-4",
+                    rows: [
+                      {
+                        layout: "column" as const,
+                        columns: [
+                          {
+                            name: "Error",
+                            props: {
+                              visibleErrors: errorMessages,
+                              onRetry: retryAllAPIs,
+                              onClose: () => removeError(0), // Remove the top error
+                              showRetry: true,
+                              maxVisibleErrors: 4, // Show max 4 errors at once
+                            },
                           },
-                        },
-                      ],
-                    },
-                  ],
+                        ],
+                      },
+                    ],
+                  },
                 },
-              },
-            ]
+              ]
             : []),
           {
             layout: {
@@ -1314,6 +1291,74 @@ const DTRDetailPage = () => {
           {
             layout: {
               type: "grid" as const,
+              columns: 2,
+              className: "",
+              rows: [
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: "RightAngle",
+                      props: {
+                        // Use actual data from API based on selected time range
+                        kwh:
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKwh
+                              : dtrConsumptionData.monthly.totalKwh
+                          ) || 0,
+                        kvarh:
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKvarh
+                              : dtrConsumptionData.monthly.totalKvarh
+                          ) || 0,
+                        kvah:
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKvah
+                              : dtrConsumptionData.monthly.totalKvah
+                          ) || 0,
+                        height: "400px",
+                        kwhColor: "#dc2626",
+                        kvarhColor: "#163b7c",
+                        kvahColor: "#22c55e",
+                        textColor: "#374151",
+                        showOriginMarker: true, // Show origin point
+                        showHeader: true,
+                        headerTitle: "Power Triangle",
+                        prependTimeRangeInTitle: true,
+                        showDownloadButton: true,
+                        isLoading: _isConsumptionLoading,
+                        availableTimeRanges: ["Daily", "Monthly"],
+                        selectedTimeRange: selectedTimeRange,
+                        onTimeRangeChange: (range: "Daily" | "Monthly") =>
+                          setSelectedTimeRange(range),
+                      },
+                    },
+                  ],
+                },
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: "VectorDiagram",
+                      props: {
+                        title: "DTR Feeders",
+                        showHeader: true,
+                        showDownloadButton: true,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            layout: {
+              type: "grid" as const,
               columns: 1,
               className: "",
               rows: [
@@ -1365,6 +1410,7 @@ const DTRDetailPage = () => {
               ],
             },
           },
+
           {
             layout: {
               type: "grid" as const,
@@ -1375,91 +1421,26 @@ const DTRDetailPage = () => {
                   layout: "grid" as const,
                   gridColumns: 1,
                   columns: [
-                     {
-                       name: "CapacityGauge",
-                       props: {
-                         size: 200,
-                         strokeWidth: 20,
-                         capacity: capacityUsage, // Use capacity usage percentage
-                         threshold: kvaMetricsData.thresholdValue || 0,
-                         ratingKVA:
-                           kvaMetricsData.capacityInfo?.dtrCapacity || 50,
-                         showHeader: true,
-                         showDownloadButton: true,
-                         enableAnimation: true,
-                         animationDuration: 2000,
-                         enableHover: true,
-                         centerLabelFontSize: 20,
-                         percentageFontSize: 32,
-                         headerTitle: "DTR Capacity Usage",
-                         subtitle: `${capacityUsage.toFixed(1)}% of ${kvaMetricsData.capacityInfo?.dtrCapacity || 50} kVA`,
-                       },
-                     },
-                  ],
-                },
-              ],
-            },
-          },
-          {
-            layout: {
-              type: "grid" as const,
-              columns: 1,
-              className: "",
-              rows: [
-                {
-                  layout: "grid" as const,
-                  className: "w-full",
-                  columns: [
                     {
-                      name: "GoogleMap",
+                      name: "CapacityGauge",
                       props: {
-                        title: "Feeder Location",
-                        hasDownload: true,
-                        apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
-                        center: mapCenter,
-                        zoom: mapZoom,
-                        libraries: ["places"],
-                        markers: (() => {
-                          // If we have specific feeder data, show only that feeder
-                          if (dtr?.location) {
-                            return [
-                              {
-                                position: {
-                                  lat: dtr.location.lat || mapLatitude,
-                                  lng: dtr.location.lng || mapLongitude,
-                                },
-                              },
-                            ];
-                          }
-
-                          // This section was removed because dtr.location is an object, not an array
-
-                          // Fallback to single marker at center
-                          return [
-                            {
-                              position: { lat: mapLatitude, lng: mapLongitude },
-                              title: "Feeder Location",
-                              infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
-                            },
-                          ];
-                        })(),
-                        mapOptions: {
-                          disableDefaultUI: false,
-                          zoomControl: true,
-                          mapTypeControl: true,
-                          scaleControl: true,
-                          streetViewControl: true,
-                          rotateControl: true,
-                          fullscreenControl: true,
-                        },
-                        onReady: (_map: any, _google: any) => { },
-                        onClick: (e: any) => {
-                          const clickedCoords = e.latLng?.toJSON();
-                          if (clickedCoords) {
-                            // You could add a temporary marker here or show coordinates in a tooltip
-                          }
-                        },
-                        onIdle: () => { },
+                        size: 200,
+                        strokeWidth: 20,
+                        capacity: capacityUsage, // Use capacity usage percentage
+                        threshold: kvaMetricsData.thresholdValue || 0,
+                        ratingKVA:
+                          kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+                        showHeader: true,
+                        showDownloadButton: true,
+                        enableAnimation: true,
+                        animationDuration: 2000,
+                        enableHover: true,
+                        centerLabelFontSize: 20,
+                        percentageFontSize: 32,
+                        headerTitle: "DTR Capacity Usage",
+                        subtitle: `${capacityUsage.toFixed(1)}% of ${
+                          kvaMetricsData.capacityInfo?.dtrCapacity || 50
+                        } kVA`,
                       },
                     },
                   ],
@@ -1477,51 +1458,59 @@ const DTRDetailPage = () => {
                   layout: "grid" as const,
                   gridColumns: 1,
                   columns: [
-                     {
-                       name: "ThresholdChart",
-                       props: {
-                         data: getKvaMetricsData().seriesData[0]?.data || [],
-                         thresholds: [
-                           { 
-                             value: kvaMetricsData.underloadThreshold || 0, 
-                             label: `Transformer Capacity (${kvaMetricsData.capacityInfo?.dtrCapacity || 50}kVA) - Underload Threshold (${kvaMetricsData.underloadThreshold || 0}kWh/day)`, 
-                             color: '#27ae60',
-                             lineStyle: 'dashed'
-                           },
-                           { 
-                             value: kvaMetricsData.overloadThreshold || 0, 
-                             label: `Transformer Capacity (${kvaMetricsData.capacityInfo?.dtrCapacity || 50}kVA) - Overload Threshold (${kvaMetricsData.overloadThreshold || 0}kVAh/day)`, 
-                             color: '#e74c3c',
-                             lineStyle: 'dashed'
-                           }
-                         ],
-                         ratingKVA:
-                           kvaMetricsData.capacityInfo?.dtrCapacity || 50,
-                         title: `KVA Metrics - ${kvaTimeRange}`,
-                         chartType: "bar",
-                         availableTimeRanges: ["Daily", "Monthly"],
-                         selectedTimeRange: kvaTimeRange,
-                         onTimeRangeChange: (range: "Daily" | "Monthly") =>
-                           setKvaTimeRange(range),
-                         loading: isKvaMetricsLoading,
-                         highestKVA:
-                           kvaTimeRange === "Daily"
-                             ? kvaMetricsData.highestKVA?.daily
-                             : kvaMetricsData.highestKVA?.monthly,
-                         capacityInfo: kvaMetricsData.capacityInfo,
-                         xAxisData: getKvaMetricsData().xAxisData || [],
-                         showCapacityInfo: true,
-                         showHighestKVA: true,
-                         showThresholds: true,
-                         seriesColors: [
-                           "#163b7c",
-                           "#55b56c",
-                           "#dc272c",
-                           "#ed8c22",
-                         ],
-                       },
-                       span: { col: 1, row: 1 },
-                     },
+                    {
+                      name: "ThresholdChart",
+                      props: {
+                        data: getKvaMetricsData().seriesData[0]?.data || [],
+                        thresholds: [
+                          {
+                            value: kvaMetricsData.underloadThreshold || 0,
+                            label: `Transformer Capacity (${
+                              kvaMetricsData.capacityInfo?.dtrCapacity || 50
+                            }kVA) - Underload Threshold (${
+                              kvaMetricsData.underloadThreshold || 0
+                            }kWh/day)`,
+                            color: "#27ae60",
+                            lineStyle: "dashed",
+                          },
+                          {
+                            value: kvaMetricsData.overloadThreshold || 0,
+                            label: `Transformer Capacity (${
+                              kvaMetricsData.capacityInfo?.dtrCapacity || 50
+                            }kVA) - Overload Threshold (${
+                              kvaMetricsData.overloadThreshold || 0
+                            }kVAh/day)`,
+                            color: "#e74c3c",
+                            lineStyle: "dashed",
+                          },
+                        ],
+                        ratingKVA:
+                          kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+                        title: `KVA Metrics - ${kvaTimeRange}`,
+                        chartType: "bar",
+                        availableTimeRanges: ["Daily", "Monthly"],
+                        selectedTimeRange: kvaTimeRange,
+                        onTimeRangeChange: (range: "Daily" | "Monthly") =>
+                          setKvaTimeRange(range),
+                        loading: isKvaMetricsLoading,
+                        highestKVA:
+                          kvaTimeRange === "Daily"
+                            ? kvaMetricsData.highestKVA?.daily
+                            : kvaMetricsData.highestKVA?.monthly,
+                        capacityInfo: kvaMetricsData.capacityInfo,
+                        xAxisData: getKvaMetricsData().xAxisData || [],
+                        showCapacityInfo: true,
+                        showHighestKVA: true,
+                        showThresholds: true,
+                        seriesColors: [
+                          "#163b7c",
+                          "#55b56c",
+                          "#dc272c",
+                          "#ed8c22",
+                        ],
+                      },
+                      span: { col: 1, row: 1 },
+                    },
                   ],
                 },
               ],
@@ -1543,7 +1532,14 @@ const DTRDetailPage = () => {
                       props: {
                         columns: [
                           // Use non-special key to avoid auto-numbering; render backend sNo explicitly
-                          { key: 'serialNo', label: 'S.No', render: (_value: any, row: any) => (row && row.sNo !== undefined && row.sNo !== null) ? row.sNo : '' },
+                          {
+                            key: "serialNo",
+                            label: "S.No",
+                            render: (_value: any, row: any) =>
+                              row && row.sNo !== undefined && row.sNo !== null
+                                ? row.sNo
+                                : "",
+                          },
                           { key: "alertId", label: "Alert ID" },
                           { key: "type", label: "Type" },
                           { key: "feederName", label: "Meter Number" },
