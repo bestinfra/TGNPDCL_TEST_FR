@@ -1,6 +1,7 @@
 import React, { useState, useEffect, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
+import BACKEND_URL from '../config';
 
 // Dummy data for fallback
 const dummyAlertStats = {
@@ -127,7 +128,7 @@ const MeterAlert: React.FC = () => {
   });
 
   // Data states
-  const [alertStats, _setAlertStats] = useState(dummyAlertStats);
+  const [alertStats, setAlertStats] = useState(dummyAlertStats);
   const [alertTableData, _setAlertTableData] = useState(dummyAlertTableData);
   const [filterOptions, _setFilterOptions] = useState(dummyFilterOptions);
   const [timelineData, _setTimelineData] = useState(dummyTimelineData);
@@ -302,6 +303,28 @@ const MeterAlert: React.FC = () => {
 //     // Update whether tracker should be shown
 //     setHasActiveFilters(activeCount > 0);
 //   }, [filterValues, filterOptions]);
+  useEffect(() => {
+    const fetchAlertStats = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/alerts`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch alert stats");
+        }
+        const data = await response.json();
+
+        setAlertStats({
+          totalAlerts: data.stats?.total?.toString() || "0",
+          resolvedAlerts: data.stats?.resolved?.toString() || "0",
+          activeAlerts: data.stats?.active?.toString() || "0",
+          todayOccurred: "0", // your backend doesn't return this yet
+        });
+      } catch (error) {
+        console.error("Error fetching alert stats:", error);
+      }
+    };
+
+    fetchAlertStats();
+  }, []);
 
   return (
     <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
