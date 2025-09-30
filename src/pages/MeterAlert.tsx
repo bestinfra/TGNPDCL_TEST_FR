@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy } from "react";
+import React, { useState, useEffect,lazy } from "react";
 import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import BACKEND_URL from '../config';
@@ -141,6 +141,9 @@ const MeterAlert: React.FC = () => {
   const [isTableLoading, _setIsTableLoading] = useState(false);
   const [isChartLoading, _setIsChartLoading] = useState(false);
 
+   // Error states - following the pattern from MetersList.tsx
+   const [error, setError] = useState<string | null>("Failed to fetch alert statistics. Please try again.");
+
   // Alert statistics cards
   const alertStatsCards = [
     {
@@ -211,20 +214,6 @@ const MeterAlert: React.FC = () => {
     }));
   };
 
-  // const handleGetData = () => {
-  //   // Apply filters and refresh data
-  //   setIsStatsLoading(true);
-  //   setIsTableLoading(true);
-  //   setIsChartLoading(true);
-
-  //   // Simulate API calls
-  //   setTimeout(() => {
-  //     setIsStatsLoading(false);
-  //     setIsTableLoading(false);
-  //     setIsChartLoading(false);
-  //   }, 1000);
-  // };
-
   const handleExportData = () => {
     // Export functionality
     console.log("Exporting alert data...");
@@ -234,102 +223,111 @@ const MeterAlert: React.FC = () => {
     console.log("Downloading chart data...");
   };
 
-  // Track component state changes and determine if tracker should be shown
+   // Error handling functions - following the pattern from MetersList.tsx
+   const handleRetry = () => {
+     setError(null);
+     window.location.reload();
+   };
+
+  // Self-contained tracking system - no imports needed!
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [activeComponents, setActiveComponents] = useState<
+    Array<{
+      id: string;
+      name: string;
+      value: any;
+      label?: string;
+    }>
+  >([]);
 
-//   useEffect(() => {
-//     let activeCount = 0;
-
-//     // Track filter components when they have values - show actual selected values
-//     if (filterValues.meterId) {
-//       trackComponentState(
-//         "meterId-filter",
-//         `Meter ID: ${filterValues.meterId}`,
-//         true,
-//         { value: filterValues.meterId }
-//       );
-//       activeCount++;
-//     } else {
-//       trackComponentState("meterId-filter", "Meter ID Filter", false);
-//     }
-
-//     if (filterValues.status && filterValues.status !== "all") {
-//       const statusLabel =
-//         filterOptions.statusOptions.find(
-//           (opt) => opt.value === filterValues.status
-//         )?.label || filterValues.status;
-//       trackComponentState("status-filter", `Status: ${statusLabel}`, true, {
-//         value: filterValues.status,
-//         label: statusLabel,
-//       });
-//       activeCount++;
-//     } else {
-//       trackComponentState("status-filter", "Status Filter", false);
-//     }
-
-//     if (filterValues.alertType && filterValues.alertType !== "all") {
-//       const alertTypeLabel =
-//         filterOptions.alertTypeOptions.find(
-//           (opt) => opt.value === filterValues.alertType
-//         )?.label || filterValues.alertType;
-//       trackComponentState(
-//         "alertType-filter",
-//         `Alert Type: ${alertTypeLabel}`,
-//         true,
-//         { value: filterValues.alertType, label: alertTypeLabel }
-//       );
-//       activeCount++;
-//     } else {
-//       trackComponentState("alertType-filter", "Alert Type Filter", false);
-//     }
-
-//     if (filterValues.dateRange.start || filterValues.dateRange.end) {
-//       const dateRangeLabel =
-//         filterValues.dateRange.start && filterValues.dateRange.end
-//           ? `Date Range: ${filterValues.dateRange.start} to ${filterValues.dateRange.end}`
-//           : filterValues.dateRange.start
-//           ? `From: ${filterValues.dateRange.start}`
-//           : `Until: ${filterValues.dateRange.end}`;
-
-//       trackComponentState("dateRange-filter", dateRangeLabel, true, {
-//         start: filterValues.dateRange.start,
-//         end: filterValues.dateRange.end,
-//       });
-//       activeCount++;
-//     } else {
-//       trackComponentState("dateRange-filter", "Date Range Filter", false);
-//     }
-
-//     // Update whether tracker should be shown
-//     setHasActiveFilters(activeCount > 0);
-//   }, [filterValues, filterOptions]);
   useEffect(() => {
-    const fetchAlertStats = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/alerts`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch alert stats");
-        }
-        const data = await response.json();
+    const components: Array<{
+      id: string;
+      name: string;
+      value: any;
+      label?: string;
+    }> = [];
 
-        setAlertStats({
-          totalAlerts: data.stats?.total?.toString() || "0",
-          resolvedAlerts: data.stats?.resolved?.toString() || "0",
-          activeAlerts: data.stats?.active?.toString() || "0",
-          todayOccurred: "0", // your backend doesn't return this yet
-        });
-      } catch (error) {
-        console.error("Error fetching alert stats:", error);
-      }
-    };
+    // Track Meter ID
+    if (filterValues.meterId && filterValues.meterId.trim()) {
+      components.push({
+        id: "meterId-filter",
+        name: `Meter ID: ${filterValues.meterId}`,
+        value: filterValues.meterId,
+      });
+    }
 
-    fetchAlertStats();
-  }, []);
+    if (filterValues.status && filterValues.status !== "all") {
+      const statusLabel =
+        filterOptions.statusOptions.find(
+          (opt) => opt.value === filterValues.status
+        )?.label || filterValues.status;
+      components.push({
+        id: "status-filter",
+        name: `Status: ${statusLabel}`,
+        value: filterValues.status,
+        label: statusLabel,
+      });
+    }
+
+    if (filterValues.alertType && filterValues.alertType !== "all") {
+      const alertTypeLabel =
+        filterOptions.alertTypeOptions.find(
+          (opt) => opt.value === filterValues.alertType
+        )?.label || filterValues.alertType;
+      components.push({
+        id: "alertType-filter",
+        name: `Alert Type: ${alertTypeLabel}`,
+        value: filterValues.alertType,
+        label: alertTypeLabel,
+      });
+    }
+
+    if (filterValues.dateRange.start || filterValues.dateRange.end) {
+      const dateRangeLabel =
+        filterValues.dateRange.start && filterValues.dateRange.end
+          ? `Date Range: ${filterValues.dateRange.start} to ${filterValues.dateRange.end}`
+          : filterValues.dateRange.start
+          ? `From: ${filterValues.dateRange.start}`
+          : `Until: ${filterValues.dateRange.end}`;
+
+      components.push({
+        id: "dateRange-filter",
+        name: dateRangeLabel,
+        value: {
+          start: filterValues.dateRange.start,
+          end: filterValues.dateRange.end,
+        },
+      });
+    }
+
+    // Update state
+    setActiveComponents(components);
+    setHasActiveFilters(components.length > 0);
+  }, [filterValues, filterOptions]);
 
   return (
     <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <Page
-        sections={[
+         sections={[
+           // Error section - following pattern from MetersList.tsx
+           ...(error ? [{
+             layout: {
+               type: 'column' as const,
+               gap: 'gap-4',
+             },
+             components: [
+               {
+                 name: 'Error',
+                 props: {
+                   visibleErrors: [error],
+                   onRetry: handleRetry,
+                   showRetry: true,
+                   maxVisibleErrors: 1,
+                 },
+               },
+             ],
+           }] : []),
           // Header section
           {
             layout: {
@@ -358,150 +356,99 @@ const MeterAlert: React.FC = () => {
             ],
           },
 
-          // Filter Section
-          {
-            layout: {
-              type: "row",
-              className:
-                "w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
-              rows: [
-                {
-                  layout: "grid",
-                  gridColumns: 4,
-                  className: "w-full items-center",
-                  columns: [
-                    {
-                      name: "Input",
-                      props: {
-                        type: "text",
-                        placeholder: "Enter Meter ID",
-                        value: filterValues.meterId,
-                        onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                          handleFilterChange("meterId", e.target.value),
-                        className: "flex-1",
-                      },
-                      span: { col: 1, row: 1 },
-                    },
-                    {
-                      name: "Dropdown",
-                      props: {
-                        options: filterOptions.statusOptions,
-                        value: filterValues.status,
-                        onChange: (value: string) =>
-                          handleFilterChange("status", value),
-                        placeholder: "Select Status",
-                        searchable: false,
-                      },
-                      span: { col: 1, row: 1 },
-                    },
-                    {
-                      name: "RangePicker",
-                      props: {
-                        startDate: filterValues.dateRange.start,
-                        endDate: filterValues.dateRange.end,
-                        onChange: handleDateRangeChange,
-                        placeholder: "Select Date Range",
-                        className: "w-full",
-                      },
-                      span: { col: 1, row: 1 },
-                    },
-                    {
-                      name: "Dropdown",
-                      props: {
-                        options: filterOptions.alertTypeOptions,
-                        value: filterValues.alertType,
-                        onChange: (value: string) =>
-                          handleFilterChange("alertType", value),
-                        placeholder: "Select Alert Type",
-                        searchable: false,
-                      },
-                      span: { col: 1, row: 1 },
-                    },
-                     // Only show tracker when there are active filters
-                     ...(hasActiveFilters ? [{
-                       name: "SelectedComponentsTracker",
-                       props: {
-                         title: "Active Filters",
-                         showOnlyActive: true,
-                         className: "flex flex-col gap-4",
-                         maxDisplayItems: 8,
-                         showRemoveButton: true,
-                         onRemoveComponent: (componentId: string) => {
-                           // Handle removing specific filter components only
-                           switch (componentId) {
-                             case "meterId-filter":
-                               handleFilterChange("meterId", "");
-                               break;
-                             case "status-filter":
-                               handleFilterChange("status", "all");
-                               break;
-                             case "alertType-filter":
-                               handleFilterChange("alertType", "all");
-                               break;
-                             case "dateRange-filter":
-                               handleDateRangeChange("", "");
-                               break;
-                             default:
-                               console.log("Remove component:", componentId);
-                           }
-                         },
-                         onComponentClick: (componentId: string) => {
-                           console.log("Clicked on component:", componentId);
-                           // You can add highlighting or scrolling to the component logic here
-                         },
-                       },
-                       span: { col: 4, row: 1 },
-                     }] : []),
-                  ],
-                },
-              ],
-            },
-            components: [
-              {
-                name: "Input",
-                props: {
-                  type: "text",
-                  placeholder: "Enter Meter ID",
-                  value: filterValues.meterId,
-                  onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleFilterChange("meterId", e.target.value),
-                  className: "flex-1",
-                },
-              },
-              {
-                name: "Dropdown",
-                props: {
-                  options: filterOptions.statusOptions,
-                  value: filterValues.status,
-                  onChange: (value: string) =>
-                    handleFilterChange("status", value),
-                  placeholder: "Select Status",
-                  searchable: false,
-                },
-              },
-              {
-                name: "RangePicker",
-                props: {
-                  startDate: filterValues.dateRange.start,
-                  endDate: filterValues.dateRange.end,
-                  onChange: handleDateRangeChange,
-                  placeholder: "Select Date Range",
-                  className: "w-full",
-                },
-              },
-              {
-                name: "Dropdown",
-                props: {
-                  options: filterOptions.alertTypeOptions,
-                  value: filterValues.alertType,
-                  onChange: (value: string) =>
-                    handleFilterChange("alertType", value),
-                  placeholder: "Select Alert Type",
-                  searchable: false,
-                },
-              },
-            ],
-          },
+           // Filter Section - following MetersList.tsx pattern (NO DUPLICATES)
+           {
+             layout: {
+               type: 'grid' as const,
+               columns: 4,
+               gap: 'gap-4',
+             },
+             components: [
+               {
+                 name: "Input",
+                 props: {
+                   type: "text",
+                   placeholder: "Enter Meter ID",
+                   value: filterValues.meterId,
+                   onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                     handleFilterChange("meterId", e.target.value),
+                   className: "w-full",
+                 },
+               },
+               {
+                 name: "Dropdown",
+                 props: {
+                   options: filterOptions.statusOptions,
+                   value: filterValues.status,
+                   onChange: (value: string) =>
+                     handleFilterChange("status", value),
+                   placeholder: "Select Status",
+                   searchable: false,
+                   className: "w-full",
+                 },
+               },
+               {
+                 name: "RangePicker",
+                 props: {
+                   startDate: filterValues.dateRange.start,
+                   endDate: filterValues.dateRange.end,
+                   onChange: handleDateRangeChange,
+                   placeholder: "Select Date Range",
+                   className: "w-full",
+                 },
+               },
+               {
+                 name: "Dropdown",
+                 props: {
+                   options: filterOptions.alertTypeOptions,
+                   value: filterValues.alertType,
+                   onChange: (value: string) =>
+                     handleFilterChange("alertType", value),
+                   placeholder: "Select Alert Type",
+                   searchable: false,
+                   className: "w-full",
+                 },
+               },
+             ],
+           },
+           // SimpleTracker Section - separate section (only show when filters are active)
+           ...(hasActiveFilters ? [{
+             layout: {
+               type: 'column' as const,
+               gap: 'gap-4',
+             },
+             components: [
+               {
+                 name: "SimpleTracker",
+                 props: {
+                   title: "Active Filters",
+                   showRemoveButton: true,
+                   activeComponents: activeComponents,
+                   onRemoveComponent: (componentId: string) => {
+                     switch (componentId) {
+                       case "meterId-filter":
+                         handleFilterChange("meterId", "");
+                         break;
+                       case "status-filter":
+                         handleFilterChange("status", "all");
+                         break;
+                       case "alertType-filter":
+                         handleFilterChange("alertType", "all");
+                         break;
+                       case "dateRange-filter":
+                         handleDateRangeChange("", "");
+                         break;
+                       default:
+                         console.log("Remove component:", componentId);
+                     }
+                   },
+                   onComponentClick: (componentId: string) => {
+                     console.log("Clicked on component:", componentId);
+                   },
+                 },
+               },
+             ],
+           }] : []),
 
           // Alert Statistics Cards
           {
