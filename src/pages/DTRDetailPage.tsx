@@ -1291,14 +1291,14 @@ const DTRDetailPage = () => {
           {
             layout: {
               type: "grid" as const,
-              columns: 2,
+              columns: 1,
               className: "",
               rows: [
                 {
                   layout: "grid" as const,
                   gridColumns: 1,
                   columns: [
-                    {
+                    { 
                       name: "RightAngle",
                       props: {
                         // Use actual data from API based on selected time range
@@ -1339,20 +1339,7 @@ const DTRDetailPage = () => {
                     },
                   ],
                 },
-                {
-                  layout: "grid" as const,
-                  gridColumns: 1,
-                  columns: [
-                    {
-                      name: "VectorDiagram",
-                      props: {
-                        title: "DTR Feeders",
-                        showHeader: true,
-                        showDownloadButton: true,
-                      },
-                    },
-                  ],
-                },
+               
               ],
             },
           },

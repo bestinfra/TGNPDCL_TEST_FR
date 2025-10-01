@@ -1915,6 +1915,7 @@ const Feeders = () => {
                       props: {
                         showHeader: true,
                         showDownloadButton: true,
+                        headerTitle:'Feeder Vector Diagram',
                         vrValue: parseFloat(instantaneousStatsData.rphVolt || "0"),
                         vbValue: parseFloat(instantaneousStatsData.bphVolt || "0"),
                         vyValue: parseFloat(instantaneousStatsData.yphVolt || "0"),
