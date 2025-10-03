@@ -133,6 +133,13 @@ const DTRDetailPage = () => {
   const { dtrId } = useParams();
   const navigate = useNavigate();
 
+  // kVARh = √(kVAh² - kWh²)
+  const calculateKvarh = (kvah: number, kwh: number): number => {
+    const kvarhSquared = Math.pow(kvah, 2) - Math.pow(kwh, 2);
+    const calculatedKvarh = kvarhSquared > 0 ? Math.sqrt(kvarhSquared) : 0;
+    return calculatedKvarh;
+  };
+
   const [dtr, setDtr] = useState(dummyDTRData);
   const [dailyConsumptionData, setDailyConsumptionData] = useState(
     dummyDailyConsumptionData
@@ -1308,12 +1315,18 @@ const DTRDetailPage = () => {
                               ? dtrConsumptionData.daily.totalKwh
                               : dtrConsumptionData.monthly.totalKwh
                           ) || 0,
-                        kvarh:
+                        kvarh: calculateKvarh(
                           Number(
                             selectedTimeRange === "Daily"
-                              ? dtrConsumptionData.daily.totalKvarh
-                              : dtrConsumptionData.monthly.totalKvarh
+                              ? dtrConsumptionData.daily.totalKvah
+                              : dtrConsumptionData.monthly.totalKvah
                           ) || 0,
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKwh
+                              : dtrConsumptionData.monthly.totalKwh
+                          ) || 0
+                        ),
                         kvah:
                           Number(
                             selectedTimeRange === "Daily"
@@ -1335,6 +1348,8 @@ const DTRDetailPage = () => {
                         selectedTimeRange: selectedTimeRange,
                         onTimeRangeChange: (range: "Daily" | "Monthly") =>
                           setSelectedTimeRange(range),
+                        inverse:false,
+                        statsSectionPosition: "right",
                       },
                     },
                   ],
