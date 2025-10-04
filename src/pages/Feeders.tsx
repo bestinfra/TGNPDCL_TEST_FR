@@ -224,6 +224,17 @@ const Feeders = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Helper function to calculate power factor angle (θ = cos⁻¹(|PF|) with preserved sign)
+  const calculatePowerFactorAngle = (powerFactor: string | number): number => {
+    const pf = parseFloat(powerFactor.toString() || "0");
+    const absPF = Math.abs(pf);
+    const clampedPF = Math.min(1, absPF);
+    const thetaRad = Math.acos(clampedPF);
+    const thetaDeg = (thetaRad * 180) / Math.PI;
+    // Preserve the sign: negative PF = leading (negative angle), positive PF = lagging (positive angle)
+    return pf < 0 ? -thetaDeg : thetaDeg;
+  };
+
   // Get passed data from navigation state
   const passedData = location.state as {
     feederData?: {
@@ -806,7 +817,7 @@ const Feeders = () => {
       return;
     }
 
-   // setIsKvaMetricsLoading(true);
+    // setIsKvaMetricsLoading(true);
     try {
       const meterIdentifier =
         passedData?.feederId ||
@@ -841,7 +852,7 @@ const Feeders = () => {
         },
       ]);
     } finally {
-     // setIsKvaMetricsLoading(false);
+      // setIsKvaMetricsLoading(false);
     }
   };
 
@@ -1441,7 +1452,7 @@ const Feeders = () => {
   }, [feederId, resolvedDtrId]);
 
   // Effect to log time range changes for debugging
- // useEffect(() => {}, [consumptionTimeRange, kvaTimeRange]);
+  // useEffect(() => {}, [consumptionTimeRange, kvaTimeRange]);
 
   // Load data on component mount
   useEffect(() => {
@@ -1499,7 +1510,6 @@ const Feeders = () => {
       description: "Waddepally, Warangal, Telangana, India, 506001",
     },
   ]);
-
 
   // Handle Excel download for daily consumption chart (legacy function - keeping for backward compatibility)
   // const handleDailyChartDownload = () => {
@@ -1573,7 +1583,7 @@ const Feeders = () => {
   //   return { center: { lat: mapLatitude, lng: mapLongitude }, zoom: 13 };
   // };
 
-//   const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
+  //   const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
 
   return (
     <div className=" sticky top-0 ">
@@ -1830,12 +1840,14 @@ const Feeders = () => {
                             labelVariant: "",
                             value: (() => {
                               const raw = instantaneousStatsData?.lastCommDate;
-                              if (!raw || typeof raw !== 'string') {
+                              if (!raw || typeof raw !== "string") {
                                 return "N/A";
                               }
                               try {
                                 // Try to parse robustly: handle both "YYYY-MM-DD HH:mm:ss" and ISO forms
-                                const parseSource = raw.includes('T') ? raw : raw.replace(' ', 'T');
+                                const parseSource = raw.includes("T")
+                                  ? raw
+                                  : raw.replace(" ", "T");
                                 const d = new Date(parseSource);
                                 if (!isNaN(d.getTime())) {
                                   return d.toLocaleString("en-IN", {
@@ -1888,7 +1900,37 @@ const Feeders = () => {
               ],
             },
           },
-
+       
+          {
+            layout: {
+              type: "grid" as const,
+              columns: 1,
+              rows: [
+                {
+                  layout: "grid" as const,
+                  className: "w-full",
+                  columns: [
+                    {
+                      name: "VectorTest",
+                      props: {
+                        showHeader: true,
+                        showDownloadButton: true,
+                        vrValue: parseFloat(instantaneousStatsData.rphVolt || "0"),
+                        vbValue: parseFloat(instantaneousStatsData.bphVolt || "0"),
+                        vyValue: parseFloat(instantaneousStatsData.yphVolt || "0"),
+                        useCustomDashedAngles: true,
+                        customDashedVrAngle: calculatePowerFactorAngle(instantaneousStatsData.rphPF || "0"),
+                        customDashedVbAngle: calculatePowerFactorAngle(instantaneousStatsData.bphPF || "0"),
+                        customDashedVyAngle: calculatePowerFactorAngle(instantaneousStatsData.yphPF || "0"),
+                        statsSectionPosition:'right',
+                        autoSize: true,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
           {
             layout: {
               type: "grid" as const,
@@ -1926,145 +1968,145 @@ const Feeders = () => {
               ],
             },
           },
-        //   {
-        //     layout: {
-        //       type: "grid" as const,
-        //       columns: 1,
-        //       className: "",
-        //       rows: [
-        //         {
-        //           layout: "grid" as const,
-        //           className: "w-full",
-        //           columns: [
-        //             {
-        //               name: "GoogleMap",
-        //               props: {
-        //                 title: "Feeder Location",
-        //                 hasDownload: true,
-        //                 apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
-        //                 center: mapCenter,
-        //                 zoom: mapZoom,
-        //                 libraries: ["places"],
-        //                 markers: (() => {
-        //                   // If we have specific feeder data, show only that feeder
-        //                   if (feederInfoData?.specificFeeder) {
-        //                     return [
-        //                       {
-        //                         position: {
-        //                           lat:
-        //                             feederInfoData.specificFeeder.latitude ||
-        //                             mapLatitude,
-        //                           lng:
-        //                             feederInfoData.specificFeeder.longitude ||
-        //                             mapLongitude,
-        //                         },
-        //                         title: `Feeder: ${
-        //                           feederInfoData.specificFeeder.meterNumber ||
-        //                           feederInfoData.specificFeeder.serialNumber
-        //                         }`,
-        //                         infoContent: `<div><strong>Feeder Location</strong><br/>Meter: ${
-        //                           feederInfoData.specificFeeder.meterNumber ||
-        //                           "N/A"
-        //                         }<br/>Serial: ${
-        //                           feederInfoData.specificFeeder.serialNumber ||
-        //                           "N/A"
-        //                         }<br/>Manufacturer: ${
-        //                           feederInfoData.specificFeeder.manufacturer ||
-        //                           "N/A"
-        //                         }<br/>Model: ${
-        //                           feederInfoData.specificFeeder.model || "N/A"
-        //                         }<br/>Type: ${
-        //                           feederInfoData.specificFeeder.type || "N/A"
-        //                         }<br/>Phase: ${
-        //                           feederInfoData.specificFeeder.phase || "N/A"
-        //                         }<br/>Status: ${
-        //                           feederInfoData.specificFeeder.status || "N/A"
-        //                         }<br/>Location: ${
-        //                           feederInfoData.specificFeeder.location ||
-        //                           "N/A"
-        //                         }<br/>Coordinates: ${
-        //                           feederInfoData.specificFeeder.latitude ||
-        //                           mapLatitude
-        //                         }, ${
-        //                           feederInfoData.specificFeeder.longitude ||
-        //                           mapLongitude
-        //                         }</div>`,
-        //                       },
-        //                     ];
-        //                   }
+          //   {
+          //     layout: {
+          //       type: "grid" as const,
+          //       columns: 1,
+          //       className: "",
+          //       rows: [
+          //         {
+          //           layout: "grid" as const,
+          //           className: "w-full",
+          //           columns: [
+          //             {
+          //               name: "GoogleMap",
+          //               props: {
+          //                 title: "Feeder Location",
+          //                 hasDownload: true,
+          //                 apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
+          //                 center: mapCenter,
+          //                 zoom: mapZoom,
+          //                 libraries: ["places"],
+          //                 markers: (() => {
+          //                   // If we have specific feeder data, show only that feeder
+          //                   if (feederInfoData?.specificFeeder) {
+          //                     return [
+          //                       {
+          //                         position: {
+          //                           lat:
+          //                             feederInfoData.specificFeeder.latitude ||
+          //                             mapLatitude,
+          //                           lng:
+          //                             feederInfoData.specificFeeder.longitude ||
+          //                             mapLongitude,
+          //                         },
+          //                         title: `Feeder: ${
+          //                           feederInfoData.specificFeeder.meterNumber ||
+          //                           feederInfoData.specificFeeder.serialNumber
+          //                         }`,
+          //                         infoContent: `<div><strong>Feeder Location</strong><br/>Meter: ${
+          //                           feederInfoData.specificFeeder.meterNumber ||
+          //                           "N/A"
+          //                         }<br/>Serial: ${
+          //                           feederInfoData.specificFeeder.serialNumber ||
+          //                           "N/A"
+          //                         }<br/>Manufacturer: ${
+          //                           feederInfoData.specificFeeder.manufacturer ||
+          //                           "N/A"
+          //                         }<br/>Model: ${
+          //                           feederInfoData.specificFeeder.model || "N/A"
+          //                         }<br/>Type: ${
+          //                           feederInfoData.specificFeeder.type || "N/A"
+          //                         }<br/>Phase: ${
+          //                           feederInfoData.specificFeeder.phase || "N/A"
+          //                         }<br/>Status: ${
+          //                           feederInfoData.specificFeeder.status || "N/A"
+          //                         }<br/>Location: ${
+          //                           feederInfoData.specificFeeder.location ||
+          //                           "N/A"
+          //                         }<br/>Coordinates: ${
+          //                           feederInfoData.specificFeeder.latitude ||
+          //                           mapLatitude
+          //                         }, ${
+          //                           feederInfoData.specificFeeder.longitude ||
+          //                           mapLongitude
+          //                         }</div>`,
+          //                       },
+          //                     ];
+          //                   }
 
-        //                   // If we have multiple feeders, show all of them
-        //                   if (
-        //                     feederInfoData?.feeders &&
-        //                     feederInfoData.feeders.length > 0
-        //                   ) {
-        //                     return feederInfoData.feeders.map(
-        //                       (feeder: any, index: number) => ({
-        //                         position: {
-        //                           lat: feeder.latitude || mapLatitude,
-        //                           lng: feeder.longitude || mapLongitude,
-        //                         },
-        //                         title: `Feeder ${index + 1}: ${
-        //                           feeder.meterNumber || feeder.serialNumber
-        //                         }`,
-        //                         infoContent: `<div><strong>Feeder ${
-        //                           index + 1
-        //                         }</strong><br/>Meter: ${
-        //                           feeder.meterNumber || "N/A"
-        //                         }<br/>Serial: ${
-        //                           feeder.serialNumber || "N/A"
-        //                         }<br/>Manufacturer: ${
-        //                           feeder.manufacturer || "N/A"
-        //                         }<br/>Model: ${
-        //                           feeder.model || "N/A"
-        //                         }<br/>Type: ${
-        //                           feeder.type || "N/A"
-        //                         }<br/>Phase: ${
-        //                           feeder.phase || "N/A"
-        //                         }<br/>Status: ${
-        //                           feeder.status || "N/A"
-        //                         }<br/>Location: ${
-        //                           feeder.location || "N/A"
-        //                         }<br/>Coordinates: ${
-        //                           feeder.latitude || mapLatitude
-        //                         }, ${feeder.longitude || mapLongitude}</div>`,
-        //                       })
-        //                     );
-        //                   }
+          //                   // If we have multiple feeders, show all of them
+          //                   if (
+          //                     feederInfoData?.feeders &&
+          //                     feederInfoData.feeders.length > 0
+          //                   ) {
+          //                     return feederInfoData.feeders.map(
+          //                       (feeder: any, index: number) => ({
+          //                         position: {
+          //                           lat: feeder.latitude || mapLatitude,
+          //                           lng: feeder.longitude || mapLongitude,
+          //                         },
+          //                         title: `Feeder ${index + 1}: ${
+          //                           feeder.meterNumber || feeder.serialNumber
+          //                         }`,
+          //                         infoContent: `<div><strong>Feeder ${
+          //                           index + 1
+          //                         }</strong><br/>Meter: ${
+          //                           feeder.meterNumber || "N/A"
+          //                         }<br/>Serial: ${
+          //                           feeder.serialNumber || "N/A"
+          //                         }<br/>Manufacturer: ${
+          //                           feeder.manufacturer || "N/A"
+          //                         }<br/>Model: ${
+          //                           feeder.model || "N/A"
+          //                         }<br/>Type: ${
+          //                           feeder.type || "N/A"
+          //                         }<br/>Phase: ${
+          //                           feeder.phase || "N/A"
+          //                         }<br/>Status: ${
+          //                           feeder.status || "N/A"
+          //                         }<br/>Location: ${
+          //                           feeder.location || "N/A"
+          //                         }<br/>Coordinates: ${
+          //                           feeder.latitude || mapLatitude
+          //                         }, ${feeder.longitude || mapLongitude}</div>`,
+          //                       })
+          //                     );
+          //                   }
 
-        //                   // Fallback to single marker at center
-        //                   return [
-        //                     {
-        //                       position: { lat: mapLatitude, lng: mapLongitude },
-        //                       title: "Feeder Location",
-        //                       infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
-        //                     },
-        //                   ];
-        //                 })(),
-        //                 mapOptions: {
-        //                   disableDefaultUI: false,
-        //                   zoomControl: true,
-        //                   mapTypeControl: true,
-        //                   scaleControl: true,
-        //                   streetViewControl: true,
-        //                   rotateControl: true,
-        //                   fullscreenControl: true,
-        //                 },
-        //                 onReady: (_map: any, _google: any) => {},
-        //                 onClick: (e: any) => {
-        //                   const clickedCoords = e.latLng?.toJSON();
-        //                   if (clickedCoords) {
-        //                     // You could add a temporary marker here or show coordinates in a tooltip
-        //                   }
-        //                 },
-        //                 onIdle: () => {},
-        //               },
-        //             },
-        //           ],
-        //         },
-        //       ],
-        //     },
-        //   },
+          //                   // Fallback to single marker at center
+          //                   return [
+          //                     {
+          //                       position: { lat: mapLatitude, lng: mapLongitude },
+          //                       title: "Feeder Location",
+          //                       infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
+          //                     },
+          //                   ];
+          //                 })(),
+          //                 mapOptions: {
+          //                   disableDefaultUI: false,
+          //                   zoomControl: true,
+          //                   mapTypeControl: true,
+          //                   scaleControl: true,
+          //                   streetViewControl: true,
+          //                   rotateControl: true,
+          //                   fullscreenControl: true,
+          //                 },
+          //                 onReady: (_map: any, _google: any) => {},
+          //                 onClick: (e: any) => {
+          //                   const clickedCoords = e.latLng?.toJSON();
+          //                   if (clickedCoords) {
+          //                     // You could add a temporary marker here or show coordinates in a tooltip
+          //                   }
+          //                 },
+          //                 onIdle: () => {},
+          //               },
+          //             },
+          //           ],
+          //         },
+          //       ],
+          //     },
+          //   },
           {
             // layout: {
             //     type: 'grid' as const,
@@ -2104,47 +2146,47 @@ const Feeders = () => {
             //     ],
             // },
           },
-        //   {
-        //     layout: {
-        //       type: "grid" as const,
-        //       columns: 1,
-        //       className: "",
-        //       rows: [
-               
-        //         {
-        //           layout: "grid" as const,
-        //           gridColumns: 1,
-        //           columns: [
-        //             {
-        //               name: "ThresholdChart",
-        //               props: {
-        //                 data: getKvaMetricsData().seriesData[0]?.data || [],
-        //                 threshold: kvaMetricsData.thresholdValue || 0,
-        //                 ratingKVA:
-        //                   kvaMetricsData.capacityInfo?.dtrCapacity || 50,
-        //                 title: `KVA Metrics - ${kvaTimeRange}`,
-        //                 chartType: "bar",
-        //                 availableTimeRanges: ["Daily", "Monthly"],
-        //                 selectedTimeRange: kvaTimeRange,
-        //                 onTimeRangeChange: (range: "Daily" | "Monthly") =>
-        //                   setKvaTimeRange(range),
-        //                 loading: isKvaMetricsLoading,
-        //                 highestKVA:
-        //                   kvaTimeRange === "Daily"
-        //                     ? kvaMetricsData.highestKVA?.daily
-        //                     : kvaMetricsData.highestKVA?.monthly,
-        //                 capacityInfo: kvaMetricsData.capacityInfo,
-        //                 xAxisData: getKvaMetricsData().xAxisData || [],
-        //                 showCapacityInfo: true,
-        //                 showHighestKVA: true,
-        //               },
-        //               span: { col: 1, row: 1 },
-        //             },
-        //           ],
-        //         },
-        //       ],
-        //     },
-        //   },
+          //   {
+          //     layout: {
+          //       type: "grid" as const,
+          //       columns: 1,
+          //       className: "",
+          //       rows: [
+
+          //         {
+          //           layout: "grid" as const,
+          //           gridColumns: 1,
+          //           columns: [
+          //             {
+          //               name: "ThresholdChart",
+          //               props: {
+          //                 data: getKvaMetricsData().seriesData[0]?.data || [],
+          //                 threshold: kvaMetricsData.thresholdValue || 0,
+          //                 ratingKVA:
+          //                   kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+          //                 title: `KVA Metrics - ${kvaTimeRange}`,
+          //                 chartType: "bar",
+          //                 availableTimeRanges: ["Daily", "Monthly"],
+          //                 selectedTimeRange: kvaTimeRange,
+          //                 onTimeRangeChange: (range: "Daily" | "Monthly") =>
+          //                   setKvaTimeRange(range),
+          //                 loading: isKvaMetricsLoading,
+          //                 highestKVA:
+          //                   kvaTimeRange === "Daily"
+          //                     ? kvaMetricsData.highestKVA?.daily
+          //                     : kvaMetricsData.highestKVA?.monthly,
+          //                 capacityInfo: kvaMetricsData.capacityInfo,
+          //                 xAxisData: getKvaMetricsData().xAxisData || [],
+          //                 showCapacityInfo: true,
+          //                 showHighestKVA: true,
+          //               },
+          //               span: { col: 1, row: 1 },
+          //             },
+          //           ],
+          //         },
+          //       ],
+          //     },
+          //   },
 
           {
             layout: {

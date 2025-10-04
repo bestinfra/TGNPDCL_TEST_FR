@@ -21,6 +21,7 @@ import DTRDetailPage from './pages/DTRDetailPage';
 import DTRTable from './pages/DTRTable';
 import ProtectedRoute from './components/auth/LocalProtectedRoute';
 import RolesPermissions from './pages/RolesPermissions';
+import MeterAlert from './pages/MeterAlert';
 
 const App: React.FC = () => {
   return (
@@ -53,6 +54,7 @@ const App: React.FC = () => {
                     <Route path="/dtr-detail/:dtrId" element={<DTRDetailPage />} />
                     <Route path="/feeder/:feederId" element={<Feeders />} />
                     <Route path="/dtr-table" element={<DTRTable />} />
+                    <Route path="/meter-alert" element={<MeterAlert />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>

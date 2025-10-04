@@ -104,6 +104,9 @@ const dummyDailyConsumptionData = {
       data: [0],
     },
   ],
+  totalKwh: 0,
+  totalKvah: 0,
+  totalKvarh: 0,
 };
 
 const dummyFeedersData = [
@@ -134,6 +137,13 @@ const DTRDetailPage = () => {
   const [dailyConsumptionData, setDailyConsumptionData] = useState(
     dummyDailyConsumptionData
   );
+  const [dtrConsumptionData, setDtrConsumptionData] = useState<any>({
+    daily: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
+    monthly: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
+  });
+  const [selectedTimeRange, setSelectedTimeRange] = useState<
+    "Daily" | "Monthly"
+  >("Daily");
   const [feedersData, setFeedersData] = useState(dummyFeedersData);
   const [alertsData, setAlertsData] = useState(dummyAlertsData);
   const [alertsPagination, setAlertsPagination] = useState({
@@ -182,55 +192,6 @@ console.log("000000000000000000",capacityUsage);
 
   // Simple error state like Prepaid.tsx
   const [errorMessages, setErrors] = useState<any[]>([]);
-
-  // State for tracking failed APIs
-  //   const [failedApis, setFailedApis] = useState<
-  //     Array<{
-  //       id: string;
-  //       name: string;
-  //       retryFunction: () => Promise<void>;
-  //       errorMessage: string;
-  //     }>
-  //   >([]);
-  // google map
-  // State for map coordinates - initialized with default coordinates
-  const getMapCenterAndZoom = () => {
-    if (dtr?.location && dtr.location.lat && dtr.location.lng) {
-      // Calculate bounds for multiple feeders
-      const lats = [dtr.location.lat].filter(Boolean);
-      const lngs = [dtr.location.lng].filter(Boolean);
-
-      if (lats.length > 0 && lngs.length > 0) {
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
-        const minLng = Math.min(...lngs);
-        const maxLng = Math.max(...lngs);
-
-        const centerLat = (minLat + maxLat) / 2;
-        const centerLng = (minLng + maxLng) / 2;
-
-        // Calculate zoom based on the span of coordinates
-        const latSpan = maxLat - minLat;
-        const lngSpan = maxLng - minLng;
-        const maxSpan = Math.max(latSpan, lngSpan);
-
-        let zoom = 13;
-        if (maxSpan > 0.1) zoom = 10;
-        else if (maxSpan > 0.05) zoom = 11;
-        else if (maxSpan > 0.01) zoom = 12;
-        else if (maxSpan > 0.005) zoom = 14;
-        else if (maxSpan > 0.001) zoom = 15;
-
-        return { center: { lat: centerLat, lng: centerLng }, zoom };
-      }
-    }
-
-    // Default center and zoom for single feeder or fallback
-    return { center: { lat: mapLatitude, lng: mapLongitude }, zoom: 13 };
-  };
-  const [mapLatitude, setMapLatitude] = useState<number>(17.992887);
-  const [mapLongitude, setMapLongitude] = useState<number>(79.550835);
-  const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
 
   // DTR Status dropdown state
   const [dtrStatusValue, setDtrStatusValue] = useState<string>("na"); // Default to N/A
@@ -339,13 +300,7 @@ console.log("000000000000000000",capacityUsage);
     };
   };
 
-  // Retry specific API
-  // const retrySpecificAPI = (apiId: string) => {
-  //   const api = failedApis.find((a) => a.id === apiId);
-  //   if (api) {
-  //     api.retryFunction();
-  //   }
-  // };
+
 
   // Clear all error messages
   const clearErrors = () => {
@@ -400,11 +355,8 @@ console.log("000000000000000000",capacityUsage);
 
       if (data.success) {
         const transformedAlerts =
-          data.data?.map((alert: any, index: number) => {
+          data.data?.map((alert: any) => {
             // Use the sNo directly from backend - it's already calculated correctly
-            console.log(
-              `🔍 [DTRDetailPage] Alert ${index}: Using backend sNo = ${alert.sNo}`
-            );
             return {
               ...alert,
               feederName: alert.feederName || "N/A",
@@ -496,14 +448,6 @@ console.log("000000000000000000",capacityUsage);
     }
   }, [dtr.condition]);
 
-  // Update map coordinates when DTR location changes
-  useEffect(() => {
-    if (dtr.location.lat !== 0 && dtr.location.lng !== 0) {
-      setMapLatitude(dtr.location.lat);
-      setMapLongitude(dtr.location.lng);
-    }
-  }, [dtr.location.lat, dtr.location.lng]);
-
   useEffect(() => {
     const fetchDtrData = async () => {
       setIsDtrLoading(true);
@@ -522,11 +466,11 @@ console.log("000000000000000000",capacityUsage);
           const transformedDtrData = {
             name: data.data?.dtr?.serialNumber || "N/A",
             dtrNo: data.data?.dtr?.dtrNumber || "N/A",
-            division: "N/A", // Not available in current API
-            subDivision: "N/A", // Not available in current API
-            substation: "N/A", // Not available in current API
-            feeder: "N/A", // Not available in current API
-            feederNo: "N/A", // Not available in current API
+            division: "N/A",
+            subDivision: "N/A",
+            substation: "N/A",
+            feeder: "N/A",
+            feederNo: "N/A",
             condition: data.data?.dtr?.status || "N/A",
             capacity: data.data?.dtr?.capacity || "N/A",
             address:
@@ -589,9 +533,41 @@ console.log("000000000000000000",capacityUsage);
                   ) || [],
               },
             ],
+            totalKwh: data.data?.dailyData?.totalKwh || 0,
+            totalKvah: data.data?.dailyData?.totalKvah || 0,
+            totalKvarh: data.data?.dailyData?.totalKvarh || 0,
           };
 
           setDailyConsumptionData(transformedConsumptionData);
+
+          // Store consumption data for RightAngle component
+          setDtrConsumptionData({
+            daily: {
+              totalKwh: data.data?.dailyData?.totalKwh || 0,
+              totalKvah: data.data?.dailyData?.totalKvah || 0,
+              totalKvarh: data.data?.dailyData?.totalKvarh || 0,
+            },
+            monthly: {
+              totalKwh: data.data?.monthlyData?.totalKwh || 0,
+              totalKvah: data.data?.monthlyData?.totalKvah || 0,
+              totalKvarh: data.data?.monthlyData?.totalKvarh || 0,
+            },
+          });
+
+          console.log("📊 [DTR Consumption] Daily Data:", {
+            totalKwh: data.data?.dailyData?.totalKwh,
+            totalKvah: data.data?.dailyData?.totalKvah,
+            totalKvarh: data.data?.dailyData?.totalKvarh,
+          });
+          console.log("📊 [DTR Consumption] Monthly Data:", {
+            totalKwh: data.data?.monthlyData?.totalKwh,
+            totalKvah: data.data?.monthlyData?.totalKvah,
+            totalKvarh: data.data?.monthlyData?.totalKvarh,
+          });
+          console.log(
+            "📊 [RightAngle] Data for component:",
+            dtrConsumptionData
+          );
         } else {
           throw new Error(data.message || "Failed to fetch consumption data");
         }
@@ -754,9 +730,9 @@ console.log("000000000000000000",capacityUsage);
         if (!response.ok) throw new Error("Failed to fetch feeder stats");
 
         const data = await response.json();
+        console.log(" 000000000000000000", data);
 
         if (data.success) {
-          // Update the DTR stats with real data from the API
           const updatedStats = [
             {
               title: "Total LT Feeders",
@@ -845,14 +821,17 @@ console.log("000000000000000000",capacityUsage);
             },
           ];
 
+          console.log("📊 [DTR Statistics] Final Stats Array:", updatedStats);
+
           setStats(updatedStats);
+
 
           // Set capacity usage for the gauge
           setCapacityUsage({
             instantly: data.data?.instantCapacityUsage || 0,
             instantKVA: data.data?.instantKVA || 0,
             daily: data.data?.dailyCapacityUsage || 0,
-            dailyMdkva: data.data?.dailylyPeakKVA || 0,
+            dailyMdkva: data.data?.dailyPeakKVA || 0,
             monthly: data.data?.monthlyCapacityUsage || 0,
             monthlyMdkva: data.data?.monthlyPeakKVA ||0,
             yearly: data.data?.yearlyCapacityUsage || 0,
@@ -1344,6 +1323,74 @@ console.log("000000000000000000",capacityUsage);
           {
             layout: {
               type: "grid" as const,
+              columns: 2,
+              className: "",
+              rows: [
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: "RightAngle",
+                      props: {
+                        // Use actual data from API based on selected time range
+                        kwh:
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKwh
+                              : dtrConsumptionData.monthly.totalKwh
+                          ) || 0,
+                        kvarh:
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKvarh
+                              : dtrConsumptionData.monthly.totalKvarh
+                          ) || 0,
+                        kvah:
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKvah
+                              : dtrConsumptionData.monthly.totalKvah
+                          ) || 0,
+                        height: "400px",
+                        kwhColor: "#dc2626",
+                        kvarhColor: "#163b7c",
+                        kvahColor: "#22c55e",
+                        textColor: "#374151",
+                        showOriginMarker: true, // Show origin point
+                        showHeader: true,
+                        headerTitle: "Power Triangle",
+                        prependTimeRangeInTitle: true,
+                        showDownloadButton: true,
+                        isLoading: _isConsumptionLoading,
+                        availableTimeRanges: ["Daily", "Monthly"],
+                        selectedTimeRange: selectedTimeRange,
+                        onTimeRangeChange: (range: "Daily" | "Monthly") =>
+                          setSelectedTimeRange(range),
+                      },
+                    },
+                  ],
+                },
+                {
+                  layout: "grid" as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: "VectorDiagram",
+                      props: {
+                        title: "DTR Feeders",
+                        showHeader: true,
+                        showDownloadButton: true,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            layout: {
+              type: "grid" as const,
               columns: 1,
               className: "",
               rows: [
@@ -1395,6 +1442,7 @@ console.log("000000000000000000",capacityUsage);
               ],
             },
           },
+
           {
             layout: {
               type: "grid" as const,
@@ -1463,73 +1511,73 @@ console.log("000000000000000000",capacityUsage);
               ],
             },
           },
-          {
-            layout: {
-              type: "grid" as const,
-              columns: 1,
-              className: "",
-              rows: [
-                {
-                  layout: "grid" as const,
-                  className: "w-full",
-                  columns: [
-                    {
-                      name: "GoogleMap",
-                      props: {
-                        title: "Feeder Location",
-                        hasDownload: true,
-                        apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
-                        center: mapCenter,
-                        zoom: mapZoom,
-                        libraries: ["places"],
-                        markers: (() => {
-                          // If we have specific feeder data, show only that feeder
-                          if (dtr?.location) {
-                            return [
-                              {
-                                position: {
-                                  lat: dtr.location.lat || mapLatitude,
-                                  lng: dtr.location.lng || mapLongitude,
-                                },
-                              },
-                            ];
-                          }
+          // {
+          //   layout: {
+          //     type: "grid" as const,
+          //     columns: 1,
+          //     className: "",
+          //     rows: [
+          //       {
+          //         layout: "grid" as const,
+          //         className: "w-full",
+          //         columns: [
+          //           {
+          //             name: "GoogleMap",
+          //             props: {
+          //               title: "Feeder Location",
+          //               hasDownload: true,
+          //               apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
+          //               center: mapCenter,
+          //               zoom: mapZoom,
+          //               libraries: ["places"],
+          //               markers: (() => {
+          //                 // If we have specific feeder data, show only that feeder
+          //                 if (dtr?.location) {
+          //                   return [
+          //                     {
+          //                       position: {
+          //                         lat: dtr.location.lat || mapLatitude,
+          //                         lng: dtr.location.lng || mapLongitude,
+          //                       },
+          //                     },
+          //                   ];
+          //                 }
 
-                          // This section was removed because dtr.location is an object, not an array
+          //                 // This section was removed because dtr.location is an object, not an array
 
-                          // Fallback to single marker at center
-                          return [
-                            {
-                              position: { lat: mapLatitude, lng: mapLongitude },
-                              title: "Feeder Location",
-                              infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
-                            },
-                          ];
-                        })(),
-                        mapOptions: {
-                          disableDefaultUI: false,
-                          zoomControl: true,
-                          mapTypeControl: true,
-                          scaleControl: true,
-                          streetViewControl: true,
-                          rotateControl: true,
-                          fullscreenControl: true,
-                        },
-                        onReady: (_map: any, _google: any) => {},
-                        onClick: (e: any) => {
-                          const clickedCoords = e.latLng?.toJSON();
-                          if (clickedCoords) {
-                            // You could add a temporary marker here or show coordinates in a tooltip
-                          }
-                        },
-                        onIdle: () => {},
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          },
+          //                 // Fallback to single marker at center
+          //                 return [
+          //                   {
+          //                     position: { lat: mapLatitude, lng: mapLongitude },
+          //                     title: "Feeder Location",
+          //                     infoContent: `<div><strong>Feeder Location</strong><br/>Coordinates: ${mapLatitude}, ${mapLongitude}</div>`,
+          //                   },
+          //                 ];
+          //               })(),
+          //               mapOptions: {
+          //                 disableDefaultUI: false,
+          //                 zoomControl: true,
+          //                 mapTypeControl: true,
+          //                 scaleControl: true,
+          //                 streetViewControl: true,
+          //                 rotateControl: true,
+          //                 fullscreenControl: true,
+          //               },
+          //               onReady: (_map: any, _google: any) => {},
+          //               onClick: (e: any) => {
+          //                 const clickedCoords = e.latLng?.toJSON();
+          //                 if (clickedCoords) {
+          //                   // You could add a temporary marker here or show coordinates in a tooltip
+          //                 }
+          //               },
+          //               onIdle: () => {},
+          //             },
+          //           },
+          //         ],
+          //       },
+          //     ],
+          //   },
+          // },
           {
             layout: {
               type: "grid" as const,
