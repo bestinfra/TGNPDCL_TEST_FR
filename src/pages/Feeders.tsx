@@ -226,13 +226,24 @@ const Feeders = () => {
 
   // Helper function to calculate power factor angle (θ = cos⁻¹(|PF|) with preserved sign)
   const calculatePowerFactorAngle = (powerFactor: string | number): number => {
-    const pf = parseFloat(powerFactor.toString() || "0");
+    // Convert to number first
+    const pfString = typeof powerFactor === 'string' ? powerFactor : powerFactor.toString();
+    const pf = parseFloat(pfString || "0");
+    
+    // Handle invalid values
+    if (isNaN(pf)) return 0;
+    
+    // Get absolute value and clamp to valid range [0, 1]
     const absPF = Math.abs(pf);
-    const clampedPF = Math.min(1, absPF);
+    const clampedPF = Math.min(1, Math.max(0, absPF));
+    
+    // Calculate angle in radians then convert to degrees
     const thetaRad = Math.acos(clampedPF);
     const thetaDeg = (thetaRad * 180) / Math.PI;
+    
     // Preserve the sign: negative PF = leading (negative angle), positive PF = lagging (positive angle)
-    return pf < 0 ? -thetaDeg : thetaDeg;
+    // Use explicit comparison to handle negative zero and ensure proper sign preservation
+    return pf < 0 ? -Math.abs(thetaDeg) : Math.abs(thetaDeg);
   };
 
   // Get passed data from navigation state
