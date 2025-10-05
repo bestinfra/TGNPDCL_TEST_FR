@@ -55,11 +55,19 @@ const dummyAlertTableData = [
 
 const dummyTimelineData = {
   months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  days: [], // For daily timeline data
+  hours: [], // Start with empty hours
   series: [
-    { name: "Active", data: [5, 8, 12, 6, 15, 10] },
-    { name: "Resolved", data: [10, 15, 8, 20, 12, 18] },
+    { name: "Active", data: [] },
+    { name: "Resolved", data: [] },
+  ],
+  hourlySeries: [
+    { name: "Active", data: [] },
+    { name: "Resolved", data: [] },
   ],
 };
+
+
 
 const dummyTrendData = {
   months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -127,14 +135,26 @@ const MeterAlert: React.FC = () => {
     alertType: "all",
   });
 
+
   // Data states
   const [alertStats, _setAlertStats] = useState(dummyAlertStats);
   const [alertTableData, _setAlertTableData] = useState(dummyAlertTableData);
   const [filterOptions, _setFilterOptions] = useState(dummyFilterOptions);
   const [timelineData, _setTimelineData] = useState(dummyTimelineData);
+  const [monthlyTimelineData, _setMonthlyTimelineData] = useState(dummyTimelineData);
+  const [dailyTimelineData, _setDailyTimelineData] = useState(dummyTimelineData);
   const [_trendData, _setTrendData] = useState(dummyTrendData);
   const [pieData, _setPieData] = useState(dummyPieData);
+  const [tamperTypesStats, _setTamperTypesStats] = useState({
+    totalCount: 0,
+    average: 0,
+    totalTypes: 0
+  });
   const [activityLogData, _setActivityLogData] = useState(dummyActivityLogData);
+
+  // Filter options states
+  const [meterOptions, setMeterOptions] = useState([]);
+  const [isLoadingMeterOptions, setIsLoadingMeterOptions] = useState(false);
 
   // Loading states
   const [isStatsLoading, _setIsStatsLoading] = useState(false);
@@ -142,7 +162,7 @@ const MeterAlert: React.FC = () => {
   const [isChartLoading, _setIsChartLoading] = useState(false);
 
    // Error states - following the pattern from MetersList.tsx
-   const [error, setError] = useState<string | null>("Failed to fetch alert statistics. Please try again.");
+   const [error, setError] = useState<string | null>(null);
 
   // Alert statistics cards
   const alertStatsCards = [
@@ -150,7 +170,7 @@ const MeterAlert: React.FC = () => {
       title: "Total Alerts",
       value: alertStats.totalAlerts,
       icon: "icons/alert.svg",
-      subtitle1: "All Time Alerts",
+      subtitle1: "Current Month Alerts",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
       onValueClick: () => navigate("/meter-alert-table?type=all"),
@@ -159,7 +179,7 @@ const MeterAlert: React.FC = () => {
       title: "Resolved",
       value: alertStats.resolvedAlerts,
       icon: "icons/check.svg",
-      subtitle1: "Successfully Resolved",
+      subtitle1: "Resolved This Month",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
       onValueClick: () => navigate("/meter-alert-table?type=resolved"),
@@ -201,17 +221,40 @@ const MeterAlert: React.FC = () => {
 
   // Filter change handlers
   const handleFilterChange = (filterName: string, value: any) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      [filterName]: value,
-    }));
+    // Extract the actual value if it's an object with target.value
+    const actualValue = typeof value === "string" ? value : value?.target?.value || value;
+    
+    console.log('Frontend handleFilterChange called with:');
+    console.log('  filterName:', filterName);
+    console.log('  value:', value);
+    console.log('  actualValue:', actualValue);
+    console.log('  typeof value:', typeof value);
+    
+    setFilterValues((prev) => {
+      const newValues = {
+        ...prev,
+        [filterName]: actualValue,
+      };
+      console.log('Frontend new filterValues after filter change:', newValues);
+      return newValues;
+    });
   };
 
   const handleDateRangeChange = (start: string, end: string) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      dateRange: { start, end },
-    }));
+    console.log('Frontend handleDateRangeChange called with:');
+    console.log('  start:', start);
+    console.log('  end:', end);
+    console.log('  typeof start:', typeof start);
+    console.log('  typeof end:', typeof end);
+    
+    setFilterValues((prev) => {
+      const newValues = {
+        ...prev,
+        dateRange: { start, end },
+      };
+      console.log('Frontend new filterValues after date change:', newValues);
+      return newValues;
+    });
   };
 
   const handleExportData = () => {
@@ -221,6 +264,42 @@ const MeterAlert: React.FC = () => {
 
   const handleChartDownload = () => {
     console.log("Downloading chart data...");
+  };
+
+
+  // Fetch meter options for dropdown
+  const fetchMeterOptions = async (searchTerm: string = '') => {
+    setIsLoadingMeterOptions(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/alerts/meter-suggestions?search=${encodeURIComponent(searchTerm)}&limit=50`);
+      if (response.ok) {
+        const suggestions = await response.json();
+        setMeterOptions(suggestions);
+      }
+    } catch (error) {
+      console.error('Error fetching meter options:', error);
+    } finally {
+      setIsLoadingMeterOptions(false);
+    }
+  };
+
+  // Fetch tamper type options
+  const fetchTamperTypeOptions = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/alerts/tamper-type-options`);
+      if (response.ok) {
+        const options = await response.json();
+        _setFilterOptions(prev => ({
+          ...prev,
+          alertTypeOptions: [
+            { value: "all", label: "All Types" },
+            ...options
+          ]
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching tamper type options:', error);
+    }
   };
 
    // Error handling functions - following the pattern from MetersList.tsx
@@ -305,12 +384,21 @@ const MeterAlert: React.FC = () => {
     setActiveComponents(components);
     setHasActiveFilters(components.length > 0);
   }, [filterValues, filterOptions]);
+
+  // Fetch filter options on component mount
+  useEffect(() => {
+    fetchTamperTypeOptions();
+    fetchMeterOptions(); // Load initial meter options
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       _setIsStatsLoading(true);
       _setIsTableLoading(true);
 
       try {
+        console.log('Frontend building query params with filterValues:', filterValues);
+        
         const queryParams = new URLSearchParams({
           status: filterValues.status === "all" ? "" : filterValues.status,
           meterId: filterValues.meterId || "",
@@ -318,6 +406,9 @@ const MeterAlert: React.FC = () => {
           startDate: filterValues.dateRange.start || "",
           endDate: filterValues.dateRange.end || "",
         }).toString();
+
+        console.log('Frontend queryParams:', queryParams);
+        console.log('Frontend URL:', `${BACKEND_URL}/alerts?${queryParams}`);
 
         const res = await fetch(`${BACKEND_URL}/alerts?${queryParams}`);
         if (!res.ok) throw new Error("Failed to fetch alerts");
@@ -343,6 +434,39 @@ const MeterAlert: React.FC = () => {
             duration: event.duration,
           }))
         );
+
+        // Update timeline data
+        if (data.timelineData) {
+          _setTimelineData({
+            months: dummyTimelineData.months, // Keep original monthly data
+            days: dummyTimelineData.days, // Keep original daily data
+            hours: data.timelineData.hours,
+            series: dummyTimelineData.series, // Keep original monthly series
+            hourlySeries: data.timelineData.series, // Use backend data for hourly
+          });
+        }
+
+        // Update daily timeline data for bar chart
+        if (data.dailyTimelineData) {
+          _setDailyTimelineData(data.dailyTimelineData);
+        } else if (data.monthlyTimelineData) {
+          _setMonthlyTimelineData(data.monthlyTimelineData);
+        }
+
+        // Update tamper types distribution data
+        if (data.tamperTypesData) {
+          _setPieData(data.tamperTypesData.pieData);
+          _setTamperTypesStats({
+            totalCount: data.tamperTypesData.totalCount,
+            average: data.tamperTypesData.average,
+            totalTypes: data.tamperTypesData.totalTypes
+          });
+        }
+
+        // Update top meters data
+        if (data.topMetersData) {
+          _setActivityLogData(data.topMetersData);
+        }
 
       } catch (err) {
         console.error(err);
@@ -414,17 +538,26 @@ const MeterAlert: React.FC = () => {
                gap: 'gap-4',
              },
              components: [
-               {
-                 name: "Input",
-                 props: {
-                   type: "text",
-                   placeholder: "Enter Meter ID",
-                   value: filterValues.meterId,
-                   onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                     handleFilterChange("meterId", e.target.value),
-                   className: "w-full",
-                 },
-               },
+                {
+                  name: "Dropdown",
+                  props: {
+                    options: [
+                      { value: "", label: "All Meters" },
+                      ...meterOptions
+                    ],
+                    value: filterValues.meterId,
+                    onChange: (value: string) => {
+                      handleFilterChange("meterId", value);
+                    },
+                    onSearch: (searchTerm: string) => {
+                      fetchMeterOptions(searchTerm);
+                    },
+                    placeholder: "Search Meter ID",
+                    searchable: true,
+                    loading: isLoadingMeterOptions,
+                    className: "w-full",
+                  },
+                },
                {
                  name: "Dropdown",
                  props: {
@@ -553,11 +686,13 @@ const MeterAlert: React.FC = () => {
                     {
                       name: "StackedBarChart",
                       props: {
-                        xAxisData: timelineData.months,
-                        seriesData: timelineData.series,
+                        xAxisData: timelineData.hours,
+                        seriesData: timelineData.hourlySeries,
                         height: 300,
                         showHeader: true,
-                        headerTitle: "Alert Timeline",
+                        headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
+                          ? `Alert Timeline (Hourly - ${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : "Alert Timeline (Today - Hourly)",
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
@@ -576,12 +711,14 @@ const MeterAlert: React.FC = () => {
                     {
                       name: "BarChart",
                       props: {
-                        xAxisData: timelineData.months,
+                        xAxisData: dailyTimelineData.days || monthlyTimelineData.months,
                         seriesColors: ["#163b7c", "#55b56c"], // Force brand colors
-                        seriesData: timelineData.series,
+                        seriesData: dailyTimelineData.series || monthlyTimelineData.series,
                         height: 300,
                         showHeader: true,
-                        headerTitle: "Alert Timeline",
+                        headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
+                          ? `Alert Timeline (${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : "Alert Timeline (Last 12 Months)",
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
@@ -611,53 +748,47 @@ const MeterAlert: React.FC = () => {
                     //   },
                     //   span: { col: 1, row: 1 },
                     // },
-                    {
-                      name: "PieChart",
-                      props: {
-                        data: pieData,
-                        height: 300,
-                        showHeader: true,
-                        headerTitle: "Alert Types Distribution",
-                        showDownloadButton: true,
-                        isLoading: isChartLoading,
-                        onClick: (segmentName?: string) => {
-                          if (segmentName) {
-                            navigate(
-                              `/meter-alert-table?type=${segmentName
-                                .toLowerCase()
-                                .replace(/\s+/g, "-")}`
-                            );
-                          }
-                        },
-                        // Enhanced features
-                        showStatsSection: true,
-                        Avg: true,
-                        valueUnit: "alerts",
+                     {
+                       name: "PieChart",
+                       props: {
+                         data: pieData,
+                         height: 300,
+                         showHeader: true,
+                         headerTitle: "Current Month Tamper Types Distribution",
+                         showDownloadButton: true,
+                         isLoading: isChartLoading,
+                         onClick: (segmentName?: string) => {
+                           if (segmentName) {
+                             navigate(
+                               `/meter-alert-table?type=${segmentName
+                                 .toLowerCase()
+                                 .replace(/\s+/g, "-")}`
+                             );
+                           }
+                         },
+                         // Enhanced features
+                         showStatsSection: true,
+                         Avg: tamperTypesStats.average,
+                         valueUnit: "alerts",
+                         totalCount: tamperTypesStats.totalCount,
+                         totalTypes: tamperTypesStats.totalTypes,
 
-                        // Dynamic colors and custom labels
-                        useDynamicColors: true,
-                        colorPalette: "status",
-                        customLabels: {
-                          Overload: "Overload Alerts",
-                          "Power Failure": "Power Failure Alerts",
-                          "Communication Loss": "Communication Loss Alerts",
-                          "Voltage Fluctuation": "Voltage Fluctuation Alerts",
-                          "Tamper Detection": "Tamper Detection Alerts",
-                          "Meter Fault": "Meter Fault Alerts",
-                        },
+                         // Dynamic colors and custom labels
+                         useDynamicColors: true,
+                         colorPalette: "status",
 
-                        // Download functionality
-                        onDownload: (timeRange: string, viewType: string) => {
-                          console.log(
-                            "Downloading chart data for:",
-                            timeRange,
-                            viewType
-                          );
-                          handleChartDownload();
-                        },
-                      },
-                      span: { col: 1, row: 1 },
-                    },
+                         // Download functionality
+                         onDownload: (timeRange: string, viewType: string) => {
+                           console.log(
+                             "Downloading chart data for:",
+                             timeRange,
+                             viewType
+                           );
+                           handleChartDownload();
+                         },
+                       },
+                       span: { col: 1, row: 1 },
+                     },
                     {
                       name: "ActivityLog",
                       props: {
@@ -686,7 +817,7 @@ const MeterAlert: React.FC = () => {
                   data: alertTableData,
                   columns: alertTableColumns,
                   showHeader: true,
-                  headerTitle: "Alert Details",
+                  headerTitle: "Current Month Alert Details",
                   searchable: true,
                   sortable: true,
                   initialRowsPerPage: 10,
