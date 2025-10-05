@@ -55,14 +55,15 @@ const dummyAlertTableData = [
 
 const dummyTimelineData = {
   months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-  hours: ["12 AM", "1 AM", "2 AM", "3 AM", "4 AM", "5 AM", "6 AM", "7 AM", "8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM", "9 PM", "10 PM", "11 PM"],
+  days: [], // For daily timeline data
+  hours: [], // Start with empty hours
   series: [
-    { name: "Active", data: [5, 8, 12, 6, 15, 10] },
-    { name: "Resolved", data: [10, 15, 8, 20, 12, 18] },
+    { name: "Active", data: [] },
+    { name: "Resolved", data: [] },
   ],
   hourlySeries: [
-    { name: "Active", data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-    { name: "Resolved", data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    { name: "Active", data: [] },
+    { name: "Resolved", data: [] },
   ],
 };
 
@@ -141,6 +142,7 @@ const MeterAlert: React.FC = () => {
   const [filterOptions, _setFilterOptions] = useState(dummyFilterOptions);
   const [timelineData, _setTimelineData] = useState(dummyTimelineData);
   const [monthlyTimelineData, _setMonthlyTimelineData] = useState(dummyTimelineData);
+  const [dailyTimelineData, _setDailyTimelineData] = useState(dummyTimelineData);
   const [_trendData, _setTrendData] = useState(dummyTrendData);
   const [pieData, _setPieData] = useState(dummyPieData);
   const [tamperTypesStats, _setTamperTypesStats] = useState({
@@ -160,7 +162,7 @@ const MeterAlert: React.FC = () => {
   const [isChartLoading, _setIsChartLoading] = useState(false);
 
    // Error states - following the pattern from MetersList.tsx
-   const [error, setError] = useState<string | null>("Failed to fetch alert statistics. Please try again.");
+   const [error, setError] = useState<string | null>(null);
 
   // Alert statistics cards
   const alertStatsCards = [
@@ -219,17 +221,40 @@ const MeterAlert: React.FC = () => {
 
   // Filter change handlers
   const handleFilterChange = (filterName: string, value: any) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      [filterName]: value,
-    }));
+    // Extract the actual value if it's an object with target.value
+    const actualValue = typeof value === "string" ? value : value?.target?.value || value;
+    
+    console.log('Frontend handleFilterChange called with:');
+    console.log('  filterName:', filterName);
+    console.log('  value:', value);
+    console.log('  actualValue:', actualValue);
+    console.log('  typeof value:', typeof value);
+    
+    setFilterValues((prev) => {
+      const newValues = {
+        ...prev,
+        [filterName]: actualValue,
+      };
+      console.log('Frontend new filterValues after filter change:', newValues);
+      return newValues;
+    });
   };
 
   const handleDateRangeChange = (start: string, end: string) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      dateRange: { start, end },
-    }));
+    console.log('Frontend handleDateRangeChange called with:');
+    console.log('  start:', start);
+    console.log('  end:', end);
+    console.log('  typeof start:', typeof start);
+    console.log('  typeof end:', typeof end);
+    
+    setFilterValues((prev) => {
+      const newValues = {
+        ...prev,
+        dateRange: { start, end },
+      };
+      console.log('Frontend new filterValues after date change:', newValues);
+      return newValues;
+    });
   };
 
   const handleExportData = () => {
@@ -372,6 +397,8 @@ const MeterAlert: React.FC = () => {
       _setIsTableLoading(true);
 
       try {
+        console.log('Frontend building query params with filterValues:', filterValues);
+        
         const queryParams = new URLSearchParams({
           status: filterValues.status === "all" ? "" : filterValues.status,
           meterId: filterValues.meterId || "",
@@ -379,6 +406,9 @@ const MeterAlert: React.FC = () => {
           startDate: filterValues.dateRange.start || "",
           endDate: filterValues.dateRange.end || "",
         }).toString();
+
+        console.log('Frontend queryParams:', queryParams);
+        console.log('Frontend URL:', `${BACKEND_URL}/alerts?${queryParams}`);
 
         const res = await fetch(`${BACKEND_URL}/alerts?${queryParams}`);
         if (!res.ok) throw new Error("Failed to fetch alerts");
@@ -409,14 +439,17 @@ const MeterAlert: React.FC = () => {
         if (data.timelineData) {
           _setTimelineData({
             months: dummyTimelineData.months, // Keep original monthly data
+            days: dummyTimelineData.days, // Keep original daily data
             hours: data.timelineData.hours,
             series: dummyTimelineData.series, // Keep original monthly series
             hourlySeries: data.timelineData.series, // Use backend data for hourly
           });
         }
 
-        // Update monthly timeline data
-        if (data.monthlyTimelineData) {
+        // Update daily timeline data for bar chart
+        if (data.dailyTimelineData) {
+          _setDailyTimelineData(data.dailyTimelineData);
+        } else if (data.monthlyTimelineData) {
           _setMonthlyTimelineData(data.monthlyTimelineData);
         }
 
@@ -657,7 +690,9 @@ const MeterAlert: React.FC = () => {
                         seriesData: timelineData.hourlySeries,
                         height: 300,
                         showHeader: true,
-                        headerTitle: "Alert Timeline (Today - Hourly)",
+                        headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
+                          ? `Alert Timeline (Hourly - ${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : "Alert Timeline (Today - Hourly)",
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
@@ -676,12 +711,14 @@ const MeterAlert: React.FC = () => {
                     {
                       name: "BarChart",
                       props: {
-                        xAxisData: monthlyTimelineData.months,
+                        xAxisData: dailyTimelineData.days || monthlyTimelineData.months,
                         seriesColors: ["#163b7c", "#55b56c"], // Force brand colors
-                        seriesData: monthlyTimelineData.series,
+                        seriesData: dailyTimelineData.series || monthlyTimelineData.series,
                         height: 300,
                         showHeader: true,
-                        headerTitle: "Alert Timeline (Last 12 Months)",
+                        headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
+                          ? `Alert Timeline (${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : "Alert Timeline (Last 12 Months)",
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
