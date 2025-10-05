@@ -210,10 +210,10 @@ const defaultStats = [
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "Cummulative kVAh",
+    title: "Active Power",
     value: "0",
     icon: "icons/consumption.svg",
-    subtitle1: "kVAh",
+    subtitle1: "kW",
     valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
@@ -1028,11 +1028,11 @@ const Feeders = () => {
           loading: isStatsLoading,
         },
         {
-          title: "Cummulative kVAh",
+          title: "Active Power",
           value:
             instantaneousStatsData.cumulativeKVAh?.toString() || "77902.296",
           icon: "icons/consumption.svg",
-          subtitle1: "kVAh",
+          subtitle1: "kW",
           valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
