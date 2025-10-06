@@ -1672,8 +1672,8 @@ console.log("000000000000000000",capacityUsage);
                                 ? row.sNo
                                 : "",
                           },
-                          { key: "alertId", label: "Alert ID" },
-                          { key: "type", label: "Type" },
+                         // { key: "alertId", label: "Alert ID" },
+                          { key: "type", label: "Event Type" },
                           { key: "feederName", label: "Meter Number" },
                           { key: "occuredOn", label: "Occured On" },
                           { key: "status", label: "Status" },

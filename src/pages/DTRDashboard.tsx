@@ -1666,8 +1666,8 @@ const DTRDashboard: React.FC = () => {
 
   const alertsTableColumns = [
     { key: 'sNo', label: 'S.No' },
-    { key: "alertId", label: "Alert ID" },
-    { key: "type", label: "Type" },
+    //{ key: "alertId", label: "Alert ID" },
+    { key: "type", label: "Event Type" },
     { key: "feederName", label: "Meter Number" },
     { key: "dtrNumber", label: "DTR Number" },
     { key: "occuredOn", label: "Occured On" },

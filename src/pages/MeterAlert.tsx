@@ -54,7 +54,7 @@ const dummyAlertTableData = [
 ];
 
 const dummyTimelineData = {
-  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   days: [], // For daily timeline data
   hours: [], // Start with empty hours
   series: [
@@ -110,6 +110,9 @@ const MeterAlert: React.FC = () => {
   const [isStatsLoading, _setIsStatsLoading] = useState(false);
   const [isTableLoading, _setIsTableLoading] = useState(false);
   const [isChartLoading, _setIsChartLoading] = useState(false);
+
+  // Time range state for bar chart
+  const [alertTimelineRange, setAlertTimelineRange] = useState<"Daily" | "Monthly">("Daily");
 
    // Error states - following the pattern from MetersList.tsx
    const [error, setError] = useState<string | null>(null);
@@ -216,7 +219,36 @@ const MeterAlert: React.FC = () => {
     console.log("Downloading chart data...");
   };
 
+  // Get alert timeline data based on selected time range
+  const getAlertTimelineData = () => {
+    
+    if (alertTimelineRange === "Daily") {
+      console.log('Returning DAILY data:', {
+        xAxisData: dailyTimelineData.days,
+        seriesData: dailyTimelineData.series
+      });
+      return {
+        xAxisData: dailyTimelineData.days || [],
+        seriesData: dailyTimelineData.series || []
+      };
+    } else {
+      console.log('Returning MONTHLY data:', {
+        xAxisData: monthlyTimelineData.months,
+        seriesData: monthlyTimelineData.series
+      });
+      return {
+        xAxisData: monthlyTimelineData.months || [],
+        seriesData: monthlyTimelineData.series || []
+      };
+    }
+  };
 
+  const handleAlertTimeRangeChange = (range: string) => {
+    console.log('Time range changed to:', range);
+    setAlertTimelineRange(range as "Daily" | "Monthly");
+  };
+
+  
   // Fetch meter options for dropdown
   const fetchMeterOptions = async (searchTerm: string = '') => {
     setIsLoadingMeterOptions(true);
@@ -367,6 +399,12 @@ const MeterAlert: React.FC = () => {
         if (!res.ok) throw new Error("Failed to fetch alerts");
 
         const data = await res.json();
+        
+        console.log('====== FULL API RESPONSE ======');
+        console.log('API Response Keys:', Object.keys(data));
+        console.log('Has dailyTimelineData?', !!data.dailyTimelineData);
+        console.log('Has monthlyTimelineData?', !!data.monthlyTimelineData);
+        console.log('================================');
 
         // Update stats
         _setAlertStats({
@@ -399,17 +437,20 @@ const MeterAlert: React.FC = () => {
           });
         }
 
-        // Update daily timeline data for bar chart
+        // Update daily and monthly timeline data for bar chart
         if (data.dailyTimelineData) {
           _setDailyTimelineData(data.dailyTimelineData);
-        } else if (data.monthlyTimelineData) {
+        }
+        
+        if (data.monthlyTimelineData) {
+          data.monthlyTimelineData.series?.forEach((s: any, idx: number) => {
+           
+          });
           _setMonthlyTimelineData(data.monthlyTimelineData);
         }
 
         // Update tamper types distribution data
         if (data.tamperTypesData) {
-          console.log('====== PIE CHART API DATA ======');
-          console.log('Full tamperTypesData:', data.tamperTypesData);
           const transformedPieData = data.tamperTypesData.pieData.map((item: any) => ({
             ...item,
             unit: item.unit === "alerts" ? "Events" : item.unit
@@ -672,20 +713,20 @@ const MeterAlert: React.FC = () => {
                     {
                       name: "BarChart",
                       props: {
-                        xAxisData: dailyTimelineData.days || monthlyTimelineData.months,
+                        xAxisData: getAlertTimelineData().xAxisData,
                         seriesColors: ["#163b7c", "#55b56c"], // Force brand colors
-                        seriesData: dailyTimelineData.series || monthlyTimelineData.series,
+                        seriesData: getAlertTimelineData().seriesData,
                         height: 300,
                         showHeader: true,
                         headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
-                          ? `Event Timeline (${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
-                          : "Event Timeline",
+                          ? `${alertTimelineRange} Alert Timeline (${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : `${alertTimelineRange} Alert Timeline`,
+                        availableTimeRanges: ["Daily", "Monthly"],
+                        initialTimeRange: alertTimelineRange,
+                        onTimeRangeChange: handleAlertTimeRangeChange,
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
-                        isTimeFormat: true,
-                        timeFormat: "24h",
-                        timeInterval: 60,
                       },
                     },
                   ],
