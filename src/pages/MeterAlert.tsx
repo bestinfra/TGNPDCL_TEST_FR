@@ -74,56 +74,6 @@ const dummyTrendData = {
   series: [{ name: "Total Alerts", data: [15, 23, 20, 26, 27, 28] }],
 };
 
-const dummyPieData = [
-  { value: 45, name: "Overload", unit: "alerts" },
-  { value: 25, name: "Power Failure", unit: "alerts" },
-  { value: 20, name: "Communication Loss", unit: "alerts" },
-  { value: 10, name: "Voltage Fluctuation", unit: "alerts" },
-];
-
-const dummyActivityLogData = [
-  {
-    id: 1,
-    description: "MTR001 - DTR001",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-    subText: "Alert Count: 15 | Last Alert: 2 hours ago",
-    author: "System",
-    status: "Active",
-  },
-  {
-    id: 2,
-    description: "MTR002 - DTR002",
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-    subText: "Alert Count: 12 | Last Alert: 4 hours ago",
-    author: "System",
-    status: "Resolved",
-  },
-  {
-    id: 3,
-    description: "MTR003 - DTR003",
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-    subText: "Alert Count: 10 | Last Alert: 1 day ago",
-    author: "System",
-    status: "Active",
-  },
-  {
-    id: 4,
-    description: "MTR004 - DTR004",
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-    subText: "Alert Count: 8 | Last Alert: 2 days ago",
-    author: "System",
-    status: "Resolved",
-  },
-  {
-    id: 5,
-    description: "MTR005 - DTR005",
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-    subText: "Alert Count: 6 | Last Alert: 3 days ago",
-    author: "System",
-    status: "Resolved",
-  },
-];
-
 const MeterAlert: React.FC = () => {
   const navigate = useNavigate();
 
@@ -144,13 +94,13 @@ const MeterAlert: React.FC = () => {
   const [monthlyTimelineData, _setMonthlyTimelineData] = useState(dummyTimelineData);
   const [dailyTimelineData, _setDailyTimelineData] = useState(dummyTimelineData);
   const [_trendData, _setTrendData] = useState(dummyTrendData);
-  const [pieData, _setPieData] = useState(dummyPieData);
+  const [pieData, _setPieData] = useState<Array<{ value: number; name: string; unit: string }>>([]);
   const [tamperTypesStats, _setTamperTypesStats] = useState({
     totalCount: 0,
     average: 0,
     totalTypes: 0
   });
-  const [activityLogData, _setActivityLogData] = useState(dummyActivityLogData);
+  const [activityLogData, _setActivityLogData] = useState<Array<any>>([]);
 
   // Filter options states
   const [meterOptions, setMeterOptions] = useState([]);
@@ -169,7 +119,7 @@ const MeterAlert: React.FC = () => {
     {
       title: "Total Events",
       value: alertStats.totalAlerts,
-      icon: "icons/alert.svg",
+      icon: "icons/totalAlerts.svg",
       subtitle1: "Current Month Events",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -178,7 +128,7 @@ const MeterAlert: React.FC = () => {
     {
       title: "Resolved",
       value: alertStats.resolvedAlerts,
-      icon: "icons/check.svg",
+      icon: "icons/resolvednotification.svg",
       subtitle1: "Resolved This Month",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -187,7 +137,7 @@ const MeterAlert: React.FC = () => {
     {
       title: "Active",
       value: alertStats.activeAlerts,
-      icon: "icons/warning.svg",
+      icon: "icons/todayNofitication.svg",
       subtitle1: "Currently Active",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -196,7 +146,7 @@ const MeterAlert: React.FC = () => {
     {
       title: "Today Occurred",
       value: alertStats.todayOccurred,
-      icon: "icons/calendar.svg",
+      icon: "icons/alert.svg",
       subtitle1: "Events Today",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
@@ -275,7 +225,9 @@ const MeterAlert: React.FC = () => {
       if (response.ok) {
         const suggestions = await response.json();
         setMeterOptions(suggestions);
+        console.log('Frontend meter options:', suggestions);
       }
+      
     } catch (error) {
       console.error('Error fetching meter options:', error);
     } finally {
@@ -296,6 +248,7 @@ const MeterAlert: React.FC = () => {
             ...options
           ]
         }));
+        console.log('Frontend tamper type options:', options);
       }
     } catch (error) {
       console.error('Error fetching tamper type options:', error);
@@ -455,7 +408,14 @@ const MeterAlert: React.FC = () => {
 
         // Update tamper types distribution data
         if (data.tamperTypesData) {
-          _setPieData(data.tamperTypesData.pieData);
+          console.log('====== PIE CHART API DATA ======');
+          console.log('Full tamperTypesData:', data.tamperTypesData);
+          const transformedPieData = data.tamperTypesData.pieData.map((item: any) => ({
+            ...item,
+            unit: item.unit === "alerts" ? "Events" : item.unit
+          }));
+          
+          _setPieData(transformedPieData);  
           _setTamperTypesStats({
             totalCount: data.tamperTypesData.totalCount,
             average: data.tamperTypesData.average,
@@ -536,6 +496,7 @@ const MeterAlert: React.FC = () => {
                type: 'grid' as const,
                columns: 4,
                gap: 'gap-4',
+               className: "border border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light items-center",
              },
              components: [
                 {
@@ -766,26 +727,17 @@ const MeterAlert: React.FC = () => {
                              );
                            }
                          },
-                         // Enhanced features
                          showStatsSection: true,
-                         Avg: tamperTypesStats.average,
-                         valueUnit: "alerts",
+                        //  Avg: tamperTypesStats.average,
+                         valueUnit: "",
                          totalCount: tamperTypesStats.totalCount,
                          totalTypes: tamperTypesStats.totalTypes,
-
-                         // Dynamic colors and custom labels
                          useDynamicColors: true,
                          colorPalette: "status",
-
-                         // Download functionality
-                         onDownload: (timeRange: string, viewType: string) => {
-                           console.log(
-                             "Downloading chart data for:",
-                             timeRange,
-                             viewType
-                           );
+                         onDownload: () => {
                            handleChartDownload();
                          },
+                         
                        },
                        span: { col: 1, row: 1 },
                      },

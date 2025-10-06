@@ -1981,6 +1981,7 @@ const DTRDashboard: React.FC = () => {
                       props: {
                         data: meterStatus || dummyMeterStatusData,
                         height: 330,
+                        showStatsLabels:false,
                         showLegend: false,
                         showNoDataMessage: false,
                         showDownloadButton: true,
