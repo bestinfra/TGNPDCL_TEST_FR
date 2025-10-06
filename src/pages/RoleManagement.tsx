@@ -385,7 +385,7 @@ export default function RoleManagement() {
         { key: 'sNo', label: 'S.No' },
         { key: 'fullName', label: 'Full Name' },
         { key: 'roleName', label: 'Role Name' },
-        { key: 'client', label: 'Client' },
+        //{ key: 'client', label: 'Client' },
     ];
 
     // Actions array for the table - With icons

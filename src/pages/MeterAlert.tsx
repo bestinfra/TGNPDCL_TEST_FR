@@ -167,13 +167,13 @@ const MeterAlert: React.FC = () => {
   // Alert statistics cards
   const alertStatsCards = [
     {
-      title: "Total Alerts",
+      title: "Total Events",
       value: alertStats.totalAlerts,
       icon: "icons/alert.svg",
-      subtitle1: "Current Month Alerts",
+      subtitle1: "Current Month Events",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/meter-alert-table?type=all"),
+     // onValueClick: () => navigate("/meter-alert-table?type=all"),
     },
     {
       title: "Resolved",
@@ -182,7 +182,7 @@ const MeterAlert: React.FC = () => {
       subtitle1: "Resolved This Month",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/meter-alert-table?type=resolved"),
+      //onValueClick: () => navigate("/meter-alert-table?type=resolved"),
     },
     {
       title: "Active",
@@ -191,16 +191,16 @@ const MeterAlert: React.FC = () => {
       subtitle1: "Currently Active",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/meter-alert-table?type=active"),
+     // onValueClick: () => navigate("/meter-alert-table?type=active"),
     },
     {
       title: "Today Occurred",
       value: alertStats.todayOccurred,
       icon: "icons/calendar.svg",
-      subtitle1: "Alerts Today",
+      subtitle1: "Events Today",
       bg: "bg-stat-icon-gradient",
       loading: isStatsLoading,
-      onValueClick: () => navigate("/meter-alert-table?type=today"),
+     // onValueClick: () => navigate("/meter-alert-table?type=today"),
     },
   ];
 
@@ -513,7 +513,7 @@ const MeterAlert: React.FC = () => {
               {
                 name: "PageHeader",
                 props: {
-                  title: "Meter Alert Dashboard",
+                  title: "Meter Events",
                   onBackClick: () => window.history.back(),
                   buttonsLabel: "Export",
                   variant: "primary",
@@ -587,51 +587,51 @@ const MeterAlert: React.FC = () => {
                    value: filterValues.alertType,
                    onChange: (value: string) =>
                      handleFilterChange("alertType", value),
-                   placeholder: "Select Alert Type",
+                   placeholder: "Select Event Type",
                    searchable: false,
                    className: "w-full",
                  },
                },
              ],
            },
-           // SimpleTracker Section - separate section (only show when filters are active)
-           ...(hasActiveFilters ? [{
-             layout: {
-               type: 'column' as const,
-               gap: 'gap-4',
-             },
-             components: [
-               {
-                 name: "SimpleTracker",
-                 props: {
-                   title: "Active Filters",
-                   showRemoveButton: true,
-                   activeComponents: activeComponents,
-                   onRemoveComponent: (componentId: string) => {
-                     switch (componentId) {
-                       case "meterId-filter":
-                         handleFilterChange("meterId", "");
-                         break;
-                       case "status-filter":
-                         handleFilterChange("status", "all");
-                         break;
-                       case "alertType-filter":
-                         handleFilterChange("alertType", "all");
-                         break;
-                       case "dateRange-filter":
-                         handleDateRangeChange("", "");
-                         break;
-                       default:
-                         console.log("Remove component:", componentId);
-                     }
-                   },
-                   onComponentClick: (componentId: string) => {
-                     console.log("Clicked on component:", componentId);
-                   },
-                 },
-               },
-             ],
-           }] : []),
+          //  // SimpleTracker Section - separate section (only show when filters are active)
+          //  ...(hasActiveFilters ? [{
+          //    layout: {
+          //      type: 'column' as const,
+          //      gap: 'gap-4',
+          //    },
+          //    components: [
+          //      {
+          //        name: "SimpleTracker",
+          //        props: {
+          //          title: "Active Filters",
+          //          showRemoveButton: true,
+          //          activeComponents: activeComponents,
+          //          onRemoveComponent: (componentId: string) => {
+          //            switch (componentId) {
+          //              case "meterId-filter":
+          //                handleFilterChange("meterId", "");
+          //                break;
+          //              case "status-filter":
+          //                handleFilterChange("status", "all");
+          //                break;
+          //              case "alertType-filter":
+          //                handleFilterChange("alertType", "all");
+          //                break;
+          //              case "dateRange-filter":
+          //                handleDateRangeChange("", "");
+          //                break;
+          //              default:
+          //                console.log("Remove component:", componentId);
+          //            }
+          //          },
+          //          onComponentClick: (componentId: string) => {
+          //            console.log("Clicked on component:", componentId);
+          //          },
+          //        },
+          //      },
+          //    ],
+          //  }] : []),
 
           // Alert Statistics Cards
           {
@@ -646,7 +646,7 @@ const MeterAlert: React.FC = () => {
               {
                 name: "SectionHeader",
                 props: {
-                  title: "Alert Statistics",
+                  title: "Event Statistics",
                   titleLevel: 2,
                   titleSize: "md",
                   titleVariant: "primary",
@@ -662,7 +662,7 @@ const MeterAlert: React.FC = () => {
                   value: stat.value,
                   icon: stat.icon,
                   subtitle1: stat.subtitle1,
-                  onValueClick: stat.onValueClick,
+                 // onValueClick: stat.onValueClick,
                   bg: stat.bg,
                   loading: stat.loading,
                 },
@@ -691,8 +691,8 @@ const MeterAlert: React.FC = () => {
                         height: 300,
                         showHeader: true,
                         headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
-                          ? `Alert Timeline (Hourly - ${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
-                          : "Alert Timeline (Today - Hourly)",
+                          ? `Event Timeline (Hourly - ${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : "Event Timeline (Today - Hourly)",
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
@@ -717,8 +717,8 @@ const MeterAlert: React.FC = () => {
                         height: 300,
                         showHeader: true,
                         headerTitle: filterValues.dateRange.start || filterValues.dateRange.end 
-                          ? `Alert Timeline (${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
-                          : "Alert Timeline (Last 12 Months)",
+                          ? `Event Timeline (${filterValues.dateRange.start || 'Start'} to ${filterValues.dateRange.end || 'End'})`
+                          : "Event Timeline",
                         showDownloadButton: true,
                         onDownload: handleChartDownload,
                         isLoading: isChartLoading,
@@ -792,7 +792,7 @@ const MeterAlert: React.FC = () => {
                     {
                       name: "ActivityLog",
                       props: {
-                        title: "Top Meters by Alert Count",
+                        title: "Top Meters by Event Count",
                         entries: activityLogData,
                         maxHeight: "h-80",
                       },
@@ -817,12 +817,12 @@ const MeterAlert: React.FC = () => {
                   data: alertTableData,
                   columns: alertTableColumns,
                   showHeader: true,
-                  headerTitle: "Current Month Alert Details",
+                  headerTitle: "Current Month Event Details",
                   searchable: true,
                   sortable: true,
                   initialRowsPerPage: 10,
                   showActions: true,
-                  text: "Alert Management Table",
+                  text: "Events Management Table",
                   onRowClick: (row: any) =>
                     navigate(`/alert-detail/${row.dtrId}`),
                   onView: (row: any) => navigate(`/alert-detail/${row.dtrId}`),
