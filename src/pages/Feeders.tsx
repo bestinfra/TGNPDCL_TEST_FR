@@ -2216,8 +2216,8 @@ const Feeders = () => {
                       props: {
                         columns: [
                           { key: "sNo", label: "S.No" },
-                          { key: "alertId", label: "Alert ID" },
-                          { key: "type", label: "Type" },
+                         // { key: "alertId", label: "Alert ID" },
+                          { key: "type", label: "Event Type" },
                           { key: "feederName", label: "Meter Number" },
                           { key: "occuredOn", label: "Occured On" },
                           { key: "status", label: "Status" },
