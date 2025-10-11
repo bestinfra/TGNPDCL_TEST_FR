@@ -210,10 +210,10 @@ const defaultStats = [
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "Cummulative kVAh",
+    title: "Active Power",
     value: "0",
     icon: "icons/consumption.svg",
-    subtitle1: "kVAh",
+    subtitle1: "kW",
     valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
@@ -226,13 +226,24 @@ const Feeders = () => {
 
   // Helper function to calculate power factor angle (θ = cos⁻¹(|PF|) with preserved sign)
   const calculatePowerFactorAngle = (powerFactor: string | number): number => {
-    const pf = parseFloat(powerFactor.toString() || "0");
+    // Convert to number first
+    const pfString = typeof powerFactor === 'string' ? powerFactor : powerFactor.toString();
+    const pf = parseFloat(pfString || "0");
+    
+    // Handle invalid values
+    if (isNaN(pf)) return 0;
+    
+    // Get absolute value and clamp to valid range [0, 1]
     const absPF = Math.abs(pf);
-    const clampedPF = Math.min(1, absPF);
+    const clampedPF = Math.min(1, Math.max(0, absPF));
+    
+    // Calculate angle in radians then convert to degrees
     const thetaRad = Math.acos(clampedPF);
     const thetaDeg = (thetaRad * 180) / Math.PI;
+    
     // Preserve the sign: negative PF = leading (negative angle), positive PF = lagging (positive angle)
-    return pf < 0 ? -thetaDeg : thetaDeg;
+    // Use explicit comparison to handle negative zero and ensure proper sign preservation
+    return pf < 0 ? -Math.abs(thetaDeg) : Math.abs(thetaDeg);
   };
 
   // Get passed data from navigation state
@@ -646,9 +657,12 @@ const Feeders = () => {
           );
 
           if (specificFeeder) {
+            // Store the actual total feeders count before filtering
+            const actualTotalFeeders = feederInfo.feeders?.length || 1;
+            
             feederInfo = {
               dtr: feederInfo.dtr,
-              totalFeeders: 1, // This is now for a specific feeder
+              totalFeeders: actualTotalFeeders, // Use actual DTR's total feeder count
               specificFeeder: {
                 serialNumber: specificFeeder.serialNumber,
                 meterNumber: specificFeeder.meterNumber,
@@ -1028,11 +1042,11 @@ const Feeders = () => {
           loading: isStatsLoading,
         },
         {
-          title: "Cummulative kVAh",
+          title: "Active Power",
           value:
             instantaneousStatsData.cumulativeKVAh?.toString() || "77902.296",
           icon: "icons/consumption.svg",
-          subtitle1: "kVAh",
+          subtitle1: "kW",
           valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
@@ -1738,7 +1752,7 @@ const Feeders = () => {
                                 gap: "gap-1",
                               },
                               {
-                                title: "Capacity",
+                                title: "DTR Capacity",
                                 value: `${
                                   feederInfoData?.dtr?.capacity || 100
                                 } kVA`,
@@ -1750,21 +1764,34 @@ const Feeders = () => {
                                 // progressColor: 'bg-secondary from-primary to-secondary'
                               },
                               {
-                                title: "Status",
-                                value: feederInfoData?.dtr?.status || "ACTIVE",
+                                title: "Feeder Capacity",
+                                value: (() => {
+                                  const dtrCapacity = feederInfoData?.dtr?.capacity || 100;
+                                  const totalFeeders = feederInfoData?.totalFeeders || 1;
+                                  const feederCapacity = Math.round(dtrCapacity / totalFeeders);
+                                  return `${feederCapacity} kVA`;
+                                })(),
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "Feeder Status",
+                                value: (() => {
+                                  // Use feeder status if available (for individual feeder), otherwise use DTR status
+                                  const feederStatus = feederInfoData?.specificFeeder?.status || 
+                                                      feederInfoData?.feeders?.[0]?.status;
+                                  return feederStatus || feederInfoData?.dtr?.status || "ACTIVE";
+                                })(),
                                 align: "start",
                                 gap: "gap-1",
                                 statusIndicator: true,
-                                statusType: feederInfoData?.dtr?.status,
+                                statusType: (() => {
+                                  const feederStatus = feederInfoData?.specificFeeder?.status || 
+                                                      feederInfoData?.feeders?.[0]?.status;
+                                  return feederStatus || feederInfoData?.dtr?.status;
+                                })(),
                               },
-                              {
-                                title: "Total Feeders",
-                                value:
-                                  feederInfoData?.totalFeeders?.toString() ||
-                                  "1",
-                                align: "start",
-                                gap: "gap-1",
-                              },
+                              
                             ],
                           },
                         ],
@@ -1915,6 +1942,7 @@ const Feeders = () => {
                       props: {
                         showHeader: true,
                         showDownloadButton: true,
+                        headerTitle:'Feeder Vector Diagram',
                         vrValue: parseFloat(instantaneousStatsData.rphVolt || "0"),
                         vbValue: parseFloat(instantaneousStatsData.bphVolt || "0"),
                         vyValue: parseFloat(instantaneousStatsData.yphVolt || "0"),
@@ -2204,8 +2232,8 @@ const Feeders = () => {
                       props: {
                         columns: [
                           { key: "sNo", label: "S.No" },
-                          { key: "alertId", label: "Alert ID" },
-                          { key: "type", label: "Type" },
+                         // { key: "alertId", label: "Alert ID" },
+                          { key: "type", label: "Event Type" },
                           { key: "feederName", label: "Meter Number" },
                           { key: "occuredOn", label: "Occured On" },
                           { key: "status", label: "Status" },

@@ -134,6 +134,13 @@ const DTRDetailPage = () => {
   const { dtrId } = useParams();
   const navigate = useNavigate();
 
+  // kVARh = √(kVAh² - kWh²)
+  const calculateKvarh = (kvah: number, kwh: number): number => {
+    const kvarhSquared = Math.pow(kvah, 2) - Math.pow(kwh, 2);
+    const calculatedKvarh = kvarhSquared > 0 ? Math.sqrt(kvarhSquared) : 0;
+    return calculatedKvarh;
+  };
+
   const [dtr, setDtr] = useState(dummyDTRData);
   const [dailyConsumptionData, setDailyConsumptionData] = useState(
     dummyDailyConsumptionData
@@ -1334,14 +1341,14 @@ console.log("000000000000000000",capacityUsage);
           {
             layout: {
               type: "grid" as const,
-              columns: 2,
+              columns: 1,
               className: "",
               rows: [
                 {
                   layout: "grid" as const,
                   gridColumns: 1,
                   columns: [
-                    {
+                    { 
                       name: "RightAngle",
                       props: {
                         // Use actual data from API based on selected time range
@@ -1351,12 +1358,18 @@ console.log("000000000000000000",capacityUsage);
                               ? dtrConsumptionData.daily.totalKwh
                               : dtrConsumptionData.monthly.totalKwh
                           ) || 0,
-                        kvarh:
+                        kvarh: calculateKvarh(
                           Number(
                             selectedTimeRange === "Daily"
-                              ? dtrConsumptionData.daily.totalKvarh
-                              : dtrConsumptionData.monthly.totalKvarh
+                              ? dtrConsumptionData.daily.totalKvah
+                              : dtrConsumptionData.monthly.totalKvah
                           ) || 0,
+                          Number(
+                            selectedTimeRange === "Daily"
+                              ? dtrConsumptionData.daily.totalKwh
+                              : dtrConsumptionData.monthly.totalKwh
+                          ) || 0
+                        ),
                         kvah:
                           Number(
                             selectedTimeRange === "Daily"
@@ -1378,24 +1391,13 @@ console.log("000000000000000000",capacityUsage);
                         selectedTimeRange: selectedTimeRange,
                         onTimeRangeChange: (range: "Daily" | "Monthly") =>
                           setSelectedTimeRange(range),
+                        inverse:false,
+                        statsSectionPosition: "right",
                       },
                     },
                   ],
                 },
-                {
-                  layout: "grid" as const,
-                  gridColumns: 1,
-                  columns: [
-                    {
-                      name: "VectorDiagram",
-                      props: {
-                        title: "DTR Feeders",
-                        showHeader: true,
-                        showDownloadButton: true,
-                      },
-                    },
-                  ],
-                },
+               
               ],
             },
           },
@@ -1686,8 +1688,8 @@ console.log("000000000000000000",capacityUsage);
                                 ? row.sNo
                                 : "",
                           },
-                          { key: "alertId", label: "Alert ID" },
-                          { key: "type", label: "Type" },
+                         // { key: "alertId", label: "Alert ID" },
+                          { key: "type", label: "Event Type" },
                           { key: "feederName", label: "Meter Number" },
                           { key: "occuredOn", label: "Occured On" },
                           { key: "status", label: "Status" },

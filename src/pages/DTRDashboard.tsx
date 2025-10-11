@@ -1,185 +1,186 @@
-import { lazy } from "react";
-import React, { useState, useEffect } from "react";
+import { lazy } from 'react';
+import React, { useState, useEffect } from 'react';
 interface TableData {
   [key: string]: string | number | boolean | null | undefined;
 }
-import { useNavigate } from "react-router-dom";
-const Page = lazy(() => import("SuperAdmin/Page"));
-import { exportChartData } from "../utils/excelExport";
-import { FILTER_STYLES } from "../contexts/FilterStyleContext";
-import { apiClient } from "../api/apiUtils";
-import BACKEND_URL from "../config";
+import { useNavigate } from 'react-router-dom';
+const Page = lazy(() => import('SuperAdmin/Page'));
+import { exportChartData } from '../utils/excelExport';
+import { FILTER_STYLES } from '../contexts/FilterStyleContext';
+import { apiClient } from '../api/apiUtils';
+import BACKEND_URL from '../config';
+import { io, Socket } from 'socket.io-client';
 
 const dummyDtrStatsData = {
-  totalDtrs: "0",
-  totalLtFeeders: "0",
-  totalFuseBlown: "0",
-  fuseBlownPercentage: "0",
-  overloadedFeeders: "0",
-  overloadedPercentage: "0",
-  underloadedFeeders: "0",
-  underloadedPercentage: "0",
-  ltSideFuseBlown: "0",
-  unbalancedDtrs: "0",
-  unbalancedPercentage: "0",
-  powerFailureFeeders: "0",
-  powerFailurePercentage: "0",
-  htSideFuseBlown: "0",
-  activeDtrs: "0",
-  inactiveDtrs: "0",
-  activePercentage: "0",
-  inactivePercentage: "0",
+  totalDtrs: '0',
+  totalLtFeeders: '0',
+  totalFuseBlown: '0',
+  fuseBlownPercentage: '0',
+  overloadedFeeders: '0',
+  overloadedPercentage: '0',
+  underloadedFeeders: '0',
+  underloadedPercentage: '0',
+  ltSideFuseBlown: '0',
+  unbalancedDtrs: '0',
+  unbalancedPercentage: '0',
+  powerFailureFeeders: '0',
+  powerFailurePercentage: '0',
+  htSideFuseBlown: '0',
+  activeDtrs: '0',
+  inactiveDtrs: '0',
+  activePercentage: '0',
+  inactivePercentage: '0',
 };
 
 const dummyFilterOptions = {
   discoms: [
-    { value: "DISCOM1", label: "DISCOM 1" },
-    { value: "DISCOM2", label: "DISCOM 2" },
+    { value: 'DISCOM1', label: 'DISCOM 1' },
+    { value: 'DISCOM2', label: 'DISCOM 2' },
   ],
   circles: [
-    { value: "CIRCLE1", label: "Circle 1" },
-    { value: "CIRCLE2", label: "Circle 2" },
+    { value: 'CIRCLE1', label: 'Circle 1' },
+    { value: 'CIRCLE2', label: 'Circle 2' },
   ],
   divisions: [
-    { value: "DIV1", label: "Division 1" },
-    { value: "DIV2", label: "Division 2" },
+    { value: 'DIV1', label: 'Division 1' },
+    { value: 'DIV2', label: 'Division 2' },
   ],
   subDivisions: [
-    { value: "SUBDIV1", label: "Sub Division 1" },
-    { value: "SUBDIV2", label: "Sub Division 2" },
+    { value: 'SUBDIV1', label: 'Sub Division 1' },
+    { value: 'SUBDIV2', label: 'Sub Division 2' },
   ],
   sections: [
-    { value: "SECTION1", label: "Section 1" },
-    { value: "SECTION2", label: "Section 2" },
+    { value: 'SECTION1', label: 'Section 1' },
+    { value: 'SECTION2', label: 'Section 2' },
   ],
   meterLocations: [
-    { value: "INDOOR", label: "Indoor" },
-    { value: "OUTDOOR", label: "Outdoor" },
+    { value: 'INDOOR', label: 'Indoor' },
+    { value: 'OUTDOOR', label: 'Outdoor' },
   ],
 };
 
 const dummyDtrConsumptionData = {
-  daily: { totalKwh: "0", totalKvah: "0", totalKw: "0", totalKva: "0" },
+  daily: { totalKwh: '0', totalKvah: '0', totalKw: '0', totalKva: '0' },
   monthly: {
-    totalKwh: "0",
-    totalKvah: "0",
-    totalKw: "0",
-    totalKva: "0",
+    totalKwh: '0',
+    totalKvah: '0',
+    totalKw: '0',
+    totalKva: '0',
   },
-  currentDay: { 
-    totalKwh: "0", 
-    totalKvah: "0", 
-    totalKw: "0", 
-    totalKva: "0",
+  currentDay: {
+    totalKwh: '0',
+    totalKvah: '0',
+    totalKw: '0',
+    totalKva: '0',
     latestKwTimestamp: null,
-    latestKvaTimestamp: null
+    latestKvaTimestamp: null,
   },
 };
 
 const dummyDtrTableData = [
   {
-    dtrId: "1",
-    dtrName: "DTR-001",
-    feedersCount: "3",
-    streetName: "Main Street",
-    city: "Hyderabad",
-    commStatus: "Active",
-    lastCommunication: "2024-01-15 14:30:00",
-    meterlocation: "17.9964, 79.5336",
+    dtrId: '1',
+    dtrName: 'DTR-001',
+    feedersCount: '3',
+    streetName: 'Main Street',
+    city: 'Hyderabad',
+    commStatus: 'Active',
+    lastCommunication: '2024-01-15 14:30:00',
+    meterlocation: '17.9964, 79.5336',
   },
   {
-    dtrId: "2", 
-    dtrName: "DTR-002",
-    feedersCount: "2",
-    streetName: "Tech Park Road",
-    city: "Hyderabad",
-    commStatus: "Active",
-    lastCommunication: "2024-01-15 12:15:00",
-    meterlocation: "17.3850, 78.4867",
+    dtrId: '2',
+    dtrName: 'DTR-002',
+    feedersCount: '2',
+    streetName: 'Tech Park Road',
+    city: 'Hyderabad',
+    commStatus: 'Active',
+    lastCommunication: '2024-01-15 12:15:00',
+    meterlocation: '17.3850, 78.4867',
   },
 ];
 
 const dummyAlertsData = [
   {
-    alertId: "ALT001",
-    type: "Overload",
-    feederName: "D1F1(32500114)",
-    dtrNumber: "DTR-201",
-    dtrId: "201",
-    occuredOn: "2024-01-15 14:30:00",
-    status: "Active",
+    alertId: 'ALT001',
+    type: 'Overload',
+    feederName: 'D1F1(32500114)',
+    dtrNumber: 'DTR-201',
+    dtrId: '201',
+    occuredOn: '2024-01-15 14:30:00',
+    status: 'Active',
   },
   {
-    alertId: "ALT002",
-    type: "Power Failure",
-    feederName: "D1F2(32500115)",
-    dtrNumber: "DTR-202",
-    dtrId: "202",
-    occuredOn: "2024-01-15 12:15:00",
-    status: "Resolved",
+    alertId: 'ALT002',
+    type: 'Power Failure',
+    feederName: 'D1F2(32500115)',
+    dtrNumber: 'DTR-202',
+    dtrId: '202',
+    occuredOn: '2024-01-15 12:15:00',
+    status: 'Resolved',
   },
 ];
 
 const dummyChartData = {
-  months: ["0"],
+  months: ['0'],
   series: [
-    { name: "LT FUSE BLOWN", data: [0] },
-    { name: "HT FUSE BLOWN", data: [0] },
-    { name: "OVERLOAD", data: [0] },
-    { name: "UNDERLOAD", data: [0] },
-    { name: "POWER FAILURE", data: [0] },
+    { name: 'LT FUSE BLOWN', data: [0] },
+    { name: 'HT FUSE BLOWN', data: [0] },
+    { name: 'OVERLOAD', data: [0] },
+    { name: 'UNDERLOAD', data: [0] },
+    { name: 'POWER FAILURE', data: [0] },
   ],
 };
 
 const dummyMeterStatusData = [
-  { value: 0, name: "Communicating" },
-  { value: 0, name: "Non-Communicating" },
+  { value: 0, name: 'Communicating' },
+  { value: 0, name: 'Non-Communicating' },
 ];
 
 // Utility function to format timestamp
 const formatTimestamp = (timestamp: string | null | undefined): string => {
-  if (!timestamp) return "No data available";
-  
+  if (!timestamp) return 'No data available';
+
   try {
     // Parse the ISO string and format it to show the time as it appears in the string
     const date = new Date(timestamp);
-    
+
     // Extract date components
     const day = date.getUTCDate().toString().padStart(2, '0');
     const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
     const year = date.getUTCFullYear();
     const hours = date.getUTCHours();
     const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    
+
     // Format time in 12-hour format
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours % 12 || 12;
-    
+
     return `${day}/${month}/${year}, ${displayHours}:${minutes} ${ampm}`;
   } catch (error) {
     console.error('Error formatting timestamp:', error);
-    return "Invalid timestamp";
+    return 'Invalid timestamp';
   }
 };
 
 const DTRDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
 
-  const [selectedTimeRange, setSelectedTimeRange] = useState<
-    "Daily" | "Monthly"
-  >("Daily");
-  
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
+
   const [selectedChartTimeRange, setSelectedChartTimeRange] = useState<
-    "Daily" | "Weekly" | "Monthly"
-  >("Daily");
+    'Daily' | 'Weekly' | 'Monthly'
+  >('Daily');
 
   const [filterValues, setFilterValues] = useState({
-    discom: "1",
-    circle: "all",
-    division: "all",
-    subDivision: "all",
-    section: "all",
-    meterLocation: "all",
+    discom: '1',
+    circle: 'all',
+    division: 'all',
+    subDivision: 'all',
+    section: 'all',
+    meterLocation: 'all',
   });
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
@@ -207,10 +208,9 @@ const DTRDashboard: React.FC = () => {
       latestKvaTimestamp?: string | null;
     };
   }>(dummyDtrConsumptionData);
-  const [dtrTableData, setDtrTableData] =
-    useState<TableData[]>(dummyDtrTableData);
+  const [dtrTableData, setDtrTableData] = useState<TableData[]>(dummyDtrTableData);
 
-    console.log("Distributiin Transformer ",dtrTableData);
+  console.log('Distributiin Transformer ', dtrTableData);
   const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
 
   const [serverPagination, setServerPagination] = useState({
@@ -221,13 +221,22 @@ const DTRDashboard: React.FC = () => {
     hasNextPage: false,
     hasPrevPage: false,
   });
-  const [chartMonths, setChartMonths] = useState<string[]>(
-    dummyChartData.months
+  const [chartMonths, setChartMonths] = useState<string[]>(dummyChartData.months);
+  const [chartSeries, setChartSeries] = useState<{ name: string; data: number[] }[]>(
+    dummyChartData.series
   );
-  const [chartSeries, setChartSeries] = useState<
-    { name: string; data: number[] }[]
-  >(dummyChartData.series);
-  const alertColors = ["#163b7c", "#ed8c22", "#55b56c", "#9467bd", "#dc272c", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+  const alertColors = [
+    '#163b7c',
+    '#ed8c22',
+    '#55b56c',
+    '#9467bd',
+    '#dc272c',
+    '#8c564b',
+    '#e377c2',
+    '#7f7f7f',
+    '#bcbd22',
+    '#17becf',
+  ];
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(true);
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
@@ -248,16 +257,25 @@ const DTRDashboard: React.FC = () => {
   const [mapCenter, setMapCenter] = useState({ lat: 17.992887, lng: 79.550835 });
   const [mapZoom, setMapZoom] = useState(13);
 
+  // Helper to build DTR table URL with current lastSelectedId
+  const buildDtrTableUrl = (type: string, title: string) => {
+    const params = new URLSearchParams();
+    params.set('type', type);
+    params.set('title', title);
+    if (lastSelectedId) params.set('lastSelectedId', lastSelectedId);
+    return `/dtr-table?${params.toString()}`;
+  };
+
   // Function to calculate map center and zoom based on DTR locations
   const calculateMapCenterAndZoom = (dtrData: any[]) => {
-    const validLocations = dtrData.filter(dtr => {
+    const validLocations = dtrData.filter((dtr) => {
       // Check direct coordinates
       const lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
       const lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
-      
+
       // Also check meterlocation string format
       const meterlocationCoords = parseCoordinates(dtr.meterlocation);
-      
+
       return (lat && lng && lat !== 0 && lng !== 0) || meterlocationCoords;
     });
 
@@ -267,54 +285,62 @@ const DTRDashboard: React.FC = () => {
 
     if (validLocations.length === 1) {
       // Try direct coordinates first
-      let lat = validLocations[0].latitude || validLocations[0].lat || validLocations[0].lat_coordinate || validLocations[0].latitude_coordinate;
-      let lng = validLocations[0].longitude || validLocations[0].lng || validLocations[0].lng_coordinate || validLocations[0].longitude_coordinate;
-      
+      let lat =
+        validLocations[0].latitude ||
+        validLocations[0].lat ||
+        validLocations[0].lat_coordinate ||
+        validLocations[0].latitude_coordinate;
+      let lng =
+        validLocations[0].longitude ||
+        validLocations[0].lng ||
+        validLocations[0].lng_coordinate ||
+        validLocations[0].longitude_coordinate;
+
       // If no direct coordinates, try parsing meterlocation
-      if ((!lat || !lng || lat === 0 || lng === 0)) {
+      if (!lat || !lng || lat === 0 || lng === 0) {
         const meterlocationCoords = parseCoordinates(validLocations[0].meterlocation);
         if (meterlocationCoords) {
           lat = meterlocationCoords.lat;
           lng = meterlocationCoords.lng;
         }
       }
-      
-      return { 
-        center: { lat: lat, lng: lng }, 
-        zoom: 15 
+
+      return {
+        center: { lat: lat, lng: lng },
+        zoom: 15,
       };
     }
 
     // Calculate bounds for multiple locations
-    const lats = validLocations.map(dtr => {
+    const lats = validLocations.map((dtr) => {
       // Try direct coordinates first
       let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
       let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
-      
+
       // If no direct coordinates, try parsing meterlocation
-      if ((!lat || !lng || lat === 0 || lng === 0)) {
+      if (!lat || !lng || lat === 0 || lng === 0) {
         const meterlocationCoords = parseCoordinates(dtr.meterlocation);
         if (meterlocationCoords) {
           lat = meterlocationCoords.lat;
         }
       }
-      
+
       return lat;
     });
-    
-    const lngs = validLocations.map(dtr => {
+
+    const lngs = validLocations.map((dtr) => {
       // Try direct coordinates first
       let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
       let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
-      
+
       // If no direct coordinates, try parsing meterlocation
-      if ((!lat || !lng || lat === 0 || lng === 0)) {
+      if (!lat || !lng || lat === 0 || lng === 0) {
         const meterlocationCoords = parseCoordinates(dtr.meterlocation);
         if (meterlocationCoords) {
           lng = meterlocationCoords.lng;
         }
       }
-      
+
       return lng;
     });
 
@@ -344,9 +370,9 @@ const DTRDashboard: React.FC = () => {
   // Function to parse coordinates from meterlocation string
   const parseCoordinates = (meterlocation: string) => {
     if (!meterlocation || typeof meterlocation !== 'string') return null;
-    
+
     // Handle format: "17.9964, 79.5336" (lat, lng)
-    const parts = meterlocation.split(',').map(part => part.trim());
+    const parts = meterlocation.split(',').map((part) => part.trim());
     if (parts.length === 2) {
       const lat = parseFloat(parts[0]);
       const lng = parseFloat(parts[1]);
@@ -359,43 +385,66 @@ const DTRDashboard: React.FC = () => {
 
   // Function to generate markers from DTR data
   const generateDTRMarkers = (dtrData: any[]) => {
-    
     return dtrData
-      .filter(dtr => {
+      .filter((dtr) => {
         // Check for various possible latitude/longitude field names
         const lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
         const lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
-        
+
         // Also check meterlocation string format
         const meterlocationCoords = parseCoordinates(dtr.meterlocation);
-        
+
         return (lat && lng && lat !== 0 && lng !== 0) || meterlocationCoords;
       })
-      .map((dtr, index) => {
+      .map((dtr) => {
         // Try direct coordinates first
         let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
         let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
-        
+
         // If no direct coordinates, try parsing meterlocation
-        if ((!lat || !lng || lat === 0 || lng === 0)) {
+        if (!lat || !lng || lat === 0 || lng === 0) {
           const meterlocationCoords = parseCoordinates(dtr.meterlocation);
           if (meterlocationCoords) {
             lat = meterlocationCoords.lat;
             lng = meterlocationCoords.lng;
           }
         }
-        
+
+        // Build tamper event info HTML if tamper event exists
+        let tamperEventHtml = '';
+        if (dtr.hasTamperEvent && dtr.tamperTypeDescription) {
+          const tamperStatusColor = dtr.tamperStatus === 'Active' ? '#dc272c' : '#55b56c';
+          const tamperStatusIcon = dtr.tamperStatus === 'Active' ? '⚠️' : '✅';
+          tamperEventHtml = `
+            <div style="margin-top: 10px; padding: 8px; background-color: #fff3cd; border-left: 4px solid ${tamperStatusColor}; border-radius: 4px;">
+              <strong style="color: ${tamperStatusColor};">${tamperStatusIcon} Tamper Alert</strong><br/>
+              <strong>Type:</strong> ${dtr.tamperTypeDescription}<br/>
+              <strong>Status:</strong> <span style="color: ${tamperStatusColor};">${
+            dtr.tamperStatus
+          }</span><br/>
+              <strong>Time:</strong> ${dtr.tamperDatetime || 'N/A'}
+            </div>
+          `;
+        }
+
         return {
           position: { lat: lat, lng: lng },
           title: dtr.dtrName || `DTR ${dtr.dtrId}`,
           infoContent: `
-            <div>
-              <strong>${dtr.dtrName || `DTR ${dtr.dtrId}`}</strong><br/>
-              <strong>DTR ID:</strong> ${dtr.dtrId}<br/>
-              <strong>Feeders:</strong> ${dtr.feedersCount || 'N/A'}<br/>
-              <strong>Status:</strong> ${dtr.commStatus || 'N/A'}<br/>
-              <strong>Location:</strong> ${dtr.meterlocation || 'N/A'}<br/>
-              <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            <div style="min-width: 250px; font-family: Arial, sans-serif;">
+              <strong style="font-size: 16px; color: #163b7c;">${
+                dtr.dtrName || `DTR ${dtr.dtrId}`
+              }</strong><br/>
+              <div style="margin-top: 8px;">
+                <strong>DTR ID:</strong> ${dtr.dtrId}<br/>
+                <strong>Feeders:</strong> ${dtr.feedersCount || 'N/A'}<br/>
+                <strong>Comm Status:</strong> <span style="color: ${
+                  dtr.commStatus === 'Active' ? '#55b56c' : '#dc272c'
+                };">${dtr.commStatus || 'N/A'}</span><br/>
+                <strong>Last Comm:</strong> ${dtr.lastCommunication || 'N/A'}<br/>
+                <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+              </div>
+              ${tamperEventHtml}
             </div>
           `,
         };
@@ -431,9 +480,7 @@ const DTRDashboard: React.FC = () => {
   const retryStatsAPI = async (lastSelectedId?: string) => {
     setIsStatsLoading(true);
     try {
-      const endpoint = lastSelectedId
-        ? `/dtrs/stats?hierarchyId=${lastSelectedId}`
-        : '/dtrs/stats';
+      const endpoint = lastSelectedId ? `/dtrs/stats?hierarchyId=${lastSelectedId}` : '/dtrs/stats';
 
       const data = await apiClient.get(endpoint);
       if (data.success) {
@@ -441,7 +488,7 @@ const DTRDashboard: React.FC = () => {
         const row2 = data.data?.row2 || {};
         setDtrStatsData(row1);
         console.log('🔍 [Frontend] Retry API response row2 data:', row2);
-        
+
         setDtrConsumptionData({
           daily: row2.daily || {
             totalKwh: 0,
@@ -464,12 +511,12 @@ const DTRDashboard: React.FC = () => {
             latestKvaTimestamp: null,
           },
         });
-        setFailedApis((prev) => prev.filter((api) => api.id !== "stats"));
+        setFailedApis((prev) => prev.filter((api) => api.id !== 'stats'));
       } else {
-        throw new Error(data.message || "Failed to fetch DTR stats");
+        throw new Error(data.message || 'Failed to fetch DTR stats');
       }
     } catch (err: any) {
-      console.error("Error in Stats API:", err);
+      console.error('Error in Stats API:', err);
       setDtrStatsData(dummyDtrStatsData);
       setDtrConsumptionData(dummyDtrConsumptionData);
     } finally {
@@ -483,12 +530,12 @@ const DTRDashboard: React.FC = () => {
     setIsTableLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append("page", "1");
-      params.append("pageSize", "10");
+      params.append('page', '1');
+      params.append('pageSize', '10');
 
       // Add lastSelectedId if available
       if (lastSelectedId) {
-        params.append("lastSelectedId", lastSelectedId);
+        params.append('lastSelectedId', lastSelectedId);
       }
 
       const data = await apiClient.get(`/dtrs?${params.toString()}`);
@@ -503,12 +550,12 @@ const DTRDashboard: React.FC = () => {
           hasNextPage: data.hasNextPage || false,
           hasPrevPage: data.hasPrevPage || false,
         });
-        setFailedApis((prev) => prev.filter((api) => api.id !== "table"));
+        setFailedApis((prev) => prev.filter((api) => api.id !== 'table'));
       } else {
-        throw new Error(data.message || "Failed to fetch DTR table");
+        throw new Error(data.message || 'Failed to fetch DTR table');
       }
     } catch (err: any) {
-      console.error("Error in Table API:", err);
+      console.error('Error in Table API:', err);
       setDtrTableData(dummyDtrTableData);
     } finally {
       setTimeout(() => {
@@ -527,12 +574,12 @@ const DTRDashboard: React.FC = () => {
       const data = await apiClient.get(endpoint);
       if (data.success) {
         setAlertsData(data.data);
-        setFailedApis((prev) => prev.filter((api) => api.id !== "alerts"));
+        setFailedApis((prev) => prev.filter((api) => api.id !== 'alerts'));
       } else {
-        throw new Error(data.message || "Failed to fetch DTR alerts");
+        throw new Error(data.message || 'Failed to fetch DTR alerts');
       }
     } catch (err: any) {
-      console.error("Error in Alerts API:", err);
+      console.error('Error in Alerts API:', err);
       setAlertsData(dummyAlertsData);
     } finally {
       setTimeout(() => {
@@ -551,21 +598,21 @@ const DTRDashboard: React.FC = () => {
       if (timeRange) {
         params.append('timeRange', timeRange);
       }
-      
+
       const endpoint = `/dtrs/alerts/trends?${params.toString()}`;
       const data = await apiClient.get(endpoint);
-      
+
       if (data.success) {
         const rows = data.data || [];
         console.log('Chart data received:', rows.length, 'rows');
         console.log('Time range:', timeRange);
         const periodsList = rows.map((r: any) => r.period);
         console.log('Periods list:', periodsList);
-        
+
         // Extract all possible alert types from the data
         const allAlertTypes = new Set<string>();
         rows.forEach((row: any) => {
-          Object.keys(row).forEach(key => {
+          Object.keys(row).forEach((key) => {
             if (key.endsWith('_count') && key !== 'period') {
               const alertType = key.replace('_count', '').replace(/\s+/g, ' ').toUpperCase();
               allAlertTypes.add(alertType);
@@ -583,18 +630,18 @@ const DTRDashboard: React.FC = () => {
           return {
             name: alertType,
             data: data,
-            color: alertColors[index % alertColors.length]
+            color: alertColors[index % alertColors.length],
           };
         });
 
         setChartMonths(periodsList);
         setChartSeries(seriesData);
-        setFailedApis((prev) => prev.filter((api) => api.id !== "chart"));
+        setFailedApis((prev) => prev.filter((api) => api.id !== 'chart'));
       } else {
-        throw new Error(data.message || "Failed to fetch DTR alerts trends");
+        throw new Error(data.message || 'Failed to fetch DTR alerts trends');
       }
     } catch (err: any) {
-      console.error("Error in Chart API:", err);
+      console.error('Error in Chart API:', err);
       setChartMonths(dummyChartData.months);
       setChartSeries(dummyChartData.series);
     } finally {
@@ -614,12 +661,12 @@ const DTRDashboard: React.FC = () => {
       const data = await apiClient.get(endpoint);
       if (data.success) {
         setMeterStatus(data.data);
-        setFailedApis((prev) => prev.filter((api) => api.id !== "meterStatus"));
+        setFailedApis((prev) => prev.filter((api) => api.id !== 'meterStatus'));
       } else {
-        throw new Error(data.message || "Failed to fetch meter status");
+        throw new Error(data.message || 'Failed to fetch meter status');
       }
     } catch (err: any) {
-      console.error("Error in Meter Status API:", err);
+      console.error('Error in Meter Status API:', err);
       setMeterStatus(null);
     } finally {
       setTimeout(() => {
@@ -640,9 +687,9 @@ const DTRDashboard: React.FC = () => {
     try {
       const response = await fetch(`${BACKEND_URL}/dtrs/filter/filter-options`);
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format');
       }
 
       const data = await response.json();
@@ -651,37 +698,37 @@ const DTRDashboard: React.FC = () => {
 
         const transformedData = {
           discoms: data.data
-            .filter((item: any) => item.levelName === "DISCOM")
+            .filter((item: any) => item.levelName === 'DISCOM')
             .map((item: any) => ({
               value: item.id.toString(),
               label: item.name,
             })),
           circles: data.data
-            .filter((item: any) => item.levelName === "Circle")
+            .filter((item: any) => item.levelName === 'Circle')
             .map((item: any) => ({
               value: item.id.toString(),
               label: item.name,
             })),
           divisions: data.data
-            .filter((item: any) => item.levelName === "Division")
+            .filter((item: any) => item.levelName === 'Division')
             .map((item: any) => ({
               value: item.id.toString(),
               label: item.name,
             })),
           subDivisions: data.data
-            .filter((item: any) => item.levelName === "Sub division")
+            .filter((item: any) => item.levelName === 'Sub division')
             .map((item: any) => ({
               value: item.id.toString(),
               label: item.name,
             })),
           sections: data.data
-            .filter((item: any) => item.levelName === "Section")
+            .filter((item: any) => item.levelName === 'Section')
             .map((item: any) => ({
               value: item.id.toString(),
               label: item.name,
             })),
           meterLocations: data.data
-            .filter((item: any) => item.levelName === "DTR Location")
+            .filter((item: any) => item.levelName === 'DTR Location')
             .map((item: any) => ({
               value: item.id.toString(),
               label: item.name,
@@ -690,20 +737,19 @@ const DTRDashboard: React.FC = () => {
 
         setFilterOptions(transformedData);
       } else {
-        throw new Error(data.message || "Failed to fetch filter options");
+        throw new Error(data.message || 'Failed to fetch filter options');
       }
     } catch (error) {
-      console.error("Error fetching filter options:", error);
+      console.error('Error fetching filter options:', error);
       setFailedApis((prev) => {
-        if (!prev.find((api) => api.id === "filters")) {
+        if (!prev.find((api) => api.id === 'filters')) {
           return [
             ...prev,
             {
-              id: "filters",
-              name: "Filter Options",
+              id: 'filters',
+              name: 'Filter Options',
               retryFunction: retryFiltersAPI,
-              errorMessage:
-                "Failed to load Filter Options. Please try again.",
+              errorMessage: 'Failed to load Filter Options. Please try again.',
             },
           ];
         }
@@ -715,7 +761,6 @@ const DTRDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-
     const fetchDTRStats = async () => {
       setIsStatsLoading(true);
       try {
@@ -724,13 +769,13 @@ const DTRDashboard: React.FC = () => {
           : `/dtrs/stats`;
 
         const data = await apiClient.get(endpoint);
-           
-          if (data.success) {
-            const row1 = data.data?.row1 || {};
+
+        if (data.success) {
+          const row1 = data.data?.row1 || {};
           const row2 = data.data?.row2 || {};
           setDtrStatsData(row1);
           console.log('🔍 [Frontend] API response row2 data:', row2);
-          
+
           setDtrConsumptionData({
             daily: row2.daily || {
               totalKwh: 0,
@@ -754,22 +799,21 @@ const DTRDashboard: React.FC = () => {
             },
           });
         } else {
-          throw new Error(data.message || "Failed to fetch DTR stats");
+          throw new Error(data.message || 'Failed to fetch DTR stats');
         }
       } catch (error) {
-        console.error("Error fetching DTR stats:", error);
+        console.error('Error fetching DTR stats:', error);
         setDtrStatsData(dummyDtrStatsData);
         setDtrConsumptionData(dummyDtrConsumptionData);
         setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "stats")) {
+          if (!prev.find((api) => api.id === 'stats')) {
             return [
               ...prev,
               {
-                id: "stats",
-                name: "DTR Stats",
+                id: 'stats',
+                name: 'DTR Stats',
                 retryFunction: retryStatsAPI,
-                errorMessage:
-                  "Failed to load DTR Statistics. Please try again.",
+                errorMessage: 'Failed to load DTR Statistics. Please try again.',
               },
             ];
           }
@@ -784,12 +828,12 @@ const DTRDashboard: React.FC = () => {
       setIsTableLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("page", "1");
-        params.append("pageSize", "10");
+        params.append('page', '1');
+        params.append('pageSize', '10');
 
         // Add lastSelectedId if available
         if (lastSelectedId) {
-          params.append("lastSelectedId", lastSelectedId);
+          params.append('lastSelectedId', lastSelectedId);
         }
 
         const data = await apiClient.get(`/dtrs?${params.toString()}`);
@@ -804,19 +848,19 @@ const DTRDashboard: React.FC = () => {
             hasPrevPage: data.hasPrevPage || false,
           });
         } else {
-          throw new Error(data.message || "Failed to fetch DTR table");
+          throw new Error(data.message || 'Failed to fetch DTR table');
         }
       } catch (error) {
         setDtrTableData(dummyDtrTableData);
         setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "table")) {
+          if (!prev.find((api) => api.id === 'table')) {
             return [
               ...prev,
               {
-                id: "table",
-                name: "DTR Table",
+                id: 'table',
+                name: 'DTR Table',
                 retryFunction: retryTableAPI,
-                errorMessage: "Failed to load DTR Table. Please try again.",
+                errorMessage: 'Failed to load DTR Table. Please try again.',
               },
             ];
           }
@@ -840,19 +884,19 @@ const DTRDashboard: React.FC = () => {
         if (data.success) {
           setAlertsData(data.data);
         } else {
-          throw new Error(data.message || "Failed to fetch DTR alerts");
+          throw new Error(data.message || 'Failed to fetch DTR alerts');
         }
       } catch (error) {
         setAlertsData(dummyAlertsData);
         setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "alerts")) {
+          if (!prev.find((api) => api.id === 'alerts')) {
             return [
               ...prev,
               {
-                id: "alerts",
-                name: "DTR Alerts",
+                id: 'alerts',
+                name: 'DTR Alerts',
                 retryFunction: retryAlertsAPI,
-                errorMessage: "Failed to load DTR Alerts. Please try again.",
+                errorMessage: 'Failed to load DTR Alerts. Please try again.',
               },
             ];
           }
@@ -873,59 +917,58 @@ const DTRDashboard: React.FC = () => {
           params.append('lastSelectedId', lastSelectedId);
         }
         params.append('timeRange', selectedChartTimeRange.toLowerCase());
-        
+
         const endpoint = `/dtrs/alerts/trends?${params.toString()}`;
         const data = await apiClient.get(endpoint);
-        
+
         if (data.success) {
           const rows = data.data || [];
           console.log('Chart data received (fetchDTRAlertsTrends):', rows.length, 'rows');
           console.log('Time range:', selectedChartTimeRange);
           const periodsList = rows.map((r: any) => r.period);
           console.log('Periods list:', periodsList);
-          
-        // Extract all possible alert types from the data
-        const allAlertTypes = new Set<string>();
-        rows.forEach((row: any) => {
-          Object.keys(row).forEach(key => {
-            if (key.endsWith('_count') && key !== 'period') {
-              const alertType = key.replace('_count', '').replace(/_/g, ' ').toUpperCase();
-              allAlertTypes.add(alertType);
-            }
-          });
-        });
-        
-        const alertTypesArray = Array.from(allAlertTypes);
-        
-        // Create dynamic series data based on actual alert types
-        const seriesData = alertTypesArray.map((alertType, index) => {
-          const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
-          const data = rows.map((r: any) => r[dataKey] || 0);
-          return {
-            name: alertType,
-            data: data,
-            color: alertColors[index % alertColors.length]
-          };
-        });
 
-        setChartMonths(periodsList);
-        setChartSeries(seriesData);
+          // Extract all possible alert types from the data
+          const allAlertTypes = new Set<string>();
+          rows.forEach((row: any) => {
+            Object.keys(row).forEach((key) => {
+              if (key.endsWith('_count') && key !== 'period') {
+                const alertType = key.replace('_count', '').replace(/_/g, ' ').toUpperCase();
+                allAlertTypes.add(alertType);
+              }
+            });
+          });
+
+          const alertTypesArray = Array.from(allAlertTypes);
+
+          // Create dynamic series data based on actual alert types
+          const seriesData = alertTypesArray.map((alertType, index) => {
+            const dataKey = alertType.toLowerCase().replace(/\s+/g, '_') + '_count';
+            const data = rows.map((r: any) => r[dataKey] || 0);
+            return {
+              name: alertType,
+              data: data,
+              color: alertColors[index % alertColors.length],
+            };
+          });
+
+          setChartMonths(periodsList);
+          setChartSeries(seriesData);
         } else {
-          throw new Error(data.message || "Failed to fetch DTR alerts trends");
+          throw new Error(data.message || 'Failed to fetch DTR alerts trends');
         }
       } catch (error) {
         setChartMonths(dummyChartData.months);
         setChartSeries(dummyChartData.series);
         setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "chart")) {
+          if (!prev.find((api) => api.id === 'chart')) {
             return [
               ...prev,
               {
-                id: "chart",
-                name: "DTR Chart",
+                id: 'chart',
+                name: 'DTR Chart',
                 retryFunction: retryChartAPI,
-                errorMessage:
-                  "Failed to load DTR Chart Data. Please try again.",
+                errorMessage: 'Failed to load DTR Chart Data. Please try again.',
               },
             ];
           }
@@ -949,20 +992,19 @@ const DTRDashboard: React.FC = () => {
         if (data.success) {
           setMeterStatus(data.data);
         } else {
-          throw new Error(data.message || "Failed to fetch meter status");
+          throw new Error(data.message || 'Failed to fetch meter status');
         }
       } catch (error) {
         setMeterStatus(null);
         setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === "meterStatus")) {
+          if (!prev.find((api) => api.id === 'meterStatus')) {
             return [
               ...prev,
               {
-                id: "meterStatus",
-                name: "Meter Status",
+                id: 'meterStatus',
+                name: 'Meter Status',
                 retryFunction: retryMeterStatusAPI,
-                errorMessage:
-                  "Failed to load Meter Status Data. Please try again.",
+                errorMessage: 'Failed to load Meter Status Data. Please try again.',
               },
             ];
           }
@@ -999,9 +1041,83 @@ const DTRDashboard: React.FC = () => {
     }
   }, [dtrTableData]);
 
+  // Initialize Socket.IO connection
+  useEffect(() => {
+    const socketInstance = io('http://localhost:4250', {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+    });
+
+    socketInstance.on('connect', () => {
+      console.log('🔌 [DTR Dashboard] Socket connected');
+      setIsSocketConnected(true);
+    });
+
+    socketInstance.on('disconnect', () => {
+      console.log('🔌 [DTR Dashboard] Socket disconnected');
+      setIsSocketConnected(false);
+    });
+
+    socketInstance.on('connect_error', (error) => {
+      console.error('🔌 [DTR Dashboard] Socket error:', error);
+    });
+
+    setSocket(socketInstance);
+
+    return () => {
+      socketInstance.disconnect();
+    };
+  }, []);
+
+  // Socket listener for real-time tamper event updates
+  useEffect(() => {
+    if (!socket || !isSocketConnected) {
+      return;
+    }
+
+    console.log('🔌 [DTR Dashboard] Setting up dtr-alert-update listener');
+
+    const handleDTRAlertUpdate = (alertData: any) => {
+      console.log('🔔 [DTR Dashboard] Real-time tamper alert received:', alertData);
+
+      // Update DTR table data with new tamper event
+      setDtrTableData((prevData) =>
+        prevData.map((dtr) => {
+          // Match by dtrId or dtrNumber
+          const dtrMatch =
+            String(dtr.dtrId) === String(alertData.dtrNumber) ||
+            String(dtr.dtrId).includes(String(alertData.dtrNumber));
+
+          if (dtrMatch) {
+            console.log(`✅ [DTR Dashboard] Updating DTR ${dtr.dtrId} with tamper event`);
+            return {
+              ...dtr,
+              hasTamperEvent: true,
+              tamperCode: alertData.tamperType,
+              tamperTypeDescription: alertData.tamperTypeDescription,
+              tamperDatetime: alertData.tamperDatetime,
+              tamperStatus: alertData.tamperStatus === 0 ? 'Active' : 'Resolved',
+            };
+          }
+          return dtr;
+        })
+      );
+
+      // Refresh alerts table
+      retryAlertsAPI(lastSelectedId || undefined);
+    };
+
+    socket.on('dtr-alert-update', handleDTRAlertUpdate);
+
+    return () => {
+      socket.off('dtr-alert-update', handleDTRAlertUpdate);
+    };
+  }, [socket, isSocketConnected, lastSelectedId]);
 
   const handleChartDownload = () => {
-    exportChartData(chartMonths, chartSeries, "dtr-alerts-trends");
+    exportChartData(chartMonths, chartSeries, 'dtr-alerts-trends');
   };
 
   const handleViewDTR = (row: TableData) => {
@@ -1010,19 +1126,19 @@ const DTRDashboard: React.FC = () => {
   };
 
   const handleViewFeeder = (row: TableData) => {
-    console.log("View Feeder - Row data:", row);
-    console.log("Feeder Name:", row.feederName);
-    console.log("DTR Number:", row.dtrNumber);
-    console.log("DTR ID:", row.dtrId);
-    
+    console.log('View Feeder - Row data:', row);
+    console.log('Feeder Name:', row.feederName);
+    console.log('DTR Number:', row.dtrNumber);
+    console.log('DTR ID:', row.dtrId);
+
     // Extract DTR ID from dtrNumber if dtrId is not available
     const dtrId = row.dtrId || (row.dtrNumber ? String(row.dtrNumber).replace('DTR-', '') : null);
-    
+
     if (!dtrId) {
-      console.error("No DTR ID available for navigation");
+      console.error('No DTR ID available for navigation');
       return;
     }
-    
+
     // Navigate to feeders page with DTR ID and feeder data
     navigate(`/feeder/${dtrId}`, {
       state: {
@@ -1032,18 +1148,18 @@ const DTRDashboard: React.FC = () => {
           dtrId: dtrId,
           alertType: row.type,
           alertId: row.alertId,
-          occuredOn: row.occuredOn
+          occuredOn: row.occuredOn,
         },
         dtrId: dtrId,
-        dtrName: row.dtrNumber
-      }
+        dtrName: row.dtrNumber,
+      },
     });
-  }
+  };
 
   const handleViewAllAlerts = () => {
     // Navigate to DTR table with alerts tab
-    navigate("/dtr-table?tab=alerts");
-  }
+    navigate('/dtr-table?tab=alerts');
+  };
 
   const handlePageChange = () => {
     retryTableAPI(undefined);
@@ -1054,11 +1170,11 @@ const DTRDashboard: React.FC = () => {
   };
 
   const handleTimeRangeChange = (range: string) => {
-    setSelectedTimeRange(range as "Daily" | "Monthly");
+    setSelectedTimeRange(range as 'Daily' | 'Monthly');
   };
 
   const handleChartTimeRangeChange = (range: string) => {
-    setSelectedChartTimeRange(range as "Daily" | "Weekly" | "Monthly");
+    setSelectedChartTimeRange(range as 'Daily' | 'Weekly' | 'Monthly');
     // Refetch chart data with new time range
     retryChartAPI(lastSelectedId || undefined, range.toLowerCase());
   };
@@ -1066,32 +1182,29 @@ const DTRDashboard: React.FC = () => {
   const updateFilterOptions = async (filterName: string, selectedValue: any) => {
     const name = selectedValue.target?.value || selectedValue;
     const value = selectedValue.target?.value || selectedValue;
-    if (name === "all") return;
+    if (name === 'all') return;
 
     try {
       const params = new URLSearchParams();
-      console.log(params)
-      params.append("parentId", value);
+      console.log(params);
+      params.append('parentId', value);
 
       const data = await apiClient.get(`/dtrs/filter/filter-options?${params.toString()}`);
 
-      console.log(data)
+      console.log(data);
 
       if (data.success) {
         const newOptions = data.data || [];
 
-
         switch (filterName) {
-          case "discom":
-
-            setFilterOptions(prev => ({
+          case 'discom':
+            setFilterOptions((prev) => ({
               ...prev,
 
               circles: [
-                { value: "all", label: "All Circles" },
+                { value: 'all', label: 'All Circles' },
                 console.log(...newOptions),
                 ...newOptions.map((item: any) => ({
-
                   value: item.id.toString(),
                   label: item.name,
                 })),
@@ -1100,28 +1213,27 @@ const DTRDashboard: React.FC = () => {
             // Reset dependent filters
             setFilterValues((prev) => ({
               ...prev,
-              circle: "all",
-              division: "all",
-              subDivision: "all",
-              section: "all",
-              meterLocation: "all",
+              circle: 'all',
+              division: 'all',
+              subDivision: 'all',
+              section: 'all',
+              meterLocation: 'all',
             }));
             // Clear dependent dropdowns
             setFilterOptions((prev) => ({
               ...prev,
-              divisions: [{ value: "all", label: "All Divisions" }],
-              subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
-              sections: [{ value: "all", label: "All Sections" }],
-              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+              divisions: [{ value: 'all', label: 'All Divisions' }],
+              subDivisions: [{ value: 'all', label: 'All Sub-Divisions' }],
+              sections: [{ value: 'all', label: 'All Sections' }],
+              meterLocations: [{ value: 'all', label: 'All Meter Locations' }],
             }));
             break;
 
-          case "circle":
-
-            setFilterOptions(prev => ({
+          case 'circle':
+            setFilterOptions((prev) => ({
               ...prev,
               divisions: [
-                { value: "all", label: "All Divisions" },
+                { value: 'all', label: 'All Divisions' },
                 ...newOptions.map((item: any) => ({
                   value: item.id.toString(),
                   label: item.name,
@@ -1131,26 +1243,25 @@ const DTRDashboard: React.FC = () => {
             // Reset dependent filters
             setFilterValues((prev) => ({
               ...prev,
-              division: "all",
-              subDivision: "all",
-              section: "all",
-              meterLocation: "all",
+              division: 'all',
+              subDivision: 'all',
+              section: 'all',
+              meterLocation: 'all',
             }));
             // Clear dependent dropdowns
             setFilterOptions((prev) => ({
               ...prev,
-              subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
-              sections: [{ value: "all", label: "All Sections" }],
-              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+              subDivisions: [{ value: 'all', label: 'All Sub-Divisions' }],
+              sections: [{ value: 'all', label: 'All Sections' }],
+              meterLocations: [{ value: 'all', label: 'All Meter Locations' }],
             }));
             break;
 
-          case "division":
-
-            setFilterOptions(prev => ({
+          case 'division':
+            setFilterOptions((prev) => ({
               ...prev,
               subDivisions: [
-                { value: "all", label: "All Sub-Divisions" },
+                { value: 'all', label: 'All Sub-Divisions' },
                 ...newOptions.map((item: any) => ({
                   value: item.id.toString(),
                   label: item.name,
@@ -1160,24 +1271,23 @@ const DTRDashboard: React.FC = () => {
             // Reset dependent filters
             setFilterValues((prev) => ({
               ...prev,
-              subDivision: "all",
-              section: "all",
-              meterLocation: "all",
+              subDivision: 'all',
+              section: 'all',
+              meterLocation: 'all',
             }));
             // Clear dependent dropdowns
             setFilterOptions((prev) => ({
               ...prev,
-              sections: [{ value: "all", label: "All Sections" }],
-              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+              sections: [{ value: 'all', label: 'All Sections' }],
+              meterLocations: [{ value: 'all', label: 'All Meter Locations' }],
             }));
             break;
 
-          case "subDivision":
-
-            setFilterOptions(prev => ({
+          case 'subDivision':
+            setFilterOptions((prev) => ({
               ...prev,
               sections: [
-                { value: "all", label: "All Sections" },
+                { value: 'all', label: 'All Sections' },
                 ...newOptions.map((item: any) => ({
                   value: item.id.toString(),
                   label: item.name,
@@ -1187,22 +1297,21 @@ const DTRDashboard: React.FC = () => {
             // Reset dependent filters
             setFilterValues((prev) => ({
               ...prev,
-              section: "all",
-              meterLocation: "all",
+              section: 'all',
+              meterLocation: 'all',
             }));
             // Clear dependent dropdowns
             setFilterOptions((prev) => ({
               ...prev,
-              meterLocations: [{ value: "all", label: "All Meter Locations" }],
+              meterLocations: [{ value: 'all', label: 'All Meter Locations' }],
             }));
             break;
 
-          case "section":
-
-            setFilterOptions(prev => ({
+          case 'section':
+            setFilterOptions((prev) => ({
               ...prev,
               meterLocations: [
-                { value: "all", label: "All Meter Locations" },
+                { value: 'all', label: 'All Meter Locations' },
                 ...newOptions.map((item: any) => ({
                   value: item.id.toString(),
                   label: item.name,
@@ -1212,36 +1321,31 @@ const DTRDashboard: React.FC = () => {
             // Reset dependent filters
             setFilterValues((prev) => ({
               ...prev,
-              meterLocation: "all",
+              meterLocation: 'all',
             }));
             break;
         }
-
-
       }
     } catch (error) {
-      console.error(
-        `❌ Error updating filter options for ${filterName}:`,
-        error
-      );
+      console.error(`❌ Error updating filter options for ${filterName}:`, error);
     }
   };
 
   // Helper function to find all parent values when child is selected
   const findAllParentValues = (childFilterName: string, childValue: string) => {
-    if (childValue === "all" || !originalApiData.length) return {};
+    if (childValue === 'all' || !originalApiData.length) return {};
 
     const hierarchyLevels = [
-      { filterName: "discom", levelName: "DISCOM" },
-      { filterName: "circle", levelName: "Circle" },
-      { filterName: "division", levelName: "Division" },
-      { filterName: "subDivision", levelName: "Sub division" },
-      { filterName: "section", levelName: "Section" },
-      { filterName: "meterLocation", levelName: "DTR Location" }
+      { filterName: 'discom', levelName: 'DISCOM' },
+      { filterName: 'circle', levelName: 'Circle' },
+      { filterName: 'division', levelName: 'Division' },
+      { filterName: 'subDivision', levelName: 'Sub division' },
+      { filterName: 'section', levelName: 'Section' },
+      { filterName: 'meterLocation', levelName: 'DTR Location' },
     ];
 
     // Find the selected child item
-    const childLevel = hierarchyLevels.find(level => level.filterName === childFilterName);
+    const childLevel = hierarchyLevels.find((level) => level.filterName === childFilterName);
     if (!childLevel) return {};
 
     const childItem = originalApiData.find(
@@ -1252,16 +1356,16 @@ const DTRDashboard: React.FC = () => {
 
     const parentValues: { [key: string]: string } = {};
     let currentItem = childItem;
-    let currentLevelIndex = hierarchyLevels.findIndex(level => level.filterName === childFilterName);
+    let currentLevelIndex = hierarchyLevels.findIndex(
+      (level) => level.filterName === childFilterName
+    );
 
     while (currentItem && currentItem.parentId && currentLevelIndex > 0) {
       const parentLevel = hierarchyLevels[currentLevelIndex - 1];
 
-      const parentItem = originalApiData.find(
-        (item: any) => {
-          return item.levelName === parentLevel.levelName && item.id === currentItem.parentId
-        }
-      );
+      const parentItem = originalApiData.find((item: any) => {
+        return item.levelName === parentLevel.levelName && item.id === currentItem.parentId;
+      });
       if (parentItem) {
         parentValues[parentLevel.filterName] = parentItem.id.toString();
         currentItem = parentItem;
@@ -1279,8 +1383,7 @@ const DTRDashboard: React.FC = () => {
     filterName: string,
     value: string | { target: { value: string } }
   ) => {
-    const selectedValue =
-      typeof value === "string" ? value : value.target.value;
+    const selectedValue = typeof value === 'string' ? value : value.target.value;
 
     const parentValues = findAllParentValues(filterName, selectedValue);
 
@@ -1299,61 +1402,56 @@ const DTRDashboard: React.FC = () => {
     await updateFilterOptions(filterName, eventObject);
   };
 
-
   // Handle Get Data button click
   const handleGetData = async () => {
-
     let lastId: string | null = null;
 
-    if (filterValues.meterLocation !== "all") {
+    if (filterValues.meterLocation !== 'all') {
       lastId = filterValues.meterLocation;
-    } else if (filterValues.section !== "all") {
+    } else if (filterValues.section !== 'all') {
       lastId = filterValues.section;
-    } else if (filterValues.subDivision !== "all") {
+    } else if (filterValues.subDivision !== 'all') {
       lastId = filterValues.subDivision;
-    } else if (filterValues.division !== "all") {
+    } else if (filterValues.division !== 'all') {
       lastId = filterValues.division;
-    } else if (filterValues.circle !== "all") {
+    } else if (filterValues.circle !== 'all') {
       lastId = filterValues.circle;
-    } else if (filterValues.discom !== "all") {
+    } else if (filterValues.discom !== 'all') {
       lastId = filterValues.discom;
     }
 
     setLastSelectedId(lastId);
 
-
     try {
       const params = new URLSearchParams();
       Object.entries(filterValues).forEach(([key, value]) => {
-        if (value !== "all") {
+        if (value !== 'all') {
           params.append(key, value);
         }
       });
-
-
 
       retryStatsAPI(lastId || undefined);
       retryTableAPI(lastId || undefined);
       retryAlertsAPI(lastId || undefined);
       retryChartAPI(lastId || undefined, selectedChartTimeRange.toLowerCase());
     } catch (error) {
-      console.error("Error applying filters:", error);
+      console.error('Error applying filters:', error);
     }
   };
 
   // Handle Reset button click
   const handleResetFilters = async () => {
     setFilterValues({
-      discom: "TGNPDCL",
-      circle: "all",
-      division: "all",
-      subDivision: "all",
-      section: "all",
-      meterLocation: "all",
+      discom: 'TGNPDCL',
+      circle: 'all',
+      division: 'all',
+      subDivision: 'all',
+      section: 'all',
+      meterLocation: 'all',
     });
     setLastSelectedId(null);
     await fetchFilterOptions();
-    
+
     // Automatically refetch all data after reset
     retryStatsAPI();
     // retryTableAPI();c
@@ -1365,72 +1463,53 @@ const DTRDashboard: React.FC = () => {
   // DTR statistics cards data - Using API data
   const dtrStatsCards = [
     {
-      title: "Total DTRs",
-      value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || "0",
-      icon: "icons/dtr.svg",
-      subtitle1: "Total Transformer Units",
-      onValueClick: () =>
-        navigate("/dtr-table?type=total-dtrs&title=Total%20DTRs"),
-      bg: "bg-stat-icon-gradient",
+      title: 'Total DTRs',
+      value: dtrStatsData.totalDtrs || dtrStatsData?.row1?.totalDtrs || '0',
+      icon: 'icons/dtr.svg',
+      subtitle1: 'Total Transformer Units',
+      onValueClick: () => navigate(buildDtrTableUrl('total-dtrs', 'Total DTRs')),
+      bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
     },
     {
-      title: "Total LT Feeders",
-      value:
-        dtrStatsData.totalLtFeeders ||
-        dtrStatsData?.row1?.totalLtFeeders ||
-        "0",
-      icon: "icons/feeder.svg",
-      subtitle1: "Connected to DTRs",
-      onValueClick: () =>
-        navigate("/dtr-table?type=total-lt-feeders&title=Total%20LT%20Feeders"),
+      title: 'Total LT Feeders',
+      value: dtrStatsData.totalLtFeeders || dtrStatsData?.row1?.totalLtFeeders || '0',
+      icon: 'icons/feeder.svg',
+      subtitle1: 'Connected to DTRs',
+      onValueClick: () => navigate(buildDtrTableUrl('total-lt-feeders', 'Total LT Feeders')),
       loading: isStatsLoading,
     },
     {
-      title: "Total Fuse Blown",
-      value:
-        dtrStatsData.totalFuseBlown ||
-        dtrStatsData?.row1?.totalFuseBlown ||
-        "0",
-      icon: "icons/power_failure.svg",
-      subtitle1: `${dtrStatsData.fuseBlownPercentage ||
-        dtrStatsData?.row1?.fuseBlownPercentage ||
-        "0"
-        }% of Total Feeders`,
-      onValueClick: () =>
-        navigate("/dtr-table?type=fuse-blown&title=Today%27s%20Fuse%20Blown"),
+      title: 'Total Fuse Blown',
+      value: dtrStatsData.totalFuseBlown || dtrStatsData?.row1?.totalFuseBlown || '0',
+      icon: 'icons/power_failure.svg',
+      subtitle1: `${
+        dtrStatsData.fuseBlownPercentage || dtrStatsData?.row1?.fuseBlownPercentage || '0'
+      }% of Total Feeders`,
+      onValueClick: () => navigate(buildDtrTableUrl('fuse-blown', "Today's Fuse Blown")),
       loading: isStatsLoading,
     },
     {
-      title: "Overloaded DTRs",
-      value:
-        dtrStatsData.overloadedFeeders ||
-        dtrStatsData?.row1?.overloadedFeeders ||
-        0,
-      icon: "icons/dtr.svg",
+      title: 'Overloaded DTRs',
+      value: dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0,
+      icon: 'icons/dtr.svg',
       subtitle1: (() => {
         const count = dtrStatsData.overloadedFeeders || dtrStatsData?.row1?.overloadedFeeders || 0;
         console.log(count);
         if (count === 0) {
-          return "No DTRs with load > 90%";
+          return 'No DTRs with load > 90%';
         }
         return `No of DTRs with load > 90%`;
         // {dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}
       })(),
-      onValueClick: () =>
-        navigate(
-          "/dtr-table?type=overloaded-feeders&title=Overloaded%20Feeders"
-        ),
+      onValueClick: () => navigate(buildDtrTableUrl('overloaded-feeders', 'Overloaded Feeders')),
       loading: isStatsLoading,
     },
     {
-      title: "Underloaded DTRs",
-      value:
-        dtrStatsData.underloadedFeeders ||
-        dtrStatsData?.row1?.underloadedFeeders ||
-        0,
-      icon: "icons/dtr.svg",
-      subtitle1:'No of DTRs with load < 30%',
+      title: 'Underloaded DTRs',
+      value: dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0,
+      icon: 'icons/dtr.svg',
+      subtitle1: 'No of DTRs with load < 30%',
       // subtitle1: (() => {
       //   const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
       //   if (count === 0) {
@@ -1439,204 +1518,179 @@ const DTRDashboard: React.FC = () => {
       //   return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
       // })(),
 
-      onValueClick: () =>
-        navigate(
-          "/dtr-table?type=underloaded-feeders&title=Underloaded%20Feeders"
-        ),
+      onValueClick: () => navigate(buildDtrTableUrl('underloaded-feeders', 'Underloaded Feeders')),
       loading: isStatsLoading,
     },
     {
-      title: "LT Side Fuse Blown",
-      value:
-        dtrStatsData.ltSideFuseBlown ||
-        dtrStatsData?.row1?.ltSideFuseBlown ||
-        "0",
-      icon: "icons/power_failure.svg",
-      subtitle1: "Incidents Today",
-      onValueClick: () =>
-        navigate(
-          "/dtr-table?type=lt-fuse-blown&title=LT%20Side%20Fuse%20Blown"
-        ),
+      title: 'LT Side Fuse Blown',
+      value: dtrStatsData.ltSideFuseBlown || dtrStatsData?.row1?.ltSideFuseBlown || '0',
+      icon: 'icons/power_failure.svg',
+      subtitle1: 'Incidents Today',
+      onValueClick: () => navigate(buildDtrTableUrl('lt-fuse-blown', 'LT Side Fuse Blown')),
       loading: isStatsLoading,
     },
     {
-      title: "Unbalanced DTRs",
-      value:
-        dtrStatsData.unbalancedDtrs ||
-        dtrStatsData?.row1?.unbalancedDtrs ||
-        "0",
-      icon: "icons/dtr.svg",
-      subtitle1: `${dtrStatsData.unbalancedPercentage ||
-        dtrStatsData?.row1?.unbalancedPercentage ||
-        "0"
-        }% of Total DTRs`,
-      onValueClick: () =>
-        navigate("/dtr-table?type=unbalanced-dtrs&title=Unbalanced%20DTRs"),
+      title: 'Unbalanced DTRs',
+      value: dtrStatsData.unbalancedDtrs || dtrStatsData?.row1?.unbalancedDtrs || '0',
+      icon: 'icons/dtr.svg',
+      subtitle1: `${
+        dtrStatsData.unbalancedPercentage || dtrStatsData?.row1?.unbalancedPercentage || '0'
+      }% of Total DTRs`,
+      onValueClick: () => navigate(buildDtrTableUrl('unbalanced-dtrs', 'Unbalanced DTRs')),
       loading: isStatsLoading,
     },
     {
-      title: "Power Failure Feeders",
-      value:
-        dtrStatsData.powerFailureFeeders ||
-        dtrStatsData?.row1?.powerFailureFeeders ||
-        "0",
-      icon: "icons/power_failure.svg",
+      title: 'Power Failure Feeders',
+      value: dtrStatsData.powerFailureFeeders || dtrStatsData?.row1?.powerFailureFeeders || '0',
+      icon: 'icons/power_failure.svg',
       subtitle1: `
         LT Feeders`,
-        // {dtrStatsData.powerFailurePercentage ||
-        // dtrStatsData?.row1?.powerFailurePercentage ||
-        // ""}
+      // {dtrStatsData.powerFailurePercentage ||
+      // dtrStatsData?.row1?.powerFailurePercentage ||
+      // ""}
       onValueClick: () =>
-        navigate(
-          "/dtr-table?type=power-failure-feeders&title=Power%20Failure%20Feeders"
-        ),
+        navigate(buildDtrTableUrl('power-failure-feeders', 'Power Failure Feeders')),
       loading: isStatsLoading,
     },
     {
-      title: "HT Side Fuse Blown",
-      value:
-        dtrStatsData.htSideFuseBlown ||
-        dtrStatsData?.row1?.htSideFuseBlown ||
-        "0",
-      icon: "icons/dtr.svg",
-      subtitle1: "Incidents Today",
-      onValueClick: () =>
-        navigate(
-          "/dtr-table?type=ht-fuse-blown&title=HT%20Side%20Fuse%20Blown"
-        ),
+      title: 'HT Side Fuse Blown',
+      value: dtrStatsData.htSideFuseBlown || dtrStatsData?.row1?.htSideFuseBlown || '0',
+      icon: 'icons/dtr.svg',
+      subtitle1: 'Incidents Today',
+      onValueClick: () => navigate(buildDtrTableUrl('ht-fuse-blown', 'HT Side Fuse Blown')),
       loading: isStatsLoading,
     },
   ];
 
   const monthlyConsumptionCards = [
     {
-      title: "Total kWh",
-      value: String(dtrConsumptionData.monthly.totalKwh || "0"),
-      icon: "icons/consumption.svg",
-      subtitle1: "Monthly Active Energy",
-      bg: "bg-stat-icon-gradient",
+      title: 'Total kWh',
+      value: String(dtrConsumptionData.monthly.totalKwh || '0'),
+      icon: 'icons/consumption.svg',
+      subtitle1: 'Monthly Active Energy',
+      bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
-      onValueClick: () =>
-        navigate("/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)"),
+      onValueClick: () => navigate('/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)'),
     },
     {
-      title: "Total kVAh",
-      value: String(dtrConsumptionData.monthly.totalKvah || "0"),
-      icon: "icons/consumption.svg",
-      subtitle1: "Monthly Apparent Energy",
-      bg: "bg-stat-icon-gradient",
+      title: 'Total kVAh',
+      value: String(dtrConsumptionData.monthly.totalKvah || '0'),
+      icon: 'icons/consumption.svg',
+      subtitle1: 'Monthly Apparent Energy',
+      bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
-      onValueClick: () =>
-        navigate("/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)"),
+      onValueClick: () => navigate('/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)'),
     },
     {
-      title: "Avg kW",
-      value: String(dtrConsumptionData.monthly.totalKw || "0"),
-      icon: "icons/consumption.svg",
-      subtitle1: "Monthly Average Power",
-      bg: "bg-stat-icon-gradient",
+      title: 'Avg kW',
+      value: String(dtrConsumptionData.monthly.totalKw || '0'),
+      icon: 'icons/consumption.svg',
+      subtitle1: 'Monthly Average Power',
+      bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
-      onValueClick: () =>
-        navigate("/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)"),
+      onValueClick: () => navigate('/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)'),
     },
     {
-      title: "Avg kVA",
-      value: String(dtrConsumptionData.monthly.totalKva || "0"),
-      icon: "icons/consumption.svg",
-      subtitle1: "Monthly Average Apparent",
-      bg: "bg-stat-icon-gradient",
+      title: 'Avg kVA',
+      value: String(dtrConsumptionData.monthly.totalKva || '0'),
+      icon: 'icons/consumption.svg',
+      subtitle1: 'Monthly Average Apparent',
+      bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
-      onValueClick: () =>
-        navigate("/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)"),
+      onValueClick: () => navigate('/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)'),
     },
     {
-      title: "Active DTRs",
-      value: Number(dtrStatsData?.activeDtrs || "0"),
-      icon: "icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
+      title: 'Active DTRs',
+      value: Number(dtrStatsData?.activeDtrs || '0'),
+      icon: 'icons/dtr.svg',
+      subtitle1: `${dtrStatsData?.activePercentage ?? '0'}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
-      bg: "bg-[var(--color-secondary)]",
+      bg: 'bg-[var(--color-secondary)]',
       loading: isStatsLoading,
     },
     {
-      title: "In-Active DTRs",
-      value: Number(dtrStatsData?.inactiveDtrs || "0"),
-      icon: "icons/dtr.svg",
-      subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
+      title: 'In-Active DTRs',
+      value: Number(dtrStatsData?.inactiveDtrs || '0'),
+      icon: 'icons/dtr.svg',
+      subtitle1: `${dtrStatsData?.inactivePercentage ?? '0'}% of Total DTRs`,
       iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
-      bg: "bg-[var(--color-danger)]",
+      bg: 'bg-[var(--color-danger)]',
       loading: isStatsLoading,
     },
   ];
 
   // Get current consumption cards data based on selected time range
   const getCurrentConsumptionCards = () => {
-    if (selectedTimeRange === "Daily") {
+    if (selectedTimeRange === 'Daily') {
       // For daily, use currentDay data if available, otherwise fall back to daily
       const currentDayData = dtrConsumptionData.currentDay || {
         ...dtrConsumptionData.daily,
         latestKwTimestamp: null,
-        latestKvaTimestamp: null
+        latestKvaTimestamp: null,
       };
       return [
         {
-          title: "Total kWh",
-          value: String(currentDayData.totalKwh || "0"),
-          icon: "icons/energy.svg",
+          title: 'Total kWh',
+          value: String(currentDayData.totalKwh || '0'),
+          icon: 'icons/energy.svg',
           subtitle1: "Today's Active Energy",
-          bg: "bg-stat-icon-gradient",
+          bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
-          onValueClick: () =>
-            navigate("/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)"),
+          onValueClick: () => navigate('/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)'),
         },
         {
-          title: "Total kVAh",
-          value: String(currentDayData.totalKvah || "0"),
-          icon: "icons/energy.svg",
+          title: 'Total kVAh',
+          value: String(currentDayData.totalKvah || '0'),
+          icon: 'icons/energy.svg',
           subtitle1: "Today's Apparent Energy",
-          bg: "bg-stat-icon-gradient",
+          bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
-          onValueClick: () =>
-            navigate("/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)"),
+          onValueClick: () => navigate('/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)'),
         },
         {
-          title: "Total kW",
-          value: String(currentDayData.totalKw || "0"),
-          icon: "icons/energy.svg",
+          title: 'Total kW',
+          value: String(currentDayData.totalKw || '0'),
+          icon: 'icons/energy.svg',
           //subtitle1: `Current Active Power${currentDayData.latestKwTimestamp ? ` (${formatTimestamp(currentDayData.latestKwTimestamp)})` : ""}`,
-          subtitle1: `${currentDayData.latestKwTimestamp ? ` ${formatTimestamp(currentDayData.latestKwTimestamp)}` : ""}`,
-          bg: "bg-stat-icon-gradient",
+          subtitle1: `${
+            currentDayData.latestKwTimestamp
+              ? ` ${formatTimestamp(currentDayData.latestKwTimestamp)}`
+              : ''
+          }`,
+          bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
-          onValueClick: () =>
-            navigate("/dtr-table?type=daily-kw&title=Total%20kW%20(Current)"),
+          onValueClick: () => navigate('/dtr-table?type=daily-kw&title=Total%20kW%20(Current)'),
         },
         {
-          title: "Total kVA",
-          value: String(currentDayData.totalKva || "0"),
-          icon: "icons/energy.svg",
+          title: 'Total kVA',
+          value: String(currentDayData.totalKva || '0'),
+          icon: 'icons/energy.svg',
           //subtitle1: `Current Apparent Power${currentDayData.latestKvaTimestamp ? ` (${formatTimestamp(currentDayData.latestKvaTimestamp)})` : ""}`,
-          subtitle1: `${currentDayData.latestKvaTimestamp ? ` ${formatTimestamp(currentDayData.latestKvaTimestamp)}` : ""}`,
-          bg: "bg-stat-icon-gradient",
+          subtitle1: `${
+            currentDayData.latestKvaTimestamp
+              ? ` ${formatTimestamp(currentDayData.latestKvaTimestamp)}`
+              : ''
+          }`,
+          bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
-          onValueClick: () =>
-            navigate("/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)"),
+          onValueClick: () => navigate('/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)'),
         },
         {
-          title: "Active DTRs",
-          value: Number(dtrStatsData?.activeDtrs || "0"),
-          icon: "icons/dtr.svg",
-          subtitle1: `${dtrStatsData?.activePercentage ?? "0"}% of Total DTRs`,
+          title: 'Active DTRs',
+          value: Number(dtrStatsData?.activeDtrs || '0'),
+          icon: 'icons/dtr.svg',
+          subtitle1: `${dtrStatsData?.activePercentage ?? '0'}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
-          bg: "bg-[var(--color-secondary)]",
+          bg: 'bg-[var(--color-secondary)]',
           loading: isStatsLoading,
         },
         {
-          title: "In-Active DTRs",
-          value: Number(dtrStatsData?.inactiveDtrs || "0"),
-          icon: "icons/dtr.svg",
-          subtitle1: `${dtrStatsData?.inactivePercentage ?? "0"}% of Total DTRs`,
+          title: 'In-Active DTRs',
+          value: Number(dtrStatsData?.inactiveDtrs || '0'),
+          icon: 'icons/dtr.svg',
+          subtitle1: `${dtrStatsData?.inactivePercentage ?? '0'}% of Total DTRs`,
           iconStyle: FILTER_STYLES.WHITE,
-          bg: "bg-[var(--color-danger)]",
+          bg: 'bg-[var(--color-danger)]',
           loading: isStatsLoading,
         },
       ];
@@ -1649,32 +1703,31 @@ const DTRDashboard: React.FC = () => {
   // Dummy data for DTRs table
   const dtrTableColumns = [
     { key: 'sNo', label: 'S.No' },
-    { key: "dtrId", label: "DTR ID" },
-    { key: "dtrName", label: "DTR Name" },
-    { key: "feedersCount", label: "Feeders Count" },
-    { key: "meterlocation", label: "Meter Location" },
+    { key: 'dtrId', label: 'DTR ID' },
+    { key: 'dtrName', label: 'DTR Name' },
+    { key: 'feedersCount', label: 'Feeders Count' },
+    { key: 'meterlocation', label: 'Meter Location' },
     // { key: "city", label: "City" },
     {
-      key: "commStatus",
-      label: "Communication Status",
+      key: 'commStatus',
+      label: 'Communication Status',
       statusIndicator: {},
       isActive: (value: string | number | boolean | null | undefined) =>
-        String(value).toLowerCase() === "active",
+        String(value).toLowerCase() === 'active',
     },
-    { key: "lastCommunication", label: "Last Communication" },
+    { key: 'lastCommunication', label: 'Last Communication' },
   ];
 
   const alertsTableColumns = [
     { key: 'sNo', label: 'S.No' },
-    { key: "alertId", label: "Alert ID" },
-    { key: "type", label: "Type" },
-    { key: "feederName", label: "Meter Number" },
-    { key: "dtrNumber", label: "DTR Number" },
-    { key: "occuredOn", label: "Occured On" },
+    //{ key: "alertId", label: "Alert ID" },
+    { key: 'type', label: 'Event Type' },
+    { key: 'feederName', label: 'Meter Number' },
+    { key: 'dtrNumber', label: 'DTR Number' },
+    { key: 'occuredOn', label: 'Occured On' },
     // { key: "status", label: "Status" },
   ];
-  console.log("Discom options:", filterOptions.discoms);
-
+  console.log('Discom options:', filterOptions.discoms);
 
   return (
     <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1683,46 +1736,44 @@ const DTRDashboard: React.FC = () => {
           // Error Section - Above PageHeader
           ...(failedApis.length > 0
             ? [
-              {
-                layout: {
-                  type: "column" as const,
-                  gap: "gap-4",
-                  rows: [
-                    {
-                      layout: "column" as const,
-                      columns: [
-                        {
-                          name: "Error",
-                          props: {
-                            visibleErrors: failedApis.map(
-                              (api) => api.errorMessage
-                            ),
-                            showRetry: true,
-                            maxVisibleErrors: 3,
-                            failedApis: failedApis,
-                            onRetrySpecific: retrySpecificAPI,
+                {
+                  layout: {
+                    type: 'column' as const,
+                    gap: 'gap-4',
+                    rows: [
+                      {
+                        layout: 'column' as const,
+                        columns: [
+                          {
+                            name: 'Error',
+                            props: {
+                              visibleErrors: failedApis.map((api) => api.errorMessage),
+                              showRetry: true,
+                              maxVisibleErrors: 3,
+                              failedApis: failedApis,
+                              onRetrySpecific: retrySpecificAPI,
+                            },
                           },
-                        },
-                      ],
-                    },
-                  ],
+                        ],
+                      },
+                    ],
+                  },
                 },
-              },
-            ]
+              ]
             : []),
 
           // Header section
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
             },
             components: [
               {
-                name: "PageHeader",
+                name: 'PageHeader',
                 props: {
-                  title: "DTR Dashboard",
+                  title: 'DTR Dashboard',
                   // onBackClick: () => window.history.back(),
                   // buttonsLabel: "Export",
                   // variant: "primary",
@@ -1731,11 +1782,10 @@ const DTRDashboard: React.FC = () => {
                   showMenu: false,
                   showDropdown: true,
                   menuItems: [
-                    { id: "all", label: "Alerts" },
-                    { id: "export", label: "Export" },
+                    { id: 'all', label: 'Alerts' },
+                    { id: 'export', label: 'Export' },
                   ],
-                  onMenuItemClick: (_itemId: string) => {
-                  },
+                  onMenuItemClick: (_itemId: string) => {},
                 },
               },
             ],
@@ -1743,107 +1793,101 @@ const DTRDashboard: React.FC = () => {
           // Filter Section
           {
             layout: {
-              type: "flex" as const,
-              direction: "row" as const,
-              gap: "gap-4",
+              type: 'flex' as const,
+              direction: 'row' as const,
+              gap: 'gap-4',
               className:
-                "flex items-center justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
+                'flex items-center justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light',
             },
             components: [
               {
-                name: "Dropdown",
+                name: 'Dropdown',
                 props: {
                   options: [...filterOptions.discoms],
                   value: filterValues.discom,
 
-                  onChange: (value: string) =>
-                    handleFilterChange("discom", value),
-                  placeholder: "Select DISCOM",
+                  onChange: (value: string) => handleFilterChange('discom', value),
+                  placeholder: 'Select DISCOM',
                   loading: isFiltersLoading,
                   searchable: false,
                 },
               },
               {
-                name: "Dropdown",
+                name: 'Dropdown',
                 props: {
                   options: [...filterOptions.circles],
                   value: filterValues.circle,
-                  onChange: (value: string) =>
-                    handleFilterChange("circle", value),
-                  placeholder: "Select Circle",
+                  onChange: (value: string) => handleFilterChange('circle', value),
+                  placeholder: 'Select Circle',
                   loading: isFiltersLoading,
                   searchable: false,
                 },
               },
               {
-                name: "Dropdown",
+                name: 'Dropdown',
                 props: {
                   options: [...filterOptions.divisions],
                   value: filterValues.division,
-                  onChange: (value: string) =>
-                    handleFilterChange("division", value),
-                  placeholder: "Select Division",
+                  onChange: (value: string) => handleFilterChange('division', value),
+                  placeholder: 'Select Division',
                   loading: isFiltersLoading,
                   searchable: false,
                 },
               },
               {
-                name: "Dropdown",
+                name: 'Dropdown',
                 props: {
                   options: [...filterOptions.subDivisions],
                   value: filterValues.subDivision,
-                  onChange: (value: string) =>
-                    handleFilterChange("subDivision", value),
-                  placeholder: "Select Sub-Division",
+                  onChange: (value: string) => handleFilterChange('subDivision', value),
+                  placeholder: 'Select Sub-Division',
                   loading: isFiltersLoading,
                   searchable: false,
                 },
               },
               {
-                name: "Dropdown",
+                name: 'Dropdown',
                 props: {
                   options: [...filterOptions.sections],
                   value: filterValues.section,
-                  onChange: (value: string) =>
-                    handleFilterChange("section", value),
-                  placeholder: "Select Section",
+                  onChange: (value: string) => handleFilterChange('section', value),
+                  placeholder: 'Select Section',
                   loading: isFiltersLoading,
                   searchable: false,
                 },
               },
               {
-                name: "Dropdown",
+                name: 'Dropdown',
                 props: {
                   options: [...filterOptions.meterLocations],
                   value: filterValues.meterLocation,
-                  onChange: (value: string) =>
-                    handleFilterChange("meterLocation", value),
-                  placeholder: "Select Meter Location",
+                  onChange: (value: string) => handleFilterChange('meterLocation', value),
+                  placeholder: 'Select Meter Location',
                   loading: isFiltersLoading,
                   searchable: false,
                 },
               },
               {
-                name: "Button",
+                name: 'Button',
                 props: {
-                  variant: "primary",
+                  variant: 'primary',
                   onClick: handleGetData,
-                  children: "Get Data",
-                  className: "self-end h-100%",
-                  searchable: false
+                  children: 'Get Data',
+                  className: 'self-end h-100%',
+                  searchable: false,
                 },
-                align: "center",
+                align: 'center',
               },
               {
-                name: "Button",
+                name: 'Button',
                 props: {
-                  variant: "secondary",
+                  variant: 'secondary',
                   onClick: handleResetFilters,
-                  children: "Reset",
-                  className: "self-end h-100%",
-                  searchable: false
+                  children: 'Reset',
+                  className: 'self-end h-100%',
+                  searchable: false,
                 },
-                align: "center",
+                align: 'center',
               },
             ],
           },
@@ -1851,53 +1895,50 @@ const DTRDashboard: React.FC = () => {
           // DTR Statistics Cards
           {
             layout: {
-              type: "grid",
+              type: 'grid',
               columns: 5,
-              gap: "gap-4",
+              gap: 'gap-4',
               rows: [
                 {
-                  layout: "grid",
-                  gap: "gap-4",
+                  layout: 'grid',
+                  gap: 'gap-4',
                   gridColumns: 3,
                   span: { col: 3, row: 1 },
                   className:
-                    "border border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
+                    'border border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light',
                   columns: [
                     {
-                      name: "SectionHeader",
+                      name: 'SectionHeader',
                       props: {
-                        title: "Distribution Transformer (DTR) Statistics",
+                        title: 'Distribution Transformer (DTR) Statistics',
                         titleLevel: 2,
-                        titleSize: "md",
-                        titleVariant: "",
-                        titleWeight: "medium",
-                        titleAlign: "left",
+                        titleSize: 'md',
+                        titleVariant: '',
+                        titleWeight: 'medium',
+                        titleAlign: 'left',
                         rightComponent: {
-                          name: "Button",
+                          name: 'Button',
                           props: {
-                            variant: "secondary",
-                            onClick: () =>
-                              navigate(
-                                "/dtr-table?type=total-dtrs&title=Total%20DTRs"
-                              ),
-                            children: "View All",
-                            className: "px-4 py-2 text-sm",
+                            variant: 'secondary',
+                            onClick: () => navigate(buildDtrTableUrl('total-dtrs', 'Total DTRs')),
+                            children: 'View All',
+                            className: 'px-4 py-2 text-sm',
                           },
                         },
-                        layout: "horizontal",
-                        gap: "gap-4",
+                        layout: 'horizontal',
+                        gap: 'gap-4',
                       },
                       span: { col: 3, row: 1 },
                     },
                     ...dtrStatsCards.map((stat) => ({
-                      name: "Card",
+                      name: 'Card',
                       props: {
                         title: stat.title,
                         value: stat.value,
                         icon: stat.icon,
                         subtitle1: stat.subtitle1,
                         onValueClick: stat.onValueClick,
-                        bg: stat.bg || "bg-stat-icon-gradient",
+                        bg: stat.bg || 'bg-stat-icon-gradient',
                         loading: stat.loading,
                       },
                       span: { col: 1 as const, row: 1 as const },
@@ -1905,45 +1946,45 @@ const DTRDashboard: React.FC = () => {
                   ],
                 },
                 {
-                  layout: "grid",
-                  gap: "gap-4",
+                  layout: 'grid',
+                  gap: 'gap-4',
                   gridColumns: 2,
                   span: { col: 2, row: 1 },
                   className:
-                    "border border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
+                    'border border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light',
                   columns: [
                     {
-                      name: "SectionHeader",
+                      name: 'SectionHeader',
                       props: {
-                        title: "Consumption & Energies",
+                        title: 'Consumption & Energies',
                         titleLevel: 2,
-                        titleSize: "md",
-                        titleVariant: "",
-                        titleWeight: "medium",
-                        titleAlign: "left",
+                        titleSize: 'md',
+                        titleVariant: '',
+                        titleWeight: 'medium',
+                        titleAlign: 'left',
                         rightComponent: {
-                          name: "TimeRangeSelector",
+                          name: 'TimeRangeSelector',
                           props: {
-                            availableTimeRanges: ["Daily", "Monthly"],
+                            availableTimeRanges: ['Daily', 'Monthly'],
                             selectedTimeRange: selectedTimeRange,
                             handleTimeRangeChange: handleTimeRangeChange,
                             timeRangeLabels: {},
                           },
                         },
-                        layout: "horizontal",
-                        gap: "gap-4",
+                        layout: 'horizontal',
+                        gap: 'gap-4',
                       },
                       span: { col: 2, row: 1 },
                     },
                     ...getCurrentConsumptionCards().map((card) => ({
-                      name: "Card",
+                      name: 'Card',
                       props: {
                         title: card.title,
                         value: card.value,
                         icon: card.icon,
                         subtitle1: card.subtitle1,
                         iconStyle: card.iconStyle, // Only for Active/In-Active DTRs
-                        bg: card.bg || "bg-stat-icon-gradient",
+                        bg: card.bg || 'bg-stat-icon-gradient',
                         loading: card.loading,
                       },
                       span: { col: 1 as const, row: 1 as const },
@@ -1956,16 +1997,15 @@ const DTRDashboard: React.FC = () => {
           // DTRs Table section
           {
             layout: {
-              type: "grid",
+              type: 'grid',
               columns: 2,
-              gap: "gap-4",
+              gap: 'gap-4',
               rows: [
                 {
-                  layout: "grid",
+                  layout: 'grid',
                   gridColumns: 1,
-                  gap: "gap-4",
-                  className:
-                    " rounded-3xl  dark:bg-primary-dark-light",
+                  gap: 'gap-4',
+                  className: ' rounded-3xl  dark:bg-primary-dark-light',
                   columns: [
                     // {
                     //   name: "Holder",ss
@@ -1977,26 +2017,33 @@ const DTRDashboard: React.FC = () => {
                     //   },
                     // },
                     {
-                      name: "PieChart",
+                      name: 'PieChart',
                       props: {
                         data: meterStatus || dummyMeterStatusData,
                         height: 330,
+                        showStatsLabels: false,
                         showLegend: false,
                         showNoDataMessage: false,
                         showDownloadButton: true,
                         showStatsSection: true,
-                        valueUnit1: "Communicating", // Unit for first category (e.g., "Meter")
-                        valueUnit2: "Non-Communicating", // Unit for second category (e.g., "Non-Meter")
-                        className: "",
+                        valueUnit1: 'Communicating', // Unit for first category (e.g., "Meter")
+                        valueUnit2: 'Non-Communicating', // Unit for second category (e.g., "Non-Meter")
+                        className: '',
                         showHeader: true,
-                        headerTitle: "Communication Status",
-                    onClick: (segmentName?: string) => {
-                          if (segmentName === "Communicating") {
-                            navigate("/dtr-table?type=communicating-meters&title=Communicating%20Meters");
-                          } else if (segmentName === "Non-Communicating") {
-                            navigate("/dtr-table?type=non-communicating-meters&title=Non-Communicating%20Meters");
+                        headerTitle: 'Communication Status',
+                        onClick: (segmentName?: string) => {
+                          if (segmentName === 'Communicating') {
+                            navigate(
+                              '/dtr-table?type=communicating-meters&title=Communicating%20Meters'
+                            );
+                          } else if (segmentName === 'Non-Communicating') {
+                            navigate(
+                              '/dtr-table?type=non-communicating-meters&title=Non-Communicating%20Meters'
+                            );
                           } else {
-                            navigate("/dtr-table?type=communicating-meters&title=Communicating%20Meters");
+                            navigate(
+                              '/dtr-table?type=communicating-meters&title=Communicating%20Meters'
+                            );
                           }
                         },
                         isLoading: isMeterStatusLoading,
@@ -2005,17 +2052,17 @@ const DTRDashboard: React.FC = () => {
                   ],
                 },
                 {
-                  layout: "grid",
+                  layout: 'grid',
                   gridColumns: 1,
-                  gap: "gap-4",
+                  gap: 'gap-4',
                   columns: [
                     {
-                      name: "Table",
+                      name: 'Table',
                       props: {
                         data: alertsData,
                         columns: alertsTableColumns,
                         showHeader: true,
-                        headerTitle: "Latest Alerts",
+                        headerTitle: 'Latest Alerts',
                         headerClickable: true,
                         onHeaderClick: handleViewAllAlerts,
                         showActions: true,
@@ -2025,42 +2072,38 @@ const DTRDashboard: React.FC = () => {
                         onView: handleViewFeeder,
                         availableTimeRanges: [],
                         initialRowsPerPage: 3,
-                        emptyMessage: "No alerts found",
+                        emptyMessage: 'No alerts found',
                         loading: isAlertsLoading,
-                        onRowClick: (row: TableData) =>
-                          handleViewFeeder(row),
+                        onRowClick: (row: TableData) => handleViewFeeder(row),
                       },
                     },
                   ],
                 },
-
               ],
             },
           },
           {
             layout: {
-              type: "grid" as const,
-              className: "",
+              type: 'grid' as const,
+              className: '',
               columns: 2,
             },
             components: [
               {
-
-                name: "Table",
+                name: 'Table',
                 props: {
                   data: dtrTableData,
                   columns: dtrTableColumns,
                   showHeader: true,
-                  headerTitle: "Distribution Transformers",
-                  headerClassName: "h-18",
+                  headerTitle: 'Distribution Transformers',
+                  headerClassName: 'h-18',
                   searchable: false,
                   sortable: true,
                   initialRowsPerPage: 10,
                   // selectable: true,
                   showActions: true,
-                  text: "DTR Management Table",
-                  onRowClick: (row: TableData) =>
-                    navigate(`/dtr-detail/${row.dtrId}`),
+                  text: 'DTR Management Table',
+                  onRowClick: (row: TableData) => navigate(`/dtr-detail/${row.dtrId}`),
                   onView: handleViewDTR,
                   availableTimeRanges: [],
                   onPageChange: handlePageChange,
@@ -2069,27 +2112,27 @@ const DTRDashboard: React.FC = () => {
                   serverPagination: serverPagination,
                   loading: isTableLoading,
                 },
-                span: { col: 2, row: 1 }
+                span: { col: 2, row: 1 },
               },
             ],
           },
 
           {
             layout: {
-              type: "row" as const,
-              className: "",
+              type: 'row' as const,
+              className: '',
             },
             components: [
               {
-                name: "StackedBarChart",
+                name: 'StackedBarChart',
                 props: {
                   xAxisData: chartMonths,
                   seriesData: chartSeries,
                   seriesColors: alertColors,
                   height: 300,
                   showHeader: true,
-                  headerTitle: "DTR Alert Statistics",
-                  availableTimeRanges: ["Daily", "Weekly", "Monthly"],
+                  headerTitle: 'DTR Alert Statistics',
+                  availableTimeRanges: ['Daily', 'Weekly', 'Monthly'],
                   initialTimeRange: selectedChartTimeRange,
                   onTimeRangeChange: handleChartTimeRangeChange,
                   showDownloadButton: true,
@@ -2099,25 +2142,24 @@ const DTRDashboard: React.FC = () => {
                 },
                 span: { col: 1, row: 1 },
               },
-             
             ],
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
             },
             components: [
               {
-                name: "GoogleMap",
+                name: 'GoogleMap',
                 props: {
-                  title: "DTR Locations",
+                  title: 'DTR Locations',
                   hasDownload: true,
-                  apiKey: "AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI",
+                  apiKey: 'AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI',
                   center: mapCenter,
                   zoom: mapZoom,
-                  libraries: ["places"],
+                  libraries: ['places'],
                   markers: generateDTRMarkers(dtrTableData),
                   mapOptions: {
                     disableDefaultUI: false,
@@ -2128,19 +2170,19 @@ const DTRDashboard: React.FC = () => {
                     rotateControl: true,
                     fullscreenControl: true,
                   },
-                  onReady: (_map: any, _google: any) => { },
+                  onReady: (_map: any, _google: any) => {},
                   onClick: (e: any) => {
                     const clickedCoords = e.latLng?.toJSON();
                     if (clickedCoords) {
                       // You could add a temporary marker here or show coordinates in a tooltip
                     }
                   },
-                  onIdle: () => { },
+                  onIdle: () => {},
                 },
                 span: { col: 1, row: 1 },
               },
-            ]
-          }
+            ],
+          },
         ]}
       />
     </div>
