@@ -36,8 +36,8 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
-	// Resolve API base URL: prop -> env -> default '/api'
-	const baseApiUrl = apiBaseUrl ?? (import.meta.env?.VITE_API_BASE_URL || '/api');
+  // Resolve API base URL: prop -> env -> default '/api'
+  const baseApiUrl = apiBaseUrl ?? (import.meta.env?.VITE_API_BASE_URL || '/api');
 
   // Notification state
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -78,11 +78,10 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
   //   }
   // };
 
-
   // Fetch notifications list
   const fetchNotificationsList = async () => {
     try {
-		const response = await fetch(`${baseApiUrl}/notifications`, {
+      const response = await fetch(`${baseApiUrl}/notifications`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -98,7 +97,9 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
           // Transform notifications to match expected format
           const transformedNotifications = dbNotifications.map((notification: any) => ({
             ...notification,
-            created_at: notification.created_at ? new Date(notification.created_at).toISOString() : new Date().toISOString()
+            created_at: notification.created_at
+              ? new Date(notification.created_at).toISOString()
+              : new Date().toISOString(),
           }));
 
           setNotifications(transformedNotifications);
@@ -119,8 +120,8 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     try {
       console.log(`🔵 [FRONTEND] markNotificationAsRead called with ID: ${notificationId}`);
       console.log(`🔵 [FRONTEND] API URL: ${baseApiUrl}/notifications/${notificationId}/read`);
-      
-		const response = await fetch(`${baseApiUrl}/notifications/${notificationId}/read`, {
+
+      const response = await fetch(`${baseApiUrl}/notifications/${notificationId}/read`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -129,17 +130,13 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
       });
 
       console.log(`🔵 [FRONTEND] Response status: ${response.status}`);
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log(`✅ [FRONTEND] Mark as read successful:`, result);
-        
-        setNotifications(prev =>
-          prev.map(notif =>
-            notif.id === notificationId
-              ? { ...notif, is_read: true }
-              : notif
-          )
+
+        setNotifications((prev) =>
+          prev.map((notif) => (notif.id === notificationId ? { ...notif, is_read: true } : notif))
         );
         return true;
       } else {
@@ -158,8 +155,8 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     try {
       console.log(`🟣 [FRONTEND] markAllNotificationsAsRead called`);
       console.log(`🟣 [FRONTEND] API URL: ${baseApiUrl}/notifications/mark-all-read`);
-      
-		const response = await fetch(`${baseApiUrl}/notifications/mark-all-read`, {
+
+      const response = await fetch(`${baseApiUrl}/notifications/mark-all-read`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -168,18 +165,16 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
       });
 
       console.log(`🟣 [FRONTEND] Response status: ${response.status}`);
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log(`✅ [FRONTEND] Mark all as read successful:`, result);
-        
-        setNotifications(prev =>
-          prev.map(notif => ({ ...notif, is_read: true }))
-        );
-        
+
+        setNotifications((prev) => prev.map((notif) => ({ ...notif, is_read: true })));
+
         // Refresh the notifications list to get updated data
         await fetchNotificationsList();
-        
+
         return true;
       } else {
         const errorData = await response.json();
@@ -196,27 +191,27 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
   function getDummyNotifications() {
     return [
       {
-        id: "1",
-        type: "HT_FUSE_BLOWN",
-        title: "HT Fuse Blown Alert",
-        message: "HT fuse blown detected on DTR-001",
+        id: '1',
+        type: 'HT_FUSE_BLOWN',
+        title: 'HT Fuse Blown Alert',
+        message: 'HT fuse blown detected on DTR-001',
         created_at: new Date().toISOString(),
         is_read: false,
-        abnormalitytype: "HT Fuse Blown",
+        abnormalitytype: 'HT Fuse Blown',
         level: 2,
-        status: "active"
+        status: 'active',
       },
       {
-        id: "2",
-        type: "METER_ABNORMALITY",
-        title: "Meter Abnormality",
-        message: "Abnormal reading detected on meter MTR-123",
+        id: '2',
+        type: 'METER_ABNORMALITY',
+        title: 'Meter Abnormality',
+        message: 'Abnormal reading detected on meter MTR-123',
         created_at: new Date().toISOString(),
         is_read: true,
-        abnormalitytype: "Voltage Drop",
+        abnormalitytype: 'Voltage Drop',
         level: 1,
-        status: "resolved"
-      }
+        status: 'resolved',
+      },
     ];
   }
 
@@ -296,7 +291,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
     // Dispatch custom event to notify Header about notification changes
     const event = new CustomEvent('notificationsUpdated', {
-      detail: { notifications, count: notifications.length }
+      detail: { notifications, count: notifications.length },
     });
     window.dispatchEvent(event);
   }, [notifications]);
@@ -324,27 +319,50 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     const transformedNotifications = notifications.map((notification: any) => {
       return {
         id: notification.id.toString(),
-        type: notification.type === 'HT_FUSE_BLOWN' ? 'warning' :
-          notification.type === 'METER_ABNORMALITY' ? 'error' :
-            notification.type === 'BILLING' ? 'info' :
-              notification.type === 'TICKET' ? 'ticket' :
-                notification.type === 'SYSTEM' ? 'success' : 'info',
-        label: notification.type === 'HT_FUSE_BLOWN' ? 'HT Fuse Alert' :
-          notification.type === 'METER_ABNORMALITY' ? 'Meter Alert' :
-            notification.type === 'BILLING' ? 'Billing' :
-              notification.type === 'TICKET' ? 'Support' :
-                notification.type === 'SYSTEM' ? 'System' : 'Notification',
+        type:
+          notification.type === 'HT_FUSE_BLOWN'
+            ? 'warning'
+            : notification.type === 'METER_ABNORMALITY'
+            ? 'error'
+            : notification.type === 'BILLING'
+            ? 'info'
+            : notification.type === 'TICKET'
+            ? 'ticket'
+            : notification.type === 'SYSTEM'
+            ? 'success'
+            : 'info',
+        label:
+          notification.type === 'HT_FUSE_BLOWN'
+            ? 'HT Fuse Alert'
+            : notification.type === 'METER_ABNORMALITY'
+            ? 'Meter Alert'
+            : notification.type === 'BILLING'
+            ? 'Billing'
+            : notification.type === 'TICKET'
+            ? 'Support'
+            : notification.type === 'SYSTEM'
+            ? 'System'
+            : 'Notification',
         title: notification.title,
-        dateTime: notification.created_at ? new Date(notification.created_at).toLocaleString() : new Date().toLocaleString(),
+        dateTime: notification.created_at
+          ? new Date(notification.created_at).toLocaleString()
+          : new Date().toLocaleString(),
         isUnread: !notification.is_read,
         isNew: !notification.is_read && isRecent(notification.created_at),
         redirectUrl: notification.redirect_url || '/dashboard',
         message: notification.message,
-        category: notification.type === 'HT_FUSE_BLOWN' ? 'HT Fuse' :
-          notification.type === 'METER_ABNORMALITY' ? 'Meter' :
-            notification.type === 'BILLING' ? 'Billing' :
-              notification.type === 'TICKET' ? 'Support' :
-                notification.type === 'SYSTEM' ? 'System' : 'General'
+        category:
+          notification.type === 'HT_FUSE_BLOWN'
+            ? 'HT Fuse'
+            : notification.type === 'METER_ABNORMALITY'
+            ? 'Meter'
+            : notification.type === 'BILLING'
+            ? 'Billing'
+            : notification.type === 'TICKET'
+            ? 'Support'
+            : notification.type === 'SYSTEM'
+            ? 'System'
+            : 'General',
       };
     });
 
@@ -353,7 +371,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
     // Dispatch event to Header with transformed notifications
     const event = new CustomEvent('setNotifications', {
-      detail: { notifications: transformedNotifications }
+      detail: { notifications: transformedNotifications },
     });
     window.dispatchEvent(event);
   }, [notifications]);
@@ -366,48 +384,157 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     return diffInHours < 24;
   }
 
-  // Global search handler
-  const handleGlobalSearch = async (query: string) => {
+  // Search suggestions handler - for autocomplete dropdown as user types
+  const handleSearchSuggestions = async (query: string) => {
+    if (!query || query.length < 2) {
+      return [];
+    }
 
+    try {
+      const trimmedQuery = query.trim();
+      const fullUrl = `${baseApiUrl}/dtrs/search?query=${encodeURIComponent(trimmedQuery)}`;
+
+      const response = await fetch(fullUrl, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.length > 0) {
+          // ✅ Transform to match SearchResult interface that Input component expects
+          const suggestions = result.data.map((item: any, index: number) => {
+            // ✅ Use backend's type field (backend determines based on query starting with 'D')
+            const searchType = item.type; // 'dtr' if query starts with D, else 'meter'
+
+            if (searchType === 'meter') {
+              // Meter search result - show meter number prominently
+              return {
+                id: `meter-${index}`,
+                name: `Meter: ${item.meter?.meterNumber || item.meter?.serialNumber || 'Unknown'}`,
+                meter: item.meter?.meterNumber || item.meter?.serialNumber || 'Unknown',
+                // uid: item.meter?.meterNumber || item.meter?.serialNumber || item.dtrNumber,
+                consumerNumber: `${item.dtrNumber}`,
+                // Store original data for navigation
+                _originalData: item,
+                _searchType: 'meter',
+              };
+            } else {
+              // DTR search result - show DTR number prominently
+              const displayName = item.meter
+                ? `DTR ${item.dtrNumber} (has meter: ${
+                    item.meter.meterNumber || item.meter.serialNumber
+                  })`
+                : `DTR ${item.dtrNumber}`;
+
+              return {
+                id: `dtr-${index}`,
+                name: displayName,
+                meter: item.location || 'Unknown Location',
+                uid: item.dtrNumber,
+                consumerNumber: item.dtrNumber,
+                // Store original data for navigation
+                _originalData: item,
+                _searchType: 'dtr',
+              };
+            }
+          });
+
+          return suggestions;
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Search suggestions error:', error);
+      return [];
+    }
+  };
+
+  // Search result click handler - when user clicks a suggestion
+  const handleSearchResultClick = (result: any) => {
+    // Check if this is a DTR/Meter search result
+    if (result._searchType === 'meter') {
+      // For meter searches: Navigate to /feeder page with state
+      const originalData = result._originalData;
+      const dtrId = originalData.dtrNumber || originalData.id;
+      const meterNumber = originalData.meter.meterNumber || originalData.meter.serialNumber;
+
+      navigate(`/feeder/${dtrId}`, {
+        state: {
+          feederData: {
+            feederName: meterNumber,
+            dtrNumber: originalData.dtrNumber,
+            dtrId: dtrId,
+          },
+          dtrId: dtrId,
+          dtrName: originalData.dtrNumber,
+          highlightMeter: meterNumber,
+        },
+      });
+    } else if (result._searchType === 'dtr') {
+      // For DTR searches: Navigate to /dtr-detail page
+      const originalData = result._originalData;
+      const dtrId = originalData.dtrNumber || originalData.id;
+      navigate(`/dtr-detail/${dtrId}`);
+    } else {
+      // Fallback for other search types (consumers, etc.)
+      if (result.consumerNumber) {
+        navigate(`/consumers/${result.consumerNumber}`);
+      }
+    }
+  };
+
+  // Global search handler - when user presses Enter without selecting a suggestion
+  const handleGlobalSearch = async (query: string) => {
     if (!query || query.length < 2) {
       return;
     }
 
     try {
-      // First try direct patterns for DTR format
-      if (query.toUpperCase().startsWith('DTR')) {
-        const dtrNumber = query.replace(/^DTR[-_]?/i, '');
+      const trimmedQuery = query.trim();
+
+      // Direct DTR navigation if starts with "DTR"
+      if (trimmedQuery.toUpperCase().startsWith('DTR')) {
+        const dtrNumber = trimmedQuery.replace(/^DTR[-_]?/i, '');
         navigate(`/dtr-detail/${dtrNumber}`);
         return;
       }
 
-      if (query.toUpperCase().startsWith('METER')) {
-        const meterQuery = query.replace(/^METER[-_\s]?/i, '');
-        const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(meterQuery)}`);
+      // Search using API
+      const fullUrl = `${baseApiUrl}/dtrs/search?query=${encodeURIComponent(trimmedQuery)}`;
+      const response = await fetch(fullUrl, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
         const result = await response.json();
 
-        if (result.success && result.data.length > 0) {
+        if (result.success && result.data && result.data.length > 0) {
           const firstResult = result.data[0];
-          navigate(`/dtr-detail/${firstResult.dtrNumber || firstResult.id}`);
-          return;
-        } else {
-          alert(`No meter found for "${meterQuery}". Please check your search term.`);
-          return;
+
+          // If result has meter info and query is likely a meter number (short, numeric)
+          if (firstResult.meter && /^\d{1,4}$/.test(trimmedQuery)) {
+            const dtrId = firstResult.dtrNumber || firstResult.id;
+            navigate(`/feeder/${dtrId}`, {
+              state: {
+                highlightMeter: firstResult.meter.meterNumber || firstResult.meter.serialNumber,
+              },
+            });
+            return;
+          } else {
+            // Navigate to DTR detail
+            const dtrId = firstResult.dtrNumber || firstResult.id;
+            navigate(`/dtr-detail/${dtrId}`);
+            return;
+          }
         }
       }
 
-      // For other queries, search the database
-      const response = await fetch(`/api/dtrs/search?query=${encodeURIComponent(query)}`);
-      const result = await response.json();
-
-      if (result.success && result.data.length > 0) {
-        // Take the first result and navigate to DTR details
-        const firstResult = result.data[0];
-        navigate(`/dtr-detail/${firstResult.dtrNumber || firstResult.id}`);
-      } else {
-        // No DTR results found, show alert
-        alert(`No DTR found for "${query}". Please check your search term.`);
-      }
+      // No results
+      alert(`No results found for "${trimmedQuery}". Please check your search term.`);
     } catch (error) {
       console.error('Search error:', error);
       alert(`Search failed. Please try again.`);
@@ -427,7 +554,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     '/data-logger': 'Data Logger',
     '/meters': 'Meter List',
     '/meter-details/:meterId': 'Meter Details',
-    '/': 'DTR Dashboard'
+    '/': 'DTR Dashboard',
   };
   // Menu configuration
   const menuItems = [
@@ -478,7 +605,6 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
           title: 'Role Management',
           link: '/role-management',
         },
-
       ],
     },
     ,
@@ -514,8 +640,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
       ],
     },
     { title: 'Data Logger', icon: 'icons/meter-bolt.svg', link: '/data-logger' },
-    { title: 'Meter List', icon: 'icons/meter-bolt.svg', link: '/meters' }
-
+    { title: 'Meter List', icon: 'icons/meter-bolt.svg', link: '/meters' },
   ];
   return (
     <div className="flex h-screen bg-white">
@@ -529,7 +654,6 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
           alt: 'Best Infra',
           collapsedSrc: 'images/changed-logo.svg',
         }}
-
         clientLogo={{
           src: 'images/tgnpdcl.png',
           alt: 'TGNPDCL Client',
@@ -551,7 +675,9 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
           // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
           title={pageTitles[location.pathname] || 'Dashboard'}
           onSearch={handleGlobalSearch}
-			apiBaseUrl={baseApiUrl}
+          onSearchSuggestions={handleSearchSuggestions}
+          onSearchResultClick={handleSearchResultClick}
+          apiBaseUrl={baseApiUrl}
           tariff={false}
           // Notification props
           //  notificationCount={notificationStats.unread}
@@ -568,9 +694,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
           logoutRoute="/v2/tgnpdcl_smart/login"
         />
         {/* Main Content */}
-        <main className="flex-1 p-6 bg-white overflow-auto dark:bg-primary-dark">
-          {children}
-        </main>
+        <main className="flex-1 p-6 bg-white overflow-auto dark:bg-primary-dark">{children}</main>
       </div>
     </div>
   );
