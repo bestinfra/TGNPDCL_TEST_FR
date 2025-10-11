@@ -1,5 +1,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { lazy } from "react";
+import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
 const Page = lazy(() => import("SuperAdmin/Page"));
 
@@ -424,6 +425,7 @@ const DownloadIcon = () => (
 );
 
 export default function AssetManagment() {
+  const navigate = useNavigate();
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
@@ -460,31 +462,34 @@ export default function AssetManagment() {
 
   // Asset management menu items
   const assetManagementActions = [
-    { id: "edit-asset-title", label: "Edit Asset Title", icon: "icons/edit.svg" },
-    { id: "delete", label: "Delete", isDestructive: true, icon: "icons/delete.svg" },
+    { id: "view", label: "View", icon: "icons/eye.svg" },
   ];
 
-  // Handle asset actions
-  const handleAssetAction = (actionId: string, _node: any) => {
+  // Handle view feeder action
+  const handleViewFeeder = (row: any) => {
+    // Navigate to the feeder page using the meter number
+    const meterNumber = row.meterNo || row.meterNumber;
+    const dtrId = row.dtrId;
+    
+    if (meterNumber && meterNumber !== 'N/A') {
+      // Navigate to individual feeder page
+      navigate(`/feeder/${meterNumber}`, {
+        state: {
+          feederData: {
+            feederName: meterNumber,
+            dtrNumber: dtrId,
+          },
+          dtrId: dtrId,
+        }
+      });
+    }
+  };
 
+  // Handle asset actions
+  const handleAssetAction = (actionId: string, row: any) => {
     switch (actionId) {
-      case "edit-asset-title":
-        // Handle edit asset title
-        break;
-      case "change-node-to-sub-node":
-        // Handle change node to sub node
-        break;
-      case "download-template":
-        // Handle download template
-        break;
-      case "duplicate-entire-asset":
-        // Handle duplicate asset
-        break;
-      case "remove-sub-node-list":
-        // Handle remove sub node list
-        break;
-      case "delete":
-        // Handle delete
+      case "view":
+        handleViewFeeder(row);
         break;
       default:
     }
@@ -2168,15 +2173,15 @@ export default function AssetManagment() {
                                 {
                                   key: "communicationStatus",
                                   label: "Communication Status",
-                                  // statusIndicator: {},
-                                  // isActive: (
-                                  //   value:
-                                  //     | string
-                                  //     | number
-                                  //     | boolean
-                                  //     | null
-                                  //     | undefined
-                                  // ) => String(value).toLowerCase() === "communicating",
+                                  statusIndicator: {},
+                                  isActive: (
+                                    value:
+                                      | string
+                                      | number
+                                      | boolean
+                                      | null
+                                      | undefined
+                                  ) => String(value).toLowerCase() === "active",
                                 },
                                 {
                                   key: "lastCommunicationDate",
@@ -2272,36 +2277,12 @@ export default function AssetManagment() {
                               } : undefined,
                               showActions: true,
                               actions: assetManagementActions,
+                              onRowClick: (row: any) => handleViewFeeder(row),
                               onActionClick: (actionId: string, row: any) => {
-                                // Find the original node data for actions
-                                const findNode = (
-                                  nodes: any[],
-                                  targetId: any
-                                ): any => {
-                                  for (const node of nodes) {
-                                    if (
-                                      node.id === targetId ||
-                                      node.hierarchy_id === targetId
-                                    ) {
-                                      return node;
-                                    }
-                                    if (node.children) {
-                                      const found = findNode(
-                                        node.children,
-                                        targetId
-                                      );
-                                      if (found) return found;
-                                    }
-                                  }
-                                  return null;
-                                };
-
-                                const originalNode = findNode(
-                                  getDisplayData(),
-                                  row.id
-                                );
-                                if (originalNode) {
-                                  handleAssetAction(actionId, originalNode);
+                                if (actionId === "view") {
+                                  handleViewFeeder(row);
+                                } else {
+                                  handleAssetAction(actionId, row);
                                 }
                               },
                             },
