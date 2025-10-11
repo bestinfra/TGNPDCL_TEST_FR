@@ -1,106 +1,106 @@
-import { useState, useEffect, lazy } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-const Page = lazy(() => import("SuperAdmin/Page"));
-import { FILTER_STYLES } from "@/contexts/FilterStyleContext";
-import BACKEND_URL from "../config";
+import { useState, useEffect, lazy } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+const Page = lazy(() => import('SuperAdmin/Page'));
+import { FILTER_STYLES } from '@/contexts/FilterStyleContext';
+import BACKEND_URL from '../config';
 
 // Dummy data for fallback
 const dummyDTRData = {
-  name: "0",
-  dtrNo: "0",
-  division: "0",
-  subDivision: "0",
-  substation: "0",
-  feeder: "0",
-  feederNo: "0",
-  condition: "0",
-  capacity: "0",
-  address: "0",
+  name: '0',
+  dtrNo: '0',
+  division: '0',
+  subDivision: '0',
+  substation: '0',
+  feeder: '0',
+  feederNo: '0',
+  condition: '0',
+  capacity: '0',
+  address: '0',
   location: { lat: 0, lng: 0 },
   lastCommunication: null,
   stats: [
     {
-      title: "Total LT Feeders",
-      value: "0",
-      icon: "icons/feeder.svg",
-      subtitle1: "Connected to DTR",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Total LT Feeders',
+      value: '0',
+      icon: 'icons/feeder.svg',
+      subtitle1: 'Connected to DTR',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Total kW",
-      value: "0",
-      icon: "icons/energy.svg",
-      subtitle1: "Active Power",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Total kW',
+      value: '0',
+      icon: 'icons/energy.svg',
+      subtitle1: 'Active Power',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Total kVA",
-      value: "0",
-      icon: "icons/energy.svg",
-      subtitle1: "Apparent Power",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Total kVA',
+      value: '0',
+      icon: 'icons/energy.svg',
+      subtitle1: 'Apparent Power',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Total kWh",
-      value: "0",
-      icon: "icons/energy.svg",
-      subtitle1: "Cumulative Active Energy",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Total kWh',
+      value: '0',
+      icon: 'icons/energy.svg',
+      subtitle1: 'Cumulative Active Energy',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Total kVAh",
-      value: "0",
-      icon: "icons/energy.svg",
-      subtitle1: "Cumulative Apparent Energy",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Total kVAh',
+      value: '0',
+      icon: 'icons/energy.svg',
+      subtitle1: 'Cumulative Apparent Energy',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "LT Feeders Fuse Blown",
-      value: "0",
-      icon: "icons/power_failure.svg",
-      subtitle1: "Requires maintenance",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'LT Feeders Fuse Blown',
+      value: '0',
+      icon: 'icons/power_failure.svg',
+      subtitle1: 'Requires maintenance',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Unbalanced LT Feeders",
-      value: "0",
-      icon: "icons/power_failure.svg",
-      subtitle1: "Requires attention",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Unbalanced LT Feeders',
+      value: '0',
+      icon: 'icons/power_failure.svg',
+      subtitle1: 'Requires attention',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Power On",
-      value: "0",
-      icon: "icons/power_failure.svg",
-      subtitle1: "",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+      title: 'Power On',
+      value: '0',
+      icon: 'icons/power_failure.svg',
+      subtitle1: '',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     },
     {
-      title: "Power Off",
-      value: "0",
-      icon: "icons/power_failure.svg",
-      subtitle1: "",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
-      bg: "bg-[var(--color-danger)]",
+      title: 'Power Off',
+      value: '0',
+      icon: 'icons/power_failure.svg',
+      subtitle1: '',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+      bg: 'bg-[var(--color-danger)]',
       iconStyle: FILTER_STYLES.WHITE,
     },
     {
-      title: "Status",
-      value: "0",
-      icon: "icons/status.svg",
-      subtitle1: "0",
-      valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
-      bg: "bg-[var(--color-secondary)]",
+      title: 'Status',
+      value: '0',
+      icon: 'icons/status.svg',
+      subtitle1: '0',
+      valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+      bg: 'bg-[var(--color-secondary)]',
       iconStyle: FILTER_STYLES.WHITE,
     },
   ],
 };
 
 const dummyDailyConsumptionData = {
-  xAxisData: ["N/A"],
+  xAxisData: ['N/A'],
   seriesData: [
     {
-      name: "Consumption",
+      name: 'Consumption',
       data: [0],
     },
   ],
@@ -112,20 +112,20 @@ const dummyDailyConsumptionData = {
 const dummyFeedersData = [
   {
     sNo: 1,
-    feederName: "NA",
-    loadStatus: "N/A",
-    condition: "N/A",
-    capacity: "N/A",
-    address: "NA",
+    feederName: 'NA',
+    loadStatus: 'N/A',
+    condition: 'N/A',
+    capacity: 'N/A',
+    address: 'NA',
   },
 ];
 
 const dummyAlertsData = [
   {
-    alertId: "NA",
-    type: "N/A",
-    feederName: "NA",
-    occuredOn: "NA",
+    alertId: 'NA',
+    type: 'N/A',
+    feederName: 'NA',
+    occuredOn: 'NA',
   },
 ];
 
@@ -141,16 +141,12 @@ const DTRDetailPage = () => {
   };
 
   const [dtr, setDtr] = useState(dummyDTRData);
-  const [dailyConsumptionData, setDailyConsumptionData] = useState(
-    dummyDailyConsumptionData
-  );
+  const [dailyConsumptionData, setDailyConsumptionData] = useState(dummyDailyConsumptionData);
   const [dtrConsumptionData, setDtrConsumptionData] = useState<any>({
     daily: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
     monthly: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
   });
-  const [selectedTimeRange, setSelectedTimeRange] = useState<
-    "Daily" | "Monthly"
-  >("Daily");
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
   const [feedersData, setFeedersData] = useState(dummyFeedersData);
   const [alertsData, setAlertsData] = useState(dummyAlertsData);
   const [alertsPagination, setAlertsPagination] = useState({
@@ -182,9 +178,9 @@ const DTRDetailPage = () => {
   });
   const [capacityUsage, setCapacityUsage] = useState({
     daily: 0,
-    dailyMdkva : 0,
+    dailyMdkva: 0,
     monthly: 0,
-    monthlyMdkva : 0,
+    monthlyMdkva: 0,
     yearly: 0,
     yearlyMdkva: 0,
     lifeTime: 0,
@@ -192,30 +188,28 @@ const DTRDetailPage = () => {
     instantly: 0,
     instantKVA: 0,
   });
-console.log("000000000000000000",capacityUsage);
-  const [kvaTimeRange, setKvaTimeRange] = useState<"Daily" | "Monthly">(
-    "Daily"
-  );
+  console.log('000000000000000000', capacityUsage);
+  const [kvaTimeRange, setKvaTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
 
   // Simple error state like Prepaid.tsx
   const [errorMessages, setErrors] = useState<any[]>([]);
 
   // DTR Status dropdown state
-  const [dtrStatusValue, setDtrStatusValue] = useState<string>("na"); // Default to N/A
+  const [dtrStatusValue, setDtrStatusValue] = useState<string>('na'); // Default to N/A
   const isDtrDropdownDisabled = false; // Can be made dynamic if needed
   const dtrStatusOptions = [
-    { label: "Active", value: "active" },
-    { label: "Inactive", value: "inactive" },
+    { label: 'Active', value: 'active' },
+    { label: 'Inactive', value: 'inactive' },
   ];
 
   // Handle DTR status change
   const handleDtrStatusChange = async (value: string) => {
-    console.log("DTR Status changed to:", value);
+    console.log('DTR Status changed to:', value);
     setDtrStatusValue(value);
 
     // Don't make API call if N/A is selected
-    if (value === "na") {
-      console.log("N/A selected - no API call needed");
+    if (value === 'na') {
+      console.log('N/A selected - no API call needed');
       return;
     }
 
@@ -223,77 +217,64 @@ console.log("000000000000000000",capacityUsage);
       // Extract numeric DTR ID from the URL parameter
       const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
       if (!numericDtrId) {
-        throw new Error("Invalid DTR ID format");
+        throw new Error('Invalid DTR ID format');
       }
 
       // Call the API to update DTR status
-      const response = await fetch(
-        `${BACKEND_URL}/dtrs/${numericDtrId}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: value,
-          }),
-        }
-      );
+      const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: value,
+        }),
+      });
 
       const data = await response.json();
 
       if (data.success) {
-        console.log("DTR status updated successfully:", data);
+        console.log('DTR status updated successfully:', data);
         // Update the DTR condition in the local state
         setDtr((prev) => ({
           ...prev,
           condition: data.data.status,
         }));
       } else {
-        console.error("Failed to update DTR status:", data.message);
+        console.error('Failed to update DTR status:', data.message);
         // Revert the dropdown value on error
-        setDtrStatusValue(
-          dtr.condition.toLowerCase().includes("active") ? "active" : "inactive"
-        );
+        setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
       }
     } catch (error) {
-      console.error("Error updating DTR status:", error);
+      console.error('Error updating DTR status:', error);
       // Revert the dropdown value on error
-      setDtrStatusValue(
-        dtr.condition.toLowerCase().includes("active") ? "active" : "inactive"
-      );
+      setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
     }
   };
 
   // Get KVA metrics data based on selected time range
   const getKvaMetricsData = () => {
-    if (kvaTimeRange === "Daily") {
+    if (kvaTimeRange === 'Daily') {
       if (kvaMetricsData && kvaMetricsData.dailyData) {
         const data = {
           xAxisData: kvaMetricsData.dailyData.xAxisData || [],
           seriesData: [
             {
-              name: "kVA",
-              data:
-                kvaMetricsData.dailyData.sums?.map((sum: string) =>
-                  parseFloat(sum)
-                ) || [],
+              name: 'kVA',
+              data: kvaMetricsData.dailyData.sums?.map((sum: string) => parseFloat(sum)) || [],
             },
           ],
         };
         return data;
       }
-    } else if (kvaTimeRange === "Monthly") {
+    } else if (kvaTimeRange === 'Monthly') {
       if (kvaMetricsData && kvaMetricsData.monthlyData) {
         const data = {
           xAxisData: kvaMetricsData.monthlyData.xAxisData || [],
           seriesData: [
             {
-              name: "kVA",
-              data:
-                kvaMetricsData.monthlyData.sums?.map((sum: string) =>
-                  parseFloat(sum)
-                ) || [],
+              name: 'kVA',
+              data: kvaMetricsData.monthlyData.sums?.map((sum: string) => parseFloat(sum)) || [],
             },
           ],
         };
@@ -303,11 +284,9 @@ console.log("000000000000000000",capacityUsage);
 
     return {
       xAxisData: [],
-      seriesData: [{ name: "kVA", data: [] }],
+      seriesData: [{ name: 'kVA', data: [] }],
     };
   };
-
-
 
   // Clear all error messages
   const clearErrors = () => {
@@ -327,35 +306,30 @@ console.log("000000000000000000",capacityUsage);
   };
 
   // Fetch Alerts data (reusable across initial load and pagination changes)
-  const fetchAlertsData = async (
-    pageOverride?: number,
-    limitOverride?: number
-  ) => {
+  const fetchAlertsData = async (pageOverride?: number, limitOverride?: number) => {
     setIsAlertsLoading(true);
     try {
       // Extract numeric DTR ID from the URL parameter
       const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
       if (!numericDtrId) {
-        throw new Error("Invalid DTR ID format");
+        throw new Error('Invalid DTR ID format');
       }
 
       const params = new URLSearchParams();
       const pageToUse = pageOverride ?? alertsPagination.currentPage;
       const limitToUse = limitOverride ?? alertsPagination.limit;
-      params.append("page", String(pageToUse));
-      params.append("pageSize", String(limitToUse));
+      params.append('page', String(pageToUse));
+      params.append('pageSize', String(limitToUse));
 
-      console.log("🔍 [DTRDetailPage] Fetching alerts with:", {
+      console.log('🔍 [DTRDetailPage] Fetching alerts with:', {
         pageToUse,
         limitToUse,
         pageOverride,
         limitOverride,
       });
 
-      const response = await fetch(
-        `${BACKEND_URL}/dtrs/${dtrId}/alerts?${params.toString()}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch alerts data");
+      const response = await fetch(`${BACKEND_URL}/dtrs/${dtrId}/alerts?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch alerts data');
 
       const data = await response.json();
       console.log(data);
@@ -366,7 +340,7 @@ console.log("000000000000000000",capacityUsage);
             // Use the sNo directly from backend - it's already calculated correctly
             return {
               ...alert,
-              feederName: alert.feederName || "N/A",
+              feederName: alert.feederName || 'N/A',
               // Keep the sNo from backend as-is
             };
           }) || [];
@@ -375,26 +349,22 @@ console.log("000000000000000000",capacityUsage);
         if (data.pagination) {
           setAlertsPagination({
             currentPage: data.pagination.currentPage ?? pageToUse,
-            totalPages:
-              data.pagination.totalPages ?? alertsPagination.totalPages,
-            totalCount:
-              data.pagination.totalCount ?? alertsPagination.totalCount,
+            totalPages: data.pagination.totalPages ?? alertsPagination.totalPages,
+            totalCount: data.pagination.totalCount ?? alertsPagination.totalCount,
             limit: data.pagination.limit ?? limitToUse,
-            hasNextPage:
-              data.pagination.hasNextPage ?? alertsPagination.hasNextPage,
-            hasPrevPage:
-              data.pagination.hasPrevPage ?? alertsPagination.hasPrevPage,
+            hasNextPage: data.pagination.hasNextPage ?? alertsPagination.hasNextPage,
+            hasPrevPage: data.pagination.hasPrevPage ?? alertsPagination.hasPrevPage,
           });
         }
       } else {
-        throw new Error(data.message || "Failed to fetch alerts data");
+        throw new Error(data.message || 'Failed to fetch alerts data');
       }
     } catch (error) {
-      console.error("Error fetching alerts data:", error);
+      console.error('Error fetching alerts data:', error);
       setAlertsData(dummyAlertsData);
       setErrors((prev) => {
-        if (!prev.includes("Failed to fetch alerts data")) {
-          const updated = [...prev, "Failed to fetch alerts data"];
+        if (!prev.includes('Failed to fetch alerts data')) {
+          const updated = [...prev, 'Failed to fetch alerts data'];
           return updated;
         }
         return prev;
@@ -408,13 +378,11 @@ console.log("000000000000000000",capacityUsage);
 
   useEffect(() => {
     if (locationHierarchy.length > 0) {
-      const feederLocation = locationHierarchy.find(
-        (loc: any) => loc.type === "Feeder"
-      );
+      const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
       if (feederLocation) {
         setDtr((prev) => ({
           ...prev,
-          address: feederLocation.name || "N/A",
+          address: feederLocation.name || 'N/A',
         }));
       }
     }
@@ -422,36 +390,31 @@ console.log("000000000000000000",capacityUsage);
 
   // Set initial DTR status based on DTR data
   useEffect(() => {
-    if (dtr.condition && dtr.condition !== "N/A" && dtr.condition !== "0") {
+    if (dtr.condition && dtr.condition !== 'N/A' && dtr.condition !== '0') {
       // Map DTR condition to dropdown value - more robust mapping
       const condition = dtr.condition.toLowerCase();
-      let statusValue = "active"; // default
+      let statusValue = 'active'; // default
 
       if (
-        condition.includes("inactive") ||
-        condition.includes("off") ||
-        condition.includes("disabled")
+        condition.includes('inactive') ||
+        condition.includes('off') ||
+        condition.includes('disabled')
       ) {
-        statusValue = "inactive";
+        statusValue = 'inactive';
       } else if (
-        condition.includes("active") ||
-        condition.includes("on") ||
-        condition.includes("enabled")
+        condition.includes('active') ||
+        condition.includes('on') ||
+        condition.includes('enabled')
       ) {
-        statusValue = "active";
+        statusValue = 'active';
       }
 
       setDtrStatusValue(statusValue);
-      console.log(
-        "Initial DTR Status set to:",
-        statusValue,
-        "based on condition:",
-        dtr.condition
-      );
+      console.log('Initial DTR Status set to:', statusValue, 'based on condition:', dtr.condition);
     } else {
       // If no valid condition data, keep N/A as default
-      setDtrStatusValue("na");
-      console.log("No valid DTR condition data, keeping N/A as default");
+      setDtrStatusValue('na');
+      console.log('No valid DTR condition data, keeping N/A as default');
     }
   }, [dtr.condition]);
 
@@ -461,29 +424,27 @@ console.log("000000000000000000",capacityUsage);
       try {
         const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
         if (!numericDtrId) {
-          throw new Error("Invalid DTR ID format");
+          throw new Error('Invalid DTR ID format');
         }
 
         const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
-        if (!response.ok) throw new Error("Failed to fetch DTR data");
+        if (!response.ok) throw new Error('Failed to fetch DTR data');
 
         const data = await response.json();
 
         if (data.success) {
           const transformedDtrData = {
-            name: data.data?.dtr?.serialNumber || "N/A",
-            dtrNo: data.data?.dtr?.dtrNumber || "N/A",
-            division: "N/A",
-            subDivision: "N/A",
-            substation: "N/A",
-            feeder: "N/A",
-            feederNo: "N/A",
-            condition: data.data?.dtr?.status || "N/A",
-            capacity: data.data?.dtr?.capacity || "N/A",
+            name: data.data?.dtr?.serialNumber || 'N/A',
+            dtrNo: data.data?.dtr?.dtrNumber || 'N/A',
+            division: 'N/A',
+            subDivision: 'N/A',
+            substation: 'N/A',
+            feeder: 'N/A',
+            feederNo: 'N/A',
+            condition: data.data?.dtr?.status || 'N/A',
+            capacity: data.data?.dtr?.capacity || 'N/A',
             address:
-              data.data?.feeders?.[0]?.location?.name ||
-              data.data?.feeders?.[0]?.city ||
-              "N/A",
+              data.data?.feeders?.[0]?.location?.name || data.data?.feeders?.[0]?.city || 'N/A',
             location: {
               lat: data.data?.feeders?.[0]?.latitude || 0,
               lng: data.data?.feeders?.[0]?.longitude || 0,
@@ -494,14 +455,14 @@ console.log("000000000000000000",capacityUsage);
 
           setDtr(transformedDtrData);
         } else {
-          throw new Error(data.message || "Failed to fetch DTR data");
+          throw new Error(data.message || 'Failed to fetch DTR data');
         }
       } catch (error) {
-        console.error("Error fetching DTR data:", error);
+        console.error('Error fetching DTR data:', error);
         setDtr(dummyDTRData);
         setErrors((prev) => {
-          if (!prev.includes("Failed to fetch DTR data")) {
-            const updated = [...prev, "Failed to fetch DTR data"];
+          if (!prev.includes('Failed to fetch DTR data')) {
+            const updated = [...prev, 'Failed to fetch DTR data'];
             return updated;
           }
           return prev;
@@ -518,26 +479,21 @@ console.log("000000000000000000",capacityUsage);
       try {
         const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
         if (!numericDtrId) {
-          throw new Error("Invalid DTR ID format");
+          throw new Error('Invalid DTR ID format');
         }
 
-        const response = await fetch(
-          `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`
-        );
-        if (!response.ok) throw new Error("Failed to fetch consumption data");
+        const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`);
+        if (!response.ok) throw new Error('Failed to fetch consumption data');
 
         const data = await response.json();
 
-        if (data.status === "success") {
+        if (data.status === 'success') {
           const transformedConsumptionData = {
             xAxisData: data.data?.dailyData?.xAxisData || [],
             seriesData: [
               {
-                name: "Consumption",
-                data:
-                  data.data?.dailyData?.sums?.map((sum: string) =>
-                    parseFloat(sum)
-                  ) || [],
+                name: 'Consumption',
+                data: data.data?.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || [],
               },
             ],
             totalKwh: data.data?.dailyData?.totalKwh || 0,
@@ -561,29 +517,26 @@ console.log("000000000000000000",capacityUsage);
             },
           });
 
-          console.log("📊 [DTR Consumption] Daily Data:", {
+          console.log('📊 [DTR Consumption] Daily Data:', {
             totalKwh: data.data?.dailyData?.totalKwh,
             totalKvah: data.data?.dailyData?.totalKvah,
             totalKvarh: data.data?.dailyData?.totalKvarh,
           });
-          console.log("📊 [DTR Consumption] Monthly Data:", {
+          console.log('📊 [DTR Consumption] Monthly Data:', {
             totalKwh: data.data?.monthlyData?.totalKwh,
             totalKvah: data.data?.monthlyData?.totalKvah,
             totalKvarh: data.data?.monthlyData?.totalKvarh,
           });
-          console.log(
-            "📊 [RightAngle] Data for component:",
-            dtrConsumptionData
-          );
+          console.log('📊 [RightAngle] Data for component:', dtrConsumptionData);
         } else {
-          throw new Error(data.message || "Failed to fetch consumption data");
+          throw new Error(data.message || 'Failed to fetch consumption data');
         }
       } catch (error) {
-        console.error("Error fetching consumption data:", error);
+        console.error('Error fetching consumption data:', error);
         setDailyConsumptionData(dummyDailyConsumptionData);
         setErrors((prev) => {
-          if (!prev.includes("Failed to fetch consumption data")) {
-            const updated = [...prev, "Failed to fetch consumption data"];
+          if (!prev.includes('Failed to fetch consumption data')) {
+            const updated = [...prev, 'Failed to fetch consumption data'];
             return updated;
           }
           return prev;
@@ -601,11 +554,11 @@ console.log("000000000000000000",capacityUsage);
         // Extract numeric DTR ID from the URL parameter
         const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
         if (!numericDtrId) {
-          throw new Error("Invalid DTR ID format");
+          throw new Error('Invalid DTR ID format');
         }
 
         const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}`);
-        if (!response.ok) throw new Error("Failed to fetch feeders data");
+        if (!response.ok) throw new Error('Failed to fetch feeders data');
 
         const data = await response.json();
 
@@ -614,11 +567,11 @@ console.log("000000000000000000",capacityUsage);
           const transformedFeedersData =
             data.data?.feeders?.map((feeder: any, index: number) => ({
               sNo: index + 1,
-              feederName: feeder.serialNumber || feeder.meterNumber || "N/A",
-              loadStatus: feeder.status || "N/A",
-              condition: feeder.status || "N/A",
-              capacity: "N/A", // Not available in current API
-              address: feeder.location?.name || feeder.city || "N/A",
+              feederName: feeder.serialNumber || feeder.meterNumber || 'N/A',
+              loadStatus: feeder.status || 'N/A',
+              condition: feeder.status || 'N/A',
+              capacity: 'N/A', // Not available in current API
+              address: feeder.location?.name || feeder.city || 'N/A',
             })) || [];
 
           setFeedersData(transformedFeedersData);
@@ -629,13 +582,13 @@ console.log("000000000000000000",capacityUsage);
 
             // Update the address using the Feeder type from location hierarchy
             const feederLocation = data.data.locationHierarchy.find(
-              (loc: any) => loc.type === "Feeder"
+              (loc: any) => loc.type === 'Feeder'
             );
             if (feederLocation) {
               setDtr((prev) => {
                 const updated = {
                   ...prev,
-                  address: feederLocation.name || "N/A",
+                  address: feederLocation.name || 'N/A',
                 };
                 return updated;
               });
@@ -644,14 +597,14 @@ console.log("000000000000000000",capacityUsage);
           } else {
           }
         } else {
-          throw new Error(data.message || "Failed to fetch feeders data");
+          throw new Error(data.message || 'Failed to fetch feeders data');
         }
       } catch (error) {
-        console.error("Error fetching feeders data:", error);
+        console.error('Error fetching feeders data:', error);
         setFeedersData(dummyFeedersData);
         setErrors((prev) => {
-          if (!prev.includes("Failed to fetch feeders data")) {
-            const updated = [...prev, "Failed to fetch feeders data"];
+          if (!prev.includes('Failed to fetch feeders data')) {
+            const updated = [...prev, 'Failed to fetch feeders data'];
             return updated;
           }
           return prev;
@@ -671,15 +624,13 @@ console.log("000000000000000000",capacityUsage);
         // Extract numeric DTR ID from the URL parameter
         const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
         if (!numericDtrId) {
-          throw new Error("Invalid DTR ID format");
+          throw new Error('Invalid DTR ID format');
         }
 
-        const response = await fetch(
-          `${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`
-        );
+        const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`);
         const data = await response.json();
 
-        if (data.status === "success") {
+        if (data.status === 'success') {
           // Store the complete KVA metrics data with capacity info
           setKvaMetricsData({
             dailyData: data.data?.dailyData || { xAxisData: [], sums: [] },
@@ -695,10 +646,10 @@ console.log("000000000000000000",capacityUsage);
             underloadThreshold: data.data?.underloadThreshold || 0,
           });
         } else {
-          throw new Error(data.message || "Failed to fetch KVA metrics");
+          throw new Error(data.message || 'Failed to fetch KVA metrics');
         }
       } catch (error: any) {
-        console.error("Error fetching KVA metrics:", error);
+        console.error('Error fetching KVA metrics:', error);
         setKvaMetricsData({
           dailyData: { xAxisData: [], sums: [] },
           monthlyData: { xAxisData: [], sums: [] },
@@ -728,110 +679,105 @@ console.log("000000000000000000",capacityUsage);
         // Extract numeric DTR ID from the URL parameter
         const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
         if (!numericDtrId) {
-          throw new Error("Invalid DTR ID format");
+          throw new Error('Invalid DTR ID format');
         }
 
-        const response = await fetch(
-          `${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`
-        );
-        if (!response.ok) throw new Error("Failed to fetch feeder stats");
+        const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/feederStats`);
+        if (!response.ok) throw new Error('Failed to fetch feeder stats');
 
         const data = await response.json();
-        console.log(" 000000000000000000", data);
+        console.log(' 000000000000000000', data);
 
         if (data.success) {
           const updatedStats = [
             {
-              title: "Total LT Feeders",
-              value: data.data?.totalLTFeeders || "0",
-              icon: "icons/feeder.svg",
-              subtitle1: "Connected to DTR",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+              title: 'Total LT Feeders',
+              value: data.data?.totalLTFeeders || '0',
+              icon: 'icons/feeder.svg',
+              subtitle1: 'Connected to DTR',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Total kW",
+              title: 'Total kW',
               value:
                 data.data?.totalKW !== undefined && data.data?.totalKW !== null
                   ? Number(data.data.totalKW).toFixed(2)
-                  : "0",
-              icon: "icons/energy.svg",
-              subtitle1: "Active Power",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+                  : '0',
+              icon: 'icons/energy.svg',
+              subtitle1: 'Active Power',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Total kVA",
-              value: data.data?.totalKVA || "0",
-              icon: "icons/energy.svg",
-              subtitle1: "Apparent Power",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+              title: 'Total kVA',
+              value: data.data?.totalKVA || '0',
+              icon: 'icons/energy.svg',
+              subtitle1: 'Apparent Power',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Total kWh",
+              title: 'Total kWh',
               value:
-                data.data?.totalKWh !== undefined &&
-                data.data?.totalKWh !== null
+                data.data?.totalKWh !== undefined && data.data?.totalKWh !== null
                   ? Number(data.data.totalKWh).toFixed(2)
-                  : "0",
-              icon: "icons/energy.svg",
-              subtitle1: "Cumulative Active Energy",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+                  : '0',
+              icon: 'icons/energy.svg',
+              subtitle1: 'Cumulative Active Energy',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Total kVAh",
+              title: 'Total kVAh',
               value:
-                data.data?.totalKVAh !== undefined &&
-                data.data?.totalKVAh !== null
+                data.data?.totalKVAh !== undefined && data.data?.totalKVAh !== null
                   ? Number(data.data.totalKVAh).toFixed(2)
-                  : "0",
-              icon: "icons/energy.svg",
-              subtitle1: "Cumulative Apparent Energy",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+                  : '0',
+              icon: 'icons/energy.svg',
+              subtitle1: 'Cumulative Apparent Energy',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "LT Feeders Fuse Blown",
-              value: data.data?.ltFuseBlown || "0",
-              icon: "icons/power_failure.svg",
-              subtitle1: "Requires maintenance",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+              title: 'LT Feeders Fuse Blown',
+              value: data.data?.ltFuseBlown || '0',
+              icon: 'icons/power_failure.svg',
+              subtitle1: 'Requires maintenance',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Unbalanced LT Feeders",
-              value: data.data?.unbalancedLTFeeders || "0",
-              icon: "icons/power_failure.svg",
-              subtitle1: "Requires attention",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+              title: 'Unbalanced LT Feeders',
+              value: data.data?.unbalancedLTFeeders || '0',
+              icon: 'icons/power_failure.svg',
+              subtitle1: 'Requires attention',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Power On",
-              value: data.data?.powerOnHours || "0",
-              icon: "icons/power_failure.svg",
-              subtitle1: "",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+              title: 'Power On',
+              value: data.data?.powerOnHours || '0',
+              icon: 'icons/power_failure.svg',
+              subtitle1: '',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
             },
             {
-              title: "Power Off",
-              value: data.data?.powerOffHours || "0",
-              icon: "icons/power_failure.svg",
-              subtitle1: "",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
-              bg: "bg-[var(--color-danger)]",
+              title: 'Power Off',
+              value: data.data?.powerOffHours || '0',
+              icon: 'icons/power_failure.svg',
+              subtitle1: '',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+              bg: 'bg-[var(--color-danger)]',
               iconStyle: FILTER_STYLES.WHITE,
             },
             {
-              title: "Status",
-              value: data.data?.status || "0",
-              icon: "icons/status.svg",
-              subtitle1: "0",
-              valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
-              bg: "bg-[var(--color-secondary)]",
+              title: 'Status',
+              value: data.data?.status || '0',
+              icon: 'icons/status.svg',
+              subtitle1: '0',
+              valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
+              bg: 'bg-[var(--color-secondary)]',
               iconStyle: FILTER_STYLES.WHITE,
             },
           ];
 
-          console.log("📊 [DTR Statistics] Final Stats Array:", updatedStats);
+          console.log('📊 [DTR Statistics] Final Stats Array:', updatedStats);
 
           setStats(updatedStats);
-
 
           // Set capacity usage for the gauge
           setCapacityUsage({
@@ -840,16 +786,16 @@ console.log("000000000000000000",capacityUsage);
             daily: data.data?.dailyCapacityUsage || 0,
             dailyMdkva: data.data?.dailyPeakKVA || 0,
             monthly: data.data?.monthlyCapacityUsage || 0,
-            monthlyMdkva: data.data?.monthlyPeakKVA ||0,
+            monthlyMdkva: data.data?.monthlyPeakKVA || 0,
             yearly: data.data?.yearlyCapacityUsage || 0,
-            yearlyMdkva: data.data?.yearlyPeakKVA ||0,
+            yearlyMdkva: data.data?.yearlyPeakKVA || 0,
             lifeTime: data.data?.lifetimeCapacityUsage || 0,
-            lifeTimeMdkva: data.data?.lifetimePeakKVA ||0,
+            lifeTimeMdkva: data.data?.lifetimePeakKVA || 0,
           });
-          console.log("setCapacityUsage", capacityUsage);
+          console.log('setCapacityUsage', capacityUsage);
         }
       } catch (error) {
-        console.error("Error fetching feeder stats:", error);
+        console.error('Error fetching feeder stats:', error);
         // Don't add to errors since this is supplementary data
       } finally {
         setTimeout(() => {
@@ -875,95 +821,81 @@ console.log("000000000000000000",capacityUsage);
     await fetchAlertsData(page, limit);
   };
 
-  console.log(dtr, "dtr");
+  console.log(dtr, 'dtr');
   const lastComm = dtr.lastCommunication
-    ? new Date(dtr.lastCommunication).toLocaleString("en-IN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
+    ? new Date(dtr.lastCommunication).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
         hour12: true,
       })
-    : "N/A";
+    : 'N/A';
 
   // Handle Excel download for all DTR data in a single file
   const handleExportData = () => {
     // Import XLSX library
-    import("xlsx").then((XLSX) => {
+    import('xlsx').then((XLSX) => {
       // Create a new workbook
       const workbook = XLSX.utils.book_new();
 
       // Prepare DTR Information data
       const dtrInfoData = [
         {
-          "DTR No": dtr.dtrNo,
-          "DTR Name": dtr.name,
-          Division:
-            locationHierarchy.find((loc) => loc.type === "Division")?.name ||
-            "N/A",
-          "Sub-Division":
-            locationHierarchy.find((loc) => loc.type === "Sub-Division")
-              ?.name || "N/A",
-          Substation:
-            locationHierarchy.find((loc) => loc.type === "Substation")?.name ||
-            "N/A",
-          Feeder:
-            locationHierarchy.find((loc) => loc.type === "Feeder")?.name ||
-            "N/A",
-          "Feeder No":
-            locationHierarchy.find((loc) => loc.type === "Feeder")?.code ||
-            "N/A",
-          Rating: "15.00 kVA",
+          'DTR No': dtr.dtrNo,
+          'DTR Name': dtr.name,
+          Division: locationHierarchy.find((loc) => loc.type === 'Division')?.name || 'N/A',
+          'Sub-Division':
+            locationHierarchy.find((loc) => loc.type === 'Sub-Division')?.name || 'N/A',
+          Substation: locationHierarchy.find((loc) => loc.type === 'Substation')?.name || 'N/A',
+          Feeder: locationHierarchy.find((loc) => loc.type === 'Feeder')?.name || 'N/A',
+          'Feeder No': locationHierarchy.find((loc) => loc.type === 'Feeder')?.code || 'N/A',
+          Rating: '15.00 kVA',
           Condition: dtr.condition,
           Capacity: dtr.capacity,
           Address: dtr.address,
-          Latitude:
-            dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : "N/A",
-          Longitude:
-            dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : "N/A",
-          "Last Communication": lastComm,
+          Latitude: dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
+          Longitude: dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
+          'Last Communication': lastComm,
         },
       ];
 
       // Prepare DTR Statistics data with S.No
       const dtrStatsData = stats.map((stat, index) => ({
-        "S.No": index + 1,
+        'S.No': index + 1,
         Metric: stat.title,
 
-        Value: stat.value || "N/A",
-        Subtitle: stat.subtitle1 || "",
+        Value: stat.value || 'N/A',
+        Subtitle: stat.subtitle1 || '',
       }));
 
       // Prepare Feeders data
       const feedersExportData = feedersData.map((feeder, index) => ({
-        "S.No": index + 1,
-        "Feeder Name": feeder.feederName || "N/A",
-        "Load Status": feeder.loadStatus || "N/A",
-        Condition: feeder.condition || "N/A",
-        Capacity: feeder.capacity || "N/A",
-        Address: feeder.address || "N/A",
+        'S.No': index + 1,
+        'Feeder Name': feeder.feederName || 'N/A',
+        'Load Status': feeder.loadStatus || 'N/A',
+        Condition: feeder.condition || 'N/A',
+        Capacity: feeder.capacity || 'N/A',
+        Address: feeder.address || 'N/A',
       }));
 
       // Prepare Alerts data
       const alertsExportData = alertsData.map((alert, index) => ({
-        "S.No": index + 1,
-        "Alert ID": alert.alertId || "N/A",
-        Type: alert.type || "N/A",
-        "Feeder Name": alert.feederName || "N/A",
-        "Occurred On": alert.occuredOn || "N/A",
+        'S.No': index + 1,
+        'Alert ID': alert.alertId || 'N/A',
+        Type: alert.type || 'N/A',
+        'Feeder Name': alert.feederName || 'N/A',
+        'Occurred On': alert.occuredOn || 'N/A',
       }));
 
       // Prepare Daily Consumption data
-      const consumptionExportData = dailyConsumptionData.xAxisData.map(
-        (date, index) => ({
-          "S.No": index + 1,
-          Date: date || "N/A",
-          "Consumption (kWh)":
-            dailyConsumptionData.seriesData[0]?.data[index] || 0,
-        })
-      );
+      const consumptionExportData = dailyConsumptionData.xAxisData.map((date, index) => ({
+        'S.No': index + 1,
+        Date: date || 'N/A',
+        'Consumption (kWh)': dailyConsumptionData.seriesData[0]?.data[index] || 0,
+      }));
 
       // Create sheets with auto-sizing
       const dtrInfoSheet = XLSX.utils.json_to_sheet(dtrInfoData);
@@ -974,15 +906,15 @@ console.log("000000000000000000",capacityUsage);
 
       // Auto-size columns for all sheets
       const sheets = [
-        { sheet: dtrInfoSheet, name: "DTR Information" },
-        { sheet: dtrStatsSheet, name: "DTR Statistics" },
-        { sheet: feedersSheet, name: "DTR Feeders" },
-        { sheet: alertsSheet, name: "DTR Alerts" },
-        { sheet: consumptionSheet, name: "Daily Consumption" },
+        { sheet: dtrInfoSheet, name: 'DTR Information' },
+        { sheet: dtrStatsSheet, name: 'DTR Statistics' },
+        { sheet: feedersSheet, name: 'DTR Feeders' },
+        { sheet: alertsSheet, name: 'DTR Alerts' },
+        { sheet: consumptionSheet, name: 'Daily Consumption' },
       ];
 
       sheets.forEach(({ sheet }) => {
-        const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
+        const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
         const cols = [];
         for (let C = range.s.c; C <= range.e.c; ++C) {
           let maxWidth = 10;
@@ -996,32 +928,28 @@ console.log("000000000000000000",capacityUsage);
           }
           cols[C] = { width: Math.min(maxWidth + 2, 50) };
         }
-        sheet["!cols"] = cols;
+        sheet['!cols'] = cols;
       });
 
       // Add worksheets to workbook
-      XLSX.utils.book_append_sheet(workbook, dtrInfoSheet, "DTR Information");
-      XLSX.utils.book_append_sheet(workbook, dtrStatsSheet, "DTR Statistics");
-      XLSX.utils.book_append_sheet(workbook, feedersSheet, "DTR Feeders");
-      XLSX.utils.book_append_sheet(workbook, alertsSheet, "DTR Alerts");
-      XLSX.utils.book_append_sheet(
-        workbook,
-        consumptionSheet,
-        "Daily Consumption"
-      );
+      XLSX.utils.book_append_sheet(workbook, dtrInfoSheet, 'DTR Information');
+      XLSX.utils.book_append_sheet(workbook, dtrStatsSheet, 'DTR Statistics');
+      XLSX.utils.book_append_sheet(workbook, feedersSheet, 'DTR Feeders');
+      XLSX.utils.book_append_sheet(workbook, alertsSheet, 'DTR Alerts');
+      XLSX.utils.book_append_sheet(workbook, consumptionSheet, 'Daily Consumption');
 
       // Generate Excel file
       const excelBuffer = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
+        bookType: 'xlsx',
+        type: 'array',
       });
 
       // Create blob and download
       const blob = new Blob([excelBuffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
       link.download = `dtr-${dtr.name}-complete-data.xlsx`;
       document.body.appendChild(link);
@@ -1039,9 +967,7 @@ console.log("000000000000000000",capacityUsage);
   // Handle feeder row click
   const handleFeederClick = (feederId: string) => {
     // Find the feeder data for the clicked feeder
-    const feederData = feedersData.find(
-      (feeder) => feeder.feederName === feederId
-    );
+    const feederData = feedersData.find((feeder) => feeder.feederName === feederId);
     if (feederData) {
       navigate(`/feeder/${feederId}`, {
         state: {
@@ -1063,7 +989,7 @@ console.log("000000000000000000",capacityUsage);
       },
     });
   };
-  console.log("setCapacityUsage", capacityUsage);
+  console.log('setCapacityUsage', capacityUsage);
   return (
     <div className=" sticky top-0 ">
       <Page
@@ -1073,14 +999,14 @@ console.log("000000000000000000",capacityUsage);
             ? [
                 {
                   layout: {
-                    type: "column" as const,
-                    gap: "gap-4",
+                    type: 'column' as const,
+                    gap: 'gap-4',
                     rows: [
                       {
-                        layout: "column" as const,
+                        layout: 'column' as const,
                         columns: [
                           {
-                            name: "Error",
+                            name: 'Error',
                             props: {
                               visibleErrors: errorMessages,
                               onRetry: retryAllAPIs,
@@ -1098,22 +1024,22 @@ console.log("000000000000000000",capacityUsage);
             : []),
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "w-full",
+              className: 'w-full',
               rows: [
                 {
-                  layout: "row" as const,
-                  className: "w-full",
+                  layout: 'row' as const,
+                  className: 'w-full',
                   columns: [
                     {
-                      name: "PageHeader",
+                      name: 'PageHeader',
                       props: {
-                        title: "DTR Details",
-                        onBackClick: () => navigate("/dtr-dashboard"),
-                        backButtonText: "Back to Dashboard",
-                        buttonsLabel: "Export Data",
-                        variant: "primary",
+                        title: 'DTR Details',
+                        onBackClick: () => navigate('/dtr-dashboard'),
+                        backButtonText: 'Back to Dashboard',
+                        buttonsLabel: 'Export Data',
+                        variant: 'primary',
                         onClick: () => handleExportData(),
                       },
                     },
@@ -1124,41 +1050,40 @@ console.log("000000000000000000",capacityUsage);
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 3,
               className:
-                "border border-primary-border dark:border-dark-border rounded-3xl bg-white dark:bg-primary-dark-light p-4",
+                'border border-primary-border dark:border-dark-border rounded-3xl bg-white dark:bg-primary-dark-light p-4',
               rows: [
                 {
-                  layout: "row" as const,
-                  className: "justify-between w-full",
+                  layout: 'row' as const,
+                  className: 'justify-between w-full',
                   span: { col: 3, row: 1 },
                   columns: [
                     {
-                      name: "SectionHeader",
+                      name: 'SectionHeader',
                       props: {
-                        title: "DTR Information",
+                        title: 'DTR Information',
 
                         titleLevel: 2,
-                        titleSize: "lg",
-                        titleVariant: "",
-                        titleWeight: "bold",
-                        titleAlign: "left",
-                        defaultTitleHeight: "0",
-                        className: "w-full",
+                        titleSize: 'lg',
+                        titleVariant: '',
+                        titleWeight: 'bold',
+                        titleAlign: 'left',
+                        defaultTitleHeight: '0',
+                        className: 'w-full',
                         showDropdown: true,
                         dropdownOptions: dtrStatusOptions,
                         dropdownValue: dtrStatusValue,
-                        dropdownPlaceholder:
-                          dtrStatusValue === "na" ? "N/A" : "Select Status",
-                        dropdownName: "dtrStatus",
+                        dropdownPlaceholder: dtrStatusValue === 'na' ? 'N/A' : 'Select Status',
+                        dropdownName: 'dtrStatus',
                         onDropdownChange: handleDtrStatusChange,
                         dropdownDisabled: isDtrDropdownDisabled,
-                        dropdownClassName: "w-30",
+                        dropdownClassName: 'w-30',
                         searchable: false,
                         lastSync: true,
-                        lastSyncLabel: "Last Sync",
-                        lastSyncValue: "2025-09-16 12:45 PM",
+                        lastSyncLabel: 'Last Sync',
+                        lastSyncValue: '2025-09-16 12:45 PM',
                         // rightComponent: {
                         //     name: 'LastComm', props: { value: lastComm },
                         // },
@@ -1170,51 +1095,49 @@ console.log("000000000000000000",capacityUsage);
                   ],
                 },
                 {
-                  layout: "row" as const,
-                  className: "justify-between w-full",
+                  layout: 'row' as const,
+                  className: 'justify-between w-full',
                   span: { col: 3, row: 1 },
 
                   columns: [
                     {
-                      name: "PageInformation",
+                      name: 'PageInformation',
                       props: {
                         gridColumns: 4,
                         rows: [
                           {
-                            layout: "row",
-                            className: "justify-between w-full",
+                            layout: 'row',
+                            className: 'justify-between w-full',
                             span: { col: 5, row: 1 },
                             items: [
                               {
-                                title: "DTR No",
+                                title: 'DTR No',
                                 value: dtr.dtrNo,
-                                align: "start",
-                                gap: "gap-1",
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "DTR Name",
+                                title: 'DTR Name',
                                 value: dtr.name,
-                                align: "start",
-                                gap: "gap-1",
+                                align: 'start',
+                                gap: 'gap-1',
                                 statusIndicator: true,
                               },
                               {
-                                title: "Division",
+                                title: 'Division',
                                 value:
-                                  locationHierarchy.find(
-                                    (loc) => loc.type === "Division"
-                                  )?.name || "N/A",
-                                align: "start",
-                                gap: "gap-1",
+                                  locationHierarchy.find((loc) => loc.type === 'Division')?.name ||
+                                  'N/A',
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "Sub-Division",
+                                title: 'Sub-Division',
                                 value:
-                                  locationHierarchy.find(
-                                    (loc) => loc.type === "Sub-Division"
-                                  )?.name || "N/A",
-                                align: "start",
-                                gap: "gap-1",
+                                  locationHierarchy.find((loc) => loc.type === 'Sub-Division')
+                                    ?.name || 'N/A',
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               // {
                               //     title: 'Substation',
@@ -1225,8 +1148,8 @@ console.log("000000000000000000",capacityUsage);
                             ],
                           },
                           {
-                            layout: "row",
-                            className: "justify-between w-full",
+                            layout: 'row',
+                            className: 'justify-between w-full',
                             span: { col: 5, row: 1 },
                             items: [
                               // {
@@ -1236,34 +1159,28 @@ console.log("000000000000000000",capacityUsage);
                               //     gap: 'gap-1'
                               // },
                               {
-                                title: "Capacity",
+                                title: 'Capacity',
                                 value: dtr.capacity,
-                                align: "start",
-                                gap: "gap-1",
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "Address",
+                                title: 'Address',
                                 value: dtr.address,
-                                align: "start",
-                                gap: "gap-1",
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "Latitude",
-                                value:
-                                  dtr.location.lat !== 0
-                                    ? dtr.location.lat.toFixed(6)
-                                    : "N/A",
-                                align: "start",
-                                gap: "gap-1",
+                                title: 'Latitude',
+                                value: dtr.location.lat !== 0 ? dtr.location.lat.toFixed(6) : 'N/A',
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "Longitude",
-                                value:
-                                  dtr.location.lng !== 0
-                                    ? dtr.location.lng.toFixed(6)
-                                    : "N/A",
-                                align: "start",
-                                gap: "gap-1",
+                                title: 'Longitude',
+                                value: dtr.location.lng !== 0 ? dtr.location.lng.toFixed(6) : 'N/A',
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                             ],
                           },
@@ -1277,26 +1194,26 @@ console.log("000000000000000000",capacityUsage);
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
               className:
-                "w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary dark:bg-primary-dark-light",
+                'w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl bg-background-secondary dark:bg-primary-dark-light',
               rows: [
                 {
-                  layout: "row" as const,
-                  className: "justify-between w-full ",
+                  layout: 'row' as const,
+                  className: 'justify-between w-full ',
                   span: { col: 1, row: 1 },
                   columns: [
                     {
-                      name: "SectionHeader",
+                      name: 'SectionHeader',
                       props: {
-                        title: "Distribution Transformer (DTR) Statistics",
+                        title: 'Distribution Transformer (DTR) Statistics',
                         titleLevel: 2,
-                        titleSize: "lg",
-                        titleVariant: "",
-                        titleWeight: "bold",
-                        titleAlign: "left",
-                        className: "w-full",
+                        titleSize: 'lg',
+                        titleVariant: '',
+                        titleWeight: 'bold',
+                        titleAlign: 'left',
+                        className: 'w-full',
                         // rightComponent: { name: 'LastComm', props: { value: lastComm } },
                       },
                       span: { col: 1, row: 1 },
@@ -1304,20 +1221,19 @@ console.log("000000000000000000",capacityUsage);
                   ],
                 },
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 5,
-                  className: "w-full gap-4",
+                  className: 'w-full gap-4',
                   columns: stats.map((stat) => ({
-                    name: "Card",
+                    name: 'Card',
                     props: {
                       title: stat.title,
                       value: stat.value,
                       subtitle1: stat.subtitle1,
                       icon: stat.icon,
-                      bg: stat.bg || "bg-stat-icon-gradient",
+                      bg: stat.bg || 'bg-stat-icon-gradient',
                       valueFontSize:
-                        stat.valueFontSize ||
-                        "text-lg lg:text-xl md:text-lg sm:text-base",
+                        stat.valueFontSize || 'text-lg lg:text-xl md:text-lg sm:text-base',
                       iconStyle: stat.iconStyle || FILTER_STYLES.BRAND_GREEN,
                       loading: isStatsLoading,
                     },
@@ -1329,84 +1245,89 @@ console.log("000000000000000000",capacityUsage);
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
               rows: [
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 1,
                   columns: [
-                    { 
-                      name: "RightAngle",
+                    {
+                      name: 'RightAngle',
                       props: {
                         // Use actual data from API based on selected time range
                         kwh:
                           Number(
-                            selectedTimeRange === "Daily"
+                            selectedTimeRange === 'Daily'
                               ? dtrConsumptionData.daily.totalKwh
                               : dtrConsumptionData.monthly.totalKwh
                           ) || 0,
                         kvarh: calculateKvarh(
                           Number(
-                            selectedTimeRange === "Daily"
+                            selectedTimeRange === 'Daily'
                               ? dtrConsumptionData.daily.totalKvah
                               : dtrConsumptionData.monthly.totalKvah
                           ) || 0,
                           Number(
-                            selectedTimeRange === "Daily"
+                            selectedTimeRange === 'Daily'
                               ? dtrConsumptionData.daily.totalKwh
                               : dtrConsumptionData.monthly.totalKwh
                           ) || 0
                         ),
                         kvah:
                           Number(
-                            selectedTimeRange === "Daily"
+                            selectedTimeRange === 'Daily'
                               ? dtrConsumptionData.daily.totalKvah
                               : dtrConsumptionData.monthly.totalKvah
                           ) || 0,
-                        height: "400px",
-                        kwhColor: "#dc2626",
-                        kvarhColor: "#163b7c",
-                        kvahColor: "#22c55e",
-                        textColor: "#374151",
+                        height: '400px',
+                        kwhColor: '#dc2626',
+                        kvarhColor: '#163b7c',
+                        kvahColor: '#22c55e',
+                        textColor: '#374151',
                         showOriginMarker: true, // Show origin point
                         showHeader: true,
-                        headerTitle: "Power Triangle",
+                        headerTitle: 'Power Triangle',
                         prependTimeRangeInTitle: true,
                         showDownloadButton: true,
                         isLoading: _isConsumptionLoading,
-                        availableTimeRanges: ["Daily", "Monthly"],
+                        availableTimeRanges: ['Daily', 'Monthly'],
                         selectedTimeRange: selectedTimeRange,
-                        onTimeRangeChange: (range: "Daily" | "Monthly") =>
+                        onTimeRangeChange: (range: 'Daily' | 'Monthly') =>
                           setSelectedTimeRange(range),
-                        inverse:false,
-                        statsSectionPosition: "right",
+                        inverse: false,
+                        statsSectionPosition: 'right',
                       },
                     },
                   ],
                 },
-               
               ],
             },
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
               rows: [
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 1,
                   columns: [
                     {
-                      name: "Table",
+                      name: 'Table',
                       props: {
                         columns: [
-                          { key: "sNo", label: "S.No" },
-                          { key: "feederName", label: "Feeder Name" },
-                          { key: "loadStatus", label: "Load Status" },
+                          { key: 'sNo', label: 'S.No' },
+                          { key: 'feederName', label: 'Feeder Name' },
+                          {
+                            key: 'loadStatus',
+                            label: 'Status',
+                            statusIndicator: {},
+                            isActive: (value: string | number | boolean | null | undefined) =>
+                              String(value).toLowerCase() === 'active',
+                          },
                           // { key: 'condition', label: 'Condition' },
                           // { key: 'capacity', label: 'Capacity' },
                           // { key: 'address', label: 'Address' },
@@ -1416,24 +1337,23 @@ console.log("000000000000000000",capacityUsage);
                         pagination: true,
                         initialRowsPerPage: 10,
                         rowsPerPageOptions: [5, 10, 15, 20, 25],
-                        emptyMessage: "No Feeders Found",
+                        emptyMessage: 'No Feeders Found',
                         showActions: true,
-                        title: "DTR Feeders",
-                        headerTitle: "DTR Feeders",
+                        title: 'DTR Feeders',
+                        headerTitle: 'DTR Feeders',
                         showHeader: true,
                         showPaginationInfo: true,
                         showRowsPerPageSelector: true,
-                        className: "w-full",
+                        className: 'w-full',
                         onExport: handleFeedersExport,
-                        onRowClick: (row: any) =>
-                          handleFeederClick(row.feederName),
+                        onRowClick: (row: any) => handleFeederClick(row.feederName),
                         actions: [
                           {
-                            label: "View",
-                            icon: "icons/eye.svg",
+                            label: 'View',
+                            icon: 'icons/eye.svg',
                             onClick: handleFeederView,
-                            variant: "primary",
-                            size: "sm",
+                            variant: 'primary',
+                            size: 'sm',
                           },
                         ],
                         loading: isFeedersLoading,
@@ -1447,16 +1367,16 @@ console.log("000000000000000000",capacityUsage);
 
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
               rows: [
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 1,
                   columns: [
                     {
-                      name: "CapacityGauge",
+                      name: 'CapacityGauge',
                       props: {
                         showHeader: true,
                         showDownloadButton: true,
@@ -1464,50 +1384,50 @@ console.log("000000000000000000",capacityUsage);
                           {
                             capacity: capacityUsage.instantly,
                             centerLabel: `${capacityUsage.instantKVA} kVA`,
-                            filledColor: "#163B7C",
-                            unfilledColor: "#e5e7eb",
-                            label: "Instant", 
+                            filledColor: '#163B7C',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Instant',
                           },
                           {
                             capacity: capacityUsage.daily,
                             centerLabel: `${capacityUsage.dailyMdkva} MDkVA`,
-                            filledColor: "#dc2626",
-                            unfilledColor: "#e5e7eb",
-                            label: "Daily", 
+                            filledColor: '#dc2626',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Daily',
                           },
                           {
                             capacity: capacityUsage.monthly,
                             centerLabel: `${capacityUsage.monthlyMdkva} MDkVA`,
-                            filledColor: "#eab308",
-                            unfilledColor: "#e5e7eb",
-                            label: "Monthly", 
+                            filledColor: '#eab308',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Monthly',
                           },
                           {
                             capacity: capacityUsage.yearly,
                             centerLabel: `${capacityUsage.yearlyMdkva} MDkVA`,
-                            filledColor: "#3b82f6",
-                            unfilledColor: "#e5e7eb",
-                            label: "Yearly", 
+                            filledColor: '#3b82f6',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Yearly',
                           },
                           {
                             capacity: capacityUsage.lifeTime,
                             centerLabel: `${capacityUsage.lifeTimeMdkva} MDkVA`,
-                            filledColor: "#059669",
-                            unfilledColor: "#e5e7eb",
-                            label: "LifeTime", 
+                            filledColor: '#059669',
+                            unfilledColor: '#e5e7eb',
+                            label: 'LifeTime',
                           },
                         ],
                         enableAnimation: true,
                         animationDuration: 2000,
                         enableHover: true,
                         gridColumns: 5,
-                        gap: "gap-30",
-                        justifyContent: "center",
+                        gap: 'gap-30',
+                        justifyContent: 'center',
                       },
                     },
-                        //  threshold: kvaMetricsData.thresholdValue || 0,
-                        //  ratingKVA:
-                        //    kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+                    //  threshold: kvaMetricsData.thresholdValue || 0,
+                    //  ratingKVA:
+                    //    kvaMetricsData.capacityInfo?.dtrCapacity || 50,
                   ],
                 },
               ],
@@ -1582,16 +1502,16 @@ console.log("000000000000000000",capacityUsage);
           // },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
               rows: [
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 1,
                   columns: [
                     {
-                      name: "ThresholdChart",
+                      name: 'ThresholdChart',
                       props: {
                         data: getKvaMetricsData().seriesData[0]?.data || [],
                         thresholds: [
@@ -1602,8 +1522,8 @@ console.log("000000000000000000",capacityUsage);
                             }kVA) - Underload Threshold (${
                               kvaMetricsData.underloadThreshold || 0
                             }kWh/day)`,
-                            color: "#27ae60",
-                            lineStyle: "dashed",
+                            color: '#27ae60',
+                            lineStyle: 'dashed',
                           },
                           {
                             value: kvaMetricsData.overloadThreshold || 0,
@@ -1612,21 +1532,19 @@ console.log("000000000000000000",capacityUsage);
                             }kVA) - Overload Threshold (${
                               kvaMetricsData.overloadThreshold || 0
                             }kVAh/day)`,
-                            color: "#e74c3c",
-                            lineStyle: "dashed",
+                            color: '#e74c3c',
+                            lineStyle: 'dashed',
                           },
                         ],
-                        ratingKVA:
-                          kvaMetricsData.capacityInfo?.dtrCapacity || 50,
+                        ratingKVA: kvaMetricsData.capacityInfo?.dtrCapacity || 50,
                         title: `KVA Metrics - ${kvaTimeRange}`,
-                        chartType: "bar",
-                        availableTimeRanges: ["Daily", "Monthly"],
+                        chartType: 'bar',
+                        availableTimeRanges: ['Daily', 'Monthly'],
                         selectedTimeRange: kvaTimeRange,
-                        onTimeRangeChange: (range: "Daily" | "Monthly") =>
-                          setKvaTimeRange(range),
+                        onTimeRangeChange: (range: 'Daily' | 'Monthly') => setKvaTimeRange(range),
                         loading: isKvaMetricsLoading,
                         highestKVA:
-                          kvaTimeRange === "Daily"
+                          kvaTimeRange === 'Daily'
                             ? kvaMetricsData.highestKVA?.daily
                             : kvaMetricsData.highestKVA?.monthly,
                         capacityInfo: kvaMetricsData.capacityInfo,
@@ -1634,12 +1552,7 @@ console.log("000000000000000000",capacityUsage);
                         showCapacityInfo: true,
                         showHighestKVA: true,
                         showThresholds: true,
-                        seriesColors: [
-                          "#163b7c",
-                          "#55b56c",
-                          "#dc272c",
-                          "#ed8c22",
-                        ],
+                        seriesColors: ['#163b7c', '#55b56c', '#dc272c', '#ed8c22'],
                       },
                       span: { col: 1, row: 1 },
                     },
@@ -1650,47 +1563,46 @@ console.log("000000000000000000",capacityUsage);
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
               rows: [
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 1,
-                  className: "pb-4",
+                  className: 'pb-4',
                   columns: [
                     {
-                      name: "Table",
+                      name: 'Table',
                       props: {
                         columns: [
                           // Use non-special key to avoid auto-numbering; render backend sNo explicitly
                           {
-                            key: "serialNo",
-                            label: "S.No",
+                            key: 'serialNo',
+                            label: 'S.No',
                             render: (_value: any, row: any) =>
-                              row && row.sNo !== undefined && row.sNo !== null
-                                ? row.sNo
-                                : "",
+                              row && row.sNo !== undefined && row.sNo !== null ? row.sNo : '',
                           },
-                         // { key: "alertId", label: "Alert ID" },
-                          { key: "type", label: "Event Type" },
-                          { key: "feederName", label: "Meter Number" },
-                          { key: "occuredOn", label: "Occured On" },
-                          { key: "status", label: "Status" },
+                          // { key: "alertId", label: "Alert ID" },
+                          { key: 'type', label: 'Event Type' },
+                          { key: 'feederName', label: 'Meter Number' },
+                          { key: 'occuredOn', label: 'Occured On' },
+                          { key: 'duration', label: 'Duration' },
+                          { key: 'status', label: 'Status' },
                         ],
                         data: alertsData,
                         searchable: true,
                         pagination: true,
                         initialRowsPerPage: 10,
                         rowsPerPageOptions: [5, 10, 15, 20, 25],
-                        emptyMessage: "No Alerts Found",
+                        emptyMessage: 'No Alerts Found',
                         showActions: false,
-                        title: "DTR Alerts",
-                        headerTitle: "DTR Alerts",
+                        title: 'DTR Alerts',
+                        headerTitle: 'DTR Alerts',
                         showHeader: true,
                         showPaginationInfo: true,
                         showRowsPerPageSelector: true,
-                        className: "w-full",
+                        className: 'w-full',
                         serverPagination: alertsPagination,
                         onPageChange: handleAlertsPageChange,
                         loading: isAlertsLoading,

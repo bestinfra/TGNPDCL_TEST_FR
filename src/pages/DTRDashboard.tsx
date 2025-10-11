@@ -1725,6 +1725,7 @@ const DTRDashboard: React.FC = () => {
     { key: 'feederName', label: 'Meter Number' },
     { key: 'dtrNumber', label: 'DTR Number' },
     { key: 'occuredOn', label: 'Occured On' },
+    { key: 'duration', label: 'Duration' },
     // { key: "status", label: "Status" },
   ];
   console.log('Discom options:', filterOptions.discoms);

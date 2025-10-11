@@ -1,220 +1,220 @@
-import { lazy } from "react";
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-const Page = lazy(() => import("SuperAdmin/Page"));
-import { exportChartData } from "../utils/excelExport";
-import { FILTER_STYLES } from "../contexts/FilterStyleContext";
-import BACKEND_URL from "../config";
+import { lazy } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+const Page = lazy(() => import('SuperAdmin/Page'));
+import { exportChartData } from '../utils/excelExport';
+import { FILTER_STYLES } from '../contexts/FilterStyleContext';
+import BACKEND_URL from '../config';
 
 // Dummy data for fallbackf
 const dummyInstantaneousStatsData = {
-  rphVolt: "0",
-  yphVolt: "0",
-  bphVolt: "0",
-  instantKVA: "0",
-  mdKVA: "0",
-  rphCurr: "0",
-  yphCurr: "0",
-  bphCurr: "0",
-  neutralCurrent: "0",
-  freqHz: "0",
-  rphPF: "0",
-  yphPF: "0",
-  bphPF: "0",
-  avgPF: "0",
-  cumulativeKVAh: "0",
+  rphVolt: '0',
+  yphVolt: '0',
+  bphVolt: '0',
+  instantKVA: '0',
+  mdKVA: '0',
+  rphCurr: '0',
+  yphCurr: '0',
+  bphCurr: '0',
+  neutralCurrent: '0',
+  freqHz: '0',
+  rphPF: '0',
+  yphPF: '0',
+  bphPF: '0',
+  avgPF: '0',
+  cumulativeKVAh: '0',
   lastCommDate: null,
 };
 
 const dummyConsumptionAnalyticsData = {
-  xAxisData: ["0"],
-  seriesData: [{ name: "Consumption", data: [0] }],
+  xAxisData: ['0'],
+  seriesData: [{ name: 'Consumption', data: [0] }],
   monthly: {
-    xAxisData: ["0"],
-    seriesData: [{ name: "Consumption", data: [0] }],
+    xAxisData: ['0'],
+    seriesData: [{ name: 'Consumption', data: [0] }],
   },
 };
 
 const dummyFeederInfoData = {
   dtr: {
-    dtrNumber: "0",
-    capacity: "0",
-    status: "N/A",
+    dtrNumber: '0',
+    capacity: '0',
+    status: 'N/A',
   },
-  totalFeeders: "0",
+  totalFeeders: '0',
 };
 
 const dummyAlertsData = [
   {
-    alertId: "ALT001",
-    type: "Overload",
-    feederName: "D1F1(32500114)",
-    occuredOn: "2024-01-15 14:30:00",
+    alertId: 'ALT001',
+    type: 'Overload',
+    feederName: 'D1F1(32500114)',
+    occuredOn: '2024-01-15 14:30:00',
   },
   {
-    alertId: "ALT002",
-    type: "Power Failure",
-    feederName: "D1F1(32500114)",
-    occuredOn: "2024-01-15 12:15:00",
+    alertId: 'ALT002',
+    type: 'Power Failure',
+    feederName: 'D1F1(32500114)',
+    occuredOn: '2024-01-15 12:15:00',
   },
 ];
 
 // Default stats data
 const defaultStats = [
   {
-    title: "R-Phase Voltage",
-    value: "0",
-    icon: "icons/r-phase-voltage.svg",
-    subtitle1: "Volts",
-    bg: "bg-[var(--color-danger)]",
-    iconClassName: "w-3 h-3",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'R-Phase Voltage',
+    value: '0',
+    icon: 'icons/r-phase-voltage.svg',
+    subtitle1: 'Volts',
+    bg: 'bg-[var(--color-danger)]',
+    iconClassName: 'w-3 h-3',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "Y-Phase Voltage",
-    value: "0",
-    icon: "icons/r-phase-voltage.svg",
-    subtitle1: "Volts",
-    bg: "bg-[var(--color-warning-alt)]",
-    iconClassName: "w-3 h-3",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Y-Phase Voltage',
+    value: '0',
+    icon: 'icons/r-phase-voltage.svg',
+    subtitle1: 'Volts',
+    bg: 'bg-[var(--color-warning-alt)]',
+    iconClassName: 'w-3 h-3',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "B-Phase Voltage",
-    value: "0",
-    icon: "icons/r-phase-voltage.svg",
-    subtitle1: "Volts",
-    bg: "bg-[var(--color-primary)]",
-    iconClassName: "w-3 h-3",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'B-Phase Voltage',
+    value: '0',
+    icon: 'icons/r-phase-voltage.svg',
+    subtitle1: 'Volts',
+    bg: 'bg-[var(--color-primary)]',
+    iconClassName: 'w-3 h-3',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "Apparent Power",
-    value: "0",
-    icon: "icons/consumption.svg",
-    subtitle1: "kVA",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Apparent Power',
+    value: '0',
+    icon: 'icons/consumption.svg',
+    subtitle1: 'kVA',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "MD-kVA",
-    value: "0",
-    icon: "icons/consumption.svg",
-    subtitle1: "kVA",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'MD-kVA',
+    value: '0',
+    icon: 'icons/consumption.svg',
+    subtitle1: 'kVA',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "R-Phase Current",
-    value: "0",
-    icon: "icons/r-phase-current.svg",
-    subtitle1: "Amps",
-    bg: "bg-[var(--color-danger)]",
-    iconClassName: "w-3 h-3",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'R-Phase Current',
+    value: '0',
+    icon: 'icons/r-phase-current.svg',
+    subtitle1: 'Amps',
+    bg: 'bg-[var(--color-danger)]',
+    iconClassName: 'w-3 h-3',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "Y-Phase Current",
-    value: "0",
-    icon: "icons/r-phase-current.svg",
-    subtitle1: "Amps",
-    bg: "bg-[var(--color-warning-alt)]",
-    iconClassName: "w-3 h-3",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Y-Phase Current',
+    value: '0',
+    icon: 'icons/r-phase-current.svg',
+    subtitle1: 'Amps',
+    bg: 'bg-[var(--color-warning-alt)]',
+    iconClassName: 'w-3 h-3',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "B-Phase Current",
-    value: "0",
-    icon: "icons/r-phase-current.svg",
-    subtitle1: "Amps",
-    bg: "bg-[var(--color-primary)]",
-    iconClassName: "w-3 h-3",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'B-Phase Current',
+    value: '0',
+    icon: 'icons/r-phase-current.svg',
+    subtitle1: 'Amps',
+    bg: 'bg-[var(--color-primary)]',
+    iconClassName: 'w-3 h-3',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "Neutral Current",
-    value: "0",
-    icon: "icons/consumption.svg",
-    subtitle1: "Amps",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Neutral Current',
+    value: '0',
+    icon: 'icons/consumption.svg',
+    subtitle1: 'Amps',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "Frequency",
-    value: "0",
-    icon: "icons/frequency.svg",
-    subtitle1: "Hz",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Frequency',
+    value: '0',
+    icon: 'icons/frequency.svg',
+    subtitle1: 'Hz',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "R-Phase PF",
-    value: "0",
-    icon: "icons/power-factor.svg",
-    subtitle1: "Power Factor",
-    bg: "bg-[var(--color-danger)]",
-    iconClassName: "w-4 h-4",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'R-Phase PF',
+    value: '0',
+    icon: 'icons/power-factor.svg',
+    subtitle1: 'Power Factor',
+    bg: 'bg-[var(--color-danger)]',
+    iconClassName: 'w-4 h-4',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "Y-Phase PF",
-    value: "0",
-    icon: "icons/power-factor.svg",
-    subtitle1: "Power Factor",
-    bg: "bg-[var(--color-warning-alt)]",
-    iconClassName: "w-4 h-4",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Y-Phase PF',
+    value: '0',
+    icon: 'icons/power-factor.svg',
+    subtitle1: 'Power Factor',
+    bg: 'bg-[var(--color-warning-alt)]',
+    iconClassName: 'w-4 h-4',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "B-Phase PF",
-    value: "0",
-    icon: "icons/power-factor.svg",
-    subtitle1: "Power Factor",
-    bg: "bg-[var(--color-primary)]",
-    iconClassName: "w-4 h-4",
-    width: "w-8",
-    height: "h-8",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'B-Phase PF',
+    value: '0',
+    icon: 'icons/power-factor.svg',
+    subtitle1: 'Power Factor',
+    bg: 'bg-[var(--color-primary)]',
+    iconClassName: 'w-4 h-4',
+    width: 'w-8',
+    height: 'h-8',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.WHITE,
   },
   {
-    title: "Avg PF",
-    value: "0",
-    icon: "icons/power-factor.svg",
-    subtitle1: "Power Factor",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Avg PF',
+    value: '0',
+    icon: 'icons/power-factor.svg',
+    subtitle1: 'Power Factor',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
   {
-    title: "Active Power",
-    value: "0",
-    icon: "icons/consumption.svg",
-    subtitle1: "kW",
-    valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+    title: 'Active Power',
+    value: '0',
+    icon: 'icons/consumption.svg',
+    subtitle1: 'kW',
+    valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
     iconStyle: FILTER_STYLES.BRAND_GREEN,
   },
 ];
@@ -228,19 +228,19 @@ const Feeders = () => {
   const calculatePowerFactorAngle = (powerFactor: string | number): number => {
     // Convert to number first
     const pfString = typeof powerFactor === 'string' ? powerFactor : powerFactor.toString();
-    const pf = parseFloat(pfString || "0");
-    
+    const pf = parseFloat(pfString || '0');
+
     // Handle invalid values
     if (isNaN(pf)) return 0;
-    
+
     // Get absolute value and clamp to valid range [0, 1]
     const absPF = Math.abs(pf);
     const clampedPF = Math.min(1, Math.max(0, absPF));
-    
+
     // Calculate angle in radians then convert to degrees
     const thetaRad = Math.acos(clampedPF);
     const thetaDeg = (thetaRad * 180) / Math.PI;
-    
+
     // Preserve the sign: negative PF = leading (negative angle), positive PF = lagging (positive angle)
     // Use explicit comparison to handle negative zero and ensure proper sign preservation
     return pf < 0 ? -Math.abs(thetaDeg) : Math.abs(thetaDeg);
@@ -267,14 +267,9 @@ const Feeders = () => {
   } | null;
 
   // Debug logging
-  console.log("Feeders Page - Location state:", location.state);
-  console.log("Feeders Page - Passed data:", passedData);
-  console.log(
-    "Feeders Page - URL params - dtrId:",
-    dtrId,
-    "feederId:",
-    feederId
-  );
+  console.log('Feeders Page - Location state:', location.state);
+  console.log('Feeders Page - Passed data:', passedData);
+  console.log('Feeders Page - URL params - dtrId:', dtrId, 'feederId:', feederId);
 
   // Determine if this is an individual feeder page or DTR page
   const isIndividualFeeder = !!feederId;
@@ -296,66 +291,56 @@ const Feeders = () => {
 
   // Determine the effective DTR ID to use for API calls
   const getEffectiveDtrId = () => {
-    console.log("getEffectiveDtrId - passedData.dtrId:", passedData?.dtrId);
-    console.log("getEffectiveDtrId - dtrId param:", dtrId);
-    console.log("getEffectiveDtrId - feederId param:", feederId);
+    console.log('getEffectiveDtrId - passedData.dtrId:', passedData?.dtrId);
+    console.log('getEffectiveDtrId - dtrId param:', dtrId);
+    console.log('getEffectiveDtrId - feederId param:', feederId);
 
     // First try passedData.dtrId (from navigation state)
     if (passedData?.dtrId) {
-      console.log("Using passedData.dtrId:", passedData.dtrId);
+      console.log('Using passedData.dtrId:', passedData.dtrId);
       return passedData.dtrId;
     }
 
     // Then try to extract from dtrId parameter
     if (dtrId && dtrId.match(/\d+/)?.[0]) {
-      console.log(
-        "Using extracted dtrId from URL param:",
-        dtrId.match(/\d+/)?.[0]
-      );
+      console.log('Using extracted dtrId from URL param:', dtrId.match(/\d+/)?.[0]);
       return dtrId.match(/\d+/)?.[0];
     }
 
     // If we have a feederId, we need to find the DTR ID from the backend
     if (feederId) {
-      console.log("Need to find DTR ID for feederId:", feederId);
+      console.log('Need to find DTR ID for feederId:', feederId);
       return null; // We'll need to handle this specially
     }
 
-    console.log("Using dtrId directly:", dtrId);
+    console.log('Using dtrId directly:', dtrId);
     return dtrId;
   };
 
   const effectiveDtrId = getEffectiveDtrId();
 
   // Function to find DTR ID from feeder ID
-  const findDtrIdFromFeederId = async (
-    feederId: string
-  ): Promise<string | null> => {
+  const findDtrIdFromFeederId = async (feederId: string): Promise<string | null> => {
     try {
       // We need to search for the feeder to find its DTR ID
       // This could be done by searching through all DTRs or by a specific feeder search endpoint
       // For now, let's try to search through the DTRs endpoint with a search parameter
 
       // Option 1: Search through DTRs with feeder name
-      const searchResponse = await fetch(
-        `${BACKEND_URL}/dtrs?search=${feederId}`
-      );
+      const searchResponse = await fetch(`${BACKEND_URL}/dtrs?search=${feederId}`);
       if (searchResponse.ok) {
         const searchData = await searchResponse.json();
         if (searchData.success && searchData.data.length > 0) {
           // Find the DTR that contains this feeder
           for (const dtr of searchData.data) {
             // Check if this DTR has the feeder
-            const dtrResponse = await fetch(
-              `${BACKEND_URL}/dtrs/${dtr.dtrId || dtr.dtrNumber}`
-            );
+            const dtrResponse = await fetch(`${BACKEND_URL}/dtrs/${dtr.dtrId || dtr.dtrNumber}`);
             if (dtrResponse.ok) {
               const dtrData = await dtrResponse.json();
               if (dtrData.success && dtrData.data?.feeders) {
                 const hasFeeder = dtrData.data.feeders.some(
                   (feeder: any) =>
-                    feeder.serialNumber === feederId ||
-                    feeder.meterNumber === feederId
+                    feeder.serialNumber === feederId || feeder.meterNumber === feederId
                 );
                 if (hasFeeder) {
                   return dtr.dtrId || dtr.dtrNumber;
@@ -373,12 +358,10 @@ const Feeders = () => {
   };
 
   // State to store the resolved DTR ID when we find it from feeder ID
-  const [resolvedDtrId, setResolvedDtrId] = useState<string | null>(
-    effectiveDtrId || null
-  );
+  const [resolvedDtrId, setResolvedDtrId] = useState<string | null>(effectiveDtrId || null);
 
-  console.log("Feeders Page - Initial effectiveDtrId:", effectiveDtrId);
-  console.log("Feeders Page - Initial resolvedDtrId:", resolvedDtrId);
+  console.log('Feeders Page - Initial effectiveDtrId:', effectiveDtrId);
+  console.log('Feeders Page - Initial resolvedDtrId:', resolvedDtrId);
 
   // State for API data - initialized with dummy data
   const [instantaneousStatsData, setInstantaneousStatsData] = useState<any>(
@@ -387,8 +370,7 @@ const Feeders = () => {
   const [consumptionAnalyticsData, setConsumptionAnalyticsData] = useState<any>(
     dummyConsumptionAnalyticsData
   );
-  const [feederInfoData, setFeederInfoData] =
-    useState<any>(dummyFeederInfoData);
+  const [feederInfoData, setFeederInfoData] = useState<any>(dummyFeederInfoData);
   const [alertsData, setAlertsData] = useState(dummyAlertsData);
 
   // State for map coordinates - initialized with default coordinates
@@ -412,60 +394,44 @@ const Feeders = () => {
   >([]);
 
   // State for time range toggles
-  const [consumptionTimeRange, setConsumptionTimeRange] = useState<
-    "Daily" | "Monthly"
-  >("Daily");
+  const [consumptionTimeRange, setConsumptionTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
 
   // API Functions
   const fetchInstantaneousStats = async () => {
-    console.log(
-      "fetchInstantaneousStats - Starting with resolvedDtrId:",
-      resolvedDtrId
-    );
-    console.log("fetchInstantaneousStats - feederId:", feederId);
-    console.log("fetchInstantaneousStats - passedData:", passedData);
+    console.log('fetchInstantaneousStats - Starting with resolvedDtrId:', resolvedDtrId);
+    console.log('fetchInstantaneousStats - feederId:', feederId);
+    console.log('fetchInstantaneousStats - passedData:', passedData);
 
     // Use resolved DTR ID
     let numericDtrId = resolvedDtrId;
 
     // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
     if (!numericDtrId && feederId) {
-      console.log(
-        "fetchInstantaneousStats - Looking for DTR ID for feeder:",
-        feederId
-      );
+      console.log('fetchInstantaneousStats - Looking for DTR ID for feeder:', feederId);
       const foundDtrId = await findDtrIdFromFeederId(feederId);
       if (foundDtrId) {
-        console.log("fetchInstantaneousStats - Found DTR ID:", foundDtrId);
+        console.log('fetchInstantaneousStats - Found DTR ID:', foundDtrId);
         setResolvedDtrId(foundDtrId);
         numericDtrId = foundDtrId;
       } else {
-        console.log(
-          "fetchInstantaneousStats - Could not find DTR ID for feeder"
-        );
+        console.log('fetchInstantaneousStats - Could not find DTR ID for feeder');
         return;
       }
     }
 
     if (!numericDtrId) {
-      console.log("fetchInstantaneousStats - No DTR ID available, skipping");
+      console.log('fetchInstantaneousStats - No DTR ID available, skipping');
       return;
     }
 
-    console.log("fetchInstantaneousStats - Using DTR ID:", numericDtrId);
+    console.log('fetchInstantaneousStats - Using DTR ID:', numericDtrId);
 
     setIsStatsLoading(true);
     try {
       // Build endpoint; pass feederId (meter identifier) when available
       const meterIdentifier =
-        passedData?.feederId ||
-        effectiveFeederData?.feederName ||
-        feederId ||
-        "";
-      console.log(
-        "fetchInstantaneousStats - Meter identifier:",
-        meterIdentifier
-      );
+        passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
+      console.log('fetchInstantaneousStats - Meter identifier:', meterIdentifier);
 
       let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
       if (meterIdentifier) {
@@ -473,12 +439,12 @@ const Feeders = () => {
         endpoint = `${endpoint}?${qp.toString()}`;
       }
 
-      console.log("fetchInstantaneousStats - Endpoint:", endpoint);
+      console.log('fetchInstantaneousStats - Endpoint:', endpoint);
 
       const response = await fetch(endpoint);
       const data = await response.json();
 
-      console.log("fetchInstantaneousStats - API Response:", data);
+      console.log('fetchInstantaneousStats - API Response:', data);
 
       if (data.success) {
         // If we have specific feeder data, we might need to adjust the data
@@ -489,21 +455,21 @@ const Feeders = () => {
 
         // No further adjustment needed; backend filters by meter when feederId provided
 
-        console.log("i m here");
-        console.log("InstantaneousStatsData:", apiData);
+        console.log('i m here');
+        console.log('InstantaneousStatsData:', apiData);
         setInstantaneousStatsData(apiData);
       } else {
-        throw new Error(data.message || "Failed to fetch instantaneous stats");
+        throw new Error(data.message || 'Failed to fetch instantaneous stats');
       }
     } catch (error: any) {
       setInstantaneousStatsData(dummyInstantaneousStatsData);
       setFailedApis((prev) => [
         ...prev,
         {
-          id: "instantaneousStats",
-          name: "Instantaneous Stats",
+          id: 'instantaneousStats',
+          name: 'Instantaneous Stats',
           retryFunction: fetchInstantaneousStats,
-          errorMessage: error.message || "Failed to fetch instantaneous stats",
+          errorMessage: error.message || 'Failed to fetch instantaneous stats',
         },
       ]);
     } finally {
@@ -533,10 +499,7 @@ const Feeders = () => {
     setIsConsumptionLoading(true);
     try {
       const meterIdentifier =
-        passedData?.feederId ||
-        effectiveFeederData?.feederName ||
-        feederId ||
-        "";
+        passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
       let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/consumptionAnalytics`;
       if (meterIdentifier) {
         const qp = new URLSearchParams({ feederId: meterIdentifier });
@@ -546,28 +509,22 @@ const Feeders = () => {
       const response = await fetch(endpoint);
       const data = await response.json();
 
-      if (data.status === "success") {
+      if (data.status === 'success') {
         // Transform the data to match frontend expectations
         let transformedData = {
           xAxisData: data.data.dailyData?.xAxisData || [],
           seriesData: [
             {
-              name: "Consumption",
-              data:
-                data.data.dailyData?.sums?.map((sum: string) =>
-                  parseFloat(sum)
-                ) || [],
+              name: 'Consumption',
+              data: data.data.dailyData?.sums?.map((sum: string) => parseFloat(sum)) || [],
             },
           ],
           monthly: {
             xAxisData: data.data.monthlyData?.xAxisData || [],
             seriesData: [
               {
-                name: "Consumption",
-                data:
-                  data.data.monthlyData?.sums?.map((sum: string) =>
-                    parseFloat(sum)
-                  ) || [],
+                name: 'Consumption',
+                data: data.data.monthlyData?.sums?.map((sum: string) => parseFloat(sum)) || [],
               },
             ],
           },
@@ -581,21 +538,18 @@ const Feeders = () => {
 
         setConsumptionAnalyticsData(transformedData);
       } else {
-        throw new Error(
-          data.message || "Failed to fetch consumption analytics"
-        );
+        throw new Error(data.message || 'Failed to fetch consumption analytics');
       }
     } catch (error: any) {
-      console.error("Error fetching consumption analytics:", error);
+      console.error('Error fetching consumption analytics:', error);
       setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
       setFailedApis((prev) => [
         ...prev,
         {
-          id: "consumptionAnalytics",
-          name: "Consumption Analytics",
+          id: 'consumptionAnalytics',
+          name: 'Consumption Analytics',
           retryFunction: fetchConsumptionAnalytics,
-          errorMessage:
-            error.message || "Failed to fetch consumption analytics",
+          errorMessage: error.message || 'Failed to fetch consumption analytics',
         },
       ]);
     } finally {
@@ -614,25 +568,19 @@ const Feeders = () => {
         setResolvedDtrId(foundDtrId);
         numericDtrId = foundDtrId;
       } else {
-        console.warn(
-          "fetchFeederInfo - Could not find DTR ID for feeder:",
-          feederId
-        );
+        console.warn('fetchFeederInfo - Could not find DTR ID for feeder:', feederId);
         return;
       }
     }
 
     if (!numericDtrId) {
-      console.warn("fetchFeederInfo - No DTR ID available");
+      console.warn('fetchFeederInfo - No DTR ID available');
       return;
     }
 
     try {
       const meterIdentifier =
-        passedData?.feederId ||
-        effectiveFeederData?.feederName ||
-        feederId ||
-        "";
+        passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
       let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}`;
       if (meterIdentifier) {
         const qp = new URLSearchParams({ feederId: meterIdentifier });
@@ -644,22 +592,20 @@ const Feeders = () => {
 
       if (data.success) {
         let feederInfo = data.data;
-        console.log("feederInfo000000000000000", feederInfo);
+        console.log('feederInfo000000000000000', feederInfo);
         // If this is for a specific feeder, we need to filter the data
         if (effectiveFeederData?.feederName) {
           const feederName = effectiveFeederData.feederName;
 
           // Find the specific feeder in the DTR's feeders list
           const specificFeeder = feederInfo.feeders?.find(
-            (feeder: any) =>
-              feeder.serialNumber === feederName ||
-              feeder.meterNumber === feederName
+            (feeder: any) => feeder.serialNumber === feederName || feeder.meterNumber === feederName
           );
 
           if (specificFeeder) {
             // Store the actual total feeders count before filtering
             const actualTotalFeeders = feederInfo.feeders?.length || 1;
-            
+
             feederInfo = {
               dtr: feederInfo.dtr,
               totalFeeders: actualTotalFeeders, // Use actual DTR's total feeder count
@@ -680,9 +626,7 @@ const Feeders = () => {
             setMapLatitude(specificFeeder.latitude || 17.992887);
             setMapLongitude(specificFeeder.longitude || 79.550835);
           } else {
-            console.warn(
-              "fetchFeederInfo - Specific feeder not found in DTR data"
-            );
+            console.warn('fetchFeederInfo - Specific feeder not found in DTR data');
           }
         }
 
@@ -698,18 +642,18 @@ const Feeders = () => {
 
         setFeederInfoData(feederInfo);
       } else {
-        throw new Error(data.message || "Failed to fetch feeder information");
+        throw new Error(data.message || 'Failed to fetch feeder information');
       }
     } catch (error: any) {
-      console.error("Error fetching feeder information:", error);
+      console.error('Error fetching feeder information:', error);
       setFeederInfoData(dummyFeederInfoData);
       setFailedApis((prev) => [
         ...prev,
         {
-          id: "feederInfo",
-          name: "Feeder Info",
+          id: 'feederInfo',
+          name: 'Feeder Info',
           retryFunction: fetchFeederInfo,
-          errorMessage: error.message || "Failed to fetch feeder information",
+          errorMessage: error.message || 'Failed to fetch feeder information',
         },
       ]);
     }
@@ -726,26 +670,20 @@ const Feeders = () => {
         setResolvedDtrId(foundDtrId);
         numericDtrId = foundDtrId;
       } else {
-        console.warn(
-          "fetchAlerts - Could not find DTR ID for feeder:",
-          feederId
-        );
+        console.warn('fetchAlerts - Could not find DTR ID for feeder:', feederId);
         return;
       }
     }
 
     if (!numericDtrId) {
-      console.warn("fetchAlerts - No DTR ID available");
+      console.warn('fetchAlerts - No DTR ID available');
       return;
     }
 
     setIsAlertsLoading(true);
     try {
       const meterIdentifier =
-        passedData?.feederId ||
-        effectiveFeederData?.feederName ||
-        feederId ||
-        "";
+        passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
       let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/alerts`;
       if (meterIdentifier) {
         const qp = new URLSearchParams({ feederId: meterIdentifier });
@@ -760,8 +698,7 @@ const Feeders = () => {
         let transformedAlerts =
           data.data?.map((alert: any) => ({
             ...alert,
-            feederName:
-              effectiveFeederData?.feederName || alert.feederName || "-",
+            feederName: effectiveFeederData?.feederName || alert.feederName || '-',
           })) || [];
 
         if (effectiveFeederData?.feederName) {
@@ -777,29 +714,29 @@ const Feeders = () => {
         if (
           transformedAlerts.every(
             (alert: any) =>
-              alert.alertId === "-" &&
-              alert.type === "-" &&
-              alert.feederName === "-" &&
-              alert.occuredOn === "-"
+              alert.alertId === '-' &&
+              alert.type === '-' &&
+              alert.feederName === '-' &&
+              alert.occuredOn === '-'
           )
         ) {
-          console.warn("All alerts transformed to -. Raw API data:", data.data);
+          console.warn('All alerts transformed to -. Raw API data:', data.data);
         }
 
         setAlertsData(transformedAlerts);
       } else {
-        throw new Error(data.message || "Failed to fetch alerts");
+        throw new Error(data.message || 'Failed to fetch alerts');
       }
     } catch (error: any) {
-      console.error("Error fetching alerts:", error);
+      console.error('Error fetching alerts:', error);
       setAlertsData(dummyAlertsData);
       setFailedApis((prev) => [
         ...prev,
         {
-          id: "alerts",
-          name: "Alerts",
+          id: 'alerts',
+          name: 'Alerts',
           retryFunction: fetchAlerts,
-          errorMessage: error.message || "Failed to fetch alerts",
+          errorMessage: error.message || 'Failed to fetch alerts',
         },
       ]);
     } finally {
@@ -818,26 +755,20 @@ const Feeders = () => {
         setResolvedDtrId(foundDtrId);
         numericDtrId = foundDtrId;
       } else {
-        console.warn(
-          "fetchKVAMetrics - Could not find DTR ID for feeder:",
-          feederId
-        );
+        console.warn('fetchKVAMetrics - Could not find DTR ID for feeder:', feederId);
         return;
       }
     }
 
     if (!numericDtrId) {
-      console.warn("fetchKVAMetrics - No DTR ID available");
+      console.warn('fetchKVAMetrics - No DTR ID available');
       return;
     }
 
     // setIsKvaMetricsLoading(true);
     try {
       const meterIdentifier =
-        passedData?.feederId ||
-        effectiveFeederData?.feederName ||
-        feederId ||
-        "";
+        passedData?.feederId || effectiveFeederData?.feederName || feederId || '';
       let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/kvaMetrics`;
       if (meterIdentifier) {
         const qp = new URLSearchParams({ feederId: meterIdentifier });
@@ -847,22 +778,22 @@ const Feeders = () => {
       const response = await fetch(endpoint);
       const data = await response.json();
 
-      if (data.status === "success") {
+      if (data.status === 'success') {
         // Store the complete KVA metrics data with capacity info
         // setKvaMetricsData removed - not used in active code
       } else {
-        throw new Error(data.message || "Failed to fetch KVA metrics");
+        throw new Error(data.message || 'Failed to fetch KVA metrics');
       }
     } catch (error: any) {
-      console.error("Error fetching KVA metrics:", error);
+      console.error('Error fetching KVA metrics:', error);
       // setKvaMetricsData removed - not used in active code
       setFailedApis((prev) => [
         ...prev,
         {
-          id: "kvaMetrics",
-          name: "KVA Metrics",
+          id: 'kvaMetrics',
+          name: 'KVA Metrics',
           retryFunction: fetchKVAMetrics,
-          errorMessage: error.message || "Failed to fetch KVA metrics",
+          errorMessage: error.message || 'Failed to fetch KVA metrics',
         },
       ]);
     } finally {
@@ -872,182 +803,181 @@ const Feeders = () => {
 
   // Generate stats from API data or use defaults
   const getStats = () => {
-    console.log("getStats - instantaneousStatsData:", instantaneousStatsData);
+    console.log('getStats - instantaneousStatsData:', instantaneousStatsData);
     if (
       instantaneousStatsData &&
       Object.keys(instantaneousStatsData).length > 0 &&
-      instantaneousStatsData.rphVolt !== "-"
+      instantaneousStatsData.rphVolt !== '-'
     ) {
       return [
         {
-          title: "R-Phase Voltage",
-          value: instantaneousStatsData.rphVolt?.toString() || "257.686",
-          icon: "icons/r-phase-voltage.svg",
-          subtitle1: "Volts",
-          bg: "bg-[var(--color-danger)]",
-          iconClassName: "w-3 h-3",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'R-Phase Voltage',
+          value: instantaneousStatsData.rphVolt?.toString() || '257.686',
+          icon: 'icons/r-phase-voltage.svg',
+          subtitle1: 'Volts',
+          bg: 'bg-[var(--color-danger)]',
+          iconClassName: 'w-3 h-3',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "Y-Phase Voltage",
-          value: instantaneousStatsData.yphVolt?.toString() || "255.089",
-          icon: "icons/r-phase-voltage.svg",
-          subtitle1: "Volts",
-          bg: "bg-[var(--color-warning-alt)]",
-          iconClassName: "w-3 h-3",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Y-Phase Voltage',
+          value: instantaneousStatsData.yphVolt?.toString() || '255.089',
+          icon: 'icons/r-phase-voltage.svg',
+          subtitle1: 'Volts',
+          bg: 'bg-[var(--color-warning-alt)]',
+          iconClassName: 'w-3 h-3',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "B-Phase Voltage",
-          value: instantaneousStatsData.bphVolt?.toString() || "254.417",
-          icon: "icons/r-phase-voltage.svg",
-          subtitle1: "Volts",
-          bg: "bg-[var(--color-primary)]",
-          iconClassName: "w-3 h-3",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'B-Phase Voltage',
+          value: instantaneousStatsData.bphVolt?.toString() || '254.417',
+          icon: 'icons/r-phase-voltage.svg',
+          subtitle1: 'Volts',
+          bg: 'bg-[var(--color-primary)]',
+          iconClassName: 'w-3 h-3',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "Apparent Power",
-          value: instantaneousStatsData.instantKVA?.toString() || "19.527",
-          icon: "icons/consumption.svg",
-          subtitle1: "kVA",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Apparent Power',
+          value: instantaneousStatsData.instantKVA?.toString() || '19.527',
+          icon: 'icons/consumption.svg',
+          subtitle1: 'kVA',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
         },
         {
-          title: "MD-kVA",
-          value: instantaneousStatsData.mdKVA?.toString() || "52.220",
-          icon: "icons/consumption.svg",
-          subtitle1: "kVA",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'MD-kVA',
+          value: instantaneousStatsData.mdKVA?.toString() || '52.220',
+          icon: 'icons/consumption.svg',
+          subtitle1: 'kVA',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
         },
         {
-          title: "R-Phase Current",
-          value: instantaneousStatsData.rphCurr?.toString() || "15.892",
-          icon: "icons/r-phase-current.svg",
-          subtitle1: "Amps",
-          bg: "bg-[var(--color-danger)]",
-          iconClassName: "w-3 h-3",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'R-Phase Current',
+          value: instantaneousStatsData.rphCurr?.toString() || '15.892',
+          icon: 'icons/r-phase-current.svg',
+          subtitle1: 'Amps',
+          bg: 'bg-[var(--color-danger)]',
+          iconClassName: 'w-3 h-3',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "Y-Phase Current",
-          value: instantaneousStatsData.yphCurr?.toString() || "27.644",
-          icon: "icons/r-phase-current.svg",
-          subtitle1: "Amps",
-          bg: "bg-[var(--color-warning-alt)]",
-          iconClassName: "w-3 h-3",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Y-Phase Current',
+          value: instantaneousStatsData.yphCurr?.toString() || '27.644',
+          icon: 'icons/r-phase-current.svg',
+          subtitle1: 'Amps',
+          bg: 'bg-[var(--color-warning-alt)]',
+          iconClassName: 'w-3 h-3',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "B-Phase Current",
-          value: instantaneousStatsData.bphCurr?.toString() || "33.984",
-          icon: "icons/r-phase-current.svg",
-          subtitle1: "Amps",
-          bg: "bg-[var(--color-primary)]",
-          iconClassName: "w-3 h-3",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'B-Phase Current',
+          value: instantaneousStatsData.bphCurr?.toString() || '33.984',
+          icon: 'icons/r-phase-current.svg',
+          subtitle1: 'Amps',
+          bg: 'bg-[var(--color-primary)]',
+          iconClassName: 'w-3 h-3',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "Neutral Current",
-          value: instantaneousStatsData.neutralCurrent?.toString() || "12.980",
-          icon: "icons/consumption.svg",
-          subtitle1: "Amps",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Neutral Current',
+          value: instantaneousStatsData.neutralCurrent?.toString() || '12.980',
+          icon: 'icons/consumption.svg',
+          subtitle1: 'Amps',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
         },
         {
-          title: "Frequency",
-          value: instantaneousStatsData.freqHz?.toString() || "49.980",
-          icon: "icons/frequency.svg",
-          subtitle1: "Hz",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Frequency',
+          value: instantaneousStatsData.freqHz?.toString() || '49.980',
+          icon: 'icons/frequency.svg',
+          subtitle1: 'Hz',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
         },
         {
-          title: "R-Phase PF",
-          value: instantaneousStatsData.rphPF?.toString() || "1.000",
-          icon: "icons/power-factor.svg",
-          subtitle1: "Power Factor",
-          bg: "bg-[var(--color-danger)]",
-          iconClassName: "w-4 h-4",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'R-Phase PF',
+          value: instantaneousStatsData.rphPF?.toString() || '1.000',
+          icon: 'icons/power-factor.svg',
+          subtitle1: 'Power Factor',
+          bg: 'bg-[var(--color-danger)]',
+          iconClassName: 'w-4 h-4',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "Y-Phase PF",
-          value: instantaneousStatsData.yphPF?.toString() || "-0.987",
-          icon: "icons/power-factor.svg",
-          subtitle1: "Power Factor",
-          bg: "bg-[var(--color-warning-alt)]",
-          iconClassName: "w-4 h-4",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Y-Phase PF',
+          value: instantaneousStatsData.yphPF?.toString() || '-0.987',
+          icon: 'icons/power-factor.svg',
+          subtitle1: 'Power Factor',
+          bg: 'bg-[var(--color-warning-alt)]',
+          iconClassName: 'w-4 h-4',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "B-Phase PF",
-          value: instantaneousStatsData.bphPF?.toString() || "0.998",
-          icon: "icons/power-factor.svg",
-          subtitle1: "Power Factor",
-          bg: "bg-[var(--color-primary)]",
-          iconClassName: "w-4 h-4",
-          width: "w-8",
-          height: "h-8",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'B-Phase PF',
+          value: instantaneousStatsData.bphPF?.toString() || '0.998',
+          icon: 'icons/power-factor.svg',
+          subtitle1: 'Power Factor',
+          bg: 'bg-[var(--color-primary)]',
+          iconClassName: 'w-4 h-4',
+          width: 'w-8',
+          height: 'h-8',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.WHITE,
           loading: isStatsLoading,
         },
         {
-          title: "Avg PF",
-          value: instantaneousStatsData.avgPF?.toString() || "-0.999",
-          icon: "icons/power-factor.svg",
-          subtitle1: "Power Factor",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Avg PF',
+          value: instantaneousStatsData.avgPF?.toString() || '-0.999',
+          icon: 'icons/power-factor.svg',
+          subtitle1: 'Power Factor',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
         },
         {
-          title: "Active Power",
-          value:
-            instantaneousStatsData.cumulativeKVAh?.toString() || "77902.296",
-          icon: "icons/consumption.svg",
-          subtitle1: "kW",
-          valueFontSize: "text-lg lg:text-xl md:text-lg sm:text-base",
+          title: 'Active Power',
+          value: instantaneousStatsData.cumulativeKVAh?.toString() || '77902.296',
+          icon: 'icons/consumption.svg',
+          subtitle1: 'kW',
+          valueFontSize: 'text-lg lg:text-xl md:text-lg sm:text-base',
           iconStyle: FILTER_STYLES.BRAND_GREEN,
           loading: isStatsLoading,
         },
@@ -1058,23 +988,21 @@ const Feeders = () => {
 
   // Get consumption data based on selected time range
   const getConsumptionData = () => {
-    if (consumptionTimeRange === "Daily") {
+    if (consumptionTimeRange === 'Daily') {
       if (consumptionAnalyticsData && consumptionAnalyticsData.xAxisData) {
         const data = {
           xAxisData: consumptionAnalyticsData.xAxisData || [],
-          seriesData: consumptionAnalyticsData.seriesData || [
-            { name: "Consumption", data: [] },
-          ],
+          seriesData: consumptionAnalyticsData.seriesData || [{ name: 'Consumption', data: [] }],
         };
 
         return data;
       }
-    } else if (consumptionTimeRange === "Monthly") {
+    } else if (consumptionTimeRange === 'Monthly') {
       if (consumptionAnalyticsData && consumptionAnalyticsData.monthly) {
         const data = {
           xAxisData: consumptionAnalyticsData.monthly.xAxisData || [],
           seriesData: consumptionAnalyticsData.monthly.seriesData || [
-            { name: "Consumption", data: [] },
+            { name: 'Consumption', data: [] },
           ],
         };
 
@@ -1084,7 +1012,7 @@ const Feeders = () => {
 
     return {
       xAxisData: [],
-      seriesData: [{ name: "Consumption", data: [] }],
+      seriesData: [{ name: 'Consumption', data: [] }],
     };
   };
 
@@ -1144,25 +1072,25 @@ const Feeders = () => {
                 const qp = new URLSearchParams({ feederId: meterIdentifier });
                 endpoint = `${endpoint}?${qp.toString()}`;
             }
-            
+
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch instantaneous stats');
-            
+
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 throw new Error('Invalid response format');
             }
-            
+
             const data = await response.json();
             if (data.success) {
-                
-                
+
+
                 // If we have specific feeder data, we might need to adjust the data
                 let apiData = {
                     ...data.data,
                     lastCommDate: data.data.lastCommDate || null
                 };
-                
+
 
                 setInstantaneousStatsData(apiData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'instantaneousStats'));
@@ -1193,12 +1121,12 @@ const Feeders = () => {
             }
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch consumption analytics');
-            
+
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 throw new Error('Invalid response format');
             }
-            
+
             const data = await response.json();
             if (data.status === 'success') {
                 let transformedData = {
@@ -1215,9 +1143,9 @@ const Feeders = () => {
                         }]
                     }
                 };
-                
 
-                
+
+
                 setConsumptionAnalyticsData(transformedData);
                 setFailedApis(prev => prev.filter(api => api.id !== 'consumptionAnalytics'));
             } else {
@@ -1235,7 +1163,7 @@ const Feeders = () => {
         try {
             // Use resolved DTR ID
             let numericDtrId = resolvedDtrId;
-            
+
             if (!numericDtrId) {
                 console.warn('retryFeederInfoAPI - No DTR ID available');
                 return;
@@ -1247,30 +1175,30 @@ const Feeders = () => {
                 const qp = new URLSearchParams({ feederId: meterIdentifier });
                 endpoint = `${endpoint}?${qp.toString()}`;
             }
-            
+
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch feeder information');
-            
+
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 throw new Error('Invalid response format');
             }
-            
+
             const data = await response.json();
             if (data.success) {
                 let feederInfo = data.data;
-                
+
                 // If this is for a specific feeder, we need to filter the data
                 if (effectiveFeederData?.feederName) {
                     const feederName = effectiveFeederData.feederName;
 
-                    
+
                     // Find the specific feeder in the DTR's feeders list
-                    const specificFeeder = feederInfo.feeders?.find((feeder: any) => 
+                    const specificFeeder = feederInfo.feeders?.find((feeder: any) =>
                         feeder.serialNumber === feederName ||
                         feeder.meterNumber === feederName
                     );
-                    
+
                     if (specificFeeder) {
 
                         // Create feeder-specific info
@@ -1293,7 +1221,7 @@ const Feeders = () => {
                         console.warn('retryFeederInfoAPI - Specific feeder not found in DTR data');
                     }
                 }
-                
+
                 setFeederInfoData(feederInfo);
                 setFailedApis(prev => prev.filter(api => api.id !== 'feederInfo'));
             } else {
@@ -1310,7 +1238,7 @@ const Feeders = () => {
         try {
             // Use resolved DTR ID
             let numericDtrId = resolvedDtrId;
-            
+
             if (!numericDtrId) {
                 console.warn('retryAlertsAPI - No DTR ID available');
                 return;
@@ -1322,11 +1250,11 @@ const Feeders = () => {
                 const qp = new URLSearchParams({ feederId: meterIdentifier });
                 endpoint = `${endpoint}?${qp.toString()}`;
             }
-            
+
             const response = await fetch(endpoint);
             const data = await response.json();
 
-            
+
             if (data.success) {
                 // Transform the data to ensure it matches the table column structure
                                // Backend now returns: { alertId: 'id', type: 'type', feederName: 'feederName', occuredOn: 'occuredOn' }
@@ -1335,22 +1263,22 @@ const Feeders = () => {
                     ...alert,
                     feederName: effectiveFeederData?.feederName || alert.feederName || '-'
                 })) || [];
-                
+
                 // If this is for a specific feeder, filter alerts for that feeder only
                 if (effectiveFeederData?.feederName) {
                     const targetFeederName = effectiveFeederData.feederName;
 
-                    
+
                     // Since we're showing alerts for a specific feeder, we'll show all alerts
                     // but mark them as belonging to this feeder
                     transformedAlerts = transformedAlerts.map((alert: any) => ({
                         ...alert,
                         feederName: targetFeederName
                     }));
-                    
+
 
                 }
-                
+
 
                 setAlertsData(transformedAlerts);
                 setFailedApis(prev => prev.filter(api => api.id !== 'alerts'));
@@ -1370,7 +1298,7 @@ const Feeders = () => {
         try {
             // Use resolved DTR ID
             let numericDtrId = resolvedDtrId;
-            
+
             if (!numericDtrId) {
                 console.warn('retryKVAMetricsAPI - No DTR ID available');
                 return;
@@ -1382,11 +1310,11 @@ const Feeders = () => {
                 const qp = new URLSearchParams({ feederId: meterIdentifier });
                 endpoint = `${endpoint}?${qp.toString()}`;
             }
-            
+
             const response = await fetch(endpoint);
             const data = await response.json();
 
-            
+
             if (data.status === 'success') {
                 let transformedData = {
                     xAxisData: data.data?.dailyData?.xAxisData || [],
@@ -1402,12 +1330,12 @@ const Feeders = () => {
                         }]
                     }
                 };
-                
+
                 // If this is for a specific feeder, we might need to adjust the data
                 if (effectiveFeederData?.feederName) {
 
                 }
-                
+
                 // setKvaMetricsData removed - not used in active code
                 setFailedApis(prev => prev.filter(api => api.id !== 'kvaMetrics'));
             } else {
@@ -1433,10 +1361,7 @@ const Feeders = () => {
   // Effect to update resolvedDtrId when effectiveDtrId changes
   useEffect(() => {
     if (effectiveDtrId && effectiveDtrId !== resolvedDtrId) {
-      console.log(
-        "Updating resolvedDtrId from effectiveDtrId:",
-        effectiveDtrId
-      );
+      console.log('Updating resolvedDtrId from effectiveDtrId:', effectiveDtrId);
       setResolvedDtrId(effectiveDtrId);
     }
   }, [effectiveDtrId]);
@@ -1445,19 +1370,13 @@ const Feeders = () => {
   useEffect(() => {
     const resolveDtrId = async () => {
       if (!resolvedDtrId && feederId) {
-        console.log(
-          "useEffect - resolveDtrId - Looking for DTR ID for feeder:",
-          feederId
-        );
+        console.log('useEffect - resolveDtrId - Looking for DTR ID for feeder:', feederId);
         const foundDtrId = await findDtrIdFromFeederId(feederId);
         if (foundDtrId) {
-          console.log("useEffect - resolveDtrId - Found DTR ID:", foundDtrId);
+          console.log('useEffect - resolveDtrId - Found DTR ID:', foundDtrId);
           setResolvedDtrId(foundDtrId);
         } else {
-          console.warn(
-            "useEffect - resolveDtrId - Could not find DTR ID for feeder:",
-            feederId
-          );
+          console.warn('useEffect - resolveDtrId - Could not find DTR ID for feeder:', feederId);
         }
       }
     };
@@ -1471,39 +1390,35 @@ const Feeders = () => {
   // Load data on component mount
   useEffect(() => {
     console.log(
-      "Main data loading useEffect - resolvedDtrId:",
+      'Main data loading useEffect - resolvedDtrId:',
       resolvedDtrId,
-      "dtrId:",
+      'dtrId:',
       dtrId,
-      "feederId:",
+      'feederId:',
       feederId
     );
 
     // Only proceed if we have a resolved DTR ID or if we're not looking for individual feeder data
     if (!resolvedDtrId && feederId) {
-      console.log("Skipping data fetch - no resolved DTR ID for feeder");
+      console.log('Skipping data fetch - no resolved DTR ID for feeder');
       return;
     }
 
     if (resolvedDtrId || dtrId) {
-      console.log("Starting data fetch with DTR ID:", resolvedDtrId || dtrId);
+      console.log('Starting data fetch with DTR ID:', resolvedDtrId || dtrId);
       fetchInstantaneousStats();
       fetchConsumptionAnalytics();
       fetchFeederInfo();
       fetchAlerts();
       fetchKVAMetrics();
     } else {
-      console.log("No DTR ID available for data fetch");
+      console.log('No DTR ID available for data fetch');
     }
   }, [resolvedDtrId, dtrId]);
 
   // Effect to update map coordinates when feeder info changes
   useEffect(() => {
-    if (
-      feederInfoData &&
-      feederInfoData.feeders &&
-      feederInfoData.feeders.length > 0
-    ) {
+    if (feederInfoData && feederInfoData.feeders && feederInfoData.feeders.length > 0) {
       const firstFeeder = feederInfoData.feeders[0];
       if (firstFeeder.latitude && firstFeeder.longitude) {
         setMapLatitude(firstFeeder.latitude);
@@ -1517,11 +1432,11 @@ const Feeders = () => {
 
   // Enhanced data for Alerts Table with more entries
   const [_feederData, _setFeederData] = useState([
-    { title: "Feeder Name", description: "D1F1(32500114)" },
-    { title: "Rating", description: "25.00 kVA" },
+    { title: 'Feeder Name', description: 'D1F1(32500114)' },
+    { title: 'Rating', description: '25.00 kVA' },
     {
-      title: "Address",
-      description: "Waddepally, Warangal, Telangana, India, 506001",
+      title: 'Address',
+      description: 'Waddepally, Warangal, Telangana, India, 506001',
     },
   ]);
 
@@ -1537,11 +1452,7 @@ const Feeders = () => {
   const handleConsumptionChartDownload = () => {
     const data = getConsumptionData();
     const timeRange = consumptionTimeRange.toLowerCase();
-    exportChartData(
-      data.xAxisData,
-      data.seriesData,
-      `feeder-${timeRange}-consumption-data`
-    );
+    exportChartData(data.xAxisData, data.seriesData, `feeder-${timeRange}-consumption-data`);
   };
 
   // Handle Excel download for KVA metrics chart based on current time range
@@ -1608,18 +1519,16 @@ const Feeders = () => {
             ? [
                 {
                   layout: {
-                    type: "column" as const,
-                    gap: "gap-4",
+                    type: 'column' as const,
+                    gap: 'gap-4',
                     rows: [
                       {
-                        layout: "column" as const,
+                        layout: 'column' as const,
                         columns: [
                           {
-                            name: "Error",
+                            name: 'Error',
                             props: {
-                              visibleErrors: failedApis.map(
-                                (api) => api.errorMessage
-                              ),
+                              visibleErrors: failedApis.map((api) => api.errorMessage),
                               showRetry: true,
                               maxVisibleErrors: 3,
                               failedApis: failedApis,
@@ -1635,31 +1544,29 @@ const Feeders = () => {
             : []),
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "w-full",
+              className: 'w-full',
               rows: [
                 {
-                  layout: "row" as const,
-                  className: "w-full",
+                  layout: 'row' as const,
+                  className: 'w-full',
                   columns: [
                     {
-                      name: "PageHeader",
+                      name: 'PageHeader',
                       props: {
                         title: isIndividualFeeder
-                          ? `Feeder ${
-                              feederData?.feederName || currentFeederId
-                            }`
+                          ? `Feeder ${feederData?.feederName || currentFeederId}`
                           : effectiveFeederData?.feederName
                           ? `Feeder ${effectiveFeederData.feederName}`
-                          : "Feeder Information",
+                          : 'Feeder Information',
                         onBackClick: () => {
                           if (isIndividualFeeder) {
                             // Go back to the specific DTR detail page if we have the DTR ID
                             if (passedData?.dtrId) {
                               navigate(`/dtr-detail/${passedData.dtrId}`);
                             } else {
-                              navigate("/dtr-dashboard");
+                              navigate('/dtr-dashboard');
                             }
                           } else {
                             window.history.back();
@@ -1682,33 +1589,31 @@ const Feeders = () => {
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 3,
               className:
-                "border border-primary-border dark:border-dark-border rounded-3xl bg-white p-4 dark:bg-primary-dark-light",
+                'border border-primary-border dark:border-dark-border rounded-3xl bg-white p-4 dark:bg-primary-dark-light',
               rows: [
                 {
-                  layout: "row" as const,
-                  className: "justify-between w-full",
+                  layout: 'row' as const,
+                  className: 'justify-between w-full',
                   span: { col: 3, row: 1 },
                   columns: [
                     {
-                      name: "SectionHeader",
+                      name: 'SectionHeader',
                       props: {
                         title: isIndividualFeeder
-                          ? `Feeder ${
-                              feederData?.feederName || currentFeederId
-                            } Information`
+                          ? `Feeder ${feederData?.feederName || currentFeederId} Information`
                           : effectiveFeederData?.feederName
                           ? `Feeder ${effectiveFeederData.feederName} Information`
-                          : "DTR Information",
+                          : 'DTR Information',
                         titleLevel: 2,
-                        titleSize: "md",
-                        titleVariant: "",
-                        titleWeight: "bold",
-                        titleAlign: "left",
-                        defaultTitleHeight: "0",
-                        className: "w-full justify-between",
+                        titleSize: 'md',
+                        titleVariant: '',
+                        titleWeight: 'bold',
+                        titleAlign: 'left',
+                        defaultTitleHeight: '0',
+                        className: 'w-full justify-between',
                         // rightComponent: {
                         //     name: 'LastComm',
 
@@ -1730,68 +1635,66 @@ const Feeders = () => {
                   ],
                 },
                 {
-                  layout: "row" as const,
-                  className: "justify-between w-full",
+                  layout: 'row' as const,
+                  className: 'justify-between w-full',
                   span: { col: 3, row: 1 },
                   columns: [
                     {
-                      name: "PageInformation",
+                      name: 'PageInformation',
                       props: {
                         gridColumns: 4,
                         rows: [
                           {
-                            layout: "row",
-                            className: "justify-between w-full",
+                            layout: 'row',
+                            className: 'justify-between w-full',
                             span: { col: 3, row: 1 },
                             items: [
                               {
-                                title: "DTR Number",
-                                value:
-                                  feederInfoData?.dtr?.dtrNumber || "DTR-007",
-                                align: "start",
-                                gap: "gap-1",
+                                title: 'DTR Number',
+                                value: feederInfoData?.dtr?.dtrNumber || 'DTR-007',
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "DTR Capacity",
-                                value: `${
-                                  feederInfoData?.dtr?.capacity || 100
-                                } kVA`,
-                                align: "start",
-                                gap: "gap-1",
+                                title: 'DTR Capacity',
+                                value: `${feederInfoData?.dtr?.capacity || 100} kVA`,
+                                align: 'start',
+                                gap: 'gap-1',
                                 // progressBar: true,
                                 // currentValue: 75,
                                 // maxValue: feederInfoData?.dtr?.capacity || 100,
                                 // progressColor: 'bg-secondary from-primary to-secondary'
                               },
                               {
-                                title: "Feeder Capacity",
+                                title: 'Feeder Capacity',
                                 value: (() => {
                                   const dtrCapacity = feederInfoData?.dtr?.capacity || 100;
                                   const totalFeeders = feederInfoData?.totalFeeders || 1;
                                   const feederCapacity = Math.round(dtrCapacity / totalFeeders);
                                   return `${feederCapacity} kVA`;
                                 })(),
-                                align: "start",
-                                gap: "gap-1",
+                                align: 'start',
+                                gap: 'gap-1',
                               },
                               {
-                                title: "Feeder Status",
+                                title: 'Feeder Status',
                                 value: (() => {
                                   // Use feeder status if available (for individual feeder), otherwise use DTR status
-                                  const feederStatus = feederInfoData?.specificFeeder?.status || 
-                                                      feederInfoData?.feeders?.[0]?.status;
-                                  return feederStatus || feederInfoData?.dtr?.status || "ACTIVE";
+                                  const feederStatus =
+                                    feederInfoData?.specificFeeder?.status ||
+                                    feederInfoData?.feeders?.[0]?.status;
+                                  return feederStatus || feederInfoData?.dtr?.status || 'ACTIVE';
                                 })(),
-                                align: "start",
-                                gap: "gap-1",
+                                align: 'start',
+                                gap: 'gap-1',
                                 statusIndicator: true,
                                 statusType: (() => {
-                                  const feederStatus = feederInfoData?.specificFeeder?.status || 
-                                                      feederInfoData?.feeders?.[0]?.status;
+                                  const feederStatus =
+                                    feederInfoData?.specificFeeder?.status ||
+                                    feederInfoData?.feeders?.[0]?.status;
                                   return feederStatus || feederInfoData?.dtr?.status;
                                 })(),
                               },
-                              
                             ],
                           },
                         ],
@@ -1805,32 +1708,30 @@ const Feeders = () => {
 
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
               className:
-                "w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl dark:bg-primary-dark-light",
+                'w-full p-4 border border-primary-border dark:border-dark-border rounded-3xl dark:bg-primary-dark-light',
               rows: [
                 {
-                  layout: "row" as const,
-                  className: "justify-between w-full",
+                  layout: 'row' as const,
+                  className: 'justify-between w-full',
                   span: { col: 1, row: 1 },
                   columns: [
                     {
-                      name: "SectionHeader",
+                      name: 'SectionHeader',
                       props: {
                         title: isIndividualFeeder
-                          ? `Feeder ${
-                              feederData?.feederName || currentFeederId
-                            } Information`
+                          ? `Feeder ${feederData?.feederName || currentFeederId} Information`
                           : effectiveFeederData?.feederName
                           ? `Feeder ${effectiveFeederData.feederName} Information`
-                          : "Instantaneous Stats",
+                          : 'Instantaneous Stats',
                         titleLevel: 2,
-                        titleSize: "md",
-                        titleVariant: "",
-                        titleWeight: "bold",
-                        titleAlign: "left",
-                        className: "w-full justify-between",
+                        titleSize: 'md',
+                        titleVariant: '',
+                        titleWeight: 'bold',
+                        titleAlign: 'left',
+                        className: 'w-full justify-between',
                         // rightComponent: { name: 'LastComm', props: {
                         //     value: (() => {
                         //         const lastComm = instantaneousStatsData?.lastCommDate;
@@ -1861,29 +1762,27 @@ const Feeders = () => {
                         //     })()
                         // } },
                         rightComponent: {
-                          name: "LastComm",
+                          name: 'LastComm',
                           props: {
-                            label: "Last Communication",
-                            labelVariant: "",
+                            label: 'Last Communication',
+                            labelVariant: '',
                             value: (() => {
                               const raw = instantaneousStatsData?.lastCommDate;
-                              if (!raw || typeof raw !== "string") {
-                                return "N/A";
+                              if (!raw || typeof raw !== 'string') {
+                                return 'N/A';
                               }
                               try {
                                 // Try to parse robustly: handle both "YYYY-MM-DD HH:mm:ss" and ISO forms
-                                const parseSource = raw.includes("T")
-                                  ? raw
-                                  : raw.replace(" ", "T");
+                                const parseSource = raw.includes('T') ? raw : raw.replace(' ', 'T');
                                 const d = new Date(parseSource);
                                 if (!isNaN(d.getTime())) {
-                                  return d.toLocaleString("en-IN", {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
+                                  return d.toLocaleString('en-IN', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
                                     hour12: true,
                                   });
                                 }
@@ -1901,24 +1800,23 @@ const Feeders = () => {
                   ],
                 },
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 5,
-                  className: "w-full gap-4",
+                  className: 'w-full gap-4',
                   columns: getStats().map((stat: any) => ({
-                    name: "Card",
+                    name: 'Card',
                     props: {
                       title: stat.title,
                       value: stat.value,
                       subtitle1: stat.subtitle1,
                       icon: stat.icon,
                       bg: stat.bg,
-                      iconClassName: stat.iconClassName || "w-4 h-4",
+                      iconClassName: stat.iconClassName || 'w-4 h-4',
                       iconStyle: stat.iconStyle || FILTER_STYLES.WHITE,
-                      width: stat.width || "w-8",
-                      height: stat.height || "h-8",
+                      width: stat.width || 'w-8',
+                      height: stat.height || 'h-8',
                       valueFontSize:
-                        stat.valueFontSize ||
-                        "text-lg lg:text-xl md:text-lg sm:text-base",
+                        stat.valueFontSize || 'text-lg lg:text-xl md:text-lg sm:text-base',
                       loading: stat.loading,
                     },
                     span: { col: 1, row: 1 },
@@ -1927,30 +1825,36 @@ const Feeders = () => {
               ],
             },
           },
-       
+
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
               rows: [
                 {
-                  layout: "grid" as const,
-                  className: "w-full",
+                  layout: 'grid' as const,
+                  className: 'w-full',
                   columns: [
                     {
-                      name: "VectorTest",
+                      name: 'VectorTest',
                       props: {
                         showHeader: true,
                         showDownloadButton: true,
-                        headerTitle:'Feeder Vector Diagram',
-                        vrValue: parseFloat(instantaneousStatsData.rphVolt || "0"),
-                        vbValue: parseFloat(instantaneousStatsData.bphVolt || "0"),
-                        vyValue: parseFloat(instantaneousStatsData.yphVolt || "0"),
+                        headerTitle: 'Feeder Vector Diagram',
+                        vrValue: parseFloat(instantaneousStatsData.rphVolt || '0'),
+                        vbValue: parseFloat(instantaneousStatsData.bphVolt || '0'),
+                        vyValue: parseFloat(instantaneousStatsData.yphVolt || '0'),
                         useCustomDashedAngles: true,
-                        customDashedVrAngle: calculatePowerFactorAngle(instantaneousStatsData.rphPF || "0"),
-                        customDashedVbAngle: calculatePowerFactorAngle(instantaneousStatsData.bphPF || "0"),
-                        customDashedVyAngle: calculatePowerFactorAngle(instantaneousStatsData.yphPF || "0"),
-                        statsSectionPosition:'right',
+                        customDashedVrAngle: calculatePowerFactorAngle(
+                          instantaneousStatsData.rphPF || '0'
+                        ),
+                        customDashedVbAngle: calculatePowerFactorAngle(
+                          instantaneousStatsData.bphPF || '0'
+                        ),
+                        customDashedVyAngle: calculatePowerFactorAngle(
+                          instantaneousStatsData.yphPF || '0'
+                        ),
+                        statsSectionPosition: 'right',
                         autoSize: true,
                       },
                     },
@@ -1961,33 +1865,33 @@ const Feeders = () => {
           },
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
               rows: [
                 {
-                  layout: "grid" as const,
-                  className: "w-full",
+                  layout: 'grid' as const,
+                  className: 'w-full',
                   columns: [
                     {
-                      name: "BarChart",
+                      name: 'BarChart',
                       props: {
                         xAxisData: getConsumptionData().xAxisData,
                         seriesData: getConsumptionData().seriesData,
-                        seriesColors: ["#163b7c", "#55b56c"], // Force brand colors
+                        seriesColors: ['#163b7c', '#55b56c'], // Force brand colors
                         height: 320,
                         showHeader: true,
                         headerTitle: `${consumptionTimeRange} Consumption Metrics Bar Chart`,
-                        className: "w-full",
-                        dateRange: "Last 30 days",
-                        availableTimeRanges: ["Daily", "Monthly"],
+                        className: 'w-full',
+                        dateRange: 'Last 30 days',
+                        availableTimeRanges: ['Daily', 'Monthly'],
                         initialTimeRange: consumptionTimeRange,
                         onTimeRangeChange: (range: string) => {
-                          setConsumptionTimeRange(range as "Daily" | "Monthly");
+                          setConsumptionTimeRange(range as 'Daily' | 'Monthly');
                         },
                         showDownloadButton: true,
                         onDownload: () => handleConsumptionChartDownload(),
                         showXAxisLabel: true,
-                        xAxisLabel: "kWh",
+                        xAxisLabel: 'kWh',
                         isLoading: isConsumptionLoading,
                       },
                     },
@@ -2218,38 +2122,39 @@ const Feeders = () => {
 
           {
             layout: {
-              type: "grid" as const,
+              type: 'grid' as const,
               columns: 1,
-              className: "",
+              className: '',
               rows: [
                 {
-                  layout: "grid" as const,
+                  layout: 'grid' as const,
                   gridColumns: 1,
-                  className: "pb-4",
+                  className: 'pb-4',
                   columns: [
                     {
-                      name: "Table",
+                      name: 'Table',
                       props: {
                         columns: [
-                          { key: "sNo", label: "S.No" },
-                         // { key: "alertId", label: "Alert ID" },
-                          { key: "type", label: "Event Type" },
-                          { key: "feederName", label: "Meter Number" },
-                          { key: "occuredOn", label: "Occured On" },
-                          { key: "status", label: "Status" },
+                          { key: 'sNo', label: 'S.No' },
+                          // { key: "alertId", label: "Alert ID" },
+                          { key: 'type', label: 'Event Type' },
+                          { key: 'feederName', label: 'Meter Number' },
+                          { key: 'occuredOn', label: 'Occured On' },
+                          { key: 'duration', label: 'Duration' },
+                          { key: 'status', label: 'Status' },
                         ],
                         data: alertsData,
                         searchable: true,
                         pagination: true,
                         initialRowsPerPage: 10,
                         rowsPerPageOptions: [5, 10, 15, 20, 25],
-                        emptyMessage: "No Alerts Found",
+                        emptyMessage: 'No Alerts Found',
                         showActions: false,
-                        showHeader: "true",
-                        headerTitle: "Alerts",
+                        showHeader: 'true',
+                        headerTitle: 'Alerts',
                         showPaginationInfo: true,
                         showRowsPerPageSelector: true,
-                        className: "w-full",
+                        className: 'w-full',
                         loading: isAlertsLoading,
                       },
                     },
