@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { FILTER_STYLES } from "@/contexts/FilterStyleContext";
 import BACKEND_URL from "../config";
+import { formatDateTime } from "@/utils/dateFormat";
 
 // Dummy data for fallback
 const dummyDTRData = {
@@ -176,14 +177,19 @@ const DTRDetailPage = () => {
   const [capacityUsage, setCapacityUsage] = useState({
     daily: 0,
     dailyMdkva : 0,
+    dailyLastCommDate: '',
     monthly: 0,
     monthlyMdkva : 0,
+    monthlyLastCommDate: '',
     yearly: 0,
     yearlyMdkva: 0,
+    yearlyLastCommDate: '',
     lifeTime: 0,
     lifeTimeMdkva: 0,
+    lifeTimeLastCommDate: '',
     instantly: 0,
     instantKVA: 0,
+    instantLastCommDate: '',
   });
 console.log("000000000000000000",capacityUsage);
   const [kvaTimeRange, setKvaTimeRange] = useState<"Daily" | "Monthly">(
@@ -830,14 +836,19 @@ console.log("000000000000000000",capacityUsage);
           setCapacityUsage({
             instantly: data.data?.instantCapacityUsage || 0,
             instantKVA: data.data?.instantKVA || 0,
+            instantLastCommDate: formatDateTime(data.data?.instantPeakDate),
             daily: data.data?.dailyCapacityUsage || 0,
             dailyMdkva: data.data?.dailyPeakKVA || 0,
+            dailyLastCommDate: formatDateTime(data.data?.dailyPeakDate), 
             monthly: data.data?.monthlyCapacityUsage || 0,
             monthlyMdkva: data.data?.monthlyPeakKVA ||0,
+            monthlyLastCommDate: formatDateTime(data.data?.monthlyPeakDate),
             yearly: data.data?.yearlyCapacityUsage || 0,
             yearlyMdkva: data.data?.yearlyPeakKVA ||0,
+            yearlyLastCommDate: formatDateTime(data.data?.yearlyPeakDate), 
             lifeTime: data.data?.lifetimeCapacityUsage || 0,
             lifeTimeMdkva: data.data?.lifetimePeakKVA ||0,
+            lifeTimeLastCommDate: formatDateTime(data.data?.lifetimePeakDate),
           });
           console.log("setCapacityUsage", capacityUsage);
         }
@@ -1462,6 +1473,7 @@ console.log("000000000000000000",capacityUsage);
                           {
                             capacity: capacityUsage.instantly,
                             centerLabel: `${capacityUsage.instantKVA} kVA`,
+                            date: capacityUsage.instantLastCommDate,
                             filledColor: "#163B7C",
                             unfilledColor: "#e5e7eb",
                             label: "Instant", 
@@ -1469,6 +1481,7 @@ console.log("000000000000000000",capacityUsage);
                           {
                             capacity: capacityUsage.daily,
                             centerLabel: `${capacityUsage.dailyMdkva} MDkVA`,
+                            date:capacityUsage.dailyLastCommDate,
                             filledColor: "#dc2626",
                             unfilledColor: "#e5e7eb",
                             label: "Daily", 
@@ -1476,6 +1489,7 @@ console.log("000000000000000000",capacityUsage);
                           {
                             capacity: capacityUsage.monthly,
                             centerLabel: `${capacityUsage.monthlyMdkva} MDkVA`,
+                            date:capacityUsage.monthlyLastCommDate,
                             filledColor: "#eab308",
                             unfilledColor: "#e5e7eb",
                             label: "Monthly", 
@@ -1483,6 +1497,7 @@ console.log("000000000000000000",capacityUsage);
                           {
                             capacity: capacityUsage.yearly,
                             centerLabel: `${capacityUsage.yearlyMdkva} MDkVA`,
+                            date:capacityUsage.yearlyLastCommDate,
                             filledColor: "#3b82f6",
                             unfilledColor: "#e5e7eb",
                             label: "Yearly", 
@@ -1490,6 +1505,7 @@ console.log("000000000000000000",capacityUsage);
                           {
                             capacity: capacityUsage.lifeTime,
                             centerLabel: `${capacityUsage.lifeTimeMdkva} MDkVA`,
+                            date:capacityUsage.lifeTimeLastCommDate,
                             filledColor: "#059669",
                             unfilledColor: "#e5e7eb",
                             label: "LifeTime", 
