@@ -371,7 +371,7 @@ const DTRDashboard: React.FC = () => {
         
         return (lat && lng && lat !== 0 && lng !== 0) || meterlocationCoords;
       })
-      .map((dtr, index) => {
+      .map((dtr, _index) => {
         // Try direct coordinates first
         let lat = dtr.latitude || dtr.lat || dtr.lat_coordinate || dtr.latitude_coordinate;
         let lng = dtr.longitude || dtr.lng || dtr.lng_coordinate || dtr.longitude_coordinate;
@@ -2074,11 +2074,10 @@ const DTRDashboard: React.FC = () => {
               },
             ],
           },
-
           {
             layout: {
-              type: "row" as const,
-              className: "",
+              type: "column" as const,
+              className: "w-full",
             },
             components: [
               {
