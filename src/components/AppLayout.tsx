@@ -117,6 +117,9 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
   // Mark notification as read
   const markNotificationAsRead = async (notificationId: string) => {
     try {
+      console.log(`🔵 [FRONTEND] markNotificationAsRead called with ID: ${notificationId}`);
+      console.log(`🔵 [FRONTEND] API URL: ${baseApiUrl}/notifications/${notificationId}/read`);
+      
 		const response = await fetch(`${baseApiUrl}/notifications/${notificationId}/read`, {
         method: 'PUT',
         credentials: 'include',
@@ -125,7 +128,12 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         },
       });
 
+      console.log(`🔵 [FRONTEND] Response status: ${response.status}`);
+      
       if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ [FRONTEND] Mark as read successful:`, result);
+        
         setNotifications(prev =>
           prev.map(notif =>
             notif.id === notificationId
@@ -134,10 +142,13 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
           )
         );
         return true;
+      } else {
+        const errorData = await response.json();
+        console.error(`❌ [FRONTEND] Mark as read failed:`, errorData);
+        return false;
       }
-      return false;
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('❌ [FRONTEND] Error marking notification as read:', error);
       return false;
     }
   };
@@ -145,6 +156,9 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
   // Mark all notifications as read
   const markAllNotificationsAsReadList = async () => {
     try {
+      console.log(`🟣 [FRONTEND] markAllNotificationsAsRead called`);
+      console.log(`🟣 [FRONTEND] API URL: ${baseApiUrl}/notifications/mark-all-read`);
+      
 		const response = await fetch(`${baseApiUrl}/notifications/mark-all-read`, {
         method: 'PUT',
         credentials: 'include',
@@ -153,15 +167,27 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         },
       });
 
+      console.log(`🟣 [FRONTEND] Response status: ${response.status}`);
+      
       if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ [FRONTEND] Mark all as read successful:`, result);
+        
         setNotifications(prev =>
           prev.map(notif => ({ ...notif, is_read: true }))
         );
+        
+        // Refresh the notifications list to get updated data
+        await fetchNotificationsList();
+        
         return true;
+      } else {
+        const errorData = await response.json();
+        console.error(`❌ [FRONTEND] Mark all as read failed:`, errorData);
+        return false;
       }
-      return false;
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      console.error('❌ [FRONTEND] Error marking all notifications as read:', error);
       return false;
     }
   };

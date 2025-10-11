@@ -657,9 +657,12 @@ const Feeders = () => {
           );
 
           if (specificFeeder) {
+            // Store the actual total feeders count before filtering
+            const actualTotalFeeders = feederInfo.feeders?.length || 1;
+            
             feederInfo = {
               dtr: feederInfo.dtr,
-              totalFeeders: 1, // This is now for a specific feeder
+              totalFeeders: actualTotalFeeders, // Use actual DTR's total feeder count
               specificFeeder: {
                 serialNumber: specificFeeder.serialNumber,
                 meterNumber: specificFeeder.meterNumber,
@@ -1749,7 +1752,7 @@ const Feeders = () => {
                                 gap: "gap-1",
                               },
                               {
-                                title: "Capacity",
+                                title: "DTR Capacity",
                                 value: `${
                                   feederInfoData?.dtr?.capacity || 100
                                 } kVA`,
@@ -1761,21 +1764,34 @@ const Feeders = () => {
                                 // progressColor: 'bg-secondary from-primary to-secondary'
                               },
                               {
-                                title: "Status",
-                                value: feederInfoData?.dtr?.status || "ACTIVE",
+                                title: "Feeder Capacity",
+                                value: (() => {
+                                  const dtrCapacity = feederInfoData?.dtr?.capacity || 100;
+                                  const totalFeeders = feederInfoData?.totalFeeders || 1;
+                                  const feederCapacity = Math.round(dtrCapacity / totalFeeders);
+                                  return `${feederCapacity} kVA`;
+                                })(),
+                                align: "start",
+                                gap: "gap-1",
+                              },
+                              {
+                                title: "Feeder Status",
+                                value: (() => {
+                                  // Use feeder status if available (for individual feeder), otherwise use DTR status
+                                  const feederStatus = feederInfoData?.specificFeeder?.status || 
+                                                      feederInfoData?.feeders?.[0]?.status;
+                                  return feederStatus || feederInfoData?.dtr?.status || "ACTIVE";
+                                })(),
                                 align: "start",
                                 gap: "gap-1",
                                 statusIndicator: true,
-                                statusType: feederInfoData?.dtr?.status,
+                                statusType: (() => {
+                                  const feederStatus = feederInfoData?.specificFeeder?.status || 
+                                                      feederInfoData?.feeders?.[0]?.status;
+                                  return feederStatus || feederInfoData?.dtr?.status;
+                                })(),
                               },
-                              {
-                                title: "Total Feeders",
-                                value:
-                                  feederInfoData?.totalFeeders?.toString() ||
-                                  "1",
-                                align: "start",
-                                gap: "gap-1",
-                              },
+                              
                             ],
                           },
                         ],
