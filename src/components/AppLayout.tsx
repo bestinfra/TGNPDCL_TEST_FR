@@ -687,10 +687,10 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             // Navigate to notifications page or show notification panel
             console.log('Notification clicked');
           }}
-          onMarkAllAsRead={markAllNotificationsAsReadList}
+          onMarkAllNotificationsAsRead={markAllNotificationsAsReadList}
           //  onRefreshNotifications={fetchNotificationStats}
           onFetchNotifications={getCurrentNotifications}
-          onMarkAsRead={markNotificationAsRead}
+          onMarkNotificationAsRead={markNotificationAsRead}
           logoutRoute="/v2/tgnpdcl_smart/login"
         />
         {/* Main Content */}
