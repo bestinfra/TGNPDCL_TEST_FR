@@ -160,7 +160,6 @@ const DTRDetailPage = () => {
   });
   const [locationHierarchy, setLocationHierarchy] = useState<any[]>([]);
 
-  // Loading states
   const [_isDtrLoading, setIsDtrLoading] = useState(true);
   const [_isConsumptionLoading, setIsConsumptionLoading] = useState(true);
   const [isFeedersLoading, setIsFeedersLoading] = useState(true);
@@ -194,68 +193,103 @@ const DTRDetailPage = () => {
     instantKVA: 0,
     instantLastCommDate: '',
   });
-  console.log('000000000000000000', capacityUsage);
   const [kvaTimeRange, setKvaTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
-
-  // Simple error state like Prepaid.tsx
   const [errorMessages, setErrors] = useState<any[]>([]);
-
-  // DTR Status dropdown state
-  const [dtrStatusValue, setDtrStatusValue] = useState<string>('na'); // Default to N/A
-  const isDtrDropdownDisabled = false; // Can be made dynamic if needed
+  const [dtrStatusValue, setDtrStatusValue] = useState<string>('na');
+  const isDtrDropdownDisabled = false;
   const dtrStatusOptions = [
     { label: 'Active', value: 'active' },
     { label: 'Inactive', value: 'inactive' },
   ];
 
-  // Handle DTR status change
-  const handleDtrStatusChange = async (value: string) => {
-    console.log('DTR Status changed to:', value);
-    setDtrStatusValue(value);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string>('');
+  const [previousStatus, setPreviousStatus] = useState<string>('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-    // Don't make API call if N/A is selected
+  const handleDtrStatusChange = (value: string) => {
     if (value === 'na') {
-      console.log('N/A selected - no API call needed');
+      setDtrStatusValue(value);
       return;
     }
+    setPreviousStatus(dtrStatusValue);
+    setDtrStatusValue(value);
+    setPendingStatus(value);
+    
+    setDtr((prev) => ({
+      ...prev,
+      condition: value.toUpperCase(),
+    }));
+    
+    setIsStatusModalOpen(true);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    setIsUpdatingStatus(true);
 
     try {
-      // Extract numeric DTR ID from the URL parameter
       const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
       if (!numericDtrId) {
         throw new Error('Invalid DTR ID format');
       }
 
-      // Call the API to update DTR status
       const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
-          status: value,
+          status: pendingStatus,
         }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        console.log('DTR status updated successfully:', data);
-        // Update the DTR condition in the local state
+      if (data.success && data.data) {
+        const apiStatus = data.data.status;
+        const normalizedStatus = apiStatus ? apiStatus.toLowerCase() : pendingStatus;
+
         setDtr((prev) => ({
           ...prev,
-          condition: data.data.status,
+          condition: apiStatus || pendingStatus.toUpperCase(),
         }));
+
+        setDtrStatusValue(normalizedStatus);
+        setPreviousStatus('');
       } else {
         console.error('Failed to update DTR status:', data.message);
-        // Revert the dropdown value on error
-        setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+        setDtrStatusValue(previousStatus);
+        setDtr((prev) => ({
+          ...prev,
+          condition: previousStatus.toUpperCase(),
+        }));
       }
     } catch (error) {
       console.error('Error updating DTR status:', error);
-      // Revert the dropdown value on error
-      setDtrStatusValue(dtr.condition.toLowerCase().includes('active') ? 'active' : 'inactive');
+      setDtrStatusValue(previousStatus);
+      setDtr((prev) => ({
+        ...prev,
+        condition: previousStatus.toUpperCase(),
+      }));
+    } finally {
+      setIsUpdatingStatus(false);
+      setIsStatusModalOpen(false);
+      setPendingStatus('');
     }
+  };
+
+  const handleCancelStatusChange = () => {
+    setDtrStatusValue(previousStatus);
+    
+    setDtr((prev) => ({
+      ...prev,
+      condition: previousStatus.toUpperCase(),
+    }));
+    
+    setIsStatusModalOpen(false);
+    setPendingStatus('');
+    setPreviousStatus('');
   };
 
   // Get KVA metrics data based on selected time range
@@ -307,7 +341,6 @@ const DTRDetailPage = () => {
   // Retry all APIs
   const retryAllAPIs = () => {
     clearErrors();
-    // Retry all APIs by refreshing the page
     window.location.reload();
   };
 
@@ -394,12 +427,10 @@ const DTRDetailPage = () => {
     }
   }, [locationHierarchy]);
 
-  // Set initial DTR status based on DTR data
   useEffect(() => {
     if (dtr.condition && dtr.condition !== 'N/A' && dtr.condition !== '0') {
-      // Map DTR condition to dropdown value - more robust mapping
       const condition = dtr.condition.toLowerCase();
-      let statusValue = 'active'; // default
+      let statusValue = 'active';
 
       if (
         condition.includes('inactive') ||
@@ -416,11 +447,8 @@ const DTRDetailPage = () => {
       }
 
       setDtrStatusValue(statusValue);
-      console.log('Initial DTR Status set to:', statusValue, 'based on condition:', dtr.condition);
     } else {
-      // If no valid condition data, keep N/A as default
       setDtrStatusValue('na');
-      console.log('No valid DTR condition data, keeping N/A as default');
     }
   }, [dtr.condition]);
 
@@ -692,7 +720,7 @@ const DTRDetailPage = () => {
         if (!response.ok) throw new Error('Failed to fetch feeder stats');
 
         const data = await response.json();
-        console.log(' 000000000000000000', data);
+        // console.log(' 000000000000000000', data);
 
         if (data.success) {
           const updatedStats = [
@@ -781,7 +809,7 @@ const DTRDetailPage = () => {
             },
           ];
 
-          console.log('📊 [DTR Statistics] Final Stats Array:', updatedStats);
+          // console.log('📊 [DTR Statistics] Final Stats Array:', updatedStats);
 
           setStats(updatedStats);
 
@@ -803,7 +831,6 @@ const DTRDetailPage = () => {
             lifeTimeMdkva: data.data?.lifetimePeakKVA ||0,
             lifeTimeLastCommDate: formatDateTime(data.data?.lifetimePeakDate),
           });
-          console.log('setCapacityUsage', capacityUsage);
         }
       } catch (error) {
         console.error('Error fetching feeder stats:', error);
@@ -832,7 +859,7 @@ const DTRDetailPage = () => {
     await fetchAlertsData(page, limit);
   };
 
-  console.log(dtr, 'dtr');
+  // console.log(dtr, 'dtr');
   const lastComm = dtr.lastCommunication
     ? new Date(dtr.lastCommunication).toLocaleString('en-IN', {
         year: 'numeric',
@@ -1000,7 +1027,7 @@ const DTRDetailPage = () => {
       },
     });
   };
-  console.log('setCapacityUsage', capacityUsage);
+  // console.log('setCapacityUsage', capacityUsage);
   return (
     <div className=" sticky top-0 ">
       <Page
@@ -1133,6 +1160,7 @@ const DTRDetailPage = () => {
                                 align: 'start',
                                 gap: 'gap-1',
                                 statusIndicator: true,
+                                statusType:dtr.condition,
                               },
                               {
                                 title: 'Division',
@@ -1617,6 +1645,37 @@ const DTRDetailPage = () => {
                         serverPagination: alertsPagination,
                         onPageChange: handleAlertsPageChange,
                         loading: isAlertsLoading,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            layout: {
+              type: 'grid' as const,
+              columns: 1,
+              className: '',
+              rows: [
+                {
+                  layout: 'grid' as const,
+                  gridColumns: 1,
+                  columns: [
+                    {
+                      name: 'Modal',
+                      props: {
+                        title: 'Confirm Status Change',
+                        message: `Are you sure you want to change the status of this DTR to ${pendingStatus.toUpperCase()}?`,
+                        onConfirm: handleConfirmStatusChange,
+                        onClose: handleCancelStatusChange,
+                        isOpen: isStatusModalOpen,
+                        showConfirmButton: true,
+                        confirmButtonLabel: isUpdatingStatus ? 'Updating...' : 'Confirm',
+                        confirmButtonVariant: 'primary',
+                        showCloseIcon: true,
+                        backdropClosable: false,
+                        size: 'md',
                       },
                     },
                   ],
