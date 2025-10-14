@@ -554,7 +554,7 @@ const DTRDashboard: React.FC = () => {
       // Add lastSelectedId if available
       if (lastSelectedId) {
         params.append('lastSelectedId', lastSelectedId);
-      }
+      } 
 
       const data = await apiClient.get(`/dtrs?${params.toString()}`);
 
@@ -2151,11 +2151,10 @@ const DTRDashboard: React.FC = () => {
               },
             ],
           },
-
           {
             layout: {
-              type: 'row' as const,
-              className: '',
+              type: "column" as const,
+              className: "w-full",
             },
             components: [
               {
@@ -2194,6 +2193,7 @@ const DTRDashboard: React.FC = () => {
                   apiKey: 'AIzaSyCzGAzUjgicpxShXVusiguSnosdmsdQ7WI',
                   center: mapCenter,
                   zoom: mapZoom,
+                  showStatsSection:true,
                   libraries: ['places'],
                   markers: generateDTRMarkers(dtrTableData),
                   mapOptions: {
