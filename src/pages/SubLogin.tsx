@@ -6,6 +6,7 @@ import { APP_CONFIG } from '../config/constants';
 interface CarouselSlide {
   title: string;
   img: string;
+  description:string,
 }
 import { useState } from "react";
 // Define FormInputValue type locally since we're using federated components
@@ -16,14 +17,17 @@ const slides: CarouselSlide[] = [
   {
     title: "Welcome to the Sub-App!",
     img: "images/Slide3.jpg",
+    description: "Welcome to the Sub-App!",
   },
   {
     title: "Feature Highlight",
     img: "images/DTR.jpg",
+    description: "Feature Highlight",
   },
   {
     title: "Stay Connected",
     img: "images/Transformer.jpg",
+    description: "Stay Connected",
   },
 ];
 

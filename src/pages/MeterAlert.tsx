@@ -288,8 +288,8 @@ const MeterAlert: React.FC = () => {
   };
 
   // Self-contained tracking system - no imports needed!
-  const [hasActiveFilters, setHasActiveFilters] = useState(false);
-  const [activeComponents, setActiveComponents] = useState<
+  const [_hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [_activeComponents, setActiveComponents] = useState<
     Array<{
       id: string;
       name: string;
