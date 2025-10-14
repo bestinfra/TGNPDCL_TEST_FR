@@ -6,7 +6,6 @@ interface TableData {
 import { useNavigate } from 'react-router-dom';
 const Page = lazy(() => import('SuperAdmin/Page'));
 import { exportChartData } from '../utils/excelExport';
-import { FILTER_STYLES } from '../contexts/FilterStyleContext';
 import { apiClient } from '../api/apiUtils';
 import BACKEND_URL from '../config';
 import { io, Socket } from 'socket.io-client';
@@ -26,10 +25,6 @@ const dummyDtrStatsData = {
   powerFailureFeeders: '0',
   powerFailurePercentage: '0',
   htSideFuseBlown: '0',
-  activeDtrs: '0',
-  inactiveDtrs: '0',
-  activePercentage: '0',
-  inactivePercentage: '0',
 };
 
 const dummyFilterOptions = {
@@ -60,18 +55,29 @@ const dummyFilterOptions = {
 };
 
 const dummyDtrConsumptionData = {
-  daily: { totalKwh: '0', totalKvah: '0', totalKw: '0', totalKva: '0' },
+  daily: {
+    totalKwh: '0',
+    totalKvah: '0',
+    totalKvarh: '0',
+    totalKw: '0',
+    totalKva: '0',
+    totalKvar: '0',
+  },
   monthly: {
     totalKwh: '0',
     totalKvah: '0',
+    totalKvarh: '0',
     totalKw: '0',
     totalKva: '0',
+    totalKvar: '0',
   },
   currentDay: {
     totalKwh: '0',
     totalKvah: '0',
+    totalKvarh: '0',
     totalKw: '0',
     totalKva: '0',
+    totalKvar: '0',
     latestKwTimestamp: null,
     latestKvaTimestamp: null,
   },
@@ -190,20 +196,26 @@ const DTRDashboard: React.FC = () => {
     daily: {
       totalKwh: string | number;
       totalKvah: string | number;
+      totalKvarh: string | number;
       totalKw: string | number;
       totalKva: string | number;
+      totalKvar: string | number;
     };
     monthly: {
       totalKwh: string | number;
       totalKvah: string | number;
+      totalKvarh: string | number;
       totalKw: string | number;
       totalKva: string | number;
+      totalKvar: string | number;
     };
     currentDay?: {
       totalKwh: string | number;
       totalKvah: string | number;
+      totalKvarh: string | number;
       totalKw: string | number;
       totalKva: string | number;
+      totalKvar: string | number;
       latestKwTimestamp?: string | null;
       latestKvaTimestamp?: string | null;
     };
@@ -493,20 +505,26 @@ const DTRDashboard: React.FC = () => {
           daily: row2.daily || {
             totalKwh: 0,
             totalKvah: 0,
+            totalKvarh: 0,
             totalKw: 0,
             totalKva: 0,
+            totalKvar: 0,
           },
           monthly: row2.monthly || {
             totalKwh: 0,
             totalKvah: 0,
+            totalKvarh: 0,
             totalKw: 0,
             totalKva: 0,
+            totalKvar: 0,
           },
           currentDay: row2.currentDay || {
             totalKwh: 0,
             totalKvah: 0,
+            totalKvarh: 0,
             totalKw: 0,
             totalKva: 0,
+            totalKvar: 0,
             latestKwTimestamp: null,
             latestKvaTimestamp: null,
           },
@@ -780,20 +798,26 @@ const DTRDashboard: React.FC = () => {
             daily: row2.daily || {
               totalKwh: 0,
               totalKvah: 0,
+              totalKvarh: 0,
               totalKw: 0,
               totalKva: 0,
+              totalKvar: 0,
             },
             monthly: row2.monthly || {
               totalKwh: 0,
               totalKvah: 0,
+              totalKvarh: 0,
               totalKw: 0,
               totalKva: 0,
+              totalKvar: 0,
             },
             currentDay: row2.currentDay || {
               totalKwh: 0,
               totalKvah: 0,
+              totalKvarh: 0,
               totalKw: 0,
               totalKva: 0,
+              totalKvar: 0,
               latestKwTimestamp: null,
               latestKvaTimestamp: null,
             },
@@ -1564,6 +1588,15 @@ const DTRDashboard: React.FC = () => {
 
   const monthlyConsumptionCards = [
     {
+      title: 'Total kW',
+      value: String(dtrConsumptionData.monthly.totalKw || '0'),
+      icon: 'icons/consumption.svg',
+      subtitle1: 'Monthly Average Power',
+      bg: 'bg-stat-icon-gradient',
+      loading: isStatsLoading,
+      onValueClick: () => navigate('/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)'),
+    },
+    {
       title: 'Total kWh',
       value: String(dtrConsumptionData.monthly.totalKwh || '0'),
       icon: 'icons/consumption.svg',
@@ -1571,6 +1604,15 @@ const DTRDashboard: React.FC = () => {
       bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
       onValueClick: () => navigate('/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)'),
+    },
+    {
+      title: 'Total kVA',
+      value: String(dtrConsumptionData.monthly.totalKva || '0'),
+      icon: 'icons/consumption.svg',
+      subtitle1: 'Monthly Average Apparent',
+      bg: 'bg-stat-icon-gradient',
+      loading: isStatsLoading,
+      onValueClick: () => navigate('/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)'),
     },
     {
       title: 'Total kVAh',
@@ -1582,45 +1624,36 @@ const DTRDashboard: React.FC = () => {
       onValueClick: () => navigate('/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)'),
     },
     {
-      title: 'Avg kW',
-      value: String(dtrConsumptionData.monthly.totalKw || '0'),
+      title: 'Total kVAR',
+      value: String(dtrConsumptionData.monthly.totalKvar || '0'),
       icon: 'icons/consumption.svg',
-      subtitle1: 'Monthly Average Power',
+      subtitle1: 'Monthly Reactive Power',
       bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
-      onValueClick: () => navigate('/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)'),
+      onValueClick: () => navigate('/dtr-table?type=monthly-kvar&title=Avg%20kVAR%20(Monthly)'),
     },
     {
-      title: 'Avg kVA',
-      value: String(dtrConsumptionData.monthly.totalKva || '0'),
+      title: 'Total kVARh',
+      value: String(dtrConsumptionData.monthly.totalKvarh || '0'),
       icon: 'icons/consumption.svg',
-      subtitle1: 'Monthly Average Apparent',
+      subtitle1: 'Monthly Reactive Energy',
       bg: 'bg-stat-icon-gradient',
       loading: isStatsLoading,
-      onValueClick: () => navigate('/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)'),
-    },
-    {
-      title: 'Active DTRs',
-      value: Number(dtrStatsData?.activeDtrs || '0'),
-      icon: 'icons/dtr.svg',
-      subtitle1: `${dtrStatsData?.activePercentage ?? '0'}% of Total DTRs`,
-      iconStyle: FILTER_STYLES.WHITE, // White icon for Active DTRs
-      bg: 'bg-[var(--color-secondary)]',
-      loading: isStatsLoading,
-    },
-    {
-      title: 'In-Active DTRs',
-      value: Number(dtrStatsData?.inactiveDtrs || '0'),
-      icon: 'icons/dtr.svg',
-      subtitle1: `${dtrStatsData?.inactivePercentage ?? '0'}% of Total DTRs`,
-      iconStyle: FILTER_STYLES.WHITE, // White icon for In-Active DTRs
-      bg: 'bg-[var(--color-danger)]',
-      loading: isStatsLoading,
+      onValueClick: () => navigate('/dtr-table?type=monthly-kvarh&title=Total%20kVARh%20(Monthly)'),
     },
   ];
 
   // Get current consumption cards data based on selected time range
-  const getCurrentConsumptionCards = () => {
+  const getCurrentConsumptionCards = (): Array<{
+    title: string;
+    value: string | number;
+    icon: string;
+    subtitle1: string;
+    bg: string;
+    loading: boolean;
+    onValueClick?: () => void;
+    iconStyle?: any;
+  }> => {
     if (selectedTimeRange === 'Daily') {
       // For daily, use currentDay data if available, otherwise fall back to daily
       const currentDayData = dtrConsumptionData.currentDay || {
@@ -1629,24 +1662,6 @@ const DTRDashboard: React.FC = () => {
         latestKvaTimestamp: null,
       };
       return [
-        {
-          title: 'Total kWh',
-          value: String(currentDayData.totalKwh || '0'),
-          icon: 'icons/energy.svg',
-          subtitle1: "Today's Active Energy",
-          bg: 'bg-stat-icon-gradient',
-          loading: isStatsLoading,
-          onValueClick: () => navigate('/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)'),
-        },
-        {
-          title: 'Total kVAh',
-          value: String(currentDayData.totalKvah || '0'),
-          icon: 'icons/energy.svg',
-          subtitle1: "Today's Apparent Energy",
-          bg: 'bg-stat-icon-gradient',
-          loading: isStatsLoading,
-          onValueClick: () => navigate('/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)'),
-        },
         {
           title: 'Total kW',
           value: String(currentDayData.totalKw || '0'),
@@ -1660,6 +1675,15 @@ const DTRDashboard: React.FC = () => {
           bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
           onValueClick: () => navigate('/dtr-table?type=daily-kw&title=Total%20kW%20(Current)'),
+        },
+        {
+          title: 'Total kWh',
+          value: String(currentDayData.totalKwh || '0'),
+          icon: 'icons/energy.svg',
+          subtitle1: "Today's Active Energy",
+          bg: 'bg-stat-icon-gradient',
+          loading: isStatsLoading,
+          onValueClick: () => navigate('/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)'),
         },
         {
           title: 'Total kVA',
@@ -1676,22 +1700,31 @@ const DTRDashboard: React.FC = () => {
           onValueClick: () => navigate('/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)'),
         },
         {
-          title: 'Active DTRs',
-          value: Number(dtrStatsData?.activeDtrs || '0'),
-          icon: 'icons/dtr.svg',
-          subtitle1: `${dtrStatsData?.activePercentage ?? '0'}% of Total DTRs`,
-          iconStyle: FILTER_STYLES.WHITE,
-          bg: 'bg-[var(--color-secondary)]',
+          title: 'Total kVAh',
+          value: String(currentDayData.totalKvah || '0'),
+          icon: 'icons/energy.svg',
+          subtitle1: "Today's Apparent Energy",
+          bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
+          onValueClick: () => navigate('/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)'),
         },
         {
-          title: 'In-Active DTRs',
-          value: Number(dtrStatsData?.inactiveDtrs || '0'),
-          icon: 'icons/dtr.svg',
-          subtitle1: `${dtrStatsData?.inactivePercentage ?? '0'}% of Total DTRs`,
-          iconStyle: FILTER_STYLES.WHITE,
-          bg: 'bg-[var(--color-danger)]',
+          title: 'Total kVAR',
+          value: String(currentDayData.totalKvar || '0'),
+          icon: 'icons/consumption.svg',
+          subtitle1: "Today's Reactive Power",
+          bg: 'bg-stat-icon-gradient',
           loading: isStatsLoading,
+          onValueClick: () => navigate('/dtr-table?type=daily-kvar&title=Total%20kVAR%20(Current)'),
+        },
+        {
+          title: 'Total kVARh',
+          value: String(currentDayData.totalKvarh || '0'),
+          icon: 'icons/consumption.svg',
+          subtitle1: "Today's Reactive Energy",
+          bg: 'bg-stat-icon-gradient',
+          loading: isStatsLoading,
+          onValueClick: () => navigate('/dtr-table?type=daily-kvarh&title=Total%20kVARh%20(Today)'),
         },
       ];
     } else {
@@ -1725,6 +1758,7 @@ const DTRDashboard: React.FC = () => {
     { key: 'feederName', label: 'Meter Number' },
     { key: 'dtrNumber', label: 'DTR Number' },
     { key: 'occuredOn', label: 'Occured On' },
+    { key: 'duration', label: 'Duration' },
     // { key: "status", label: "Status" },
   ];
   console.log('Discom options:', filterOptions.discoms);
@@ -1983,9 +2017,10 @@ const DTRDashboard: React.FC = () => {
                         value: card.value,
                         icon: card.icon,
                         subtitle1: card.subtitle1,
-                        iconStyle: card.iconStyle, // Only for Active/In-Active DTRs
+                        ...(card.iconStyle && { iconStyle: card.iconStyle }),
                         bg: card.bg || 'bg-stat-icon-gradient',
                         loading: card.loading,
+                        onValueClick: card.onValueClick,
                       },
                       span: { col: 1 as const, row: 1 as const },
                     })),

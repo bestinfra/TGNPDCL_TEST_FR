@@ -510,16 +510,16 @@ const MeterAlert: React.FC = () => {
                 props: {
                   title: 'Meter Events',
                   onBackClick: () => window.history.back(),
-                  buttonsLabel: 'Export',
-                  variant: 'primary',
-                  backButtonText: '',
-                  onClick: handleExportData,
-                  showMenu: true,
-                  showDropdown: true,
-                  menuItems: [{ id: 'export', label: 'Export' }],
-                  onMenuItemClick: (_itemId: string) => {
-                    // Handle menu item click
-                  },
+                  //   buttonsLabel: 'Export',
+                  //   variant: 'primary',
+                  //   backButtonText: '',
+                  //   onClick: handleExportData,
+                  //   showMenu: true,
+                  //   showDropdown: true,
+                  //   menuItems: [{ id: 'export', label: 'Export' }],
+                  //   onMenuItemClick: (_itemId: string) => {
+                  //     // Handle menu item click
+                  //   },
                 },
               },
             ],
@@ -752,7 +752,7 @@ const MeterAlert: React.FC = () => {
                         data: pieData,
                         height: 300,
                         showHeader: true,
-                        headerTitle: 'Current Month Tamper Types Distribution',
+                        headerTitle: 'Current Month Event Types Distribution',
                         showDownloadButton: true,
                         isLoading: isChartLoading,
                         onClick: (segmentName?: string) => {

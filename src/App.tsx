@@ -34,32 +34,35 @@ const App: React.FC = () => {
               path="/*"
               element={
                 <ProtectedRoute>
-                <AppLayout>
-                <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-                  <Routes>
-                    <Route path="/" element={<DTRDashboard />} />
-                    <Route path="/asset-management" element={<AssetManagement />} />
-                    <Route path="/users" element={<Users />} />
-                    <Route path="/users/:userId" element={<UserDetail />} />
-                    <Route path="/add-user" element={<AddUser />} />
-                    <Route path="/role-management" element={<RoleManagement />} />
-                    <Route path="/roles-permissions" element={<RolesPermissions />} />
-                    <Route path="/tickets" element={<Tickets />} />
-                    <Route path="/tickets/:ticketId" element={<TicketView />} />  
-                    <Route path="/tickets/:ticketId/edit" element={<AddTicket />} />
-                    <Route path="/add-ticket" element={<AddTicket />} />
-                    <Route path="/data-logger" element={<DataLogger />} />
-                    {/* <Route path="/meters" element={<MetersList />} /> */}
-                    <Route path="/meter-details/:meterId" element={<MeterDetails />} />
-                    <Route path="/dtr-detail/:dtrId" element={<DTRDetailPage />} />
-                    <Route path="/feeder/:feederId" element={<Feeders />} />
-                    <Route path="/dtr-table" element={<DTRTable />} />
-                    <Route path="/meter-alert" element={<MeterAlert />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-              </AppLayout>
-           
+                  <AppLayout>
+                    <Suspense
+                      fallback={
+                        <div className="flex items-center justify-center h-screen">Loading...</div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/" element={<DTRDashboard />} />
+                        <Route path="/asset-management" element={<AssetManagement />} />
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/users/:userId" element={<UserDetail />} />
+                        <Route path="/add-user" element={<AddUser />} />
+                        <Route path="/role-management" element={<RoleManagement />} />
+                        <Route path="/roles-permissions" element={<RolesPermissions />} />
+                        <Route path="/tickets" element={<Tickets />} />
+                        <Route path="/tickets/:ticketId" element={<TicketView />} />
+                        <Route path="/tickets/:ticketId/edit" element={<AddTicket />} />
+                        <Route path="/add-ticket" element={<AddTicket />} />
+                        <Route path="/data-logger" element={<DataLogger />} />
+                        {/* <Route path="/meters" element={<MetersList />} /> */}
+                        <Route path="/meter-details/:meterId" element={<MeterDetails />} />
+                        <Route path="/dtr-detail/:dtrId" element={<DTRDetailPage />} />
+                        <Route path="/feeder/:dtrId" element={<Feeders />} />
+                        <Route path="/dtr-table" element={<DTRTable />} />
+                        <Route path="/meter-alert" element={<MeterAlert />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </Suspense>
+                  </AppLayout>
                 </ProtectedRoute>
               }
             />
