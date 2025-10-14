@@ -1,9 +1,9 @@
-import { useState, useEffect, lazy } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-const Page = lazy(() => import("SuperAdmin/Page"));
-import { FILTER_STYLES } from "@/contexts/FilterStyleContext";
-import BACKEND_URL from "../config";
-import { formatDateTime } from "@/utils/dateFormat";
+import { useState, useEffect, lazy } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+const Page = lazy(() => import('SuperAdmin/Page'));
+import { FILTER_STYLES } from '@/contexts/FilterStyleContext';
+import BACKEND_URL from '../config';
+import { formatDateTime } from '@/utils/dateFormat';
 
 // Dummy data for fallback
 const dummyDTRData = {
@@ -178,10 +178,10 @@ const DTRDetailPage = () => {
   });
   const [capacityUsage, setCapacityUsage] = useState({
     daily: 0,
-    dailyMdkva : 0,
+    dailyMdkva: 0,
     dailyLastCommDate: '',
     monthly: 0,
-    monthlyMdkva : 0,
+    monthlyMdkva: 0,
     monthlyLastCommDate: '',
     yearly: 0,
     yearlyMdkva: 0,
@@ -822,13 +822,13 @@ const DTRDetailPage = () => {
             dailyMdkva: data.data?.dailyPeakKVA || 0,
             dailyLastCommDate: formatDateTime(data.data?.dailyPeakDate),
             monthly: data.data?.monthlyCapacityUsage || 0,
-            monthlyMdkva: data.data?.monthlyPeakKVA ||0,
+            monthlyMdkva: data.data?.monthlyPeakKVA || 0,
             monthlyLastCommDate: formatDateTime(data.data?.monthlyPeakDate),
             yearly: data.data?.yearlyCapacityUsage || 0,
-            yearlyMdkva: data.data?.yearlyPeakKVA ||0,
+            yearlyMdkva: data.data?.yearlyPeakKVA || 0,
             yearlyLastCommDate: formatDateTime(data.data?.yearlyPeakDate),
             lifeTime: data.data?.lifetimeCapacityUsage || 0,
-            lifeTimeMdkva: data.data?.lifetimePeakKVA ||0,
+            lifeTimeMdkva: data.data?.lifetimePeakKVA || 0,
             lifeTimeLastCommDate: formatDateTime(data.data?.lifetimePeakDate),
           });
         }
@@ -1423,37 +1423,42 @@ const DTRDetailPage = () => {
                           {
                             capacity: capacityUsage.instantly,
                             centerLabel: `${capacityUsage.instantKVA} kVA`,
-                            filledColor: "#163B7C",
-                            unfilledColor: "#e5e7eb",
-                            label: "Instant",
+                            filledColor: '#163B7C',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Instant',
+                            date: capacityUsage.instantLastCommDate,
                           },
                           {
                             capacity: capacityUsage.daily,
                             centerLabel: `${capacityUsage.dailyMdkva} MDkVA`,
-                            filledColor: "#dc2626",
-                            unfilledColor: "#e5e7eb",
-                            label: "Daily",
+                            filledColor: '#dc2626',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Daily',
+                            date: capacityUsage.dailyLastCommDate,
                           },
                           {
                             capacity: capacityUsage.monthly,
                             centerLabel: `${capacityUsage.monthlyMdkva} MDkVA`,
-                            filledColor: "#eab308",
-                            unfilledColor: "#e5e7eb",
-                            label: "Monthly",
+                            filledColor: '#eab308',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Monthly',
+                            date: capacityUsage.monthlyLastCommDate,
                           },
                           {
                             capacity: capacityUsage.yearly,
                             centerLabel: `${capacityUsage.yearlyMdkva} MDkVA`,
-                            filledColor: "#3b82f6",
-                            unfilledColor: "#e5e7eb",
-                            label: "Yearly",
+                            filledColor: '#3b82f6',
+                            unfilledColor: '#e5e7eb',
+                            label: 'Yearly',
+                            date: capacityUsage.yearlyLastCommDate,
                           },
                           {
                             capacity: capacityUsage.lifeTime,
                             centerLabel: `${capacityUsage.lifeTimeMdkva} MDkVA`,
-                            filledColor: "#059669",
-                            unfilledColor: "#e5e7eb",
-                            label: "LifeTime",
+                            filledColor: '#059669',
+                            unfilledColor: '#e5e7eb',
+                            label: 'LifeTime',
+                            date: capacityUsage.lifeTimeLastCommDate,
                           },
                         ],
                         enableAnimation: true,
