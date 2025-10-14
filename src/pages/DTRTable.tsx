@@ -87,7 +87,7 @@ const DTRTable: React.FC = () => {
             label: 'Communication-Status',
             statusIndicator: {},
             isActive: (value: string | number | boolean | null | undefined) =>
-              String(value).toLowerCase() === "active",
+              String(value).toLowerCase() === 'active',
           },
           { key: 'lastCommunication', label: 'Last Communication' },
         ];
@@ -202,7 +202,7 @@ const DTRTable: React.FC = () => {
             label: 'Communication-Status',
             statusIndicator: {},
             isActive: (value: string | number | boolean | null | undefined) =>
-              String(value).toLowerCase() === "active",
+              String(value).toLowerCase() === 'active',
           },
           { key: 'lastCommunication', label: 'Last Communication' },
         ];
@@ -215,14 +215,14 @@ const DTRTable: React.FC = () => {
       try {
         if (!cardType) return;
 
-        let url = "";
+        let url = '';
         const params = new URLSearchParams();
-        params.append("page", page.toString());
-        params.append("pageSize", pageSize.toString());
-        if (search) params.append("search", search);
+        params.append('page', page.toString());
+        params.append('pageSize', pageSize.toString());
+        if (search) params.append('search', search);
 
         switch (cardType) {
-          case "total-dtrs":
+          case 'total-dtrs':
             url = `${BACKEND_URL}/dtrs?${params.toString()}`;
             break;
           case 'communicating-meters':
@@ -231,28 +231,28 @@ const DTRTable: React.FC = () => {
           case 'non-communicating-meters':
             url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
             break;
-          case "total-lt-feeders":
+          case 'total-lt-feeders':
             url = `${BACKEND_URL}/dtrs/all-meters?page=${page}&limit=${pageSize}`;
             break;
-          case "fuse-blown":
+          case 'fuse-blown':
             url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
             break;
-          case "overloaded-feeders":
+          case 'overloaded-feeders':
             url = `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
             break;
-          case "underloaded-feeders":
+          case 'underloaded-feeders':
             url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
             break;
-          case "ht-fuse-blown":
+          case 'ht-fuse-blown':
             url = `${BACKEND_URL}/dtrs/ht-fuse-blown`;
             break;
-          case "lt-fuse-blown":
+          case 'lt-fuse-blown':
             url = `${BACKEND_URL}/dtrs/lt-fuse-blown`;
             break;
-          case "unbalanced-dtrs":
+          case 'unbalanced-dtrs':
             url = `${BACKEND_URL}/dtrs/unbalanced-dtrs`;
             break;
-          case "power-failure-feeders":
+          case 'power-failure-feeders':
             url = `${BACKEND_URL}/dtrs/power-failure-feeders`;
             break;
 
@@ -278,11 +278,11 @@ const DTRTable: React.FC = () => {
         console.log(`[DTRTable] Fetching data for ${cardType} from: ${url}`);
         console.log(`[DTRTable] Request params:`, { page, pageSize, search });
 
-        const response = await fetch(url, { credentials: "include" });
+        const response = await fetch(url, { credentials: 'include' });
         if (!response.ok) throw new Error(`Failed to fetch data for ${cardType}`);
 
-        const contentType = response.headers.get("content-type");
-        if (!contentType?.includes("application/json")) throw new Error("Invalid response format");
+        const contentType = response.headers.get('content-type');
+        if (!contentType?.includes('application/json')) throw new Error('Invalid response format');
 
         const data = await response.json();
         console.log(`[DTRTable] Full API response for ${cardType}:`, data);
@@ -291,7 +291,7 @@ const DTRTable: React.FC = () => {
           let rows = data.data || [];
           console.log(`[DTRTable] Raw data for ${cardType}:`, rows.length, 'rows');
           console.log(`[DTRTable] Sample row:`, rows[0]);
-          
+
           // No client-side filter needed; backend returns filtered rows
 
           safeSetTableData(rows);
@@ -311,7 +311,7 @@ const DTRTable: React.FC = () => {
           throw new Error(data.message || `Failed to fetch data for ${cardType}`);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to fetch data. Please try again.");
+        setError(err.message || 'Failed to fetch data. Please try again.');
         console.error(`❌ Error fetching ${cardType}:`, err);
       } finally {
         setLoading(false);
@@ -338,7 +338,7 @@ const DTRTable: React.FC = () => {
 
   const handleView = (row: TableData) => {
     if (!row) return;
-    
+
     if (cardType === 'total-lt-feeders') {
       const dtrId = row.dtrId;
       if (dtrId != null) {
@@ -350,45 +350,69 @@ const DTRTable: React.FC = () => {
               dtrName: row.dtrName,
               location: row.location,
               communicationStatus: row.communicationStatus,
-              lastCommunicationDate: row.lastCommunicationDate
+              lastCommunicationDate: row.lastCommunicationDate,
             },
             dtrId: dtrId,
-            dtrName: row.dtrName
-          }
+            dtrName: row.dtrName,
+          },
         });
         return;
       }
     }
-    
+
     // For DTR-related tables, navigate to DTR detail page
-    if (['total-dtrs','fuse-blown','ht-fuse-blown','lt-fuse-blown','overloaded-feeders', 'underloaded-feeders', 'unbalanced-dtrs', 'power-failure-feeders'].includes(cardType || '')) {
+    if (
+      [
+        'total-dtrs',
+        'fuse-blown',
+        'ht-fuse-blown',
+        'lt-fuse-blown',
+        'overloaded-feeders',
+        'underloaded-feeders',
+        'unbalanced-dtrs',
+        'power-failure-feeders',
+      ].includes(cardType || '')
+    ) {
       const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
       if (dtrId != null) {
         navigate(`/dtr-detail/${dtrId}`);
         return;
       }
     }
-    
+
     // For meter-related tables, navigate to meter search
-    if ((cardType === 'communicating-meters' || cardType === 'non-communicating-meters') && row.meterNo != null) {
+    if (
+      (cardType === 'communicating-meters' || cardType === 'non-communicating-meters') &&
+      row.meterNo != null
+    ) {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
-    
+
     if (cardType === 'fuse-blown' && row.meterNo != null) {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
-    
+
     // For consumption-related tables, navigate to DTR detail if dtrId is available
-    if (['daily-kwh', 'monthly-kwh', 'daily-kvah', 'monthly-kvah', 'daily-kw', 'monthly-kw', 'daily-kva', 'monthly-kva'].includes(cardType || '')) {
+    if (
+      [
+        'daily-kwh',
+        'monthly-kwh',
+        'daily-kvah',
+        'monthly-kvah',
+        'daily-kw',
+        'monthly-kw',
+        'daily-kva',
+        'monthly-kva',
+      ].includes(cardType || '')
+    ) {
       if (row.dtrId != null) {
         navigate(`/dtr-detail/${row.dtrId}`);
         return;
       }
     }
   };
-
 
   const handlePageChange = (page: number) => fetchData(page, serverPagination.limit);
   const handleSearch = (searchTerm: string) => fetchData(1, serverPagination.limit, searchTerm);
@@ -466,9 +490,13 @@ const DTRTable: React.FC = () => {
                         pagination: true,
                         showHeader: true,
                         showActions: !nonActionableCardTypes.includes(cardType || ''),
-                        onView: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
-                       // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
-                        onRowClick: !nonActionableCardTypes.includes(cardType || '') ? handleView : undefined,
+                        onView: !nonActionableCardTypes.includes(cardType || '')
+                          ? handleView
+                          : undefined,
+                        // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
+                        onRowClick: !nonActionableCardTypes.includes(cardType || '')
+                          ? handleView
+                          : undefined,
                         text: cardTitle,
                         className: 'w-full',
                         emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
