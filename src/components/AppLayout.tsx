@@ -435,7 +435,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         window.dispatchEvent(event);
     }, [notifications]);
 
-    // Helper function for isRecent
+    // Helper function for isRecent 
     function isRecent(createdAt: string): boolean {
         const notificationDate = new Date(createdAt);
         const now = new Date();
@@ -772,7 +772,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             <div className="flex flex-col flex-1">
                 {/* Header */}
                 <Header
-                    // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}
+                    // key={`header-${notifications.length}-${notificationStats.unread || 0}-notifications`}l
                     title={pageTitles[location.pathname] || "Dashboard"}
                     onSearch={handleGlobalSearch}
                     onSearchSuggestions={handleSearchSuggestions}
