@@ -1,0 +1,42 @@
+name: GMR Frontend Deploy
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        runs-on: [self-hosted, tgnpdcl_fr]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+
+            - name: Install
+              run: npm ci
+
+            - name: Build
+              run: npm run build
+
+            - name: Deploy
+              shell: powershell
+              run: |
+                  $target = "C:\xampp_production\htdocs\dev\tgnpdcl_smart"
+                  $htaccess = Join-Path $target ".htaccess"
+                  $backup = "$htaccess.bak"
+
+                  if (Test-Path $htaccess) {
+                    Copy-Item $htaccess $backup -Force
+                  }
+
+                  robocopy dist $target /MIR /XF ".htaccess"
+                  if ($LASTEXITCODE -le 1) { exit 0 } else { exit $LASTEXITCODE }
+
+                  if (Test-Path $backup) {
+                    Move-Item $backup $htaccess -Force
+                  }
