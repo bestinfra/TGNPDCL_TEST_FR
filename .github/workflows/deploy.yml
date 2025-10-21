@@ -1,104 +1,42 @@
-name: TGNPDCL Frontend Deploy to Xampp
+name: GMR Frontend Deploy
 
 on:
-  push:
-    branches:
-      - main
-      - dev
+    push:
+        branches:
+            - main
 
 jobs:
-  deploy:
-    runs-on: [self-hosted, tgnpdcl_fr]
+    deploy:
+        runs-on: [self-hosted, tgnpdcl_fr]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
+            - name: Install
+              run: npm ci
 
-      - name: Install Dependencies
-        run: npm ci
+            - name: Build
+              run: npm run build
 
-      # Build for Production (main branch)
-      - name: Build Production
-        if: github.ref == 'refs/heads/main'
-        run: |
-          echo "Building for PRODUCTION with base path /v2/tgnpdcl_smart/"
-          npm run build:prod
+            - name: Deploy
+              shell: powershell
+              run: |
+                  $target = "C:\xampp_production\htdocs\dev\tgnpdcl_smart"
+                  $htaccess = Join-Path $target ".htaccess"
+                  $backup = "$htaccess.bak"
 
-      # Build for Development (dev branch)
-      - name: Build Development
-        if: github.ref == 'refs/heads/dev'
-        run: |
-          echo "Building for DEVELOPMENT with base path /dev/tgnpdcl_smart/"
-          npm run build:dev
+                  if (Test-Path $htaccess) {
+                    Copy-Item $htaccess $backup -Force
+                  }
 
-      # Deploy to Production Server (main branch)
-      - name: Deploy to Production XAMPP (preserve .htaccess)
-        if: github.ref == 'refs/heads/main'
-        shell: powershell
-        run: |
-          echo "Deploying to PRODUCTION server..."
-          $target = "C:\xampp_production\htdocs\v2\tgnpdcl_smart"
-          $source = "$env:GITHUB_WORKSPACE\dist"
-          $htaccess = Join-Path $target ".htaccess"
-          $backup = "$htaccess.bak"
+                  robocopy dist $target /MIR /XF ".htaccess"
+                  if ($LASTEXITCODE -le 1) { exit 0 } else { exit $LASTEXITCODE }
 
-          # Backup .htaccess if it exists
-          if (Test-Path $htaccess) {
-            Copy-Item $htaccess $backup -Force
-            Write-Host "Backed up .htaccess"
-          }
-
-          # Deploy build files but exclude .htaccess
-          # /IS = Include Same files, /IT = Include Tweaked files
-          robocopy $source $target /MIR /IS /IT /XF ".htaccess"
-          if ($LASTEXITCODE -le 1) { $exitCode = 0 } else { $exitCode = $LASTEXITCODE }
-
-          # Restore .htaccess if backup exists
-          if (Test-Path $backup) {
-            Move-Item $backup $htaccess -Force
-            Write-Host "Restored .htaccess"
-          }
-
-          Write-Host "Production deployment completed!"
-          exit $exitCode
-
-      # Deploy to Development Server (dev branch)
-      - name: Deploy to Development XAMPP (preserve .htaccess)
-        if: github.ref == 'refs/heads/dev'
-        shell: powershell
-        run: |
-          echo "Deploying to DEVELOPMENT server..."
-          $target = "C:\xampp_production\htdocs\dev\tgnpdcl_smart"
-          $source = "$env:GITHUB_WORKSPACE\dist"
-          $htaccess = Join-Path $target ".htaccess"
-          $backup = "$htaccess.bak"
-
-          # Backup .htaccess if it exists
-          if (Test-Path $htaccess) {
-            Copy-Item $htaccess $backup -Force
-            Write-Host "Backed up .htaccess"
-          }
-
-          # Deploy build files but exclude .htaccess
-          # /IS = Include Same files, /IT = Include Tweaked files
-          robocopy $source $target /MIR /IS /IT /XF ".htaccess"
-          if ($LASTEXITCODE -le 1) { $exitCode = 0 } else { $exitCode = $LASTEXITCODE }
-
-          # Restore .htaccess if backup exists
-          if (Test-Path $backup) {
-            Move-Item $backup $htaccess -Force
-            Write-Host "Restored .htaccess"
-          }
-
-          Write-Host "Development deployment completed!"
-          exit $exitCode
-
-# Auto-deploy based on branch:
-# - Push to 'main' → Production build (/v2/tgnpdcl_smart/) → C:\xampp_production\htdocs\v2\tgnpdcl_smart
-# - Push to 'dev' → Development build (/dev/tgnpdcl_smart/) → C:\xampp_production\htdocs\dev\tgnpdcl_smart
-
+                  if (Test-Path $backup) {
+                    Move-Item $backup $htaccess -Force
+                  }
