@@ -139,8 +139,8 @@ const dummyChartData = {
 };
 
 const dummyMeterStatusData = [
-    { value: 0, name: "Communicating" },
-    { value: 0, name: "Non-Communicating" },
+    { value: 0, name: "Communicating", meterNumbers: [] },
+    { value: 0, name: "Non-Communicating", meterNumbers: [] },
 ];
 
 // Utility function to format timestamp
@@ -734,8 +734,12 @@ const DTRDashboard: React.FC = () => {
                 ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
                 : "/dtrs/meter-status";
 
+            console.log("🔍 [Meter Status API] Fetching from endpoint:", endpoint);
             const data = await apiClient.get(endpoint);
+            console.log("🔍 [Meter Status API] Raw response:", data);
+            
             if (data.success) {
+                console.log("🔍 [Meter Status API] Setting meter status data:", data.data);
                 setMeterStatus(data.data);
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "meterStatus")
@@ -1254,6 +1258,12 @@ const DTRDashboard: React.FC = () => {
         exportChartData(chartMonths, chartSeries, "dtr-alerts-trends");
     };
 
+    const handleMeterStatusDownload = () => {
+        console.log("🔍 [Meter Status Download] Handler called - PieChart will handle the export");
+        // The PieChart component will handle the actual export based on the data structure
+        // This handler is kept for compatibility but the PieChart will detect meterNumbers and export accordingly
+    };
+
     const handleViewDTR = (row: TableData) => {
         console.log(row.dtrId);
         navigate(`/dtr-detail/${row.dtrId}`);
@@ -1606,6 +1616,7 @@ const DTRDashboard: React.FC = () => {
                 lastId || undefined,
                 selectedChartTimeRange.toLowerCase()
             );
+            retryMeterStatusAPI(lastId || undefined);
         } catch (error) {
             console.error("Error applying filters:", error);
         }
@@ -1626,10 +1637,10 @@ const DTRDashboard: React.FC = () => {
 
         // Automatically refetch all data after reset
         retryStatsAPI();
-        // retryTableAPI();c
-        // retryAlertsAPI();
-        // retryChartAPI(undefined, selectedChartTimeRange.toLowerCase());/
-        // retryMeterStatusAPI();
+        retryTableAPI();
+        retryAlertsAPI();
+        retryChartAPI(undefined, selectedChartTimeRange.toLowerCase());
+        retryMeterStatusAPI();
     };
 
     // DTR statistics cards data - Using API data
@@ -2349,35 +2360,25 @@ const DTRDashboard: React.FC = () => {
                                         {
                                             name: "PieChart",
                                             props: {
-                                                data:
-                                                    meterStatus ||
-                                                    dummyMeterStatusData,
+                                                data: meterStatus || dummyMeterStatusData,
                                                 height: 330,
                                                 showStatsLabels: false,
                                                 showLegend: false,
                                                 showNoDataMessage: false,
                                                 showDownloadButton: true,
+                                                onDownload: handleMeterStatusDownload,
                                                 showStatsSection: true,
                                                 valueUnit1: "Communicating", // Unit for first category (e.g., "Meter")
                                                 valueUnit2: "Non-Communicating", // Unit for second category (e.g., "Non-Meter")
                                                 className: "",
                                                 showHeader: true,
-                                                headerTitle:
-                                                    "Communication Status",
-                                                onClick: (
-                                                    segmentName?: string
-                                                ) => {
-                                                    if (
-                                                        segmentName ===
-                                                        "Communicating"
-                                                    ) {
+                                                headerTitle: "Communication Status",
+                                                onClick: (segmentName?: string) => {
+                                                    if (segmentName === "Communicating") {
                                                         navigate(
                                                             "/dtr-table?type=communicating-meters&title=Communicating%20Meters"
                                                         );
-                                                    } else if (
-                                                        segmentName ===
-                                                        "Non-Communicating"
-                                                    ) {
+                                                    } else if (segmentName === "Non-Communicating") {
                                                         navigate(
                                                             "/dtr-table?type=non-communicating-meters&title=Non-Communicating%20Meters"
                                                         );
@@ -2544,5 +2545,5 @@ const DTRDashboard: React.FC = () => {
         </div>
     );
 };
-
+    
 export default DTRDashboard;
