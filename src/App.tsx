@@ -24,10 +24,12 @@ import RolesPermissions from './pages/RolesPermissions';
 import MeterAlert from './pages/MeterAlert';
 
 const App: React.FC = () => {
+  const basename = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || "/v2/tgnpdcl_smart";
+  
   return (
     <AuthProvider>
       <AppProvider>
-        <Router basename="/v2/tgnpdcl_smart">
+        <Router basename={basename}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route
