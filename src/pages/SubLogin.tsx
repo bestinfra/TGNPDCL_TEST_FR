@@ -173,6 +173,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
       row: 2,
       col: 1,
       colSpan: 2,
+      rightIcon: "icons/email.svg",
       validation: {
         custom: (value: FormInputValue) => {
           if (!value) return "Email is required";
@@ -194,6 +195,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
       row: 2,
       col: 1,
       colSpan: 2,
+      rightIcon: "icons/user.svg",
       validation: {
         custom: (value: FormInputValue) =>
           !value ? "Username or email is required" : null,
@@ -222,7 +224,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
       name: 'rememberMe',
       type: 'checkbox',
       label: 'Keep me signed in',
-      defaultValue: false,
+      defaultValue: true,
       row: 4,
       col: 1,
       colSpan: 1,
@@ -258,7 +260,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
                   span: { col: 3, row: 1 },
                   columns: [
                     {
-                      name: "Carousel",
+                      name: "SplitSlideshow",
                       props: { slides },
                     },
                   ],
