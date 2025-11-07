@@ -224,7 +224,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
       name: 'rememberMe',
       type: 'checkbox',
       label: 'Keep me signed in',
-      defaultValue: false,
+      defaultValue: true,
       row: 4,
       col: 1,
       colSpan: 1,

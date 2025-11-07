@@ -7,7 +7,7 @@ on:
 
 jobs:
     deploy:
-        runs-on: [self-hosted, tgnpdcl_fr]
+        runs-on: [self-hosted, tgnpdcl_frn]
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -26,17 +26,29 @@ jobs:
             - name: Deploy
               shell: powershell
               run: |
-                  $target = "C:\xampp_production\htdocs\dev\tgnpdcl_smart"
-                  $htaccess = Join-Path $target ".htaccess"
-                  $backup = "$htaccess.bak"
+                $target = "C:\xampp_production\htdocs\v2\tgnpdcl_smart"
+                $backupPath = "C:\xampp_production\htaccess_backup\.htaccess.bak"
+                $htaccess = Join-Path $target ".htaccess"
 
-                  if (Test-Path $htaccess) {
-                    Copy-Item $htaccess $backup -Force
-                  }
+                # Ensure backup folder exists
+                if (!(Test-Path "C:\xampp_production\htaccess_backup")) {
+                  New-Item -ItemType Directory -Path "C:\xampp_production\htaccess_backup" | Out-Null
+                }
 
-                  robocopy dist $target /MIR /XF ".htaccess"
-                  if ($LASTEXITCODE -le 1) { exit 0 } else { exit $LASTEXITCODE }
+                # Backup .htaccess outside deploy folder
+                if (Test-Path $htaccess) {
+                  Copy-Item $htaccess $backupPath -Force
+                  Write-Host "✅ .htaccess backed up"
+                }
 
-                  if (Test-Path $backup) {
-                    Move-Item $backup $htaccess -Force
-                  }
+                robocopy dist $target /MIR /XF ".htaccess" /R:10 /W:5
+                $code = $LASTEXITCODE
+
+                # Restore .htaccess
+                if (Test-Path $backupPath) {
+                  Copy-Item $backupPath $htaccess -Force
+                  Write-Host "✅ .htaccess restored"
+                }
+
+                # Exit robocopy exit code correctly
+                if ($code -le 1) { exit 0 } else { exit $code }
