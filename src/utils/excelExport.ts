@@ -115,24 +115,16 @@ export const exportMeterStatusData = (
     meterStatusData: { name: string; value: number; meterNumbers?: string[] }[],
     fileName: string = 'meter-status-data'
 ): void => {
-    console.log("🔍 [Export] Input data:", meterStatusData);
-    console.log("🔍 [Export] Data type:", typeof meterStatusData);
-    console.log("🔍 [Export] Is array:", Array.isArray(meterStatusData));
-    
     // Validate input data
     if (!meterStatusData || !Array.isArray(meterStatusData)) {
-        console.error("❌ [Export] Invalid meter status data:", meterStatusData);
         return;
     }
     
     const exportData: any[] = [];
     
     meterStatusData.forEach((status, statusIndex) => {
-        console.log(`🔍 [Export] Processing status ${statusIndex}:`, status);
-        
         // Ensure status has required properties
         if (!status || typeof status.name !== 'string' || typeof status.value !== 'number') {
-            console.warn(`⚠️ [Export] Skipping invalid status at index ${statusIndex}:`, status);
             return;
         }
         
@@ -155,10 +147,7 @@ export const exportMeterStatusData = (
         }
     });
     
-    console.log("🔍 [Export] Final export data:", exportData);
-    
     if (exportData.length === 0) {
-        console.warn("⚠️ [Export] No data to export");
         return;
     }
     

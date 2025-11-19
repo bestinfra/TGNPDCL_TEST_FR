@@ -164,7 +164,6 @@ const formatTimestamp = (timestamp: string | null | undefined): string => {
 
         return `${day}/${month}/${year}, ${displayHours}:${minutes} ${ampm}`;
     } catch (error) {
-        console.error("Error formatting timestamp:", error);
         return "Invalid timestamp";
     }
 };
@@ -225,7 +224,6 @@ const DTRDashboard: React.FC = () => {
     const [dtrTableData, setDtrTableData] =
         useState<TableData[]>(dummyDtrTableData);
 
-    console.log("Distributiin Transformer ", dtrTableData);
     const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
 
     const [serverPagination, setServerPagination] = useState({
@@ -537,10 +535,6 @@ const DTRDashboard: React.FC = () => {
                 const row1 = data.data?.row1 || {};
                 const row2 = data.data?.row2 || {};
                 setDtrStatsData(row1);
-                console.log(
-                    "🔍 [Frontend] Retry API response row2 data:",
-                    row2
-                );
 
                 setDtrConsumptionData({
                     daily: row2.daily || {
@@ -577,7 +571,6 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch DTR stats");
             }
         } catch (err: any) {
-            console.error("Error in Stats API:", err);
             setDtrStatsData(dummyDtrStatsData);
             setDtrConsumptionData(dummyDtrConsumptionData);
         } finally {
@@ -618,7 +611,6 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch DTR table");
             }
         } catch (err: any) {
-            console.error("Error in Table API:", err);
             setDtrTableData(dummyDtrTableData);
         } finally {
             setTimeout(() => {
@@ -644,7 +636,6 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch DTR alerts");
             }
         } catch (err: any) {
-            console.error("Error in Alerts API:", err);
             setAlertsData(dummyAlertsData);
         } finally {
             setTimeout(() => {
@@ -672,10 +663,7 @@ const DTRDashboard: React.FC = () => {
 
             if (data.success) {
                 const rows = data.data || [];
-                console.log("Chart data received:", rows.length, "rows");
-                console.log("Time range:", timeRange);
                 const periodsList = rows.map((r: any) => r.period);
-                console.log("Periods list:", periodsList);
 
                 // Extract all possible alert types from the data
                 const allAlertTypes = new Set<string>();
@@ -717,7 +705,6 @@ const DTRDashboard: React.FC = () => {
                 );
             }
         } catch (err: any) {
-            console.error("Error in Chart API:", err);
             setChartMonths(dummyChartData.months);
             setChartSeries(dummyChartData.series);
         } finally {
@@ -734,12 +721,9 @@ const DTRDashboard: React.FC = () => {
                 ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
                 : "/dtrs/meter-status";
 
-            console.log("🔍 [Meter Status API] Fetching from endpoint:", endpoint);
             const data = await apiClient.get(endpoint);
-            console.log("🔍 [Meter Status API] Raw response:", data);
             
             if (data.success) {
-                console.log("🔍 [Meter Status API] Setting meter status data:", data.data);
                 setMeterStatus(data.data);
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "meterStatus")
@@ -748,7 +732,6 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch meter status");
             }
         } catch (err: any) {
-            console.error("Error in Meter Status API:", err);
             setMeterStatus(null);
         } finally {
             setTimeout(() => {
@@ -830,7 +813,6 @@ const DTRDashboard: React.FC = () => {
                 );
             }
         } catch (error) {
-            console.error("Error fetching filter options:", error);
             setFailedApis((prev) => {
                 if (!prev.find((api) => api.id === "filters")) {
                     return [
@@ -865,8 +847,6 @@ const DTRDashboard: React.FC = () => {
                     const row1 = data.data?.row1 || {};
                     const row2 = data.data?.row2 || {};
                     setDtrStatsData(row1);
-                    console.log("🔍 [Frontend] API response row2 data:", row2);
-
                     setDtrConsumptionData({
                         daily: row2.daily || {
                             totalKwh: 0,
@@ -901,7 +881,6 @@ const DTRDashboard: React.FC = () => {
                     );
                 }
             } catch (error) {
-                console.error("Error fetching DTR stats:", error);
                 setDtrStatsData(dummyDtrStatsData);
                 setDtrConsumptionData(dummyDtrConsumptionData);
                 setFailedApis((prev) => {
@@ -1032,14 +1011,7 @@ const DTRDashboard: React.FC = () => {
 
                 if (data.success) {
                     const rows = data.data || [];
-                    console.log(
-                        "Chart data received (fetchDTRAlertsTrends):",
-                        rows.length,
-                        "rows"
-                    );
-                    console.log("Time range:", selectedChartTimeRange);
                     const periodsList = rows.map((r: any) => r.period);
-                    console.log("Periods list:", periodsList);
 
                     // Extract all possible alert types from the data
                     const allAlertTypes = new Set<string>();
@@ -1180,17 +1152,15 @@ const DTRDashboard: React.FC = () => {
         });
 
         socketInstance.on("connect", () => {
-            console.log("🔌 [DTR Dashboard] Socket connected");
             setIsSocketConnected(true);
         });
 
         socketInstance.on("disconnect", () => {
-            console.log("🔌 [DTR Dashboard] Socket disconnected");
             setIsSocketConnected(false);
         });
 
         socketInstance.on("connect_error", (error) => {
-            console.error("🔌 [DTR Dashboard] Socket error:", error);
+            // Socket connection error handled silently
         });
 
         setSocket(socketInstance);
@@ -1206,13 +1176,7 @@ const DTRDashboard: React.FC = () => {
             return;
         }
 
-        console.log("🔌 [DTR Dashboard] Setting up dtr-alert-update listener");
-
         const handleDTRAlertUpdate = (alertData: any) => {
-            console.log(
-                "🔔 [DTR Dashboard] Real-time tamper alert received:",
-                alertData
-            );
 
             // Update DTR table data with new tamper event
             setDtrTableData((prevData) =>
@@ -1223,9 +1187,6 @@ const DTRDashboard: React.FC = () => {
                         String(dtr.dtrId).includes(String(alertData.dtrNumber));
 
                     if (dtrMatch) {
-                        console.log(
-                            `✅ [DTR Dashboard] Updating DTR ${dtr.dtrId} with tamper event`
-                        );
                         return {
                             ...dtr,
                             hasTamperEvent: true,
@@ -1259,29 +1220,21 @@ const DTRDashboard: React.FC = () => {
     };
 
     const handleMeterStatusDownload = () => {
-        console.log("🔍 [Meter Status Download] Handler called - PieChart will handle the export");
         // The PieChart component will handle the actual export based on the data structure
         // This handler is kept for compatibility but the PieChart will detect meterNumbers and export accordingly
     };
 
     const handleViewDTR = (row: TableData) => {
-        console.log(row.dtrId);
         navigate(`/dtr-detail/${row.dtrId}`);
     };
 
     const handleViewFeeder = (row: TableData) => {
-        console.log("View Feeder - Row data:", row);
-        console.log("Feeder Name:", row.feederName);
-        console.log("DTR Number:", row.dtrNumber);
-        console.log("DTR ID:", row.dtrId);
-
         // Extract DTR ID from dtrNumber if dtrId is not available
         const dtrId =
             row.dtrId ||
             (row.dtrNumber ? String(row.dtrNumber).replace("DTR-", "") : null);
 
         if (!dtrId) {
-            console.error("No DTR ID available for navigation");
             return;
         }
 
@@ -1335,14 +1288,11 @@ const DTRDashboard: React.FC = () => {
 
         try {
             const params = new URLSearchParams();
-            console.log(params);
             params.append("parentId", value);
 
             const data = await apiClient.get(
                 `/dtrs/filter/filter-options?${params.toString()}`
             );
-
-            console.log(data);
 
             if (data.success) {
                 const newOptions = data.data || [];
@@ -1354,7 +1304,6 @@ const DTRDashboard: React.FC = () => {
 
                             circles: [
                                 { value: "all", label: "All Circles" },
-                                console.log(...newOptions),
                                 ...newOptions.map((item: any) => ({
                                     value: item.id.toString(),
                                     label: item.name,
@@ -1492,10 +1441,7 @@ const DTRDashboard: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error(
-                `❌ Error updating filter options for ${filterName}:`,
-                error
-            );
+            // Error updating filter options handled silently
         }
     };
 
@@ -1618,7 +1564,7 @@ const DTRDashboard: React.FC = () => {
             );
             retryMeterStatusAPI(lastId || undefined);
         } catch (error) {
-            console.error("Error applying filters:", error);
+            // Error applying filters handled silently
         }
     };
 
@@ -1698,7 +1644,6 @@ const DTRDashboard: React.FC = () => {
                     dtrStatsData.overloadedFeeders ||
                     dtrStatsData?.row1?.overloadedFeeders ||
                     0;
-                console.log(count);
                 if (count === 0) {
                     return "No DTRs with load > 90%";
                 }
@@ -2020,7 +1965,6 @@ const DTRDashboard: React.FC = () => {
         { key: "duration", label: "Duration" },
         // { key: "status", label: "Status" },
     ];
-    console.log("Discom options:", filterOptions.discoms);
 
     return (
         <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -2523,7 +2467,6 @@ const DTRDashboard: React.FC = () => {
                                         fullscreenControl: true,
                                     },
                                     onMarkerIdClick: (dtrId: string) => {
-                                        console.log("DTR ID clicked:", dtrId);
                                         navigate(`/dtr-detail/${dtrId}`);
                                     },
                                     onReady: (_map: any, _google: any) => {},

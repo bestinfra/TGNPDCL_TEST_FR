@@ -407,68 +407,35 @@ const Feeders = () => {
         headerTitle?: string;
     } | null>(null);
 
-    // Debug modal state
-    console.log(
-        "🔍 Modal state - isModalOpen:",
-        isModalOpen,
-        "modalData:",
-        modalData
-    );
-
     const handleModalOpen = (data: any) => {
-        console.log("🔓 Opening modal with data:", data);
         setModalData(data);
         setIsModalOpen(true);
     };
 
     const handleModalClose = () => {
-        console.log("🔒 Closing modal");
         setIsModalOpen(false);
         setModalData(null);
     };
 
     // API Functions
     const fetchInstantaneousStats = async () => {
-        console.log(
-            "fetchInstantaneousStats - Starting with resolvedDtrId:",
-            resolvedDtrId
-        );
-        console.log("fetchInstantaneousStats - feederId:", feederId);
-        console.log("fetchInstantaneousStats - passedData:", passedData);
-
         // Use resolved DTR ID
         let numericDtrId = resolvedDtrId;
 
         // If we don't have a DTR ID but we have a feeder ID, we need to find the DTR ID first
         if (!numericDtrId && feederId) {
-            console.log(
-                "fetchInstantaneousStats - Looking for DTR ID for feeder:",
-                feederId
-            );
             const foundDtrId = await findDtrIdFromFeederId(feederId);
             if (foundDtrId) {
-                console.log(
-                    "fetchInstantaneousStats - Found DTR ID:",
-                    foundDtrId
-                );
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-                console.log(
-                    "fetchInstantaneousStats - Could not find DTR ID for feeder"
-                );
                 return;
             }
         }
 
         if (!numericDtrId) {
-            console.log(
-                "fetchInstantaneousStats - No DTR ID available, skipping"
-            );
             return;
         }
-
-        console.log("fetchInstantaneousStats - Using DTR ID:", numericDtrId);
 
         setIsStatsLoading(true);
         try {
@@ -478,10 +445,6 @@ const Feeders = () => {
                 effectiveFeederData?.feederName ||
                 feederId ||
                 "";
-            console.log(
-                "fetchInstantaneousStats - Meter identifier:",
-                meterIdentifier
-            );
 
             let endpoint = `${BACKEND_URL}/dtrs/${numericDtrId}/instantaneousStats`;
             if (meterIdentifier) {
@@ -489,12 +452,8 @@ const Feeders = () => {
                 endpoint = `${endpoint}?${qp.toString()}`;
             }
 
-            console.log("fetchInstantaneousStats - Endpoint:", endpoint);
-
             const response = await fetch(endpoint);
             const data = await response.json();
-
-            console.log("fetchInstantaneousStats - API Response:", data);
 
             if (data.success) {
                 // If we have specific feeder data, we might need to adjust the data
@@ -504,9 +463,6 @@ const Feeders = () => {
                 };
 
                 // No further adjustment needed; backend filters by meter when feederId provided
-
-                console.log("i m here");
-                console.log("InstantaneousStatsData:", apiData);
                 setInstantaneousStatsData(apiData);
             } else {
                 throw new Error(
@@ -605,7 +561,6 @@ const Feeders = () => {
                 );
             }
         } catch (error: any) {
-            console.error("Error fetching consumption analytics:", error);
             setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
             setFailedApis((prev) => [
                 ...prev,
@@ -634,16 +589,11 @@ const Feeders = () => {
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-                console.warn(
-                    "fetchFeederInfo - Could not find DTR ID for feeder:",
-                    feederId
-                );
                 return;
             }
         }
 
         if (!numericDtrId) {
-            console.warn("fetchFeederInfo - No DTR ID available");
             return;
         }
 
@@ -664,7 +614,6 @@ const Feeders = () => {
 
             if (data.success) {
                 let feederInfo = data.data;
-                console.log("feederInfo000000000000000", feederInfo);
                 // If this is for a specific feeder, we need to filter the data
                 if (effectiveFeederData?.feederName) {
                     const feederName = effectiveFeederData.feederName;
@@ -701,9 +650,6 @@ const Feeders = () => {
                         setMapLatitude(specificFeeder.latitude || 17.992887);
                         setMapLongitude(specificFeeder.longitude || 79.550835);
                     } else {
-                        console.warn(
-                            "fetchFeederInfo - Specific feeder not found in DTR data"
-                        );
                     }
                 }
 
@@ -724,7 +670,6 @@ const Feeders = () => {
                 );
             }
         } catch (error: any) {
-            console.error("Error fetching feeder information:", error);
             setFeederInfoData(dummyFeederInfoData);
             setFailedApis((prev) => [
                 ...prev,
@@ -750,16 +695,11 @@ const Feeders = () => {
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-                console.warn(
-                    "fetchAlerts - Could not find DTR ID for feeder:",
-                    feederId
-                );
                 return;
             }
         }
 
         if (!numericDtrId) {
-            console.warn("fetchAlerts - No DTR ID available");
             return;
         }
 
@@ -809,10 +749,6 @@ const Feeders = () => {
                             alert.occuredOn === "-"
                     )
                 ) {
-                    console.warn(
-                        "All alerts transformed to -. Raw API data:",
-                        data.data
-                    );
                 }
 
                 setAlertsData(transformedAlerts);
@@ -820,7 +756,6 @@ const Feeders = () => {
                 throw new Error(data.message || "Failed to fetch alerts");
             }
         } catch (error: any) {
-            console.error("Error fetching alerts:", error);
             setAlertsData(dummyAlertsData);
             setFailedApis((prev) => [
                 ...prev,
@@ -847,16 +782,11 @@ const Feeders = () => {
                 setResolvedDtrId(foundDtrId);
                 numericDtrId = foundDtrId;
             } else {
-                console.warn(
-                    "fetchKVAMetrics - Could not find DTR ID for feeder:",
-                    feederId
-                );
                 return;
             }
         }
 
         if (!numericDtrId) {
-            console.warn("fetchKVAMetrics - No DTR ID available");
             return;
         }
 
@@ -883,7 +813,6 @@ const Feeders = () => {
                 throw new Error(data.message || "Failed to fetch KVA metrics");
             }
         } catch (error: any) {
-            console.error("Error fetching KVA metrics:", error);
             // setKvaMetricsData removed - not used in active code
             setFailedApis((prev) => [
                 ...prev,
@@ -902,10 +831,6 @@ const Feeders = () => {
 
     // Generate stats from API data or use defaults
     const getStats = () => {
-        console.log(
-            "getStats - instantaneousStatsData:",
-            instantaneousStatsData
-        );
         if (
             instantaneousStatsData &&
             Object.keys(instantaneousStatsData).length > 0 &&
@@ -1221,7 +1146,6 @@ const Feeders = () => {
                 throw new Error(data.message || 'Failed to fetch instantaneous stats');
             }
         } catch (err: any) {
-            console.error("Error in Stats API:", err);
             setInstantaneousStatsData(dummyInstantaneousStatsData);
         } finally {
             setTimeout(() => {
@@ -1275,7 +1199,6 @@ const Feeders = () => {
                 throw new Error(data.message || 'Failed to fetch consumption analytics');
             }
         } catch (err: any) {
-            console.error("Error in Consumption API:", err);
             setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
         } finally {
                 setIsConsumptionLoading(false);
