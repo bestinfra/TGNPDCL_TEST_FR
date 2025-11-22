@@ -1159,9 +1159,9 @@ const DTRDashboard: React.FC = () => {
             setIsSocketConnected(false);
         });
 
-        socketInstance.on("connect_error", (error) => {
-            // Socket connection error handled silently
-        });
+        // socketInstance.on("connect_error", (error) => {
+        //     // Socket connection error handled silently
+        // });
 
         setSocket(socketInstance);
 
