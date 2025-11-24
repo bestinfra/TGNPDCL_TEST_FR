@@ -122,7 +122,7 @@ export const exportMeterStatusData = (
     
     const exportData: any[] = [];
     
-    meterStatusData.forEach((status, statusIndex) => {
+    meterStatusData.forEach((status) => {
         // Ensure status has required properties
         if (!status || typeof status.name !== 'string' || typeof status.value !== 'number') {
             return;

@@ -1145,7 +1145,8 @@ const DTRDetailPage = () => {
                         rows: [
                           {
                             layout: 'row',
-                            className: 'justify-between w-full',
+                            className:
+                              'justify-between w-full bg-background-secondary dark:bg-white/5 rounded-2xl px-4 py-4',
                             span: { col: 5, row: 1 },
                             items: [
                               {
