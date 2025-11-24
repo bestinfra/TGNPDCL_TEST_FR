@@ -2290,7 +2290,7 @@ const DTRDashboard: React.FC = () => {
                                     gridColumns: 1,
                                     gap: "gap-4",
                                     className:
-                                        " rounded-3xl  dark:bg-primary-dark-light",
+                                        "border border-primary-border dark:border-dark-border rounded-3xl dark:bg-primary-dark-light",
                                     columns: [
                                         // {
                                         //   name: "Holder",ss
@@ -2314,7 +2314,7 @@ const DTRDashboard: React.FC = () => {
                                                 showStatsSection: true,
                                                 valueUnit1: "Communicating", // Unit for first category (e.g., "Meter")
                                                 valueUnit2: "Non-Communicating", // Unit for second category (e.g., "Non-Meter")
-                                                className: "",
+                                                holderClassName: "",
                                                 showHeader: true,
                                                 headerTitle: "Communication Status",
                                                 onClick: (segmentName?: string) => {
