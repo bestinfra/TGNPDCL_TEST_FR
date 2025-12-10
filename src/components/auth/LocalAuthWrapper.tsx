@@ -77,12 +77,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: 'Invalid response from server' };
       }
       if (data.success && data.data) {
-        const { user: userData, token: userToken } = data.data;
+        const { user: userData, accessToken, token: userToken } = data.data;
+        // Use accessToken if available, otherwise fallback to token
+        const finalToken = accessToken || userToken;
         // Store in localStorage
-        localStorage.setItem('token', userToken);
+        localStorage.setItem('token', finalToken);
         localStorage.setItem('user', JSON.stringify(userData));
         // Update state
-        setToken(userToken);
+        setToken(finalToken);
         setUser(userData);
         return { success: true };
       } else {
@@ -94,11 +96,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { success: false, message: 'Network error occurred' };
     }
   };
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint
+      const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4249';
+      const API_BASE = `${BACKEND_URL}/sub-app/auth`;
+      const token = localStorage.getItem('token');
+      
+      await fetch(`${API_BASE}/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+      // Continue with local cleanup even if API call fails
+    } finally {
+      // Always clear local data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+    }
   };
   const value: AuthContextType = {
     user,

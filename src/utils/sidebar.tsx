@@ -185,14 +185,34 @@ const defaultProps: Partial<
             alt: 'App Logo',
         },
     },
-    onLogout: () => {
-        const allCookies = Cookies.get();
-        Object.keys(allCookies).forEach((cookieName) => {
-            Cookies.remove(cookieName);
-        });
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/auth/logout';
+    onLogout: async () => {
+        try {
+            // Call backend logout endpoint
+            const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4249';
+            const API_BASE = `${BACKEND_URL}/sub-app/auth`;
+            const token = localStorage.getItem('token');
+            
+            await fetch(`${API_BASE}/logout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Logout API call failed:', error);
+            // Continue with local cleanup even if API call fails
+        } finally {
+            // Clear all local data
+            const allCookies = Cookies.get();
+            Object.keys(allCookies).forEach((cookieName) => {
+                Cookies.remove(cookieName);
+            });
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/login';
+        }
     },
 };
 const Sidebar = ({
