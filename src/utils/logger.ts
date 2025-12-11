@@ -70,7 +70,7 @@ class FrontendLogger {
 
     // Try to get user ID from localStorage or sessionStorage
     try {
-      const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+      const userData = localStorage.getItem('tgnpdcl_user') || sessionStorage.getItem('tgnpdcl_user');
       if (userData) {
         const user = JSON.parse(userData);
         entry.userId = user.id || user.userId;
