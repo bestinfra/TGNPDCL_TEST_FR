@@ -128,8 +128,8 @@ If you have any questions about this Privacy Policy, please contact us.`;
         // Use accessToken if available, otherwise fallback to token
         const token = result.data.accessToken || result.data.token;
         if (token) {
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(result.data.user));
+          localStorage.setItem("tgnpdcl_token", token);
+          localStorage.setItem("tgnpdcl_user", JSON.stringify(result.data.user));
           window.location.href = `${APP_CONFIG.BASENAME}/`;
         } else {
           setError("Invalid response from server");

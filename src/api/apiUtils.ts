@@ -8,14 +8,14 @@ const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4249'
  * Get access token from localStorage
  */
 const getAccessToken = (): string | null => {
-  return localStorage.getItem('token');
+  return localStorage.getItem('tgnpdcl_token');
 };
 
 /**
  * Set access token in localStorage
  */
 const setAccessToken = (token: string): void => {
-  localStorage.setItem('token', token);
+  localStorage.setItem('tgnpdcl_token', token);
 };
 
 /**
@@ -58,8 +58,8 @@ const refreshAccessToken = async (): Promise<string | null> => {
     } catch (error) {
       console.error('Token refresh error:', error);
       // Clear tokens on refresh failure
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('tgnpdcl_token');
+      localStorage.removeItem('tgnpdcl_user');
       return null;
     } finally {
       isRefreshing = false;
@@ -131,8 +131,8 @@ export class ApiClient {
           });
         } else {
           // Refresh failed, redirect to login
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          localStorage.removeItem('tgnpdcl_token');
+          localStorage.removeItem('tgnpdcl_user');
           window.location.href = '/login';
           throw new Error('Authentication failed. Please login again.');
         }

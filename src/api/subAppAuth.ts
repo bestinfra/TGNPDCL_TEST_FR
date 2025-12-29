@@ -113,19 +113,19 @@ export const getProfile = async (token: string): Promise<ProfileResponse> => {
 
 // Helper function to get stored token
 export const getStoredToken = (): string | null => {
-  return localStorage.getItem('token');
+  return localStorage.getItem('tgnpdcl_token');
 };
 
 // Helper function to get stored user
 export const getStoredUser = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('tgnpdcl_user');
   return userStr ? JSON.parse(userStr) : null;
 };
 
 // Helper function to clear stored auth data
 export const clearAuthData = (): void => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  localStorage.removeItem('tgnpdcl_token');
+  localStorage.removeItem('tgnpdcl_user');
 };
 
 // Helper function to check if user is authenticated

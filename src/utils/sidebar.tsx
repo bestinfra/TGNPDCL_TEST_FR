@@ -190,7 +190,7 @@ const defaultProps: Partial<
             // Call backend logout endpoint
             const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4249';
             const API_BASE = `${BACKEND_URL}/sub-app/auth`;
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('tgnpdcl_token');
             
             await fetch(`${API_BASE}/logout`, {
                 method: 'POST',
