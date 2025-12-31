@@ -20,8 +20,8 @@ interface LoginResponse {
       lastName: string;
       role: string;
     };
-    token: string;
-    appId: string;
+    accessToken: string;
+    appId?: string;
   };
 }
 

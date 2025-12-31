@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (identifier: string, password: string, appId?: string): Promise<LoginResult> => {
     try {
       // Sub-apps use the application-backend authentication
-      const endpoint = '/api/sub-app-auth/login';
+      const endpoint = '/api/sub-app/auth/login';
       const requestBody = { identifier, password, appId: appId || 'TGNPDCL' };
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -76,8 +76,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('JSON parse error:', parseError);
         return { success: false, message: 'Invalid response from server' };
       }
+      
       if (data.success && data.data) {
-        const { user: userData, token: userToken } = data.data;
+        const { user: userData, accessToken: userToken } = data.data;
+        
         // Store in localStorage
         localStorage.setItem('token', userToken);
         localStorage.setItem('user', JSON.stringify(userData));

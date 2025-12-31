@@ -125,7 +125,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
         rememberMe: data.rememberMe as boolean
       });
       if (result.success && result.data) {
-        localStorage.setItem("token", result.data.token);
+        localStorage.setItem("token", result.data.accessToken);
         localStorage.setItem("user", JSON.stringify(result.data.user));
         window.location.href = `${APP_CONFIG.BASENAME}/`;
       } else {

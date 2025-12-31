@@ -22,7 +22,8 @@ import DTRTable from './pages/DTRTable';
 import ProtectedRoute from './components/auth/LocalProtectedRoute';
 import RolesPermissions from './pages/RolesPermissions';
 import MeterAlert from './pages/MeterAlert';
-
+import Reports from './pages/Reports';
+import ReportsView from './pages/ReportsView';
 const App: React.FC = () => {
   const basename = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || "/v2/tgnpdcl_smart";
   
@@ -62,6 +63,8 @@ const App: React.FC = () => {
                         <Route path="/dtr-table" element={<DTRTable />} />
                         <Route path="/meter-alert" element={<MeterAlert />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/reports/view" element={<ReportsView />} />
                       </Routes>
                     </Suspense>
                   </AppLayout>
