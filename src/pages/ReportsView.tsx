@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, lazy, useRef } from 'react';
+import { Suspense, useState, useEffect, lazy, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { apiClient } from '../api/apiUtils';
@@ -261,11 +261,23 @@ export default function ReportsView() {
   const [hasDataBeenFetched, setHasDataBeenFetched] = useState(false);
   const [dynamicColumns, setDynamicColumns] = useState<TableColumn[]>(getBaseColumns());
   const [serverPagination, setServerPagination] = useState(INITIAL_PAGINATION);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   
   const lastFetchedTableDataRef = useRef<any[]>([]);
   const lastFetchedColumnsRef = useRef<TableColumn[]>(getBaseColumns());
   const lastFetchedPaginationRef = useRef(INITIAL_PAGINATION);
   const filtersChangedRef = useRef(false);
+  const lastFetchedAnalysisValidationRef = useRef<string>('');
+
+  const enableHorizontalScroll = useMemo(() => {
+    if (!hasDataBeenFetched || !lastFetchedAnalysisValidationRef.current) {
+      return false;
+    }
+    return lastFetchedAnalysisValidationRef.current !== 'power-failure';
+  }, [hasDataBeenFetched]);
+
+  const isAnalysisValidationSelected = !!filterValues.analysisValidation;
+  const isDownloadDisabled = !hasDataBeenFetched || !isAnalysisValidationSelected;
 
   const isGetDataDisabled = !filterValues.meterSINo || !filterValues.analysisValidation;
   const isResetDisabled = 
@@ -344,11 +356,13 @@ export default function ReportsView() {
           lastFetchedColumnsRef.current = generatedColumns;
           setTableData(tableFormattedData);
           lastFetchedTableDataRef.current = tableFormattedData;
+          lastFetchedAnalysisValidationRef.current = filterValues.analysisValidation;
         } else {
           setTableData([]);
           lastFetchedTableDataRef.current = [];
           setDynamicColumns(getBaseColumns());
           lastFetchedColumnsRef.current = getBaseColumns();
+          lastFetchedAnalysisValidationRef.current = filterValues.analysisValidation;
         }
         
         filtersChangedRef.current = false;
@@ -405,10 +419,26 @@ export default function ReportsView() {
     }
   }, []);
 
+  // Auto-fetch data on mount if URL parameters are present
   useEffect(() => {
+    // Check if we have valid parameters from URL to auto-fetch
+    // Use URL params directly to avoid timing issues with state initialization
+    const hasValidParams = meterSINo && analysisValidationParam;
+    
+    if (hasValidParams && isInitialMountRef.current) {
+      // fetchReportData uses filterValues state, which is initialized from searchParams
+      // Since useState initializes synchronously, filterValues should be ready
+      allowFetchRef.current = true;
+      setHasDataBeenFetched(true);
+      hasDataBeenFetchedRef.current = true;
+      fetchReportData().finally(() => {
+        allowFetchRef.current = false;
+      });
+    }
+    // Mark initial mount as complete after first render
     isInitialMountRef.current = false;
     previousFilterValuesRef.current = filterValues;
-  }, []);
+  }, []); // Only run on mount
 
   useEffect(() => {
     hasDataBeenFetchedRef.current = hasDataBeenFetched;
@@ -479,6 +509,8 @@ export default function ReportsView() {
     lastFetchedColumnsRef.current = baseCols;
     setServerPagination(INITIAL_PAGINATION);
     lastFetchedPaginationRef.current = INITIAL_PAGINATION;
+    lastFetchedAnalysisValidationRef.current = '';
+    setSelectedRows([]);
   };
 
   const handleDateRangeFilterChange = (_key: string, value: string) => {
@@ -617,6 +649,8 @@ export default function ReportsView() {
                         searchable: true,
                         searchContainerClassName: 'bg-background-secondary p-4 rounded-3xl',
                         selectable: true,
+                        selectedRows: selectedRows,
+                        onSelectionChange: setSelectedRows,
                         pagination: true,
                         serverPagination: serverPagination,
                         rowsPerPageOptions: [5, 10, 15, 25, 50],
@@ -629,8 +663,9 @@ export default function ReportsView() {
                         headerTitle: 'Reports Management',
                         isLoading: isLoading,
                         className: 'w-full',
-                        // enableHorizontalScroll: filterValues.analysisValidation !== 'power-failure',
+                        enableHorizontalScroll: enableHorizontalScroll,
                         showSearchBarDownload: true,
+                        downloadDisabled: isDownloadDisabled,
                         showFilterButton: true,
                         showFilterDropdowns: true,
                         customFilterOptions: [

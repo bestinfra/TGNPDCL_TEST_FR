@@ -2,6 +2,7 @@ import { Suspense, useState, useEffect, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { apiClient } from '../api/apiUtils';
+import { APP_CONFIG } from '../config/constants';
 
 const REPORT_TYPES = [
   { type: 'Load Analysis', validation: 'instantaneous' },
@@ -180,8 +181,9 @@ export default function Reports() {
         params.append(key, value);
       });
     }
-    const basePath = window.location.pathname.includes('/admin') ? '/admin' : '';
-    return `${window.location.origin}${basePath}/reports/view?${params.toString()}`;
+    // Use the same basename logic as App.tsx
+    const basename = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || APP_CONFIG.BASENAME;
+    return `${window.location.origin}${basename}/reports/view?${params.toString()}`;
   };
 
   const handleGetData = () => {
