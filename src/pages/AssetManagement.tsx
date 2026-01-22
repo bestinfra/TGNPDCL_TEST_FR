@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
 const Page = lazy(() => import("SuperAdmin/Page"));
 
+
+
 interface HierarchyNode {
     hierarchy_id: string | number;
     hierarchy_name: string;
@@ -426,6 +428,7 @@ const DownloadIcon = () => (
 
 export default function AssetManagment() {
   const navigate = useNavigate();
+  const [showUpload, setShowUpload] = useState(false);
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>([]);
@@ -1833,37 +1836,98 @@ export default function AssetManagment() {
                 },
               ]
             : []),
+            
+{
+  layout: {
+    type: "column",
+    gap: "gap-4",
+    rows: [
+      {
+        layout: "row",
+        columns: [
           {
-            layout: {
-              type: "column",
-              gap: "gap-4",
-              rows: [
+            name: "PageHeader",
+            props: {
+              title: "Meter Management",
+              onBackClick: () => window.history.back(),
+              backButtonText: "Back to Dashboard",
+              showMenu: true,
+              menuItems: [
+                { id: "Table View", label: "Table View" },
+                { id: "HierarchyView", label: "Hierarchy View" },
+              ],
+              onMenuItemClick: handleMenuClick,
+
+              // ✅ THIS IS THE KEY CHANGE
+              buttons: [
                 {
-                  layout: "row",
-                  columns: [
-                    {
-                      name: "PageHeader",
-                      props: {
-                        title: "Meter Management",
-                        onBackClick: () => window.history.back(),
-                        backButtonText: "Back to Dashboard",
-                        showMenu: true,
-                        menuItems: [
-                          { id: "Table View", label: "Table View" },
-                          { id: "HierarchyView", label: "Hierarchy View" },
-                        ],
-                        onMenuItemClick: handleMenuClick,
-                        buttonsLabel: isExporting ? "Exporting..." : "Export",
-                        variant: "primary",
-                        onClick: handleExportData,
-                        disabled: isExporting,
-                      },
-                    },
-                  ],
+                  label: isExporting ? "Exporting..." : "Export",
+                  variant: "primary",
+                  onClick: handleExportData,
+                  disabled: isExporting,
+                },
+                {
+                  label: "Upload",
+                  variant: "secondary",
+                   onClick: () => {
+          // console.log("UPLOAD CLICKED"); // 🔴 IMPORTANT
+          setShowUpload(true);
+        },
                 },
               ],
             },
           },
+        ],
+      },
+    ],
+  },
+},
+{
+      layout: {
+        type: "column",
+        rows: [
+          {
+            layout: "row",
+            columns: [
+              {
+                name: "Modal",
+                props: {
+                  isOpen: showUpload,
+                  onClose: () => setShowUpload(false),
+                  title: "Upload File",
+                  size: "sm",
+                  showCloseIcon: true,
+                  backdropClosable: true,
+                  centered: true,
+                  showForm: true,
+
+                  formFields: [
+                    {
+                      name: "uploadFile",
+                      type: "chosenfile",
+                      label: "Upload File",
+                      dragAndDrop: true,
+                      accept: ".csv,.xlsx,.xls",
+                      required: true,
+                      className: "w-full",
+                      containerClassName: "w-full"
+                    },
+                  ],
+
+                  onSave: () => {
+                    console.log("UPLOAD SUBMITTED");
+                    setShowUpload(false);
+                  },
+
+                  saveButtonLabel: "Submit",
+                  cancelButtonLabel: "Cancel",
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
           ...(viewMode === "hierarchy"
             ? [
                 // Filter Section for Hierarchy View
