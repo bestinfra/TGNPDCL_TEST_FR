@@ -1870,7 +1870,6 @@ export default function AssetManagment() {
                   label: "Upload",
                   variant: "secondary",
                    onClick: () => {
-          // console.log("UPLOAD CLICKED"); // 🔴 IMPORTANT
           setShowUpload(true);
         },
                 },
@@ -1895,7 +1894,7 @@ export default function AssetManagment() {
                   isOpen: showUpload,
                   onClose: () => setShowUpload(false),
                   title: "Upload File",
-                  size: "sm",
+                  size: "lg",
                   showCloseIcon: true,
                   backdropClosable: true,
                   centered: true,
@@ -1909,8 +1908,9 @@ export default function AssetManagment() {
                       dragAndDrop: true,
                       accept: ".csv,.xlsx,.xls",
                       required: true,
-                      className: "w-full",
-                      containerClassName: "w-full"
+                      colSpan: 3,          
+                      rowSpan: 1,
+
                     },
                   ],
 
