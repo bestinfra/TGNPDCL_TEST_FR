@@ -5,6 +5,9 @@ import BACKEND_URL from "../config";
 const Page = lazy(() => import("SuperAdmin/Page"));
 
 
+type UploadFormValues = {
+  uploadFile: File;
+};
 
 interface HierarchyNode {
     hierarchy_id: string | number;
@@ -847,6 +850,8 @@ export default function AssetManagment() {
       setDropdownLoading(false);
     }
   };
+
+
 
   // Fetch dropdown data from API
   useEffect(() => {
@@ -1914,10 +1919,44 @@ export default function AssetManagment() {
                     },
                   ],
 
-                  onSave: () => {
-                    console.log("UPLOAD SUBMITTED");
-                    setShowUpload(false);
-                  },
+                 onSave: async (values: UploadFormValues) => {
+  try {
+    const file = values.uploadFile;
+
+    if (!file) {
+      alert("Please select a file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(
+      "http://localhost:4249/api/assets/bulk-upload",
+      {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      }
+    );
+
+    const data = await response.json();
+    console.log("UPLOAD RESPONSE 👉", data);
+
+    if (response.ok) {
+      setShowUpload(false);
+    } else {
+      alert(data.message || "Upload failed");
+    }
+
+  } catch (error) {
+    console.error("UPLOAD ERROR 👉", error);
+    alert("Something went wrong while uploading");
+  }
+},
+
+
+
 
                   saveButtonLabel: "Submit",
                   cancelButtonLabel: "Cancel",
