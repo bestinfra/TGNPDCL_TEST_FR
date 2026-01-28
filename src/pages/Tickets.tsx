@@ -453,7 +453,9 @@ export default function Tickets() {
 
   // Handle ticket actions
   const handleViewTicket = (row: TableData) => {
-    navigate(`/tickets/${row.id}`);
+    // navigate(`/tickets/${row.id}`);
+    navigate(`/tickets/${row.ticketNumber}`);
+
   };
 
   const handleEditTicket = (row: TableData) => {

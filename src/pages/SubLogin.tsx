@@ -1,46 +1,54 @@
-import { lazy } from 'react';
+import { lazy } from "react";
 import React from "react";
-const Page = lazy(() => import('SuperAdmin/Page'));
-import { APP_CONFIG } from '../config/constants';
+const Page = lazy(() => import("SuperAdmin/Page"));
+import { APP_CONFIG } from "../config/constants";
 // Define CarouselSlide type locally since we're using federated components
 interface CarouselSlide {
-  title: string;
-  img: string;
-  description:string,
+    title: string;
+    img: string;
+    description: string;
 }
 import { useState } from "react";
 // Define FormInputValue type locally since we're using federated components
-type FormInputValue = string | string[] | number | boolean | FileList | File | null | undefined;
+type FormInputValue =
+    | string
+    | string[]
+    | number
+    | boolean
+    | FileList
+    | File
+    | null
+    | undefined;
 import { login } from "../api/subAppAuth";
 
 const slides: CarouselSlide[] = [
-  {
-    title: "Welcome to the Sub-App!",
-    img: "images/Slide3.jpg",
-    description: "Welcome to the Sub-App!",
-  },
-  {
-    title: "Feature Highlight",
-    img: "images/DTR.jpg",
-    description: "Feature Highlight",
-  },
-  {
-    title: "Stay Connected",
-    img: "images/Transformer.jpg",
-    description: "Stay Connected",
-  },
+    {
+        title: "Welcome to the Sub-App!",
+        img: "images/Slide3.jpg",
+        description: "Welcome to the Sub-App!",
+    },
+    {
+        title: "Feature Highlight",
+        img: "images/DTR.jpg",
+        description: "Feature Highlight",
+    },
+    {
+        title: "Stay Connected",
+        img: "images/Transformer.jpg",
+        description: "Stay Connected",
+    },
 ];
 
 const SubLogin: React.FC = () => {
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<string>("");
-  const [modalTitle, setModalTitle] = useState<string>("");
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState<string>("");
+    const [modalTitle, setModalTitle] = useState<string>("");
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Modal content data
-  const termsOfServiceContent = `Last updated: January 1, 2024
+    // Modal content data
+    const termsOfServiceContent = `Last updated: January 1, 2024
 
 1. Acceptance of Terms
 By accessing and using this application, you accept and agree to be bound by the terms and provision of this agreement.
@@ -63,7 +71,7 @@ We have not reviewed all of the sites linked to our application and are not resp
 7. Modifications
 We may revise these terms of service for our application at any time without notice.`;
 
-  const privacyPolicyContent = `Last updated: January 1, 2024
+    const privacyPolicyContent = `Last updated: January 1, 2024
 
 1. Information We Collect
 We collect information you provide directly to us, such as when you create an account, log in, or contact us for support.
@@ -97,283 +105,374 @@ We may update this privacy policy from time to time. We will notify you of any c
 8. Contact Us
 If you have any questions about this Privacy Policy, please contact us.`;
 
-  const handleModalOpen = (title: string, content: string) => {
-    setModalTitle(title);
-    setModalContent(content);
-    setModalOpen(true);
-  };
+    const handleModalOpen = (title: string, content: string) => {
+        setModalTitle(title);
+        setModalContent(content);
+        setModalOpen(true);
+    };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setModalContent("");
-    setModalTitle("");
-  };
+    const handleModalClose = () => {
+        setModalOpen(false);
+        setModalContent("");
+        setModalTitle("");
+    };
 
-  const handleForgotPassword = () => {
-    setShowForgotPassword(true);
-  };
+    const handleForgotPassword = () => {
+        setShowForgotPassword(true);
+    };
 
-  const handleLogin = async (data: Record<string, FormInputValue>) => {
-    setError("");
-    setLoading(true);
-    
-    try {
-      const result = await login({
-        identifier: data.identifier as string,
-        password: data.password as string,
-        appId: 'TGNPDCL',
-        rememberMe: data.rememberMe as boolean
-      });
-      if (result.success && result.data) {
-        localStorage.setItem("token", result.data.token);
-        localStorage.setItem("user", JSON.stringify(result.data.user));
-        window.location.href = `${APP_CONFIG.BASENAME}/`;
-      } else {
-        setError(result.message || "Login failed");
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleLogin = async (data: Record<string, FormInputValue>) => {
+        setError("");
+        setLoading(true);
 
-  const handleForgotPasswordSubmit = async (_data: Record<string, FormInputValue>) => {
-    setError("");
-    setLoading(true);
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setError("Password reset link sent to your email!");
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      setError("Failed to send reset link. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        try {
+            const result = await login({
+                identifier: data.identifier as string,
+                password: data.password as string,
+                appId: "TGNPDCL",
+                rememberMe: data.rememberMe as boolean,
+            });
 
-  // Form inputs configuration
-  const forgotPasswordInputs = [
-    {
-      name: "errorLabel",
-      type: "label",
-      label: error || "",
-      row: 1,
-      col: 1,
-      colSpan: 2,
-      labelClassName: error ? "text-red-500 text-sm font-medium text-center" : "hidden",
-    },
-    {
-      name: "email",
-      type: "email",
-      placeholder: "Email Address",
-      required: true,
-      row: 2,
-      col: 1,
-      colSpan: 2,
-      rightIcon: "icons/email.svg",
-      validation: {
-        custom: (value: FormInputValue) => {
-          if (!value) return "Email is required";
-          if (typeof value === "string" && !value.includes('@')) {
-            return "Please enter a valid email address";
-          }
-          return null;
-        },
-      },
-    },
-  ];
+            // 🔥 ADD THIS BLOCK HERE
+            if (!result.success) {
+                switch (result.code) {
+                    case "INVALID_USERNAME":
+                        setError("Invalid username or email");
+                        break;
 
-  const loginInputs = [
-    {
-      name: "identifier",
-      type: "text",
-      placeholder: "Email or Username",
-      required: true,
-      row: 2,
-      col: 1,
-      colSpan: 2,
-      rightIcon: "icons/user.svg",
-      validation: {
-        custom: (value: FormInputValue) =>
-          !value ? "Username or email is required" : null,
-      },
-    },
-    {
-      name: "password",
-      type: "password",
-      placeholder: "Enter your password",
-      required: true,
-      showPasswordToggle: true,
-      row: 3,
-      col: 1,
-      colSpan: 2,
-      validation: {
-        minLength: 8,
-        custom: (value: FormInputValue) => {
-          if (!value) return "Password is required";
-          if (typeof value === "string" && value.length < 8)
-            return `Password must be at least 8 characters`;
-          return null;
-        },
-      },
-    },
-    {
-      name: 'rememberMe',
-      type: 'checkbox',
-      label: 'Keep me signed in',
-      defaultValue: true,
-      row: 4,
-      col: 1,
-      colSpan: 1,
-      className: 'justify-start',
-    },
-    {
-      name: 'forgotPassword',
-      type: 'label',
-      label: 'Forgot Password?',
-      row: 4,
-      col: 2,
-      colSpan: 1,
-      labelClassName: 'items-end',
-      onClick: handleForgotPassword,
-    },
-  ];
+                    case "INVALID_PASSWORD":
+                        setError("Invalid password");
+                        break;
 
-  return (
-    <div className="h-screen overflow-hidden scroll-y-hidden">
-      <Page
-        sections={[
-          {
-            layout: {
-              type: "grid",
-              className: "rounded-lg min-h-screen bg-primary-lightest",
-              columns: 5,
-              gap: "gap-1",
-              gridRows: 1,
-              rows: [
-                {
-                  layout: "row",  
-                  className: "rounded-lg h-full p-4",
-                  span: { col: 3, row: 1 },
-                  columns: [
-                    {
-                      name: "SplitSlideshow",
-                      props: { slides },
-                    },
-                  ],
-                },
-                {
-                  layout: "grid",
-                  className: "rounded-lg h-full justify-betweens py-4 pr-4",
-                  span: { col: 2, row: 1 },
-                  gridColumns: 2,
-                  columns: [
-                    {
-                      name: "SectionHeader",
-                      props: {
-                        title: "Back to Website",
-                        titleLevel: 2,
-                        titleSize: "lg",
-                        titleWeight: 'normal',
-                        titleVariant: 'success',
-                        iconBg: "bg-primary",
-                        className: "",
-                        icon: "arrow-left",
-                        iconSize: "lg",
-                      },
-                      span: { col: 2, row: 1 },
-                    },
-                    {
-                      name: "LoginV2",
-                      span: { col: 2, row: 1 },
-                      props: {
-                        buttonLabel: showForgotPassword ? "Send Verification Code" : "Login",
-                        rememberMeLabel: "Keep me signed in",
-                        minPasswordLength: 8,
-                        identifierPlaceholder: "Email or Username",
-                        passwordPlaceholder: "Enter your password",
-                        inputs: showForgotPassword ? forgotPasswordInputs : loginInputs,
-                        onSubmit: showForgotPassword ? handleForgotPasswordSubmit : handleLogin,
-                        loading,
-                        error,
-                      },
-                    },
-                    {
-                      name: 'SectionHeader',
-                      span: { col: 2, row: 1 },
-                      props: {
-                        title: 'Need Help? Contact Support',
-                        titleLevel: 3,
-                        titleSize: 'lg',
-                        titleWeight: 'normal',
-                        className: 'h-full items-end',
-                        titleVariant: 'muted',
-                        titleClassName: 'items-end',
-                        titleParts: {
-                          prefix: 'Need Help? ',
-                          suffix: 'Contact Support',
-                          suffixVariant: 'success',
-                          suffixClassName: 'cursor-pointer',
-                        },
-                        rightLabels: [
-                          {
-                            label: 'Terms of Service',
-                            size: 'lg',
-                            variant: 'success',
-                            weight: 'normal',
-                            className: 'cursor-pointer hover:opacity-80',
-                            onClick: () => {
-                              handleModalOpen('Terms of Service', termsOfServiceContent);
-                            }
-                          },
-                          {
-                            label: 'Privacy Policy',
-                            size: 'lg',
-                            variant: 'success',
-                            weight: 'normal',
-                            className: 'cursor-pointer hover:opacity-80',
-                            onClick: () => {
-                              handleModalOpen('Privacy Policy', privacyPolicyContent);
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  ],
-                },
-              ],
-            },
-          },
-          {
-            layout: {
-              type: "row",
-              className: "",
-              gap: "gap-1",
-            },
-            components: [
-              {
-                name: "Modal",
-                props: {
-                  isOpen: modalOpen,
-                  onClose: handleModalClose,
-                  title: modalTitle,
-                  size: "xl",
-                  showCloseIcon: true,
-                  backdropClosable: true,
-                  centered: true,
-                  content: modalContent,
-                  contentType: "html"
+                    case "ACCOUNT_LOCKED":
+                        setError(
+                            "Your account is temporarily locked. Try again later.",
+                        );
+                        break;
+
+                    case "ACCOUNT_DEACTIVATED":
+                        setError("Your account is deactivated. Contact admin.");
+                        break;
+
+                    case "MISSING_CREDENTIALS":
+                        setError("Username and password are required");
+                        break;
+
+                    default:
+                        setError(result.message || "Login failed");
                 }
-              }
-            ]
-          }
-        ]}
-      />
-    </div>
-  );
-};
+                return;
+            }
 
+            // ✅ SUCCESS FLOW
+            if (result.data) {
+                localStorage.setItem("token", result.data.token);
+                localStorage.setItem("user", JSON.stringify(result.data.user));
+                window.location.href = `${APP_CONFIG.BASENAME}/`;
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            setError("Network error. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPasswordSubmit = async (
+        _data: Record<string, FormInputValue>,
+    ) => {
+        setError("");
+        setLoading(true);
+
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            setError("Password reset link sent to your email!");
+        } catch (error) {
+            console.error("Forgot password error:", error);
+            setError("Failed to send reset link. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Form inputs configuration
+    const forgotPasswordInputs = [
+        {
+            name: "errorLabel",
+            type: "label",
+            label: error || "",
+            row: 1,
+            col: 1,
+            colSpan: 2,
+            labelClassName: error
+                ? "text-red-500 text-sm font-medium text-center"
+                : "hidden",
+        },
+        {
+            name: "email",
+            type: "email",
+            placeholder: "Email Address",
+            required: true,
+            row: 2,
+            col: 1,
+            colSpan: 2,
+            rightIcon: "icons/email.svg",
+            validation: {
+                custom: (value: FormInputValue) => {
+                    if (!value) return "Email is required";
+                    if (typeof value === "string" && !value.includes("@")) {
+                        return "Please enter a valid email address";
+                    }
+                    return null;
+                },
+            },
+        },
+    ];
+
+    const loginInputs = [
+        {
+            name: "errorLabel",
+            type: "label",
+            label: error || "",
+            row: 1,
+            col: 1,
+            colSpan: 2,
+            labelClassName: error
+                ? "text-red-500 text-sm font-medium text-center"
+                : "hidden",
+        },
+
+        {
+            name: "identifier",
+            type: "text",
+            placeholder: "Email or Username",
+            required: true,
+            row: 2,
+            col: 1,
+            colSpan: 2,
+            rightIcon: "icons/user.svg",
+            validation: {
+                custom: (value: FormInputValue) => {
+                    if (!value) return "Username or email is required";
+
+                    if (typeof value === "string") {
+                        if (value.length < 3)
+                            return "Username must be at least 3 characters";
+
+                        if (value.includes(" "))
+                            return "Username should not contain spaces";
+                    }
+
+                    return null;
+                },
+            },
+        },
+
+        {
+            name: "password",
+            type: "password",
+            placeholder: "Enter your password",
+            required: true,
+            showPasswordToggle: true,
+            row: 3,
+            col: 1,
+            colSpan: 2,
+            validation: {
+                custom: (value: FormInputValue) => {
+                    if (!value) return "Password is required";
+
+                    if (typeof value === "string") {
+                        if (value.length < 8)
+                            return "Password must be at least 8 characters";
+
+                        if (value.includes(" "))
+                            return "Password should not contain spaces";
+                    }
+
+                    return null;
+                },
+            },
+        },
+
+        {
+            name: "rememberMe",
+            type: "checkbox",
+            label: "Keep me signed in",
+            defaultValue: true,
+            row: 4,
+            col: 1,
+            colSpan: 1,
+        },
+
+        {
+            name: "forgotPassword",
+            type: "label",
+            label: "Forgot Password?",
+            row: 4,
+            col: 2,
+            colSpan: 1,
+            labelClassName: "items-end cursor-pointer",
+            onClick: handleForgotPassword,
+        },
+    ];
+
+    return (
+        <div className="h-screen overflow-hidden scroll-y-hidden">
+            <Page
+                sections={[
+                    {
+                        layout: {
+                            type: "grid",
+                            className:
+                                "rounded-lg min-h-screen bg-primary-lightest",
+                            columns: 5,
+                            gap: "gap-1",
+                            gridRows: 1,
+                            rows: [
+                                {
+                                    layout: "row",
+                                    className: "rounded-lg h-full p-4",
+                                    span: { col: 3, row: 1 },
+                                    columns: [
+                                        {
+                                            name: "SplitSlideshow",
+                                            props: { slides },
+                                        },
+                                    ],
+                                },
+                                {
+                                    layout: "grid",
+                                    className:
+                                        "rounded-lg h-full justify-betweens py-4 pr-4",
+                                    span: { col: 2, row: 1 },
+                                    gridColumns: 2,
+                                    columns: [
+                                        {
+                                            name: "SectionHeader",
+                                            span: { col: 2, row: 1 },
+                                            props: {
+                                                title: "Back to Website",
+                                                titleLevel: 2,
+                                                titleSize: "lg",
+                                                titleWeight: "normal",
+                                                titleVariant: "success",
+                                                iconBg: "bg-primary",
+                                                icon: "arrow-left",
+                                                iconSize: "lg",
+                                            },
+                                        },
+
+                                        {
+                                            name: "LoginV2",
+                                            span: { col: 2, row: 1 },
+                                            props: {
+                                                buttonLabel: showForgotPassword
+                                                    ? "Send Verification Code"
+                                                    : "Login",
+                                                rememberMeLabel:
+                                                    "Keep me signed in",
+                                                minPasswordLength: 8,
+                                                identifierPlaceholder:
+                                                    "Email or Username",
+                                                passwordPlaceholder:
+                                                    "Enter your password",
+                                                inputs: showForgotPassword
+                                                    ? forgotPasswordInputs
+                                                    : loginInputs,
+                                                onSubmit: showForgotPassword
+                                                    ? handleForgotPasswordSubmit
+                                                    : handleLogin,
+                                                loading,
+                                                error,
+                                            },
+                                        },
+                                        {
+                                            name: "SectionHeader",
+                                            span: { col: 2, row: 1 },
+                                            props: {
+                                                title: "",
+                                                titleLevel: 3,
+                                                titleSize: "lg",
+                                                titleWeight: "normal",
+                                                className: "h-full items-end",
+                                                titleVariant: "muted",
+                                                titleClassName: "items-end",
+                                                titleParts: {
+                                                    prefix: "Need Help? ",
+                                                    suffix: "Contact Support",
+                                                    suffixVariant: "success",
+                                                    suffixClassName:
+                                                        "cursor-pointer",
+                                                },
+                                                rightLabels: [
+                                                    {
+                                                        label: "Terms of Service",
+                                                        size: "lg",
+                                                        variant: "success",
+                                                        weight: "normal",
+                                                        className:
+                                                            "relative z-10 cursor-pointer hover:opacity-80",
+                                                        onClick: (
+                                                            e: React.MouseEvent,
+                                                        ) => {
+                                                            e.stopPropagation();
+                                                            handleModalOpen(
+                                                                "Terms of Service",
+                                                                termsOfServiceContent,
+                                                            );
+                                                        },
+                                                    },
+                                                    {
+                                                        label: "Privacy Policy",
+                                                        size: "lg",
+                                                        variant: "success",
+                                                        weight: "normal",
+                                                        className:
+                                                            "relative z-10 cursor-pointer hover:opacity-80",
+                                                        onClick: (
+                                                            e: React.MouseEvent,
+                                                        ) => {
+                                                            e.stopPropagation();
+                                                            handleModalOpen(
+                                                                "Privacy Policy",
+                                                                privacyPolicyContent,
+                                                            );
+                                                        },
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        layout: {
+                            type: "row",
+                            className: "",
+                            gap: "gap-1",
+                        },
+                        components: [
+                            {
+                                name: "Modal",
+                                props: {
+                                    isOpen: modalOpen,
+                                    onClose: handleModalClose,
+                                    title: modalTitle,
+                                    size: "xl",
+                                    showCloseIcon: true,
+                                    backdropClosable: true,
+                                    centered: true,
+                                    content: modalContent,
+                                    contentType: "html",
+                                },
+                            },
+                        ],
+                    },
+                ]}
+            />
+        </div>
+    );
+};
 export default SubLogin;
