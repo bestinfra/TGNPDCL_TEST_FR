@@ -14,7 +14,7 @@ export default function AddTicket() {
   const [feederNumber, setFeederNumber] = useState('');
   const [location, setLocation] = useState('');
   const [dtrId, setDtrId] = useState('');
-  const [pendingDtrId, setPendingDtrId] = useState('');
+  // const [pendingDtrId, setPendingDtrId] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // Check authentication on mount
@@ -35,6 +35,60 @@ export default function AddTicket() {
 
     checkAuth();
   }, [navigate]);
+
+  const MIN_DTR_LENGTH = 5;
+  useEffect(() => {
+    if (!dtrId || dtrId.trim().length < MIN_DTR_LENGTH) {
+      setFeederNumber('');
+      setLocation('');
+      return;
+    }
+
+    const debounceTimer = setTimeout(() => {
+      fetchDtrDetails(dtrId.trim());
+    }, 800);
+
+    return () => clearTimeout(debounceTimer);
+  }, [dtrId]);
+
+  const fetchDtrDetails = async (dtrNumber: string) => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      const result = await apiClient.get(`/tickets/dtr/${dtrNumber}`);
+
+      if (result.success && result.data) {
+        const dtrData = result.data;
+
+        setFeederNumber(
+          dtrData.feeder?.serialNumber ||
+          dtrData.feeder?.meterNumber ||
+          ''
+        );
+        setLocation(dtrData.location || '');
+
+        setSuccess(
+          `DTR found! Feeder: ${
+            dtrData.feeder?.serialNumber ||
+            dtrData.feeder?.meterNumber ||
+            '-'
+          }, Location: ${dtrData.location || '-'}`
+        );
+      } else {
+        setError('DTR not found');
+        setFeederNumber('');
+        setLocation('');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error fetching DTR details');
+      setFeederNumber('');
+      setLocation('');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const priorityOptions = [
     { value: '', label: 'Select Priority' },
@@ -140,125 +194,75 @@ export default function AddTicket() {
     [dtrId, feederNumber, location]
   );
 
-  // Function to handle DTR ID change and auto-populate fields
-  async function handleDtrIdChange(dtrNumber: string) {
-    // Update the DTR ID state immediately
-    setDtrId(dtrNumber);
+  // Removed Function to handle DTR ID change and auto-populate fields
 
-    if (dtrNumber && dtrNumber.trim()) {
-      try {
-        setLoading(true);
-        setError('');
-        setSuccess('');
+  // Removed Use useEffect to handle DTR ID changes (prevents setState during render)
 
-        // Use apiClient for proper authentication handling
-        const result = await apiClient.get(`/tickets/dtr/${dtrNumber.trim()}`);
+  // RemovedHandle form data changes - memoized to prevent re-renders
 
-        if (result.success && result.data) {
-          const dtrData = result.data;
+  const handleFormChange = useCallback(
+  (newFormData: Record<string, any>) => {
+    const newDtrId = newFormData.DTRID || '';
 
-          // Auto-populate the fields
-          setFeederNumber(
-            dtrData.feeder?.serialNumber || dtrData.feeder?.meterNumber || 'No meter found'
-          );
-          setLocation(dtrData.location || 'Location not available');
+    // Update input immediately (no API call yet)
+    setDtrId(newDtrId);
+  },
+  []
+);
 
-          // Show success message
-          setSuccess(
-            `DTR found! Feeder: ${
-              dtrData.feeder?.serialNumber || dtrData.feeder?.meterNumber || 'No meter'
-            }, Location: ${dtrData.location || '-'}`
-          );
-        } else {
-          setError('DTR not found');
-          setFeederNumber('');
-          setLocation('');
-        }
-      } catch (error: any) {
-        console.error('Error fetching DTR details:', error);
-        setError(error.message || 'Error fetching DTR details');
-        setFeederNumber('');
-        setLocation('');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setFeederNumber('');
-      setLocation('');
-      setSuccess('');
-    }
-  }
 
-  // Use useEffect to handle DTR ID changes (prevents setState during render)
-  useEffect(() => {
-    if (pendingDtrId && pendingDtrId !== dtrId) {
-      // Use setTimeout to ensure state updates happen after render
-      const timeoutId = setTimeout(() => {
-        handleDtrIdChange(pendingDtrId);
-      }, 0);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [pendingDtrId, dtrId]);
-
-  // Handle form data changes - memoized to prevent re-renders
-  const handleFormChange = useCallback((newFormData: Record<string, any>) => {
-    // Use setTimeout to defer state update
-    setTimeout(() => {
-      setPendingDtrId(newFormData.DTRID || '');
-    }, 0);
-  }, []);
-
+ // Handle form submission - memoized to prevent re-renders 
   const handleFormSubmit = useCallback(
-    async (formData: Record<string, any>) => {
-      try {
-        setLoading(true);
-        setError('');
-        setSuccess('');
+  async (formData: Record<string, any>) => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
 
-        // Prepare the data for the API
-        const ticketData = {
-          subject: formData.subject,
-          description: formData.description,
-          type: 'COMPLAINT',
-          category: formData.category,
-          priority: formData.Priority?.toUpperCase() || formData.priority?.toUpperCase(),
-          dtrId: dtrId || null,
-          feederNumber: feederNumber || null,
-          location: location || null,
-          attachments: formData.attachments || null,
-        };
+      const fd = new FormData();
 
-        // Use apiClient for proper authentication handling
-        const result = await apiClient.post('/tickets', ticketData);
+      fd.append('subject', formData.subject);
+      fd.append('description', formData.description);
+      fd.append('type', 'COMPLAINT');
+      fd.append('category', formData.category);
+      fd.append(
+        'priority',
+        formData.Priority?.toUpperCase() || formData.priority?.toUpperCase()
+      );
 
-        if (result.success) {
-          setSuccess('Ticket created successfully! Redirecting...');
-          // Navigate back after successful creation
-          setTimeout(() => {
-            navigate('/tickets');
-          }, 1500);
-        } else {
-          setError(result.message || 'Failed to create ticket');
-        }
-      } catch (error: any) {
-        console.error('Error creating ticket:', error);
+      if (dtrId) fd.append('dtrId', dtrId);
+      if (feederNumber) fd.append('feederNumber', feederNumber);
+      if (location) fd.append('location', location);
 
-        // Check if it's an authentication error
-        if (error.response?.status === 401 || error.message?.includes('authenticated')) {
-          setError('You must be logged in to create tickets. Redirecting to login...');
-          setTimeout(() => {
-            navigate('/login');
-          }, 2000);
-        } else {
-          setError(error.message || 'Error creating ticket. Please try again.');
-        }
-      } finally {
-        setLoading(false);
+      // IMPORTANT: field name MUST match multer → upload.single("attachment")
+      if (formData.attachments && formData.attachments.length > 0) {
+        fd.append('attachment', formData.attachments[0]); 
       }
-    },
-    [dtrId, feederNumber, location, navigate]
-  );
+
+      const result = await apiClient.post('/tickets', fd);
+
+      if (result.success) {
+        setSuccess('Ticket created successfully! Redirecting...');
+        setTimeout(() => navigate('/tickets'), 1500);
+      } else {
+        setError(result.message || 'Failed to create ticket');
+      }
+    } catch (error: any) {
+      console.error('Error creating ticket:', error);
+
+      if (error.response?.status === 401) {
+        setError('You must be logged in to create tickets. Redirecting...');
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError(error.message || 'Error creating ticket. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  },
+  [dtrId, feederNumber, location, navigate]
+);
+
 
   const handleFormCancel = useCallback(() => {
     navigate('/tickets');
@@ -344,7 +348,7 @@ export default function AddTicket() {
                     {
                       name: 'PageHeader',
                       props: {
-                        title: 'Create New Ticket',
+                        title: 'Create New Ticketsssss',
                         onBackClick: () => navigate('/tickets'),
                         showMenu: false,
                         showDropdown: false,
