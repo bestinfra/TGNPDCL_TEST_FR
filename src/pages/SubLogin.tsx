@@ -348,20 +348,19 @@ If you have any questions about this Privacy Policy, please contact us.`;
                                     gridColumns: 2,
                                     columns: [
                                         {
-  name: "SectionHeader",
-  span: { col: 2, row: 1 },
-  props: {
-    title: "Back to Website",
-    titleLevel: 2,
-    titleSize: "lg",
-    titleWeight: "normal",
-    titleVariant: "success",
-    iconBg: "bg-primary",
-    icon: "arrow-left",
-    iconSize: "lg",
-  },
-},
-
+                                            name: "SectionHeader",
+                                            span: { col: 2, row: 1 },
+                                            props: {
+                                                title: "Back to Website",
+                                                titleLevel: 2,
+                                                titleSize: "lg",
+                                                titleWeight: "normal",
+                                                titleVariant: "success",
+                                                iconBg: "bg-primary",
+                                                icon: "arrow-left",
+                                                iconSize: "lg",
+                                            },
+                                        },
 
                                         {
                                             name: "LoginV2",

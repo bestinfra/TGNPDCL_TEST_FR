@@ -235,6 +235,7 @@ const TicketView: React.FC = () => {
         // Add your ticket opening logic here
     };
 
+
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <Page
