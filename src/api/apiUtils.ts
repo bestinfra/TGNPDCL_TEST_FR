@@ -35,18 +35,25 @@ export class ApiClient {
     return response.json();
   }
 
-  /**
-   * Make a POST request
-   */
   async post(endpoint: string, data: any, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
+
+    // Check if data is FormData
+    const isFormData = data instanceof FormData;
+
+    const headers: Record<string, string> = {
+      ...options.headers as Record<string, string>,
+    };
+
+    // Only set Content-Type to application/json if NOT FormData
+    if (!isFormData && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      body: JSON.stringify(data),
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
       credentials: 'include', // Include cookies for authentication
       ...options,
     });
@@ -63,13 +70,23 @@ export class ApiClient {
    */
   async put(endpoint: string, data: any, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
+
+    // Check if data is FormData
+    const isFormData = data instanceof FormData;
+
+    const headers: Record<string, string> = {
+      ...options.headers as Record<string, string>,
+    };
+
+    // Only set Content-Type to application/json if NOT FormData
+    if (!isFormData && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      body: JSON.stringify(data),
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
       credentials: 'include', // Include cookies for authentication
       ...options,
     });
@@ -137,10 +154,10 @@ export const apiClient = new ApiClient();
 export const api = {
   // Health check
   health: () => apiClient.healthCheck(),
-  
+
   // Environment info
   env: () => apiClient.getEnvironmentInfo(),
-  
+
   // Example API endpoints (customize based on your backend)
   users: {
     getAll: () => apiClient.get('/api/users'),
@@ -149,7 +166,7 @@ export const api = {
     update: (id: string, data: any) => apiClient.put(`/api/users/${id}`, data),
     delete: (id: string) => apiClient.delete(`/api/users/${id}`),
   },
-  
+
   // Add more API endpoints as needed
   // Example: posts, comments, etc.
 };

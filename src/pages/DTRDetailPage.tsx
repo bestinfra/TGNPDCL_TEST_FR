@@ -1633,7 +1633,10 @@ const DTRDetailPage = () => {
                           { key: 'feederName', label: 'Meter Number' },
                           { key: 'occuredOn', label: 'Occured On' },
                           { key: 'duration', label: 'Duration' },
-                          { key: 'status', label: 'Status' },
+                          { key: 'status', label: 'Status' ,
+                          statusIndicator: {},
+                          isActive: (value: string) => value.toLowerCase() === "resolved",
+                          }
                         ],
                         data: alertsData,
                         searchable: true,
