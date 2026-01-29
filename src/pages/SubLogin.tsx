@@ -166,9 +166,15 @@ If you have any questions about this Privacy Policy, please contact us.`;
 
             // ✅ SUCCESS FLOW
             if (result.data) {
-                localStorage.setItem("token", result.data.token);
-                localStorage.setItem("user", JSON.stringify(result.data.user));
-                window.location.href = `${APP_CONFIG.BASENAME}/`;
+                // Handle both 'token' and 'accessToken' for backward compatibility
+                const token = result.data.token || result.data.accessToken;
+                if (token) {
+                    localStorage.setItem("token", token);
+                    localStorage.setItem("user", JSON.stringify(result.data.user));
+                    window.location.href = `${APP_CONFIG.BASENAME}/`;
+                } else {
+                    setError("Token missing in response");
+                }
             }
         } catch (error) {
             console.error("Login error:", error);
