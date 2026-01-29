@@ -11,6 +11,12 @@ interface LoginRequest {
 interface LoginResponse {
   success: boolean;
   message: string;
+  code?: 
+    | "INVALID_USERNAME"
+    | "INVALID_PASSWORD"
+    | "ACCOUNT_LOCKED"
+    | "ACCOUNT_DEACTIVATED"
+    | "MISSING_CREDENTIALS";
   data?: {
     user: {
       id: number;
@@ -71,16 +77,16 @@ async function apiRequest<T>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    credentials: 'include', // Include cookies for authentication
+    credentials: 'include',
     ...options,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
+  // ✅ Always parse JSON
+  const data = await response.json();
 
-  return response.json();
+  return data;
 }
+
 
 // Login function
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {

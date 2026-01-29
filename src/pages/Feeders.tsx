@@ -2381,6 +2381,8 @@ const Feeders = () => {
                                                     {
                                                         key: "status",
                                                         label: "Status",
+                                                        statusIndicator: {},
+                                                        isActive:(value: string) => value && value.toLowerCase() === "resolved",
                                                     },
                                                 ],
                                                 data: alertsData,

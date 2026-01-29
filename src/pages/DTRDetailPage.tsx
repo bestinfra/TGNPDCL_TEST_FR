@@ -1145,7 +1145,8 @@ const DTRDetailPage = () => {
                         rows: [
                           {
                             layout: 'row',
-                            className: 'justify-between w-full',
+                            className:
+                              'justify-between w-full bg-background-secondary dark:bg-white/5 rounded-2xl px-4 py-4',
                             span: { col: 5, row: 1 },
                             items: [
                               {
@@ -1632,7 +1633,10 @@ const DTRDetailPage = () => {
                           { key: 'feederName', label: 'Meter Number' },
                           { key: 'occuredOn', label: 'Occured On' },
                           { key: 'duration', label: 'Duration' },
-                          { key: 'status', label: 'Status' },
+                          { key: 'status', label: 'Status' ,
+                          statusIndicator: {},
+                          isActive: (value: string) => value.toLowerCase() === "resolved",
+                          }
                         ],
                         data: alertsData,
                         searchable: true,

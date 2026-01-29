@@ -99,6 +99,12 @@ const MeterAlert: React.FC = () => {
     // Data states
     const [alertStats, _setAlertStats] = useState(dummyAlertStats);
     const [alertTableData, _setAlertTableData] = useState(dummyAlertTableData);
+
+    // Pagination states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [totalCount, setTotalCount] = useState(0);
+
     const [filterOptions, _setFilterOptions] = useState(dummyFilterOptions);
     const [timelineData, _setTimelineData] = useState(dummyTimelineData);
     const [monthlyTimelineData, _setMonthlyTimelineData] =
@@ -175,7 +181,7 @@ const MeterAlert: React.FC = () => {
 
     // Alert table columns
     const alertTableColumns = [
-        { key: "sNo", label: "S.No" },
+        { key: "serialNumber", label: "S.No" },
         { key: "dtrId", label: "DTR ID" },
         { key: "meter", label: "Meter" },
         { key: "tamperType", label: "Tamper Type" },
@@ -184,7 +190,7 @@ const MeterAlert: React.FC = () => {
             key: "status",
             label: "Status",
             statusIndicator: {},
-            isActive: (value: string) => value.toLowerCase() === "active",
+            isActive: (value: string) => value.toLowerCase() === "resolved",
         },
         { key: "duration", label: "Duration" },
     ];
@@ -212,6 +218,7 @@ const MeterAlert: React.FC = () => {
             );
             return newValues;
         });
+        setPage(1); 
     };
 
     const handleDateRangeChange = (start: string, end: string) => {
@@ -232,6 +239,12 @@ const MeterAlert: React.FC = () => {
             );
             return newValues;
         });
+        setPage(1); 
+    };
+
+    const handlePageChange = (newPage: number, newLimit: number) => {
+        setPage(newPage);
+        setRowsPerPage(newLimit);
     };
 
     const handleChartDownload = () => {
@@ -374,8 +387,8 @@ const MeterAlert: React.FC = () => {
                 filterValues.dateRange.start && filterValues.dateRange.end
                     ? `Date Range: ${filterValues.dateRange.start} to ${filterValues.dateRange.end}`
                     : filterValues.dateRange.start
-                    ? `From: ${filterValues.dateRange.start}`
-                    : `Until: ${filterValues.dateRange.end}`;
+                        ? `From: ${filterValues.dateRange.start}`
+                        : `Until: ${filterValues.dateRange.end}`;
 
             components.push({
                 id: "dateRange-filter",
@@ -421,6 +434,8 @@ const MeterAlert: React.FC = () => {
                             : filterValues.alertType,
                     startDate: filterValues.dateRange.start || "",
                     endDate: filterValues.dateRange.end || "",
+                    page: page.toString(),
+                    pageSize: rowsPerPage.toString(),
                 }).toString();
 
                 console.log("Frontend queryParams:", queryParams);
@@ -453,7 +468,7 @@ const MeterAlert: React.FC = () => {
                 // Map table data
                 _setAlertTableData(
                     data.events.map((event: any, idx: number) => ({
-                        sNo: idx + 1,
+                        serialNumber: event.sNo || (page - 1) * rowsPerPage + idx + 1, // Use backend sNo or calculate based on page
                         dtrId: event.dtrId ?? "N/A",
                         meter: event.meter ?? "N/A",
                         tamperType: event.tamperType,
@@ -462,6 +477,14 @@ const MeterAlert: React.FC = () => {
                         occurredOn: event.occurredOn,
                     }))
                 );
+
+                // Update pagination from backend response
+                if (data.pagination) {
+                    setTotalCount(data.pagination.totalCount || 0);
+                } else {
+                    // Fallback if pagination is missing
+                    setTotalCount(data.events?.length || 0);
+                }
 
                 // Update timeline data
                 if (data.timelineData) {
@@ -517,7 +540,7 @@ const MeterAlert: React.FC = () => {
         };
 
         fetchData();
-    }, [filterValues]);
+    }, [filterValues, page, rowsPerPage]);
 
     return (
         <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -526,24 +549,24 @@ const MeterAlert: React.FC = () => {
                     // Error section - following pattern from MetersList.tsx
                     ...(error
                         ? [
-                              {
-                                  layout: {
-                                      type: "column" as const,
-                                      gap: "gap-4",
-                                  },
-                                  components: [
-                                      {
-                                          name: "Error",
-                                          props: {
-                                              visibleErrors: [error],
-                                              onRetry: handleRetry,
-                                              showRetry: true,
-                                              maxVisibleErrors: 1,
-                                          },
-                                      },
-                                  ],
-                              },
-                          ]
+                            {
+                                layout: {
+                                    type: "column" as const,
+                                    gap: "gap-4",
+                                },
+                                components: [
+                                    {
+                                        name: "Error",
+                                        props: {
+                                            visibleErrors: [error],
+                                            onRetry: handleRetry,
+                                            showRetry: true,
+                                            maxVisibleErrors: 1,
+                                        },
+                                    },
+                                ],
+                            },
+                        ]
                         : []),
                     // Header section
                     {
@@ -739,17 +762,17 @@ const MeterAlert: React.FC = () => {
                                                 headerTitle:
                                                     filterValues.dateRange
                                                         .start ||
-                                                    filterValues.dateRange.end
+                                                        filterValues.dateRange.end
                                                         ? `Event Timeline (Hourly - ${
-                                                              filterValues
-                                                                  .dateRange
-                                                                  .start ||
-                                                              "Start"
-                                                          } to ${
-                                                              filterValues
-                                                                  .dateRange
-                                                                  .end || "End"
-                                                          })`
+                                                            filterValues
+                                                            .dateRange
+                                                            .start ||
+                                                        "Start"
+                                                        } to ${
+                                                            filterValues
+                                                            .dateRange
+                                                            .end || "End"
+                                                        })`
                                                         : "Event Timeline (Today - Hourly)",
                                                 showDownloadButton: true,
                                                 onDownload: handleChartDownload,
@@ -784,17 +807,17 @@ const MeterAlert: React.FC = () => {
                                                 headerTitle:
                                                     filterValues.dateRange
                                                         .start ||
-                                                    filterValues.dateRange.end
+                                                        filterValues.dateRange.end
                                                         ? `${alertTimelineRange} Alert Timeline (${
-                                                              filterValues
-                                                                  .dateRange
-                                                                  .start ||
-                                                              "Start"
-                                                          } to ${
-                                                              filterValues
-                                                                  .dateRange
-                                                                  .end || "End"
-                                                          })`
+                                                            filterValues
+                                                            .dateRange
+                                                            .start ||
+                                                        "Start"
+                                                        } to ${
+                                                            filterValues
+                                                            .dateRange
+                                                            .end || "End"
+                                                        })`
                                                         : `${alertTimelineRange} Alert Timeline`,
                                                 availableTimeRanges: [
                                                     "Daily",
@@ -910,6 +933,15 @@ const MeterAlert: React.FC = () => {
                                     pagination: true,
                                     loading: isTableLoading,
                                     emptyMessage: "No alerts found",
+                                    serverPagination: {
+                                        currentPage: page,
+                                        totalPages: Math.ceil(totalCount / rowsPerPage) || 1,
+                                        totalCount: totalCount,
+                                        limit: rowsPerPage,
+                                        hasNextPage: page < (Math.ceil(totalCount / rowsPerPage) || 1),
+                                        hasPrevPage: page > 1,
+                                    },
+                                    onPageChange: handlePageChange,
                                 },
                                 span: { col: 1, row: 1 },
                             },

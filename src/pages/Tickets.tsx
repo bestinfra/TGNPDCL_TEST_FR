@@ -374,75 +374,75 @@ export default function Tickets() {
     fetchTrends();
   }, []);
 
+  const fetchTable = async (page=1,limit=10) => {
+    setIsTableLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+
+      const res = await fetch(`${BACKEND_URL}/tickets/table?${params.toString()}`);
+
+      if (!res.ok) {
+        throw new Error(`Table API failed with status ${res.status}`);
+      }
+
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Table API returned non-JSON response');
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setTickets(data.data);
+        setServerPagination({
+          currentPage: data.pagination?.currentPage || 1,
+          totalPages: data.pagination?.totalPages || 1,
+          totalCount: data.pagination?.totalCount || 0,
+          limit: data.pagination?.limit || 10,
+          hasNextPage: data.pagination?.hasNextPage || false,
+          hasPrevPage: data.pagination?.hasPrevPage || false,
+        });
+        console.log("Tickets from backend:", data.data);
+        // Remove from failed APIs if successful
+        setFailedApis((prev) => prev.filter((api) => api.id !== 'table'));
+      } else {
+        throw new Error('Table API returned unsuccessful response');
+      }
+    } catch (err: any) {
+      console.error('Error in Tickets Table:', err);
+      setTickets(dummyTickets);
+
+      // Add to failed APIs
+      setFailedApis((prev) => {
+        if (!prev.find((api) => api.id === 'table')) {
+          return [
+            ...prev,
+            {
+              id: 'table',
+              name: 'Tickets Table',
+              retryFunction: () => retryTableAPI(),
+              errorMessage: 'Failed to load Tickets Table. Please try again.',
+            },
+          ];
+        }
+        return prev;
+      });
+    } finally {
+      // Add a small delay to make loading state visible
+      setTimeout(() => {
+        setIsTableLoading(false);
+      }, 1000);
+    }
+  };
   // Fetch tickets table
   useEffect(() => {
-    const fetchTable = async () => {
-      setIsTableLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.append('page', '1');
-        params.append('limit', '10');
-
-        const res = await fetch(`${BACKEND_URL}/tickets/table?${params.toString()}`);
-
-        if (!res.ok) {
-          throw new Error(`Table API failed with status ${res.status}`);
-        }
-
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('Table API returned non-JSON response');
-        }
-
-        const data = await res.json();
-        if (data.success) {
-          setTickets(data.data);
-          setServerPagination({
-            currentPage: data.pagination?.currentPage || 1,
-            totalPages: data.pagination?.totalPages || 1,
-            totalCount: data.pagination?.totalCount || 0,
-            limit: data.pagination?.limit || 10,
-            hasNextPage: data.pagination?.hasNextPage || false,
-            hasPrevPage: data.pagination?.hasPrevPage || false,
-          });
-          // Remove from failed APIs if successful
-          setFailedApis((prev) => prev.filter((api) => api.id !== 'table'));
-        } else {
-          throw new Error('Table API returned unsuccessful response');
-        }
-      } catch (err: any) {
-        console.error('Error in Tickets Table:', err);
-        setTickets(dummyTickets);
-
-        // Add to failed APIs
-        setFailedApis((prev) => {
-          if (!prev.find((api) => api.id === 'table')) {
-            return [
-              ...prev,
-              {
-                id: 'table',
-                name: 'Tickets Table',
-                retryFunction: () => retryTableAPI(),
-                errorMessage: 'Failed to load Tickets Table. Please try again.',
-              },
-            ];
-          }
-          return prev;
-        });
-      } finally {
-        // Add a small delay to make loading state visible
-        setTimeout(() => {
-          setIsTableLoading(false);
-        }, 1000);
-      }
-    };
-
     fetchTable();
   }, []);
 
   // Handle table pagination
   const handlePageChange = (page: number, limit: number) => {
-    retryTableAPI(page, limit);
+    fetchTable(page, limit);
   };
 
   // Handle table search
@@ -453,7 +453,9 @@ export default function Tickets() {
 
   // Handle ticket actions
   const handleViewTicket = (row: TableData) => {
-    navigate(`/tickets/${row.id}`);
+    // navigate(`/tickets/${row.id}`);
+    navigate(`/tickets/${row.ticketNumber}`);
+
   };
 
   const handleEditTicket = (row: TableData) => {
