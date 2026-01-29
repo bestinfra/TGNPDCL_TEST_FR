@@ -77,7 +77,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: 'Invalid response from server' };
       }
       if (data.success && data.data) {
-        const { user: userData, token: userToken } = data.data;
+        // Handle both 'token' and 'accessToken' for backward compatibility
+        const userToken = data.data.token || data.data.accessToken;
+        const userData = data.data.user;
+
+        if (!userToken) {
+          console.error('Token missing in response');
+          return { success: false, message: 'Token missing in response' };
+        }
+
         // Store in localStorage
         localStorage.setItem('token', userToken);
         localStorage.setItem('user', JSON.stringify(userData));
