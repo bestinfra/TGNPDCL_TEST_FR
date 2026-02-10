@@ -1,20 +1,25 @@
+import { defineConfig, loadEnv } from "vite";
 import federation from "@originjs/vite-plugin-federation";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { defineConfig } from "vite";
-export default defineConfig({
-    base: "/v2/tgnpdcl_smart/",
-    plugins: [
-        react(),
-        federation({
-            name: "tgnpdcl",
-            remotes: {
-                SuperAdmin: "http://localhost:4173/admin/assets/remoteEntry.js",
-                //SuperAdmin: "https://bestinfra.app/admin/assets/remoteEntry.js",
-            },
-            shared: ["react", "react-dom", "react-router", "react-router-dom"],
-        }),
-    ],
+
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), "");
+
+    return {
+        base: "/",
+        plugins: [
+            react(),
+            federation({
+                name: "tgnpdcl",
+                remotes: {
+                    SuperAdmin:
+                        env.VITE_SUPER_ADMIN_URL ??
+                        "https://admin.bestinfra.app/assets/remoteEntry.js",
+                },
+                shared: ["react", "react-dom", "react-router", "react-router-dom"],
+            }),
+        ],
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
@@ -27,24 +32,25 @@ export default defineConfig({
             "@types": path.resolve(__dirname, "./src/types"),
         },
     },
-    build: {
-        modulePreload: false,
-        target: "esnext",
-        minify: false,
-        cssCodeSplit: false,
-    },
-    server: {
-        port: 1700,
-        fs: {
-            allow: [".."],
+        build: {
+            modulePreload: false,
+            target: "esnext",
+            minify: false,
+            cssCodeSplit: false,
         },
-        proxy: {
-            "/api": {
-                target: "http://localhost:4249",
-                changeOrigin: true,
-                secure: false,
+        server: {
+            port: 1700,
+            fs: {
+                allow: [".."],
+            },
+            proxy: {
+                "/api": {
+                    target: "http://localhost:4249",
+                    changeOrigin: true,
+                    secure: false,
+                },
             },
         },
-    },
-    publicDir: "public",
+        publicDir: "public",
+    };
 });
