@@ -793,7 +793,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                     //  onRefreshNotifications={fetchNotificationStats}
                     onFetchNotifications={getCurrentNotifications}
                     onMarkNotificationAsRead={markNotificationAsRead}
-                    logoutRoute="/v2/tgnpdcl_smart/login"
+                    logoutRoute="/login"
                     // clientLogo={{
                     //     src: "images/tgnpdcl.png",
                     //     alt: "Client Logo",

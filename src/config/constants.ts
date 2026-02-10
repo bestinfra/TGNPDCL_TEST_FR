@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  BASENAME: '/v2/tgnpdcl_smart',
+  BASENAME: '' as string,
   
   // API Configuration
   API_TIMEOUT: 10000,
@@ -20,13 +20,25 @@ export const APP_CONFIG = {
 export const getFullPath = (path: string): string => {
   // Remove leading slash if present to avoid double slashes
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+
+  // If no basename is set, just ensure the path starts with a single leading slash
+  if (!APP_CONFIG.BASENAME) {
+    return `/${cleanPath}`;
+  }
+
   return `${APP_CONFIG.BASENAME}/${cleanPath}`;
 };
 
 // Helper function to get relative path (without basename)
 export const getRelativePath = (fullPath: string): string => {
+  // If no basename is configured, just return the original path
+  if (!APP_CONFIG.BASENAME) {
+    return fullPath;
+  }
+
   if (fullPath.startsWith(APP_CONFIG.BASENAME)) {
     return fullPath.slice(APP_CONFIG.BASENAME.length) || '/';
   }
+
   return fullPath;
 };

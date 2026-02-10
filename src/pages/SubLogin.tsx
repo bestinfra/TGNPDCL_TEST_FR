@@ -167,7 +167,8 @@ If you have any questions about this Privacy Policy, please contact us.`;
             // ✅ SUCCESS FLOW
             if (result.data) {
                 // Handle both 'token' and 'accessToken' for backward compatibility
-                const token = result.data.token || result.data.accessToken;
+                const data: any = result.data;
+                const token = data.token || data.accessToken;
                 if (token) {
                     localStorage.setItem("token", token);
                     localStorage.setItem("user", JSON.stringify(result.data.user));
