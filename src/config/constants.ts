@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  BASENAME: '',
+  BASENAME: '' as string,
   
   // API Configuration
   API_TIMEOUT: 10000,
