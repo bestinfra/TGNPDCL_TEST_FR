@@ -707,6 +707,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             icon: "icons/customer-service.svg",
             link: "/tickets",
         },
+        
         {
             title: "Meter Management",
             icon: "icons/meter-bolt.svg",

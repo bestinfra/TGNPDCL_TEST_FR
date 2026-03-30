@@ -22,10 +22,14 @@ import DTRTable from './pages/DTRTable';
 import ProtectedRoute from './components/auth/LocalProtectedRoute';
 import RolesPermissions from './pages/RolesPermissions';
 import MeterAlert from './pages/MeterAlert';
+import Instantaneous from './pages/Instantaneous';
+import MDReport from './pages/MDReport';
+import LSData from './pages/LSData';
+import LSDataIndividual from './pages/LSDataIndividual';
 
 const App: React.FC = () => {
   const basename = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || '';
-  
+
   return (
     <AuthProvider>
       <AppProvider>
@@ -55,6 +59,15 @@ const App: React.FC = () => {
                         <Route path="/tickets/:ticketId/edit" element={<AddTicket />} />
                         <Route path="/add-ticket" element={<AddTicket />} />
                         <Route path="/data-logger" element={<DataLogger />} />
+                        <Route path='/instantaneous' element={<Instantaneous />} />
+                        <Route path='/md-report' element={<MDReport />} />
+                        <Route path="/lsdata" element={<LSData />} />
+                        <Route path="/lsdata-individual/:id" element={<LSDataIndividual />} />
+
+
+
+
+
                         {/* <Route path="/meters" element={<MetersList />} /> */}
                         <Route path="/meter-details/:meterId" element={<MeterDetails />} />
                         <Route path="/dtr-detail/:dtrId" element={<DTRDetailPage />} />
