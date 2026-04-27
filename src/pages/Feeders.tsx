@@ -289,19 +289,25 @@ const Feeders = () => {
             : null);
 
     // Determine the effective DTR ID to use for API calls
+    const isLikelyDtrIdentifier = (value: string) => {
+        if (!value) return false;
+        const v = String(value).trim();
+        // Numeric ids or coded DTR ids like DTR-001 / SS-233 should be treated as DTR identifiers.
+        if (/^\d+$/.test(v)) return true;
+        if (/^(DTR|SS)-/i.test(v)) return true;
+        // Meter numbers like TGNxxxx should NOT be treated as DTR identifiers.
+        if (/^TGN/i.test(v)) return false;
+        return false;
+    };
+
     const getEffectiveDtrId = () => {
         // First try passedData.dtrId (from navigation state)
         if (passedData?.dtrId) {
             return passedData.dtrId;
         }
 
-        // If route param is pure numeric id, use it as-is.
-        if (dtrId && /^\d+$/.test(dtrId)) {
-            return dtrId;
-        }
-
-        // If route param looks like a DTR code (e.g. DTR-001, SS-233), keep full value.
-        if (dtrId && /[A-Za-z]/.test(dtrId)) {
+        // Route param can either be dtr id/code or feeder meter number.
+        if (dtrId && isLikelyDtrIdentifier(dtrId)) {
             return dtrId;
         }
 
@@ -320,37 +326,15 @@ const Feeders = () => {
         feederId: string
     ): Promise<string | null> => {
         try {
-            // We need to search for the feeder to find its DTR ID
-            // This could be done by searching through all DTRs or by a specific feeder search endpoint
-            // For now, let's try to search through the DTRs endpoint with a search parameter
-
-            // Option 1: Search through DTRs with feeder name
-            const searchResponse = await fetch(
-                `${BACKEND_URL}/dtrs?search=${feederId}`
+            // Directly search meter listing first; this endpoint already links meters to DTR ids/codes.
+            const meterSearchResponse = await fetch(
+                `${BACKEND_URL}/dtrs/all-meters?search=${encodeURIComponent(feederId)}&page=1&pageSize=1`
             );
-            if (searchResponse.ok) {
-                const searchData = await searchResponse.json();
-                if (searchData.success && searchData.data.length > 0) {
-                    // Find the DTR that contains this feeder
-                    for (const dtr of searchData.data) {
-                        // Check if this DTR has the feeder
-                        const dtrResponse = await fetch(
-                            `${BACKEND_URL}/dtrs/${dtr.dtrId || dtr.dtrNumber}`
-                        );
-                        if (dtrResponse.ok) {
-                            const dtrData = await dtrResponse.json();
-                            if (dtrData.success && dtrData.data?.feeders) {
-                                const hasFeeder = dtrData.data.feeders.some(
-                                    (feeder: any) =>
-                                        feeder.serialNumber === feederId ||
-                                        feeder.meterNumber === feederId
-                                );
-                                if (hasFeeder) {
-                                    return dtr.dtrId || dtr.dtrNumber;
-                                }
-                            }
-                        }
-                    }
+            if (meterSearchResponse.ok) {
+                const meterSearchData = await meterSearchResponse.json();
+                const first = meterSearchData?.data?.[0];
+                if (first?.dtrId && first.dtrId !== "N/A") {
+                    return String(first.dtrId);
                 }
             }
 
