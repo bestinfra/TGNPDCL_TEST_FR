@@ -295,13 +295,18 @@ const Feeders = () => {
             return passedData.dtrId;
         }
 
-        // Then try to extract from dtrId parameter
-        if (dtrId && dtrId.match(/\d+/)?.[0]) {
-            return dtrId.match(/\d+/)?.[0];
+        // If route param is pure numeric id, use it as-is.
+        if (dtrId && /^\d+$/.test(dtrId)) {
+            return dtrId;
+        }
+
+        // If route param looks like a DTR code (e.g. DTR-001, SS-233), keep full value.
+        if (dtrId && /[A-Za-z]/.test(dtrId)) {
+            return dtrId;
         }
 
         // If we have a feederId, we need to find the DTR ID from the backend
-        if (feederId) {
+        if (feederId || passedData?.feederId) {
             return null; // We'll need to handle this specially
         }
 
@@ -1418,12 +1423,13 @@ const Feeders = () => {
     // Effect to resolve DTR ID from feeder ID when needed
     useEffect(() => {
         const resolveDtrId = async () => {
-            if (!resolvedDtrId && feederId) {
+            const feederIdentifier = feederId || passedData?.feederId;
+            if (!resolvedDtrId && feederIdentifier) {
                 console.log(
                     "useEffect - resolveDtrId - Looking for DTR ID for feeder:",
-                    feederId
+                    feederIdentifier
                 );
-                const foundDtrId = await findDtrIdFromFeederId(feederId);
+                const foundDtrId = await findDtrIdFromFeederId(feederIdentifier);
                 if (foundDtrId) {
                     console.log(
                         "useEffect - resolveDtrId - Found DTR ID:",
@@ -1433,14 +1439,14 @@ const Feeders = () => {
                 } else {
                     console.warn(
                         "useEffect - resolveDtrId - Could not find DTR ID for feeder:",
-                        feederId
+                        feederIdentifier
                     );
                 }
             }
         };
 
         resolveDtrId();
-    }, [feederId, resolvedDtrId]);
+    }, [feederId, passedData?.feederId, resolvedDtrId]);
 
     // Effect to log time range changes for debugging
     // useEffect(() => {}, [consumptionTimeRange, kvaTimeRange]);
