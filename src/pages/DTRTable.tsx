@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BACKEND_URL from '../config';
 
@@ -34,6 +34,7 @@ const DTRTable: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [cardType, setCardType] = useState<string | null>(null);
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
+  const normalizedCardType = useMemo(() => cardType?.toLowerCase() ?? null, [cardType]);
   const [serverPagination, setServerPagination] = useState<Pagination>({
     currentPage: 1,
     totalPages: 1,
@@ -59,12 +60,12 @@ const DTRTable: React.FC = () => {
     const type = urlParams.get('type');
     const title = urlParams.get('title');
 
-    if (type) setCardType(type);
+    if (type) setCardType(type.toLowerCase());
     if (title) setCardTitle(decodeURIComponent(title));
   }, []);
 
   const getTableColumns = () => {
-    switch (cardType) {
+    switch (normalizedCardType) {
       case 'communicating-meters':
       case 'non-communicating-meters':
         return [
@@ -192,6 +193,27 @@ const DTRTable: React.FC = () => {
           { key: 'location', label: 'Location' },
           { key: 'timestamp', label: 'Timestamp' },
         ];
+      case 'daily-kvar':
+      case 'monthly-kvar':
+        return [
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'kvar', label: 'kVAR Reading' },
+          { key: 'powerFactor', label: 'Power Factor' },
+          { key: 'location', label: 'Location' },
+          { key: 'timestamp', label: 'Timestamp' },
+        ];
+      case 'daily-kvarh':
+      case 'monthly-kvarh':
+        return [
+          { key: 'dtrId', label: 'DTR ID' },
+          { key: 'dtrName', label: 'DTR Name' },
+          { key: 'kvarh', label: 'kVARh Reading' },
+          { key: 'previousReading', label: 'Previous Reading' },
+          { key: 'consumption', label: 'Consumption' },
+          { key: 'location', label: 'Location' },
+          { key: 'timestamp', label: 'Timestamp' },
+        ];
       default:
         return [
           { key: 'dtrId', label: 'DTR ID' },
@@ -213,7 +235,7 @@ const DTRTable: React.FC = () => {
     async (page: number = 1, pageSize: number = 10, search?: string) => {
       setLoading(true);
       try {
-        if (!cardType) return;
+        if (!normalizedCardType) return;
 
         let url = '';
         const params = new URLSearchParams();
@@ -221,7 +243,7 @@ const DTRTable: React.FC = () => {
         params.append('pageSize', pageSize.toString());
         if (search) params.append('search', search);
 
-        switch (cardType) {
+        switch (normalizedCardType) {
           case 'total-dtrs':
             url = `${BACKEND_URL}/dtrs?${params.toString()}`;
             break;
@@ -255,9 +277,23 @@ const DTRTable: React.FC = () => {
           case 'power-failure-feeders':
             url = `${BACKEND_URL}/dtrs/power-failure-feeders`;
             break;
+          case 'daily-kw':
+          case 'daily-kwh':
+          case 'daily-kva':
+          case 'daily-kvah':
+          case 'daily-kvar':
+          case 'daily-kvarh':
+          case 'monthly-kw':
+          case 'monthly-kwh':
+          case 'monthly-kva':
+          case 'monthly-kvah':
+          case 'monthly-kvar':
+          case 'monthly-kvarh':
+            url = `${BACKEND_URL}/dtrs/stats`;
+            break;
 
           default:
-            if (nonActionableCardTypes.includes(cardType)) {
+            if (nonActionableCardTypes.includes(normalizedCardType)) {
               safeSetTableData([]);
               setServerPagination({
                 currentPage: 1,
@@ -271,25 +307,76 @@ const DTRTable: React.FC = () => {
               setLoading(false);
               return;
             } else {
-              throw new Error(`Unsupported card type: ${cardType}`);
+              throw new Error(`Unsupported card type: ${normalizedCardType}`);
             }
         }
 
-        console.log(`[DTRTable] Fetching data for ${cardType} from: ${url}`);
+        console.log(`[DTRTable] Fetching data for ${normalizedCardType} from: ${url}`);
         console.log(`[DTRTable] Request params:`, { page, pageSize, search });
 
         const response = await fetch(url, { credentials: 'include' });
-        if (!response.ok) throw new Error(`Failed to fetch data for ${cardType}`);
+        if (!response.ok) throw new Error(`Failed to fetch data for ${normalizedCardType}`);
 
         const contentType = response.headers.get('content-type');
         if (!contentType?.includes('application/json')) throw new Error('Invalid response format');
 
         const data = await response.json();
-        console.log(`[DTRTable] Full API response for ${cardType}:`, data);
+        console.log(`[DTRTable] Full API response for ${normalizedCardType}:`, data);
 
         if (data.success) {
           let rows = data.data || [];
-          console.log(`[DTRTable] Raw data for ${cardType}:`, rows.length, 'rows');
+          const consumptionMetricCardTypes = new Set([
+            'daily-kw',
+            'daily-kwh',
+            'daily-kva',
+            'daily-kvah',
+            'daily-kvar',
+            'daily-kvarh',
+            'monthly-kw',
+            'monthly-kwh',
+            'monthly-kva',
+            'monthly-kvah',
+            'monthly-kvar',
+            'monthly-kvarh',
+          ]);
+
+          if (consumptionMetricCardTypes.has(normalizedCardType)) {
+            const isDaily = normalizedCardType.startsWith('daily-');
+            const metric = normalizedCardType.replace(/^(daily|monthly)-/, '');
+            const statsSource = isDaily ? data.data?.row2?.currentDay : data.data?.row2?.monthly;
+            const metricValues: Record<string, string | number> = {
+              kw: statsSource?.totalKw ?? 0,
+              kwh: statsSource?.totalKwh ?? 0,
+              kva: statsSource?.totalKva ?? 0,
+              kvah: statsSource?.totalKvah ?? 0,
+              kvar: statsSource?.totalKvar ?? 0,
+              kvarh: statsSource?.totalKvarh ?? 0,
+            };
+
+            rows = [
+              {
+                dtrId: 'ALL',
+                dtrName: isDaily ? 'Today Aggregated' : 'Monthly Aggregated',
+                kw: metric === 'kw' ? metricValues.kw : '-',
+                kwh: metric === 'kwh' ? metricValues.kwh : '-',
+                kva: metric === 'kva' ? metricValues.kva : '-',
+                kvah: metric === 'kvah' ? metricValues.kvah : '-',
+                kvar: metric === 'kvar' ? metricValues.kvar : '-',
+                kvarh: metric === 'kvarh' ? metricValues.kvarh : '-',
+                previousReading: '-',
+                consumption: '-',
+                powerFactor: '-',
+                location: 'All Locations',
+                timestamp:
+                  (isDaily
+                    ? data.data?.row2?.currentDay?.latestKwTimestamp ||
+                      data.data?.row2?.currentDay?.latestKvaTimestamp
+                    : null) || '-',
+              },
+            ];
+          }
+
+          console.log(`[DTRTable] Raw data for ${normalizedCardType}:`, rows.length, 'rows');
           console.log(`[DTRTable] Sample row:`, rows[0]);
 
           // No client-side filter needed; backend returns filtered rows
@@ -308,20 +395,20 @@ const DTRTable: React.FC = () => {
           });
           setError(null);
         } else {
-          throw new Error(data.message || `Failed to fetch data for ${cardType}`);
+          throw new Error(data.message || `Failed to fetch data for ${normalizedCardType}`);
         }
       } catch (err: any) {
         setError(err.message || 'Failed to fetch data. Please try again.');
-        console.error(`❌ Error fetching ${cardType}:`, err);
+        console.error(`❌ Error fetching ${normalizedCardType}:`, err);
       } finally {
         setLoading(false);
       }
     },
-    [cardType]
+    [normalizedCardType]
   );
 
   useEffect(() => {
-    if (!cardType) return;
+    if (!normalizedCardType) return;
     setTableData([]);
     setLoading(true);
     setError(null);
@@ -334,12 +421,12 @@ const DTRTable: React.FC = () => {
       hasPrevPage: false,
     });
     fetchData(1, 10);
-  }, [cardType, fetchData]);
+  }, [normalizedCardType, fetchData]);
 
   const handleView = (row: TableData) => {
     if (!row) return;
 
-    if (cardType === 'total-lt-feeders') {
+    if (normalizedCardType === 'total-lt-feeders') {
       const dtrId = row.dtrId;
       if (dtrId != null) {
         navigate(`/feeder/${dtrId}`, {
@@ -371,7 +458,7 @@ const DTRTable: React.FC = () => {
         'underloaded-feeders',
         'unbalanced-dtrs',
         'power-failure-feeders',
-      ].includes(cardType || '')
+      ].includes(normalizedCardType || '')
     ) {
       const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
       if (dtrId != null) {
@@ -382,14 +469,15 @@ const DTRTable: React.FC = () => {
 
     // For meter-related tables, navigate to meter search
     if (
-      (cardType === 'communicating-meters' || cardType === 'non-communicating-meters') &&
+      (normalizedCardType === 'communicating-meters' ||
+        normalizedCardType === 'non-communicating-meters') &&
       row.meterNo != null
     ) {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
 
-    if (cardType === 'fuse-blown' && row.meterNo != null) {
+    if (normalizedCardType === 'fuse-blown' && row.meterNo != null) {
       navigate(`/meters?search=${row.meterNo}`);
       return;
     }
@@ -405,7 +493,11 @@ const DTRTable: React.FC = () => {
         'monthly-kw',
         'daily-kva',
         'monthly-kva',
-      ].includes(cardType || '')
+        'daily-kvar',
+        'monthly-kvar',
+        'daily-kvarh',
+        'monthly-kvarh',
+      ].includes(normalizedCardType || '')
     ) {
       if (row.dtrId != null) {
         navigate(`/dtr-detail/${row.dtrId}`);
@@ -460,7 +552,8 @@ const DTRTable: React.FC = () => {
                         title: cardTitle,
                         onBackClick: () => navigate('/dtr-dashboard'),
                         backButtonText: 'Back to Dashboard',
-                        buttonsLabel: cardType === 'total-lt-feeders' ? 'Export' : 'Add New',
+                        buttonsLabel:
+                          normalizedCardType === 'total-lt-feeders' ? 'Export' : 'Add New',
                         variant: 'primary',
                         onClick: undefined,
                       },
@@ -480,7 +573,7 @@ const DTRTable: React.FC = () => {
                   columns: [
                     {
                       name: 'Table',
-                      key: cardType || 'default',
+                      key: normalizedCardType || 'default',
                       props: {
                         data: tableData,
                         columns: getTableColumns(),
@@ -489,12 +582,12 @@ const DTRTable: React.FC = () => {
                         sortable: true,
                         pagination: true,
                         showHeader: true,
-                        showActions: !nonActionableCardTypes.includes(cardType || ''),
-                        onView: !nonActionableCardTypes.includes(cardType || '')
+                        showActions: !nonActionableCardTypes.includes(normalizedCardType || ''),
+                        onView: !nonActionableCardTypes.includes(normalizedCardType || '')
                           ? handleView
                           : undefined,
-                        // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
-                        onRowClick: !nonActionableCardTypes.includes(cardType || '')
+                        // onEdit: !nonActionableCardTypes.includes(normalizedCardType || '') ? handleEdit : undefined,
+                        onRowClick: !nonActionableCardTypes.includes(normalizedCardType || '')
                           ? handleView
                           : undefined,
                         text: cardTitle,

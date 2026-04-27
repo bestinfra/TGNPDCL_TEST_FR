@@ -105,10 +105,10 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                             ...notification,
                             created_at: notification.created_at
                                 ? new Date(
-                                      notification.created_at
+                                      notification.created_at,
                                   ).toISOString()
                                 : new Date().toISOString(),
-                        })
+                        }),
                     );
 
                     setNotifications(transformedNotifications);
@@ -128,10 +128,10 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     const markNotificationAsRead = async (notificationId: string) => {
         try {
             console.log(
-                `🔵 [FRONTEND] markNotificationAsRead called with ID: ${notificationId}`
+                `🔵 [FRONTEND] markNotificationAsRead called with ID: ${notificationId}`,
             );
             console.log(
-                `🔵 [FRONTEND] API URL: ${baseApiUrl}/notifications/${notificationId}/read`
+                `🔵 [FRONTEND] API URL: ${baseApiUrl}/notifications/${notificationId}/read`,
             );
 
             const response = await fetch(
@@ -142,7 +142,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                }
+                },
             );
 
             console.log(`🔵 [FRONTEND] Response status: ${response.status}`);
@@ -155,8 +155,8 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                     prev.map((notif) =>
                         notif.id === notificationId
                             ? { ...notif, is_read: true }
-                            : notif
-                    )
+                            : notif,
+                    ),
                 );
                 return true;
             } else {
@@ -167,7 +167,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         } catch (error) {
             console.error(
                 "❌ [FRONTEND] Error marking notification as read:",
-                error
+                error,
             );
             return false;
         }
@@ -178,7 +178,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         try {
             console.log(`🟣 [FRONTEND] markAllNotificationsAsRead called`);
             console.log(
-                `🟣 [FRONTEND] API URL: ${baseApiUrl}/notifications/mark-all-read`
+                `🟣 [FRONTEND] API URL: ${baseApiUrl}/notifications/mark-all-read`,
             );
 
             const response = await fetch(
@@ -189,7 +189,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                }
+                },
             );
 
             console.log(`🟣 [FRONTEND] Response status: ${response.status}`);
@@ -198,11 +198,11 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                 const result = await response.json();
                 console.log(
                     `✅ [FRONTEND] Mark all as read successful:`,
-                    result
+                    result,
                 );
 
                 setNotifications((prev) =>
-                    prev.map((notif) => ({ ...notif, is_read: true }))
+                    prev.map((notif) => ({ ...notif, is_read: true })),
                 );
 
                 // Refresh the notifications list to get updated data
@@ -213,14 +213,14 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                 const errorData = await response.json();
                 console.error(
                     `❌ [FRONTEND] Mark all as read failed:`,
-                    errorData
+                    errorData,
                 );
                 return false;
             }
         } catch (error) {
             console.error(
                 "❌ [FRONTEND] Error marking all notifications as read:",
-                error
+                error,
             );
             return false;
         }
@@ -278,11 +278,11 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                         (notification: any) => {
                             console.log(
                                 "New escalation notification received:",
-                                notification
+                                notification,
                             );
                             // Refresh notification stats when new notification arrives
                             // fetchNotificationStats();
-                        }
+                        },
                     );
 
                     socket.on("notification_resolved", (data: any) => {
@@ -293,13 +293,13 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
                     socket.on("connect", () => {
                         console.log(
-                            "🔌 [SOCKET] Connected to notification server"
+                            "🔌 [SOCKET] Connected to notification server",
                         );
                     });
 
                     socket.on("disconnect", () => {
                         console.log(
-                            "🔌 [SOCKET] Disconnected from notification server"
+                            "🔌 [SOCKET] Disconnected from notification server",
                         );
                     });
 
@@ -314,7 +314,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                 }
             } else {
                 console.log(
-                    "🔌 [SOCKET] Socket.io not available, using polling only"
+                    "🔌 [SOCKET] Socket.io not available, using polling only",
                 );
             }
         };
@@ -378,26 +378,26 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                         notification.type === "HT_FUSE_BLOWN"
                             ? "warning"
                             : notification.type === "METER_ABNORMALITY"
-                            ? "error"
-                            : notification.type === "BILLING"
-                            ? "info"
-                            : notification.type === "TICKET"
-                            ? "ticket"
-                            : notification.type === "SYSTEM"
-                            ? "success"
-                            : "info",
+                              ? "error"
+                              : notification.type === "BILLING"
+                                ? "info"
+                                : notification.type === "TICKET"
+                                  ? "ticket"
+                                  : notification.type === "SYSTEM"
+                                    ? "success"
+                                    : "info",
                     label:
                         notification.type === "HT_FUSE_BLOWN"
                             ? "HT Fuse Alert"
                             : notification.type === "METER_ABNORMALITY"
-                            ? "Meter Alert"
-                            : notification.type === "BILLING"
-                            ? "Billing"
-                            : notification.type === "TICKET"
-                            ? "Support"
-                            : notification.type === "SYSTEM"
-                            ? "System"
-                            : "Notification",
+                              ? "Meter Alert"
+                              : notification.type === "BILLING"
+                                ? "Billing"
+                                : notification.type === "TICKET"
+                                  ? "Support"
+                                  : notification.type === "SYSTEM"
+                                    ? "System"
+                                    : "Notification",
                     title: notification.title,
                     dateTime: notification.created_at
                         ? new Date(notification.created_at).toLocaleString()
@@ -412,16 +412,16 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                         notification.type === "HT_FUSE_BLOWN"
                             ? "HT Fuse"
                             : notification.type === "METER_ABNORMALITY"
-                            ? "Meter"
-                            : notification.type === "BILLING"
-                            ? "Billing"
-                            : notification.type === "TICKET"
-                            ? "Support"
-                            : notification.type === "SYSTEM"
-                            ? "System"
-                            : "General",
+                              ? "Meter"
+                              : notification.type === "BILLING"
+                                ? "Billing"
+                                : notification.type === "TICKET"
+                                  ? "Support"
+                                  : notification.type === "SYSTEM"
+                                    ? "System"
+                                    : "General",
                 };
-            }
+            },
         );
 
         // Store transformed notifications globally
@@ -435,7 +435,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         window.dispatchEvent(event);
     }, [notifications]);
 
-    // Helper function for isRecent 
+    // Helper function for isRecent
     function isRecent(createdAt: string): boolean {
         const notificationDate = new Date(createdAt);
         const now = new Date();
@@ -453,7 +453,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         try {
             const trimmedQuery = query.trim();
             const fullUrl = `${baseApiUrl}/dtrs/search?query=${encodeURIComponent(
-                trimmedQuery
+                trimmedQuery,
             )}`;
 
             const response = await fetch(fullUrl, {
@@ -510,7 +510,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                                     _searchType: "dtr",
                                 };
                             }
-                        }
+                        },
                     );
 
                     return suggestions;
@@ -578,7 +578,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
             // Search using API
             const fullUrl = `${baseApiUrl}/dtrs/search?query=${encodeURIComponent(
-                trimmedQuery
+                trimmedQuery,
             )}`;
             const response = await fetch(fullUrl, {
                 credentials: "include",
@@ -613,7 +613,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
             // No results
             alert(
-                `No results found for "${trimmedQuery}". Please check your search term.`
+                `No results found for "${trimmedQuery}". Please check your search term.`,
             );
         } catch (error) {
             console.error("Search error:", error);
@@ -707,7 +707,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             icon: "icons/customer-service.svg",
             link: "/tickets",
         },
-        
+
         {
             title: "Meter Management",
             icon: "icons/meter-bolt.svg",
