@@ -1758,10 +1758,10 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Average Power",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    "/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)"
-                ),
+            // onValueClick: () =>
+            //     navigate(
+            //         "/dtr-table?type=monthly-kw&title=Avg%20kW%20(Monthly)"
+            //     ),
         },
         {
             title: "Total kWh",
@@ -1770,10 +1770,10 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Active Energy",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    "/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)"
-                ),
+            // onValueClick: () =>
+            //     navigate(
+            //         "/dtr-table?type=monthly-kwh&title=Total%20kWh%20(Monthly)"
+            //     ),
         },
         {
             title: "Total kVA",
@@ -1782,10 +1782,10 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Average Apparent",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    "/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)"
-                ),
+            // onValueClick: () =>
+            //     navigate(
+            //         "/dtr-table?type=monthly-kva&title=Avg%20kVA%20(Monthly)"
+            //     ),
         },
         {
             title: "Total kVAh",
@@ -1794,10 +1794,10 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Apparent Energy",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    "/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)"
-                ),
+            // onValueClick: () =>
+            //     navigate(
+            //         "/dtr-table?type=monthly-kvah&title=Total%20kVAh%20(Monthly)"
+            //     ),
         },
         {
             title: "Total kVAR",
@@ -1806,10 +1806,10 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Reactive Power",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    "/dtr-table?type=monthly-kvar&title=Avg%20kVAR%20(Monthly)"
-                ),
+            // onValueClick: () =>
+            //     navigate(
+            //         "/dtr-table?type=monthly-kvar&title=Avg%20kVAR%20(Monthly)"
+            //     ),
         },
         {
             title: "Total kVARh",
@@ -1818,10 +1818,10 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Reactive Energy",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    "/dtr-table?type=monthly-kvarh&title=Total%20kVARh%20(Monthly)"
-                ),
+            // onValueClick: () =>
+            //     navigate(
+            //         "/dtr-table?type=monthly-kvarh&title=Total%20kVARh%20(Monthly)"
+            //     ),
         },
     ];
 
@@ -1858,10 +1858,10 @@ const DTRDashboard: React.FC = () => {
                     }`,
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            "/dtr-table?type=daily-kw&title=Total%20kW%20(Current)"
-                        ),
+                    // onValueClick: () =>
+                    //     navigate(
+                    //         "/dtr-table?type=daily-kw&title=Total%20kW%20(Current)"
+                    //     ),
                 },
                 {
                     title: "Total kWh",
@@ -1870,10 +1870,10 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Active Energy",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            "/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)"
-                        ),
+                    // onValueClick: () =>
+                    //     navigate(
+                    //         "/dtr-table?type=daily-kwh&title=Total%20kWh%20(Today)"
+                    //     ),
                 },
                 {
                     title: "Total kVA",
@@ -1889,10 +1889,10 @@ const DTRDashboard: React.FC = () => {
                     }`,
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            "/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)"
-                        ),
+                    // onValueClick: () =>
+                    //     navigate(
+                    //         "/dtr-table?type=daily-kva&title=Total%20kVA%20(Current)"
+                    //     ),
                 },
                 {
                     title: "Total kVAh",
@@ -1901,10 +1901,10 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Apparent Energy",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            "/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)"
-                        ),
+                    // onValueClick: () =>
+                    //     navigate(
+                    //         "/dtr-table?type=daily-kvah&title=Total%20kVAh%20(Today)"
+                    //     ),
                 },
                 {
                     title: "Total kVAR",
@@ -1913,10 +1913,10 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Reactive Power",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            "/dtr-table?type=daily-kvar&title=Total%20kVAR%20(Current)"
-                        ),
+                    // onValueClick: () =>
+                    //     navigate(
+                    //         "/dtr-table?type=daily-kvar&title=Total%20kVAR%20(Current)"
+                    //     ),
                 },
                 {
                     title: "Total kVARh",
@@ -1925,10 +1925,10 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Reactive Energy",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            "/dtr-table?type=daily-kvarh&title=Total%20kVARh%20(Today)"
-                        ),
+                    // onValueClick: () =>
+                    //     navigate(
+                    //         "/dtr-table?type=daily-kvarh&title=Total%20kVARh%20(Today)"
+                    //     ),
                 },
             ];
         } else {
@@ -2264,8 +2264,8 @@ const DTRDashboard: React.FC = () => {
                                                         card.bg ||
                                                         "bg-stat-icon-gradient",
                                                     loading: card.loading,
-                                                    onValueClick:
-                                                        card.onValueClick,
+                                                    // onValueClick:
+                                                        // card.onValueClick,
                                                 },
                                                 span: {
                                                     col: 1 as const,

@@ -623,6 +623,9 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     // Simplified page title mapping
     const pageTitles: Record<string, string> = {
         "/dtr-dashboard": "DTR Dashboard",
+        "/meter-alerts": "Meter Events",
+        "/meter-alert": "Meter Events",
+        "/reports": "MIS Reports",
         "/asset-management": "Meter Management",
         "/users": "Users",
         "/users/:userId": "User Detail",
@@ -743,12 +746,35 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         },
         { title: "Meter List", icon: "icons/meter-bolt.svg", link: "/meters" },
     ];
+    const handleSidebarNavigate = (rawPath: string) => {
+        const path = (rawPath || "").trim();
+        const normalized = path.toLowerCase().replace(/\/+$/, "");
+
+        // Normalize common sidebar variants to stable routes.
+        if (
+            normalized.includes("meter-alerts") ||
+            normalized.includes("meter-alert") ||
+            normalized.includes("meterevents") ||
+            normalized.includes("meter-events")
+        ) {
+            navigate("/meter-alerts");
+            return;
+        }
+
+        if (normalized.includes("mis-report") || normalized.includes("ms-report")) {
+            navigate("/reports");
+            return;
+        }
+
+        navigate(path || "/");
+    };
+
     return (
         <div className="flex h-screen bg-white">
             {/* Sidebar */}
             <Sidebar
                 currentPath={location.pathname}
-                onNavigate={(path: string) => navigate(path)}
+                onNavigate={handleSidebarNavigate}
                 menus={[{ category: "GENERAL", items: menuItems }]}
                 logo={{
                     src: "images/bi-logo-latest.svg",

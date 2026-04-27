@@ -147,6 +147,14 @@ const App: React.FC = () => {
                                                     element={<MeterAlert />}
                                                 />
                                                 <Route
+                                                    path="/reports"
+                                                    element={<MeterAlert />}
+                                                />
+                                                <Route
+                                                    path="/meter-alert"
+                                                    element={<MeterAlert />}
+                                                />
+                                                <Route
                                                     path="*"
                                                     element={
                                                         <Navigate
