@@ -98,6 +98,11 @@ const dummyFilterOptions = {
         { value: "INDOOR", label: "Indoor" },
         { value: "OUTDOOR", label: "Outdoor" },
     ],
+    communicationStatuses: [
+        { value: "all", label: "All communication statuses" },
+        { value: "active", label: "Active" },
+        { value: "inactive", label: "Inactive" },
+    ],
 };
 
 const dummyHierarchyData = [
@@ -450,8 +455,16 @@ export default function AssetManagment() {
     const [meterTableData, setMeterTableData] = useState<any[]>([]);
     const [isLoadingMeterData, setIsLoadingMeterData] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
+    /** Page size for /dtrs/all-meters; Table footer uses serverPagination from API. */
+    const [meterTableLimit, setMeterTableLimit] = useState(20);
+    const [serverPagination, setServerPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 20,
+        hasNextPage: false,
+        hasPrevPage: false,
+    });
     const [isExporting, setIsExporting] = useState(false);
 
     // State for filter values
@@ -462,6 +475,7 @@ export default function AssetManagment() {
         subDivision: "all",
         section: "all",
         meterLocation: "all",
+        communicationStatus: "all",
     });
 
     // State for tracking the last selected ID from hierarchy dropdowns
@@ -610,18 +624,61 @@ export default function AssetManagment() {
         }
     }, [useDummyData]);
 
+    const applyMeterPaginationFromResponse = (
+        pagination: any,
+        pageRequested: number,
+        limitRequested: number,
+    ) => {
+        const lim = pagination?.limit ?? limitRequested;
+        setMeterTableLimit(lim);
+        setServerPagination({
+            currentPage: pagination?.currentPage ?? pageRequested,
+            totalPages: pagination?.totalPages ?? 1,
+            totalCount: pagination?.totalCount ?? 0,
+            limit: lim,
+            hasNextPage: pagination?.hasNextPage ?? false,
+            hasPrevPage: pagination?.hasPrevPage ?? false,
+        });
+        setCurrentPage(pagination?.currentPage ?? pageRequested);
+    };
+
+    const handleMeterTablePageChange = (page: number, limit?: number) => {
+        const lim =
+            typeof limit === "number" && limit > 0 ? limit : meterTableLimit;
+        setCurrentPage(page);
+        if (lim !== meterTableLimit) {
+            setMeterTableLimit(lim);
+        }
+        fetchMeterData(page, lim, "", lastSelectedId);
+    };
+
+    const handleMeterTableRowsPerPageChange = (limit: number) => {
+        setMeterTableLimit(limit);
+        setCurrentPage(1);
+        fetchMeterData(1, limit, "", lastSelectedId);
+    };
+
     // Retry function for meter data API
     const retryMeterDataAPI = async (lastSelectedId?: string) => {
         setIsLoadingMeterData(true);
         try {
             const queryParams = new URLSearchParams({
                 page: currentPage.toString(),
-                pageSize: "20",
+                pageSize: String(meterTableLimit),
             });
 
             // Add lastSelectedId if available
             if (lastSelectedId) {
                 queryParams.append("hierarchyId", lastSelectedId);
+            }
+            if (
+                filterValues.communicationStatus &&
+                filterValues.communicationStatus !== "all"
+            ) {
+                queryParams.append(
+                    "communicationStatus",
+                    filterValues.communicationStatus,
+                );
             }
 
             const response = await fetch(
@@ -639,9 +696,11 @@ export default function AssetManagment() {
 
             if (data.success) {
                 setMeterTableData(data.data || []);
-                setTotalPages(data.pagination?.totalPages || 1);
-                setTotalCount(data.pagination?.totalCount || 0);
-                setCurrentPage(data.pagination?.currentPage || 1);
+                applyMeterPaginationFromResponse(
+                    data.pagination,
+                    currentPage,
+                    meterTableLimit,
+                );
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "meterData"),
                 );
@@ -689,6 +748,15 @@ export default function AssetManagment() {
             if (lastSelectedId) {
                 queryParams.append("hierarchyId", lastSelectedId);
             }
+            if (
+                filterValues.communicationStatus &&
+                filterValues.communicationStatus !== "all"
+            ) {
+                queryParams.append(
+                    "communicationStatus",
+                    filterValues.communicationStatus,
+                );
+            }
 
             const response = await fetch(
                 `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
@@ -705,9 +773,11 @@ export default function AssetManagment() {
 
             if (data.success) {
                 setMeterTableData(data.data || []);
-                setTotalPages(data.pagination?.totalPages || 1);
-                setTotalCount(data.pagination?.totalCount || 0);
-                setCurrentPage(data.pagination?.currentPage || 1);
+                applyMeterPaginationFromResponse(
+                    data.pagination,
+                    page,
+                    pageSize,
+                );
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "meterData"),
                 );
@@ -739,9 +809,10 @@ export default function AssetManagment() {
     // Fetch meter data when view mode changes to table or when lastSelectedId changes
     useEffect(() => {
         if (viewMode === "table") {
-            fetchMeterData(currentPage, 20, "", lastSelectedId);
+            fetchMeterData(currentPage, meterTableLimit, "", lastSelectedId);
         }
-    }, [viewMode, currentPage, lastSelectedId]);
+        // Pagination changes call fetchMeterData directly; refetch when scope/filters change.
+    }, [viewMode, lastSelectedId, filterValues.communicationStatus]);
 
     // Retry function for filter options API
     const retryFilterOptionsAPI = async () => {
@@ -859,6 +930,8 @@ export default function AssetManagment() {
                             label: item.name,
                         })),
                     ],
+                    communicationStatuses:
+                        dummyFilterOptions.communicationStatuses,
                 });
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "filterOptions"),
@@ -1020,6 +1093,8 @@ export default function AssetManagment() {
                                 }),
                             ),
                         ],
+                        communicationStatuses:
+                            dummyFilterOptions.communicationStatuses,
                     });
                     setFailedApis((prev) =>
                         prev.filter((api) => api.id !== "filterOptions"),
@@ -1332,6 +1407,14 @@ export default function AssetManagment() {
         const selectedValue =
             typeof value === "string" ? value : value.target.value;
 
+        if (filterName === "communicationStatus") {
+            setFilterValues((prev) => ({
+                ...prev,
+                communicationStatus: selectedValue,
+            }));
+            return;
+        }
+
         // Find all parent values if a child is selected
         const parentValues = findAllParentValues(filterName, selectedValue);
 
@@ -1381,7 +1464,7 @@ export default function AssetManagment() {
 
             // Refresh data with new filters
             if (viewMode === "table") {
-                fetchMeterData(currentPage, 20, "", lastId);
+                fetchMeterData(currentPage, meterTableLimit, "", lastId);
             } else if (viewMode === "hierarchy") {
                 fetchAssets(lastId);
             }
@@ -1573,6 +1656,7 @@ export default function AssetManagment() {
             subDivision: "all",
             section: "all",
             meterLocation: "all",
+            communicationStatus: "all",
         });
         setLastSelectedId(null);
 
@@ -1700,6 +1784,8 @@ export default function AssetManagment() {
                                 }),
                             ),
                         ],
+                        communicationStatuses:
+                            dummyFilterOptions.communicationStatuses,
                     });
                 }
             } catch (error) {
@@ -1713,6 +1799,7 @@ export default function AssetManagment() {
 
         // Refresh data with reset filters
         if (viewMode === "table") {
+            setMeterTableLimit(20);
             fetchMeterData(1, 20, "", null);
         } else if (viewMode === "hierarchy") {
             fetchAssets(null);
@@ -2015,13 +2102,13 @@ export default function AssetManagment() {
                                                             handleExportData,
                                                         disabled: isExporting,
                                                     },
-                                                    {
-                                                        label: "Upload",
-                                                        variant: "secondary",
-                                                        onClick: () => {
-                                                            setShowUpload(true);
-                                                        },
-                                                    },
+                                                    // {
+                                                    //     label: "Upload",
+                                                    //     variant: "secondary",
+                                                    //     onClick: () => {
+                                                    //         setShowUpload(true);
+                                                    //     },
+                                                    // },
                                                 ],
                                             },
                                         },
@@ -2459,6 +2546,25 @@ export default function AssetManagment() {
                                                       },
                                                   },
                                                   {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.communicationStatuses,
+                                                          value: filterValues.communicationStatus,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "communicationStatus",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Communication status",
+                                                          loading: false,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
                                                       name: "Button",
                                                       props: {
                                                           onClick:
@@ -2655,42 +2761,61 @@ export default function AssetManagment() {
                                                                   : "No assets found",
                                                           showSearch: true,
                                                           showPagination: true,
+                                                          pagination: true,
+                                                          serverPagination:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination
+                                                                  : undefined,
                                                           pageSize:
                                                               viewMode ===
                                                               "table"
-                                                                  ? 20
+                                                                  ? serverPagination.limit
                                                                   : 10,
+                                                          itemsPerPage:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination.limit
+                                                                  : undefined,
                                                           totalCount:
                                                               viewMode ===
                                                               "table"
-                                                                  ? totalCount
+                                                                  ? serverPagination.totalCount
                                                                   : undefined,
                                                           currentPage:
                                                               viewMode ===
                                                               "table"
-                                                                  ? currentPage
+                                                                  ? serverPagination.currentPage
                                                                   : undefined,
                                                           totalPages:
                                                               viewMode ===
                                                               "table"
-                                                                  ? totalPages
+                                                                  ? serverPagination.totalPages
+                                                                  : undefined,
+                                                          rowsPerPageOptions:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? [
+                                                                        10,
+                                                                        20,
+                                                                        50,
+                                                                        100,
+                                                                    ]
+                                                                  : undefined,
+                                                          initialRowsPerPage:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? 20
                                                                   : undefined,
                                                           onPageChange:
                                                               viewMode ===
                                                               "table"
-                                                                  ? (
-                                                                        page: number,
-                                                                    ) => {
-                                                                        setCurrentPage(
-                                                                            page,
-                                                                        );
-                                                                        fetchMeterData(
-                                                                            page,
-                                                                            20,
-                                                                            "",
-                                                                            lastSelectedId,
-                                                                        );
-                                                                    }
+                                                                  ? handleMeterTablePageChange
+                                                                  : undefined,
+                                                          onRowsPerPageChange:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? handleMeterTableRowsPerPageChange
                                                                   : undefined,
                                                           onSearch:
                                                               viewMode ===
@@ -2703,7 +2828,7 @@ export default function AssetManagment() {
                                                                         );
                                                                         fetchMeterData(
                                                                             1,
-                                                                            20,
+                                                                            meterTableLimit,
                                                                             searchTerm,
                                                                             lastSelectedId,
                                                                         );

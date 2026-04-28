@@ -1900,6 +1900,26 @@ const Feeders = () => {
                                                             ) {
                                                                 return "N/A";
                                                             }
+                                                            // Backend now sends display-ready date string.
+                                                            if (
+                                                                raw.includes(
+                                                                    ","
+                                                                ) &&
+                                                                (raw.includes(
+                                                                    "AM"
+                                                                ) ||
+                                                                    raw.includes(
+                                                                        "PM"
+                                                                    ) ||
+                                                                    raw.includes(
+                                                                        "am"
+                                                                    ) ||
+                                                                    raw.includes(
+                                                                        "pm"
+                                                                    ))
+                                                            ) {
+                                                                return raw;
+                                                            }
                                                             try {
                                                                 // Try to parse robustly: handle both "YYYY-MM-DD HH:mm:ss" and ISO forms
                                                                 const parseSource =
@@ -1930,6 +1950,8 @@ const Feeders = () => {
                                                                             minute: "2-digit",
                                                                             second: "2-digit",
                                                                             hour12: true,
+                                                                            timeZone:
+                                                                                "Asia/Kolkata",
                                                                         }
                                                                     );
                                                                 }
