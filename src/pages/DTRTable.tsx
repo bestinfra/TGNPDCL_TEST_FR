@@ -1,615 +1,797 @@
-import { lazy } from 'react';
-import React, { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import BACKEND_URL from '../config';
+import { lazy } from "react";
+import React, {
+    useState,
+    useEffect,
+    Suspense,
+    useCallback,
+    useMemo,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import BACKEND_URL from "../config";
 
-const Page = lazy(() => import('SuperAdmin/Page'));
+const Page = lazy(() => import("SuperAdmin/Page"));
 
 // Define TableData type locally since we're using federated components
 interface TableData {
-  [key: string]: string | number | boolean | null | undefined;
+    [key: string]: string | number | boolean | null | undefined;
 }
 
 interface Pagination {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
 }
 
 const nonActionableCardTypes: string[] = [
-  // Consumption-related tables are now actionable (can navigate to DTR detail)
-  // 'daily-kwh','monthly-kwh',
-  // 'daily-kvah','monthly-kvah',
-  // 'daily-kw','monthly-kw',
-  // 'daily-kva','monthly-kva'
+    // Consumption-related tables are now actionable (can navigate to DTR detail)
+    // 'daily-kwh','monthly-kwh',
+    // 'daily-kvah','monthly-kvah',
+    // 'daily-kw','monthly-kw',
+    // 'daily-kva','monthly-kva'
 ];
 
 const DTRTable: React.FC = () => {
-  const navigate = useNavigate();
-  const [tableData, setTableData] = useState<TableData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [cardType, setCardType] = useState<string | null>(null);
-  const [cardTitle, setCardTitle] = useState<string>('DTR Management');
-  const normalizedCardType = useMemo(() => cardType?.toLowerCase() ?? null, [cardType]);
-  const [serverPagination, setServerPagination] = useState<Pagination>({
-    currentPage: 1,
-    totalPages: 1,
-    totalCount: 0,
-    limit: 10,
-    hasNextPage: false,
-    hasPrevPage: false,
-  });
+    const navigate = useNavigate();
+    const [tableData, setTableData] = useState<TableData[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [cardType, setCardType] = useState<string | null>(null);
+    const [cardTitle, setCardTitle] = useState<string>("DTR Management");
+    const normalizedCardType = useMemo(
+        () => cardType?.toLowerCase() ?? null,
+        [cardType],
+    );
+    const [serverPagination, setServerPagination] = useState<Pagination>({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 10,
+        hasNextPage: false,
+        hasPrevPage: false,
+    });
+    const [lastSearch, setLastSearch] = useState<string | undefined>(undefined);
 
-  const safeSetTableData = (data: TableData[]) => {
-    if (data && data.length > 0) {
-      console.log(`[DTRTable] Setting table data with ${data.length} items`);
-      setTableData(data);
-    } else {
-      console.log(`[DTRTable] Setting empty table data - API returned no data`);
-      setTableData([]);
-    }
-  };
+    const paginationFromApi = (
+        pagination: unknown,
+        pageRequested: number,
+        pageSizeRequested: number,
+        rowCount: number,
+    ): Pagination => {
+        const p = pagination as Record<string, unknown> | null | undefined;
+        if (p != null && typeof p.totalCount === "number") {
+            const limit =
+                typeof p.limit === "number" && p.limit > 0
+                    ? p.limit
+                    : pageSizeRequested;
+            const totalCount = Number(p.totalCount) || 0;
+            const totalPages = Math.max(
+                1,
+                typeof p.totalPages === "number" && p.totalPages > 0
+                    ? p.totalPages
+                    : Math.ceil(totalCount / limit) || 1,
+            );
+            return {
+                currentPage:
+                    typeof p.currentPage === "number"
+                        ? p.currentPage
+                        : pageRequested,
+                totalPages,
+                totalCount,
+                limit,
+                hasNextPage: Boolean(p.hasNextPage),
+                hasPrevPage: Boolean(p.hasPrevPage),
+            };
+        }
+        return {
+            currentPage: pageRequested,
+            totalPages: Math.max(1, rowCount > 0 ? 1 : 1),
+            totalCount: rowCount,
+            limit: pageSizeRequested,
+            hasNextPage: false,
+            hasPrevPage: false,
+        };
+    };
 
-  // Apply URL params only once
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const type = urlParams.get('type');
-    const title = urlParams.get('title');
+    const safeSetTableData = (data: TableData[]) => {
+        if (data && data.length > 0) {
+            console.log(
+                `[DTRTable] Setting table data with ${data.length} items`,
+            );
+            setTableData(data);
+        } else {
+            console.log(
+                `[DTRTable] Setting empty table data - API returned no data`,
+            );
+            setTableData([]);
+        }
+    };
 
-    if (type) setCardType(type.toLowerCase());
-    if (title) setCardTitle(decodeURIComponent(title));
-  }, []);
+    // Apply URL params only once
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const type = urlParams.get("type");
+        const title = urlParams.get("title");
 
-  const getTableColumns = () => {
-    switch (normalizedCardType) {
-      case 'communicating-meters':
-      case 'non-communicating-meters':
-        return [
-          { key: 'slNo', label: 'S.No' },
-          { key: 'meterNo', label: 'Meter Number' },
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'location', label: 'Location' },
-          { key: 'communicationStatus', label: 'Communication Status' },
-          { key: 'lastCommunicationDate', label: 'Last Communication' },
-        ];
-      case 'total-dtrs':
-        return [
-          { key: 'sNo', label: 'S.No' },
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'feedersCount', label: 'Feeders Count' },
-          {
-            key: 'commStatus',
-            label: 'Communication-Status',
-            statusIndicator: {},
-            isActive: (value: string | number | boolean | null | undefined) =>
-              String(value).toLowerCase() === 'active',
-          },
-          { key: 'lastCommunication', label: 'Last Communication' },
-        ];
-      case 'total-lt-feeders':
-        return [
-          { key: 'sNo', label: 'S.No' },
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'meterNo', label: 'Meter Number' },
-          { key: 'communicationStatus', label: 'Communication Status' },
-          { key: 'location', label: 'Location' },
-          { key: 'lastCommunicationDate', label: 'Last Communication Date' },
+        if (type) setCardType(type.toLowerCase());
+        if (title) setCardTitle(decodeURIComponent(title));
+    }, []);
 
-          //{ key: 'installationDate', label: 'Installation Date' },
-        ];
-      case 'fuse-blown':
-      case 'lt-fuse-blown':
-      case 'ht-fuse-blown':
-        return [
-          { key: 'slNo', label: 'S.No' },
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'meterNo', label: 'Meter Number' },
-          { key: 'location', label: 'Location' },
-          { key: 'fuseType', label: 'Fuse Type' },
-          { key: 'lastReadingDate', label: 'Last Communication Date' },
-        ];
-      case 'overloaded-feeders':
-      case 'underloaded-feeders':
-        return [
-          { key: 'slNo', label: 'S.No' },
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'manufacturer', label: 'Manufacturer' },
-          { key: 'communicationStatus', label: 'Communication Status' },
-          { key: 'feedersCount', label: 'Feeders Count' },
-          { key: 'capacity', label: 'Capacity' },
-          { key: 'loadPercentage', label: 'Load %' },
-          { key: 'location', label: 'Location' },
-          { key: 'lastCommunication', label: 'Last Communication' },
-        ];
-      case 'unbalanced-dtrs':
-        return [
-          { key: 'slNo', label: 'S.No' },
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'location', label: 'Location' },
-          { key: 'communicationStatus', label: 'Communication Status' },
-          { key: 'neutralCurrent', label: 'Neutral Current' },
-          { key: 'lastCommunication', label: 'Last Communication' },
-        ];
-      case 'power-failure-feeders':
-        return [
-          { key: 'slNo', label: 'S.No' },
-          { key: 'feederId', label: 'DTR ID' },
-          { key: 'feederName', label: 'DTR Name' },
-          { key: 'meterNo', label: 'Meter Number' },
-          { key: 'communicationStatus', label: 'Communication Status' },
-          { key: 'location', label: 'Location' },
-          { key: 'failureTime', label: 'Failure Time' },
-          { key: 'lastCommunication', label: 'Last Communication' },
-        ];
-      case 'daily-kwh':
-      case 'monthly-kwh':
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'kwh', label: 'kWh Reading' },
-          { key: 'previousReading', label: 'Previous Reading' },
-          { key: 'consumption', label: 'Consumption' },
-          { key: 'location', label: 'Location' },
-          { key: 'timestamp', label: 'Timestamp' },
-        ];
-      case 'daily-kvah':
-      case 'monthly-kvah':
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'kvah', label: 'kVAh Reading' },
-          { key: 'previousReading', label: 'Previous Reading' },
-          { key: 'consumption', label: 'Consumption' },
-          { key: 'location', label: 'Location' },
-          { key: 'timestamp', label: 'Timestamp' },
-        ];
-      case 'daily-kw':
-      case 'monthly-kw':
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'kw', label: 'kW Reading' },
-          { key: 'powerFactor', label: 'Power Factor' },
-          { key: 'location', label: 'Location' },
-          { key: 'timestamp', label: 'Timestamp' },
-        ];
-      case 'daily-kva':
-      case 'monthly-kva':
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'kva', label: 'kVA Reading' },
-          { key: 'powerFactor', label: 'Power Factor' },
-          { key: 'location', label: 'Location' },
-          { key: 'timestamp', label: 'Timestamp' },
-        ];
-      case 'daily-kvar':
-      case 'monthly-kvar':
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'kvar', label: 'kVAR Reading' },
-          { key: 'powerFactor', label: 'Power Factor' },
-          { key: 'location', label: 'Location' },
-          { key: 'timestamp', label: 'Timestamp' },
-        ];
-      case 'daily-kvarh':
-      case 'monthly-kvarh':
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'kvarh', label: 'kVARh Reading' },
-          { key: 'previousReading', label: 'Previous Reading' },
-          { key: 'consumption', label: 'Consumption' },
-          { key: 'location', label: 'Location' },
-          { key: 'timestamp', label: 'Timestamp' },
-        ];
-      default:
-        return [
-          { key: 'dtrId', label: 'DTR ID' },
-          { key: 'dtrName', label: 'DTR Name' },
-          { key: 'feedersCount', label: 'Feeders Count' },
-          {
-            key: 'commStatus',
-            label: 'Communication-Status',
-            statusIndicator: {},
-            isActive: (value: string | number | boolean | null | undefined) =>
-              String(value).toLowerCase() === 'active',
-          },
-          { key: 'lastCommunication', label: 'Last Communication' },
-        ];
-    }
-  };
-
-  const fetchData = useCallback(
-    async (page: number = 1, pageSize: number = 10, search?: string) => {
-      setLoading(true);
-      try {
-        if (!normalizedCardType) return;
-
-        let url = '';
-        const params = new URLSearchParams();
-        params.append('page', page.toString());
-        params.append('pageSize', pageSize.toString());
-        if (search) params.append('search', search);
-
+    const getTableColumns = () => {
         switch (normalizedCardType) {
-          case 'total-dtrs':
-            url = `${BACKEND_URL}/dtrs?${params.toString()}`;
-            break;
-          case 'communicating-meters':
-            url = `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
-            break;
-          case 'non-communicating-meters':
-            url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
-            break;
-          case 'total-lt-feeders':
-            url = `${BACKEND_URL}/dtrs/all-meters?page=${page}&limit=${pageSize}`;
-            break;
-          case 'fuse-blown':
-            url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
-            break;
-          case 'overloaded-feeders':
-            url = `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
-            break;
-          case 'underloaded-feeders':
-            url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
-            break;
-          case 'ht-fuse-blown':
-            url = `${BACKEND_URL}/dtrs/ht-fuse-blown`;
-            break;
-          case 'lt-fuse-blown':
-            url = `${BACKEND_URL}/dtrs/lt-fuse-blown`;
-            break;
-          case 'unbalanced-dtrs':
-            url = `${BACKEND_URL}/dtrs/unbalanced-dtrs`;
-            break;
-          case 'power-failure-feeders':
-            url = `${BACKEND_URL}/dtrs/power-failure-feeders`;
-            break;
-          case 'daily-kw':
-          case 'daily-kwh':
-          case 'daily-kva':
-          case 'daily-kvah':
-          case 'daily-kvar':
-          case 'daily-kvarh':
-          case 'monthly-kw':
-          case 'monthly-kwh':
-          case 'monthly-kva':
-          case 'monthly-kvah':
-          case 'monthly-kvar':
-          case 'monthly-kvarh':
-            url = `${BACKEND_URL}/dtrs/stats`;
-            break;
+            case "communicating-meters":
+            case "non-communicating-meters":
+                return [
+                    { key: "slNo", label: "S.No" },
+                    { key: "meterNo", label: "Meter Number" },
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "location", label: "Location" },
+                    {
+                        key: "communicationStatus",
+                        label: "Communication Status",
+                    },
+                    {
+                        key: "lastCommunicationDate",
+                        label: "Last Communication",
+                    },
+                ];
+            case "total-dtrs":
+                return [
+                    { key: "sNo", label: "S.No" },
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "feedersCount", label: "Feeders Count" },
+                    {
+                        key: "commStatus",
+                        label: "Communication-Status",
+                        statusIndicator: {},
+                        isActive: (
+                            value: string | number | boolean | null | undefined,
+                        ) => String(value).toLowerCase() === "active",
+                    },
+                    { key: "lastCommunication", label: "Last Communication" },
+                ];
+            case "total-lt-feeders":
+                return [
+                    { key: "sNo", label: "S.No" },
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "meterNo", label: "Meter Number" },
+                    {
+                        key: "communicationStatus",
+                        label: "Communication Status",
+                    },
+                    { key: "location", label: "Location" },
+                    {
+                        key: "lastCommunicationDate",
+                        label: "Last Communication Date",
+                    },
 
-          default:
-            if (nonActionableCardTypes.includes(normalizedCardType)) {
-              safeSetTableData([]);
-              setServerPagination({
-                currentPage: 1,
-                totalPages: 1,
-                totalCount: 0,
-                limit: pageSize,
-                hasNextPage: false,
-                hasPrevPage: false,
-              });
-              setError(null);
-              setLoading(false);
-              return;
-            } else {
-              throw new Error(`Unsupported card type: ${normalizedCardType}`);
+                    //{ key: 'installationDate', label: 'Installation Date' },
+                ];
+            case "fuse-blown":
+            case "lt-fuse-blown":
+            case "ht-fuse-blown":
+                return [
+                    { key: "slNo", label: "S.No" },
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "meterNo", label: "Meter Number" },
+                    { key: "location", label: "Location" },
+                    { key: "fuseType", label: "Fuse Type" },
+                    {
+                        key: "lastReadingDate",
+                        label: "Last Communication Date",
+                    },
+                ];
+            case "overloaded-feeders":
+            case "underloaded-feeders":
+                return [
+                    { key: "slNo", label: "S.No" },
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "manufacturer", label: "Manufacturer" },
+                    {
+                        key: "communicationStatus",
+                        label: "Communication Status",
+                    },
+                    { key: "feedersCount", label: "Feeders Count" },
+                    { key: "capacity", label: "Capacity" },
+                    { key: "loadPercentage", label: "Load %" },
+                    { key: "location", label: "Location" },
+                    { key: "lastCommunication", label: "Last Communication" },
+                ];
+            case "unbalanced-dtrs":
+                return [
+                    { key: "slNo", label: "S.No" },
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "location", label: "Location" },
+                    {
+                        key: "communicationStatus",
+                        label: "Communication Status",
+                    },
+                    { key: "neutralCurrent", label: "Neutral Current" },
+                    { key: "lastCommunication", label: "Last Communication" },
+                ];
+            case "power-failure-feeders":
+                return [
+                    { key: "slNo", label: "S.No" },
+                    { key: "feederId", label: "DTR ID" },
+                    { key: "feederName", label: "DTR Name" },
+                    { key: "meterNo", label: "Meter Number" },
+                    {
+                        key: "communicationStatus",
+                        label: "Communication Status",
+                    },
+                    { key: "location", label: "Location" },
+                    { key: "failureTime", label: "Failure Time" },
+                    { key: "lastCommunication", label: "Last Communication" },
+                ];
+            case "daily-kwh":
+            case "monthly-kwh":
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "kwh", label: "kWh Reading" },
+                    { key: "previousReading", label: "Previous Reading" },
+                    { key: "consumption", label: "Consumption" },
+                    { key: "location", label: "Location" },
+                    { key: "timestamp", label: "Timestamp" },
+                ];
+            case "daily-kvah":
+            case "monthly-kvah":
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "kvah", label: "kVAh Reading" },
+                    { key: "previousReading", label: "Previous Reading" },
+                    { key: "consumption", label: "Consumption" },
+                    { key: "location", label: "Location" },
+                    { key: "timestamp", label: "Timestamp" },
+                ];
+            case "daily-kw":
+            case "monthly-kw":
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "kw", label: "kW Reading" },
+                    { key: "powerFactor", label: "Power Factor" },
+                    { key: "location", label: "Location" },
+                    { key: "timestamp", label: "Timestamp" },
+                ];
+            case "daily-kva":
+            case "monthly-kva":
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "kva", label: "kVA Reading" },
+                    { key: "powerFactor", label: "Power Factor" },
+                    { key: "location", label: "Location" },
+                    { key: "timestamp", label: "Timestamp" },
+                ];
+            case "daily-kvar":
+            case "monthly-kvar":
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "kvar", label: "kVAR Reading" },
+                    { key: "powerFactor", label: "Power Factor" },
+                    { key: "location", label: "Location" },
+                    { key: "timestamp", label: "Timestamp" },
+                ];
+            case "daily-kvarh":
+            case "monthly-kvarh":
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "kvarh", label: "kVARh Reading" },
+                    { key: "previousReading", label: "Previous Reading" },
+                    { key: "consumption", label: "Consumption" },
+                    { key: "location", label: "Location" },
+                    { key: "timestamp", label: "Timestamp" },
+                ];
+            default:
+                return [
+                    { key: "dtrId", label: "DTR ID" },
+                    { key: "dtrName", label: "DTR Name" },
+                    { key: "feedersCount", label: "Feeders Count" },
+                    {
+                        key: "commStatus",
+                        label: "Communication-Status",
+                        statusIndicator: {},
+                        isActive: (
+                            value: string | number | boolean | null | undefined,
+                        ) => String(value).toLowerCase() === "active",
+                    },
+                    { key: "lastCommunication", label: "Last Communication" },
+                ];
+        }
+    };
+
+    const fetchData = useCallback(
+        async (page: number = 1, pageSize: number = 10, search?: string) => {
+            setLoading(true);
+            try {
+                if (!normalizedCardType) return;
+
+                let url = "";
+                const params = new URLSearchParams();
+                params.append("page", page.toString());
+                params.append("pageSize", pageSize.toString());
+                if (search) params.append("search", search);
+
+                switch (normalizedCardType) {
+                    case "total-dtrs":
+                        url = `${BACKEND_URL}/dtrs?${params.toString()}`;
+                        break;
+                    case "communicating-meters":
+                        url = `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
+                        break;
+                    case "non-communicating-meters":
+                        url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
+                        break;
+                    case "total-lt-feeders":
+                        url = `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
+                        break;
+                    case "fuse-blown":
+                        url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
+                        break;
+                    case "overloaded-feeders":
+                        url = `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
+                        break;
+                    case "underloaded-feeders":
+                        url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
+                        break;
+                    case "ht-fuse-blown":
+                        url = `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
+                        break;
+                    case "lt-fuse-blown":
+                        url = `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
+                        break;
+                    case "unbalanced-dtrs":
+                        url = `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
+                        break;
+                    case "power-failure-feeders":
+                        url = `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
+                        break;
+                    case "daily-kw":
+                    case "daily-kwh":
+                    case "daily-kva":
+                    case "daily-kvah":
+                    case "daily-kvar":
+                    case "daily-kvarh":
+                    case "monthly-kw":
+                    case "monthly-kwh":
+                    case "monthly-kva":
+                    case "monthly-kvah":
+                    case "monthly-kvar":
+                    case "monthly-kvarh":
+                        url = `${BACKEND_URL}/dtrs/stats`;
+                        break;
+
+                    default:
+                        if (
+                            nonActionableCardTypes.includes(normalizedCardType)
+                        ) {
+                            safeSetTableData([]);
+                            setServerPagination({
+                                currentPage: 1,
+                                totalPages: 1,
+                                totalCount: 0,
+                                limit: pageSize,
+                                hasNextPage: false,
+                                hasPrevPage: false,
+                            });
+                            setError(null);
+                            setLoading(false);
+                            return;
+                        } else {
+                            throw new Error(
+                                `Unsupported card type: ${normalizedCardType}`,
+                            );
+                        }
+                }
+
+                console.log(
+                    `[DTRTable] Fetching data for ${normalizedCardType} from: ${url}`,
+                );
+                console.log(`[DTRTable] Request params:`, {
+                    page,
+                    pageSize,
+                    search,
+                });
+
+                const response = await fetch(url, { credentials: "include" });
+                if (!response.ok)
+                    throw new Error(
+                        `Failed to fetch data for ${normalizedCardType}`,
+                    );
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType?.includes("application/json"))
+                    throw new Error("Invalid response format");
+
+                const data = await response.json();
+                console.log(
+                    `[DTRTable] Full API response for ${normalizedCardType}:`,
+                    data,
+                );
+
+                if (data.success) {
+                    let rows = data.data || [];
+                    const consumptionMetricCardTypes = new Set([
+                        "daily-kw",
+                        "daily-kwh",
+                        "daily-kva",
+                        "daily-kvah",
+                        "daily-kvar",
+                        "daily-kvarh",
+                        "monthly-kw",
+                        "monthly-kwh",
+                        "monthly-kva",
+                        "monthly-kvah",
+                        "monthly-kvar",
+                        "monthly-kvarh",
+                    ]);
+
+                    if (consumptionMetricCardTypes.has(normalizedCardType)) {
+                        const isDaily = normalizedCardType.startsWith("daily-");
+                        const metric = normalizedCardType.replace(
+                            /^(daily|monthly)-/,
+                            "",
+                        );
+                        const statsSource = isDaily
+                            ? data.data?.row2?.currentDay
+                            : data.data?.row2?.monthly;
+                        const metricValues: Record<string, string | number> = {
+                            kw: statsSource?.totalKw ?? 0,
+                            kwh: statsSource?.totalKwh ?? 0,
+                            kva: statsSource?.totalKva ?? 0,
+                            kvah: statsSource?.totalKvah ?? 0,
+                            kvar: statsSource?.totalKvar ?? 0,
+                            kvarh: statsSource?.totalKvarh ?? 0,
+                        };
+
+                        rows = [
+                            {
+                                dtrId: "ALL",
+                                dtrName: isDaily
+                                    ? "Today Aggregated"
+                                    : "Monthly Aggregated",
+                                kw: metric === "kw" ? metricValues.kw : "-",
+                                kwh: metric === "kwh" ? metricValues.kwh : "-",
+                                kva: metric === "kva" ? metricValues.kva : "-",
+                                kvah:
+                                    metric === "kvah" ? metricValues.kvah : "-",
+                                kvar:
+                                    metric === "kvar" ? metricValues.kvar : "-",
+                                kvarh:
+                                    metric === "kvarh"
+                                        ? metricValues.kvarh
+                                        : "-",
+                                previousReading: "-",
+                                consumption: "-",
+                                powerFactor: "-",
+                                location: "All Locations",
+                                timestamp:
+                                    (isDaily
+                                        ? data.data?.row2?.currentDay
+                                              ?.latestKwTimestamp ||
+                                          data.data?.row2?.currentDay
+                                              ?.latestKvaTimestamp
+                                        : null) || "-",
+                            },
+                        ];
+                    }
+
+                    console.log(
+                        `[DTRTable] Raw data for ${normalizedCardType}:`,
+                        rows.length,
+                        "rows",
+                    );
+                    console.log(`[DTRTable] Sample row:`, rows[0]);
+
+                    // No client-side filter needed; backend returns filtered rows
+
+                    safeSetTableData(rows);
+
+                    if (consumptionMetricCardTypes.has(normalizedCardType)) {
+                        setServerPagination({
+                            currentPage: 1,
+                            totalPages: 1,
+                            totalCount: rows.length,
+                            limit: Math.max(rows.length, 1),
+                            hasNextPage: false,
+                            hasPrevPage: false,
+                        });
+                    } else {
+                        setServerPagination(
+                            paginationFromApi(
+                                data.pagination,
+                                page,
+                                pageSize,
+                                rows.length,
+                            ),
+                        );
+                    }
+                    setError(null);
+                } else {
+                    throw new Error(
+                        data.message ||
+                            `Failed to fetch data for ${normalizedCardType}`,
+                    );
+                }
+            } catch (err: any) {
+                setError(
+                    err.message || "Failed to fetch data. Please try again.",
+                );
+                console.error(`❌ Error fetching ${normalizedCardType}:`, err);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [normalizedCardType],
+    );
+
+    useEffect(() => {
+        if (!normalizedCardType) return;
+        setTableData([]);
+        setLoading(true);
+        setError(null);
+        setLastSearch(undefined);
+        setServerPagination({
+            currentPage: 1,
+            totalPages: 1,
+            totalCount: 0,
+            limit: 10,
+            hasNextPage: false,
+            hasPrevPage: false,
+        });
+        fetchData(1, 10);
+    }, [normalizedCardType, fetchData]);
+
+    const handleView = (row: TableData) => {
+        if (!row) return;
+
+        if (normalizedCardType === "total-lt-feeders") {
+            const dtrId = row.dtrId;
+            if (dtrId != null) {
+                navigate(`/feeder/${dtrId}`, {
+                    state: {
+                        feederData: {
+                            meterNumber: row.meterNo,
+                            dtrId: dtrId,
+                            dtrName: row.dtrName,
+                            location: row.location,
+                            communicationStatus: row.communicationStatus,
+                            lastCommunicationDate: row.lastCommunicationDate,
+                        },
+                        dtrId: dtrId,
+                        dtrName: row.dtrName,
+                    },
+                });
+                return;
             }
         }
 
-        console.log(`[DTRTable] Fetching data for ${normalizedCardType} from: ${url}`);
-        console.log(`[DTRTable] Request params:`, { page, pageSize, search });
-
-        const response = await fetch(url, { credentials: 'include' });
-        if (!response.ok) throw new Error(`Failed to fetch data for ${normalizedCardType}`);
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType?.includes('application/json')) throw new Error('Invalid response format');
-
-        const data = await response.json();
-        console.log(`[DTRTable] Full API response for ${normalizedCardType}:`, data);
-
-        if (data.success) {
-          let rows = data.data || [];
-          const consumptionMetricCardTypes = new Set([
-            'daily-kw',
-            'daily-kwh',
-            'daily-kva',
-            'daily-kvah',
-            'daily-kvar',
-            'daily-kvarh',
-            'monthly-kw',
-            'monthly-kwh',
-            'monthly-kva',
-            'monthly-kvah',
-            'monthly-kvar',
-            'monthly-kvarh',
-          ]);
-
-          if (consumptionMetricCardTypes.has(normalizedCardType)) {
-            const isDaily = normalizedCardType.startsWith('daily-');
-            const metric = normalizedCardType.replace(/^(daily|monthly)-/, '');
-            const statsSource = isDaily ? data.data?.row2?.currentDay : data.data?.row2?.monthly;
-            const metricValues: Record<string, string | number> = {
-              kw: statsSource?.totalKw ?? 0,
-              kwh: statsSource?.totalKwh ?? 0,
-              kva: statsSource?.totalKva ?? 0,
-              kvah: statsSource?.totalKvah ?? 0,
-              kvar: statsSource?.totalKvar ?? 0,
-              kvarh: statsSource?.totalKvarh ?? 0,
-            };
-
-            rows = [
-              {
-                dtrId: 'ALL',
-                dtrName: isDaily ? 'Today Aggregated' : 'Monthly Aggregated',
-                kw: metric === 'kw' ? metricValues.kw : '-',
-                kwh: metric === 'kwh' ? metricValues.kwh : '-',
-                kva: metric === 'kva' ? metricValues.kva : '-',
-                kvah: metric === 'kvah' ? metricValues.kvah : '-',
-                kvar: metric === 'kvar' ? metricValues.kvar : '-',
-                kvarh: metric === 'kvarh' ? metricValues.kvarh : '-',
-                previousReading: '-',
-                consumption: '-',
-                powerFactor: '-',
-                location: 'All Locations',
-                timestamp:
-                  (isDaily
-                    ? data.data?.row2?.currentDay?.latestKwTimestamp ||
-                      data.data?.row2?.currentDay?.latestKvaTimestamp
-                    : null) || '-',
-              },
-            ];
-          }
-
-          console.log(`[DTRTable] Raw data for ${normalizedCardType}:`, rows.length, 'rows');
-          console.log(`[DTRTable] Sample row:`, rows[0]);
-
-          // No client-side filter needed; backend returns filtered rows
-
-          safeSetTableData(rows);
-
-          // Derive pagination after filter
-          const totalFiltered = rows.length;
-          setServerPagination({
-            currentPage: 1,
-            totalPages: 1,
-            totalCount: totalFiltered,
-            limit: totalFiltered,
-            hasNextPage: false,
-            hasPrevPage: false,
-          });
-          setError(null);
-        } else {
-          throw new Error(data.message || `Failed to fetch data for ${normalizedCardType}`);
+        // For DTR-related tables, navigate to DTR detail page
+        if (
+            [
+                "total-dtrs",
+                "fuse-blown",
+                "ht-fuse-blown",
+                "lt-fuse-blown",
+                "overloaded-feeders",
+                "underloaded-feeders",
+                "unbalanced-dtrs",
+                "power-failure-feeders",
+            ].includes(normalizedCardType || "")
+        ) {
+            const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
+            if (dtrId != null) {
+                navigate(`/dtr-detail/${dtrId}`);
+                return;
+            }
         }
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch data. Please try again.');
-        console.error(`❌ Error fetching ${normalizedCardType}:`, err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [normalizedCardType]
-  );
 
-  useEffect(() => {
-    if (!normalizedCardType) return;
-    setTableData([]);
-    setLoading(true);
-    setError(null);
-    setServerPagination({
-      currentPage: 1,
-      totalPages: 1,
-      totalCount: 0,
-      limit: 10,
-      hasNextPage: false,
-      hasPrevPage: false,
-    });
-    fetchData(1, 10);
-  }, [normalizedCardType, fetchData]);
+        // For meter-related tables, navigate to meter search
+        if (
+            (normalizedCardType === "communicating-meters" ||
+                normalizedCardType === "non-communicating-meters") &&
+            row.meterNo != null
+        ) {
+            navigate(`/meters?search=${row.meterNo}`);
+            return;
+        }
 
-  const handleView = (row: TableData) => {
-    if (!row) return;
+        if (normalizedCardType === "fuse-blown" && row.meterNo != null) {
+            navigate(`/meters?search=${row.meterNo}`);
+            return;
+        }
 
-    if (normalizedCardType === 'total-lt-feeders') {
-      const dtrId = row.dtrId;
-      if (dtrId != null) {
-        navigate(`/feeder/${dtrId}`, {
-          state: {
-            feederData: {
-              meterNumber: row.meterNo,
-              dtrId: dtrId,
-              dtrName: row.dtrName,
-              location: row.location,
-              communicationStatus: row.communicationStatus,
-              lastCommunicationDate: row.lastCommunicationDate,
-            },
-            dtrId: dtrId,
-            dtrName: row.dtrName,
-          },
-        });
-        return;
-      }
-    }
+        // For consumption-related tables, navigate to DTR detail if dtrId is available
+        if (
+            [
+                "daily-kwh",
+                "monthly-kwh",
+                "daily-kvah",
+                "monthly-kvah",
+                "daily-kw",
+                "monthly-kw",
+                "daily-kva",
+                "monthly-kva",
+                "daily-kvar",
+                "monthly-kvar",
+                "daily-kvarh",
+                "monthly-kvarh",
+            ].includes(normalizedCardType || "")
+        ) {
+            if (row.dtrId != null) {
+                navigate(`/dtr-detail/${row.dtrId}`);
+                return;
+            }
+        }
+    };
 
-    // For DTR-related tables, navigate to DTR detail page
-    if (
-      [
-        'total-dtrs',
-        'fuse-blown',
-        'ht-fuse-blown',
-        'lt-fuse-blown',
-        'overloaded-feeders',
-        'underloaded-feeders',
-        'unbalanced-dtrs',
-        'power-failure-feeders',
-      ].includes(normalizedCardType || '')
-    ) {
-      const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
-      if (dtrId != null) {
-        navigate(`/dtr-detail/${dtrId}`);
-        return;
-      }
-    }
+    const handlePageChange = (page: number, limit?: number) => {
+        const lim =
+            typeof limit === "number" && limit > 0
+                ? limit
+                : serverPagination.limit;
+        fetchData(page, lim, lastSearch);
+    };
 
-    // For meter-related tables, navigate to meter search
-    if (
-      (normalizedCardType === 'communicating-meters' ||
-        normalizedCardType === 'non-communicating-meters') &&
-      row.meterNo != null
-    ) {
-      navigate(`/meters?search=${row.meterNo}`);
-      return;
-    }
+    const handleSearch = (searchTerm: string) => {
+        setLastSearch(searchTerm);
+        fetchData(1, serverPagination.limit, searchTerm);
+    };
 
-    if (normalizedCardType === 'fuse-blown' && row.meterNo != null) {
-      navigate(`/meters?search=${row.meterNo}`);
-      return;
-    }
+    const handleRowsPerPageChange = (limit: number) => {
+        fetchData(1, limit, lastSearch);
+    };
 
-    // For consumption-related tables, navigate to DTR detail if dtrId is available
-    if (
-      [
-        'daily-kwh',
-        'monthly-kwh',
-        'daily-kvah',
-        'monthly-kvah',
-        'daily-kw',
-        'monthly-kw',
-        'daily-kva',
-        'monthly-kva',
-        'daily-kvar',
-        'monthly-kvar',
-        'daily-kvarh',
-        'monthly-kvarh',
-      ].includes(normalizedCardType || '')
-    ) {
-      if (row.dtrId != null) {
-        navigate(`/dtr-detail/${row.dtrId}`);
-        return;
-      }
-    }
-  };
-
-  const handlePageChange = (page: number) => fetchData(page, serverPagination.limit);
-  const handleSearch = (searchTerm: string) => fetchData(1, serverPagination.limit, searchTerm);
-
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Page
-        sections={[
-          ...(error
-            ? [
-                {
-                  layout: {
-                    type: 'column',
-                    gap: 'gap-4',
-                    rows: [
-                      {
-                        layout: 'column',
-                        columns: [
-                          {
-                            name: 'Error',
-                            props: {
-                              visibleErrors: [error],
-                              showRetry: true,
-                              onRetry: () => fetchData(),
-                            },
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                },
-              ]
-            : []),
-          {
-            layout: {
-              type: 'column',
-              gap: 'gap-4',
-              rows: [
-                {
-                  layout: 'row',
-                  columns: [
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <Page
+                sections={[
+                    ...(error
+                        ? [
+                              {
+                                  layout: {
+                                      type: "column",
+                                      gap: "gap-4",
+                                      rows: [
+                                          {
+                                              layout: "column",
+                                              columns: [
+                                                  {
+                                                      name: "Error",
+                                                      props: {
+                                                          visibleErrors: [
+                                                              error,
+                                                          ],
+                                                          showRetry: true,
+                                                          onRetry: () =>
+                                                              fetchData(
+                                                                  1,
+                                                                  serverPagination.limit,
+                                                                  lastSearch,
+                                                              ),
+                                                      },
+                                                  },
+                                              ],
+                                          },
+                                      ],
+                                  },
+                              },
+                          ]
+                        : []),
                     {
-                      name: 'PageHeader',
-                      props: {
-                        title: cardTitle,
-                        onBackClick: () => navigate('/dtr-dashboard'),
-                        backButtonText: 'Back to Dashboard',
-                        buttonsLabel:
-                          normalizedCardType === 'total-lt-feeders' ? 'Export' : 'Add New',
-                        variant: 'primary',
-                        onClick: undefined,
-                      },
+                        layout: {
+                            type: "column",
+                            gap: "gap-4",
+                            rows: [
+                                {
+                                    layout: "row",
+                                    columns: [
+                                        {
+                                            name: "PageHeader",
+                                            props: {
+                                                title: cardTitle,
+                                                onBackClick: () =>
+                                                    navigate("/dtr-dashboard"),
+                                                backButtonText:
+                                                    "Back to Dashboard",
+                                                buttonsLabel:
+                                                    normalizedCardType ===
+                                                    "total-lt-feeders"
+                                                        ? "Export"
+                                                        : "Add New",
+                                                variant: "primary",
+                                                onClick: undefined,
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
                     },
-                  ],
-                },
-              ],
-            },
-          },
-          {
-            layout: {
-              type: 'column',
-              gap: 'gap-4',
-              rows: [
-                {
-                  layout: 'column',
-                  columns: [
                     {
-                      name: 'Table',
-                      key: normalizedCardType || 'default',
-                      props: {
-                        data: tableData,
-                        columns: getTableColumns(),
-                        loading,
-                        searchable: true,
-                        sortable: true,
-                        pagination: true,
-                        showHeader: true,
-                        showActions: !nonActionableCardTypes.includes(normalizedCardType || ''),
-                        onView: !nonActionableCardTypes.includes(normalizedCardType || '')
-                          ? handleView
-                          : undefined,
-                        // onEdit: !nonActionableCardTypes.includes(normalizedCardType || '') ? handleEdit : undefined,
-                        onRowClick: !nonActionableCardTypes.includes(normalizedCardType || '')
-                          ? handleView
-                          : undefined,
-                        text: cardTitle,
-                        className: 'w-full',
-                        emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
-                        rowsPerPageOptions: [10, 25, 50],
-                        initialRowsPerPage: 10,
-                        showSkeletonActionButtons: true,
-                        onPageChange: handlePageChange,
-                        onSearch: handleSearch,
-                        serverPagination,
-                      },
+                        layout: {
+                            type: "column",
+                            gap: "gap-4",
+                            rows: [
+                                {
+                                    layout: "column",
+                                    columns: [
+                                        {
+                                            name: "Table",
+                                            key:
+                                                normalizedCardType || "default",
+                                            props: {
+                                                data: tableData,
+                                                columns: getTableColumns(),
+                                                loading,
+                                                searchable: true,
+                                                sortable: true,
+                                                pagination: true,
+                                                showHeader: true,
+                                                showActions:
+                                                    !nonActionableCardTypes.includes(
+                                                        normalizedCardType ||
+                                                            "",
+                                                    ),
+                                                onView: !nonActionableCardTypes.includes(
+                                                    normalizedCardType || "",
+                                                )
+                                                    ? handleView
+                                                    : undefined,
+                                                // onEdit: !nonActionableCardTypes.includes(normalizedCardType || '') ? handleEdit : undefined,
+                                                onRowClick:
+                                                    !nonActionableCardTypes.includes(
+                                                        normalizedCardType ||
+                                                            "",
+                                                    )
+                                                        ? handleView
+                                                        : undefined,
+                                                text: cardTitle,
+                                                className: "w-full",
+                                                emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
+                                                rowsPerPageOptions: [
+                                                    10, 25, 50, 100,
+                                                ],
+                                                initialRowsPerPage: 10,
+                                                showSkeletonActionButtons: true,
+                                                onPageChange: handlePageChange,
+                                                onRowsPerPageChange:
+                                                    handleRowsPerPageChange,
+                                                onSearch: handleSearch,
+                                                serverPagination,
+                                                pageSize: serverPagination.limit,
+                                                itemsPerPage:
+                                                    serverPagination.limit,
+                                                totalCount:
+                                                    serverPagination.totalCount,
+                                                currentPage:
+                                                    serverPagination.currentPage,
+                                                totalPages:
+                                                    serverPagination.totalPages,
+                                                showPagination: true,
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
                     },
-                  ],
-                },
-              ],
-            },
-          },
-        ]}
-      />
-    </Suspense>
-  );
+                ]}
+            />
+        </Suspense>
+    );
 };
 
 export default DTRTable;
