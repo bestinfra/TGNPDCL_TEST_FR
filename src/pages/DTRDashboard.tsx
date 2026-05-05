@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { apiClient } from "../api/apiUtils";
-import BACKEND_URL from "../config";
 import { io, Socket } from "socket.io-client";
 
 const dummyDtrStatsData = {
@@ -48,9 +47,9 @@ const dummyFilterOptions = {
         { value: "SECTION1", label: "Section 1" },
         { value: "SECTION2", label: "Section 2" },
     ],
-    meterLocations: [
-        { value: "INDOOR", label: "Indoor" },
-        { value: "OUTDOOR", label: "Outdoor" },
+    substations: [
+        { value: "SUB1", label: "Substation 1" },
+        { value: "SUB2", label: "Substation 2" },
     ],
 };
 
@@ -182,12 +181,12 @@ const DTRDashboard: React.FC = () => {
     >("Daily");
 
     const [filterValues, setFilterValues] = useState({
-        discom: "1",
+        discom: "all",
         circle: "all",
         division: "all",
         subDivision: "all",
         section: "all",
-        meterLocation: "all",
+        substation: "all",
     });
     const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
     const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
@@ -267,6 +266,24 @@ const DTRDashboard: React.FC = () => {
             errorMessage: string;
         }>
     >([]);
+
+    const hierarchyLevels = [
+        { filterName: "discom", levelName: "DISCOM", optionKey: "discoms", allLabel: "All DISCOMs" },
+        { filterName: "circle", levelName: "Circle", optionKey: "circles", allLabel: "All Circles" },
+        { filterName: "division", levelName: "Division", optionKey: "divisions", allLabel: "All Divisions" },
+        { filterName: "subDivision", levelName: "Sub division", optionKey: "subDivisions", allLabel: "All Sub-Divisions" },
+        { filterName: "section", levelName: "Section", optionKey: "sections", allLabel: "All Sections" },
+        { filterName: "substation", levelName: "Substation", optionKey: "substations", allLabel: "All Substations" },
+    ] as const;
+
+    const getStoredUser = () => {
+        try {
+            const user = localStorage.getItem("user");
+            return user ? JSON.parse(user) : null;
+        } catch {
+            return null;
+        }
+    };
 
     // Map-related state
     const [mapCenter, setMapCenter] = useState({
@@ -500,7 +517,7 @@ const DTRDashboard: React.FC = () => {
     const retryFiltersAPI = async () => {
         // setIsFiltersLoading(true);
         // try {
-        //   const response = await fetch(`${BACKEND_URL}/dtrs/filter-options`);
+        //   const response = await apiClient.get("/dtrs/filter-options");
         //   if (!response.ok) throw new Error("Failed to fetch filter options");
         //   const contentType = response.headers.get("content-type");
         //   if (!contentType || !contentType.includes("application/json")) {
@@ -589,20 +606,24 @@ const DTRDashboard: React.FC = () => {
 
             // Add lastSelectedId if available
             if (lastSelectedId) {
-                params.append("lastSelectedId", lastSelectedId);
+                params.append("hierarchyId", lastSelectedId);
             }
 
             const data = await apiClient.get(`/dtrs?${params.toString()}`);
 
             if (data.success) {
                 setDtrTableData(data.data);
+                const pagination = data.pagination || {};
                 setServerPagination({
-                    currentPage: data.page || 1,
-                    totalPages: Math.ceil(data.total / data.pageSize) || 1,
-                    totalCount: data.total || 0,
-                    limit: data.pageSize || 10,
-                    hasNextPage: data.hasNextPage || false,
-                    hasPrevPage: data.hasPrevPage || false,
+                    currentPage: pagination.currentPage || data.page || 1,
+                    totalPages:
+                        pagination.totalPages ||
+                        Math.ceil((data.total || 0) / (data.pageSize || 10)) ||
+                        1,
+                    totalCount: pagination.totalCount || data.total || 0,
+                    limit: pagination.limit || data.pageSize || 10,
+                    hasNextPage: pagination.hasNextPage || data.hasNextPage || false,
+                    hasPrevPage: pagination.hasPrevPage || data.hasPrevPage || false,
                 });
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "table")
@@ -623,7 +644,7 @@ const DTRDashboard: React.FC = () => {
         setIsAlertsLoading(true);
         try {
             const endpoint = lastSelectedId
-                ? `/dtrs/alerts?lastSelectedId=${lastSelectedId}`
+                ? `/dtrs/alerts?hierarchyId=${lastSelectedId}`
                 : "/dtrs/alerts";
 
             const data = await apiClient.get(endpoint);
@@ -652,7 +673,7 @@ const DTRDashboard: React.FC = () => {
         try {
             const params = new URLSearchParams();
             if (lastSelectedId) {
-                params.append("lastSelectedId", lastSelectedId);
+                params.append("hierarchyId", lastSelectedId);
             }
             if (timeRange) {
                 params.append("timeRange", timeRange);
@@ -718,7 +739,7 @@ const DTRDashboard: React.FC = () => {
         setIsMeterStatusLoading(true);
         try {
             const endpoint = lastSelectedId
-                ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
+                ? `/dtrs/meter-status?hierarchyId=${lastSelectedId}`
                 : "/dtrs/meter-status";
 
             const data = await apiClient.get(endpoint);
@@ -750,63 +771,67 @@ const DTRDashboard: React.FC = () => {
     const fetchFilterOptions = async () => {
         setIsFiltersLoading(true);
         try {
-            const response = await fetch(
-                `${BACKEND_URL}/dtrs/filter/filter-options`
-            );
-
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Invalid response format");
-            }
-
-            const data = await response.json();
+            const data = await apiClient.get("/dtrs/filter/filter-options");
             if (data.success) {
-                setOriginalApiData(data.data);
+                const apiData = data.data || [];
+                setOriginalApiData(apiData);
 
-                const transformedData = {
-                    discoms: data.data
-                        .filter((item: any) => item.levelName === "DISCOM")
-                        .map((item: any) => ({
-                            value: item.id.toString(),
-                            label: item.name,
-                        })),
-                    circles: data.data
-                        .filter((item: any) => item.levelName === "Circle")
-                        .map((item: any) => ({
-                            value: item.id.toString(),
-                            label: item.name,
-                        })),
-                    divisions: data.data
-                        .filter((item: any) => item.levelName === "Division")
-                        .map((item: any) => ({
-                            value: item.id.toString(),
-                            label: item.name,
-                        })),
-                    subDivisions: data.data
-                        .filter(
-                            (item: any) => item.levelName === "Sub division"
-                        )
-                        .map((item: any) => ({
-                            value: item.id.toString(),
-                            label: item.name,
-                        })),
-                    sections: data.data
-                        .filter((item: any) => item.levelName === "Section")
-                        .map((item: any) => ({
-                            value: item.id.toString(),
-                            label: item.name,
-                        })),
-                    meterLocations: data.data
-                        .filter(
-                            (item: any) => item.levelName === "DTR Location"
-                        )
-                        .map((item: any) => ({
-                            value: item.id.toString(),
-                            label: item.name,
-                        })),
-                };
+                const transformedData = hierarchyLevels.reduce((acc: any, level) => {
+                    acc[level.optionKey] = [
+                        { value: "all", label: level.allLabel },
+                        ...apiData
+                            .filter((item: any) => item.levelName === level.levelName)
+                            .map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                    ];
+                    return acc;
+                }, {});
 
                 setFilterOptions(transformedData);
+
+                const user = getStoredUser();
+                const userLocationId = user?.locationId?.toString();
+                const isAdmin =
+                    user?.accessLevel === "ADMIN" ||
+                    user?.accessLevel === "SUPER_ADMIN" ||
+                    user?.role === "ADMIN" ||
+                    user?.role === "admin";
+
+                if (userLocationId && !isAdmin) {
+                    const userLocation = apiData.find(
+                        (item: any) => item.id.toString() === userLocationId
+                    );
+
+                    if (userLocation) {
+                        const selectedPath: any = {
+                            discom: "all",
+                            circle: "all",
+                            division: "all",
+                            subDivision: "all",
+                            section: "all",
+                            substation: "all",
+                        };
+                        let currentItem = userLocation;
+
+                        while (currentItem) {
+                            const level = hierarchyLevels.find(
+                                (item) => item.levelName === currentItem.levelName
+                            );
+                            if (level) {
+                                selectedPath[level.filterName] = currentItem.id.toString();
+                            }
+
+                            currentItem = currentItem.parentId
+                                ? apiData.find((item: any) => item.id === currentItem.parentId)
+                                : null;
+                        }
+
+                        setFilterValues(selectedPath);
+                        setLastSelectedId(userLocationId);
+                    }
+                }
             } else {
                 throw new Error(
                     data.message || "Failed to fetch filter options"
@@ -912,19 +937,23 @@ const DTRDashboard: React.FC = () => {
 
                 // Add lastSelectedId if available
                 if (lastSelectedId) {
-                    params.append("lastSelectedId", lastSelectedId);
+                    params.append("hierarchyId", lastSelectedId);
                 }
 
                 const data = await apiClient.get(`/dtrs?${params.toString()}`);
                 if (data.success) {
                     setDtrTableData(data.data);
+                    const pagination = data.pagination || {};
                     setServerPagination({
-                        currentPage: data.page || 1,
-                        totalPages: Math.ceil(data.total / data.pageSize) || 1,
-                        totalCount: data.total || 0,
-                        limit: data.pageSize || 10,
-                        hasNextPage: data.hasNextPage || false,
-                        hasPrevPage: data.hasPrevPage || false,
+                        currentPage: pagination.currentPage || data.page || 1,
+                        totalPages:
+                            pagination.totalPages ||
+                            Math.ceil((data.total || 0) / (data.pageSize || 10)) ||
+                            1,
+                        totalCount: pagination.totalCount || data.total || 0,
+                        limit: pagination.limit || data.pageSize || 10,
+                        hasNextPage: pagination.hasNextPage || data.hasNextPage || false,
+                        hasPrevPage: pagination.hasPrevPage || data.hasPrevPage || false,
                     });
                 } else {
                     throw new Error(
@@ -959,7 +988,7 @@ const DTRDashboard: React.FC = () => {
             setIsAlertsLoading(true);
             try {
                 const endpoint = lastSelectedId
-                    ? `/dtrs/alerts?lastSelectedId=${lastSelectedId}`
+                    ? `/dtrs/alerts?hierarchyId=${lastSelectedId}`
                     : "/dtrs/alerts";
 
                 const data = await apiClient.get(endpoint);
@@ -999,7 +1028,7 @@ const DTRDashboard: React.FC = () => {
             try {
                 const params = new URLSearchParams();
                 if (lastSelectedId) {
-                    params.append("lastSelectedId", lastSelectedId);
+                    params.append("hierarchyId", lastSelectedId);
                 }
                 params.append(
                     "timeRange",
@@ -1080,7 +1109,7 @@ const DTRDashboard: React.FC = () => {
             setIsMeterStatusLoading(true);
             try {
                 const endpoint = lastSelectedId
-                    ? `/dtrs/meter-status?lastSelectedId=${lastSelectedId}`
+                    ? `/dtrs/meter-status?hierarchyId=${lastSelectedId}`
                     : "/dtrs/meter-status";
 
                 const data = await apiClient.get(endpoint);
@@ -1317,7 +1346,7 @@ const DTRDashboard: React.FC = () => {
                             division: "all",
                             subDivision: "all",
                             section: "all",
-                            meterLocation: "all",
+                            substation: "all",
                         }));
                         // Clear dependent dropdowns
                         setFilterOptions((prev) => ({
@@ -1329,8 +1358,8 @@ const DTRDashboard: React.FC = () => {
                                 { value: "all", label: "All Sub-Divisions" },
                             ],
                             sections: [{ value: "all", label: "All Sections" }],
-                            meterLocations: [
-                                { value: "all", label: "All Meter Locations" },
+                            substations: [
+                                { value: "all", label: "All Substations" },
                             ],
                         }));
                         break;
@@ -1352,7 +1381,7 @@ const DTRDashboard: React.FC = () => {
                             division: "all",
                             subDivision: "all",
                             section: "all",
-                            meterLocation: "all",
+                            substation: "all",
                         }));
                         // Clear dependent dropdowns
                         setFilterOptions((prev) => ({
@@ -1361,8 +1390,8 @@ const DTRDashboard: React.FC = () => {
                                 { value: "all", label: "All Sub-Divisions" },
                             ],
                             sections: [{ value: "all", label: "All Sections" }],
-                            meterLocations: [
-                                { value: "all", label: "All Meter Locations" },
+                            substations: [
+                                { value: "all", label: "All Substations" },
                             ],
                         }));
                         break;
@@ -1383,14 +1412,14 @@ const DTRDashboard: React.FC = () => {
                             ...prev,
                             subDivision: "all",
                             section: "all",
-                            meterLocation: "all",
+                            substation: "all",
                         }));
                         // Clear dependent dropdowns
                         setFilterOptions((prev) => ({
                             ...prev,
                             sections: [{ value: "all", label: "All Sections" }],
-                            meterLocations: [
-                                { value: "all", label: "All Meter Locations" },
+                            substations: [
+                                { value: "all", label: "All Substations" },
                             ],
                         }));
                         break;
@@ -1410,13 +1439,13 @@ const DTRDashboard: React.FC = () => {
                         setFilterValues((prev) => ({
                             ...prev,
                             section: "all",
-                            meterLocation: "all",
+                            substation: "all",
                         }));
                         // Clear dependent dropdowns
                         setFilterOptions((prev) => ({
                             ...prev,
-                            meterLocations: [
-                                { value: "all", label: "All Meter Locations" },
+                            substations: [
+                                { value: "all", label: "All Substations" },
                             ],
                         }));
                         break;
@@ -1424,8 +1453,8 @@ const DTRDashboard: React.FC = () => {
                     case "section":
                         setFilterOptions((prev) => ({
                             ...prev,
-                            meterLocations: [
-                                { value: "all", label: "All Meter Locations" },
+                            substations: [
+                                { value: "all", label: "All Substations" },
                                 ...newOptions.map((item: any) => ({
                                     value: item.id.toString(),
                                     label: item.name,
@@ -1435,7 +1464,7 @@ const DTRDashboard: React.FC = () => {
                         // Reset dependent filters
                         setFilterValues((prev) => ({
                             ...prev,
-                            meterLocation: "all",
+                            substation: "all",
                         }));
                         break;
                 }
@@ -1451,15 +1480,6 @@ const DTRDashboard: React.FC = () => {
         childValue: string
     ) => {
         if (childValue === "all" || !originalApiData.length) return {};
-
-        const hierarchyLevels = [
-            { filterName: "discom", levelName: "DISCOM" },
-            { filterName: "circle", levelName: "Circle" },
-            { filterName: "division", levelName: "Division" },
-            { filterName: "subDivision", levelName: "Sub division" },
-            { filterName: "section", levelName: "Section" },
-            { filterName: "meterLocation", levelName: "DTR Location" },
-        ];
 
         // Find the selected child item
         const childLevel = hierarchyLevels.find(
@@ -1531,8 +1551,8 @@ const DTRDashboard: React.FC = () => {
     const handleGetData = async () => {
         let lastId: string | null = null;
 
-        if (filterValues.meterLocation !== "all") {
-            lastId = filterValues.meterLocation;
+        if (filterValues.substation !== "all") {
+            lastId = filterValues.substation;
         } else if (filterValues.section !== "all") {
             lastId = filterValues.section;
         } else if (filterValues.subDivision !== "all") {
@@ -1571,12 +1591,12 @@ const DTRDashboard: React.FC = () => {
     // Handle Reset button click
     const handleResetFilters = async () => {
         setFilterValues({
-            discom: "TGNPDCL",
+            discom: "all",
             circle: "all",
             division: "all",
             subDivision: "all",
             section: "all",
-            meterLocation: "all",
+            substation: "all",
         });
         setLastSelectedId(null);
         await fetchFilterOptions();
@@ -1943,7 +1963,7 @@ const DTRDashboard: React.FC = () => {
         { key: "dtrId", label: "DTR ID" },
         { key: "dtrName", label: "DTR Name" },
         { key: "feedersCount", label: "Feeders Count" },
-        { key: "meterlocation", label: "Meter Location" },
+        { key: "meterlocation", label: "Coordinates" },
         // { key: "city", label: "City" },
         {
             key: "commStatus",
@@ -2110,14 +2130,14 @@ const DTRDashboard: React.FC = () => {
                             {
                                 name: "Dropdown",
                                 props: {
-                                    options: [...filterOptions.meterLocations],
-                                    value: filterValues.meterLocation,
+                                    options: [...filterOptions.substations],
+                                    value: filterValues.substation,
                                     onChange: (value: string) =>
                                         handleFilterChange(
-                                            "meterLocation",
+                                            "substation",
                                             value
                                         ),
-                                    placeholder: "Select Meter Location",
+                                    placeholder: "Select Substation",
                                     loading: isFiltersLoading,
                                     searchable: false,
                                 },
@@ -2264,8 +2284,6 @@ const DTRDashboard: React.FC = () => {
                                                         card.bg ||
                                                         "bg-stat-icon-gradient",
                                                     loading: card.loading,
-                                                    onValueClick:
-                                                        card.onValueClick,
                                                 },
                                                 span: {
                                                     col: 1 as const,
