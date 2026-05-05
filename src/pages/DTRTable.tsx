@@ -34,6 +34,8 @@ const DTRTable: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [cardType, setCardType] = useState<string | null>(null);
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hierarchyId, setHierarchyId] = useState<string | null>(null);
   const [serverPagination, setServerPagination] = useState<Pagination>({
     currentPage: 1,
     totalPages: 1,
@@ -58,9 +60,11 @@ const DTRTable: React.FC = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
     const title = urlParams.get('title');
+    const selectedHierarchyId = urlParams.get('hierarchyId') || urlParams.get('lastSelectedId');
 
     if (type) setCardType(type);
     if (title) setCardTitle(decodeURIComponent(title));
+    if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
   }, []);
 
   const getTableColumns = () => {
@@ -220,6 +224,7 @@ const DTRTable: React.FC = () => {
         params.append('page', page.toString());
         params.append('pageSize', pageSize.toString());
         if (search) params.append('search', search);
+        if (hierarchyId) params.append('hierarchyId', hierarchyId);
 
         switch (cardType) {
           case 'total-dtrs':
@@ -232,7 +237,7 @@ const DTRTable: React.FC = () => {
             url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
             break;
           case 'total-lt-feeders':
-            url = `${BACKEND_URL}/dtrs/all-meters?page=${page}&limit=${pageSize}`;
+            url = `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
             break;
           case 'fuse-blown':
             url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
@@ -244,16 +249,16 @@ const DTRTable: React.FC = () => {
             url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
             break;
           case 'ht-fuse-blown':
-            url = `${BACKEND_URL}/dtrs/ht-fuse-blown`;
+            url = `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
             break;
           case 'lt-fuse-blown':
-            url = `${BACKEND_URL}/dtrs/lt-fuse-blown`;
+            url = `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
             break;
           case 'unbalanced-dtrs':
-            url = `${BACKEND_URL}/dtrs/unbalanced-dtrs`;
+            url = `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
             break;
           case 'power-failure-feeders':
-            url = `${BACKEND_URL}/dtrs/power-failure-feeders`;
+            url = `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
             break;
 
           default:
@@ -297,15 +302,27 @@ const DTRTable: React.FC = () => {
           safeSetTableData(rows);
 
           // Derive pagination after filter
-          const totalFiltered = rows.length;
-          setServerPagination({
-            currentPage: 1,
-            totalPages: 1,
-            totalCount: totalFiltered,
-            limit: totalFiltered,
-            hasNextPage: false,
-            hasPrevPage: false,
-          });
+          if (data.pagination) {
+            setServerPagination({
+              currentPage: data.pagination.currentPage,
+              totalPages: data.pagination.totalPages,
+              totalCount: data.pagination.totalCount,
+              limit: data.pagination.limit,
+              hasNextPage: data.pagination.hasNextPage,
+              hasPrevPage: data.pagination.hasPrevPage,
+            });
+          } else {
+            // Fallback for endpoints without pagination object
+            const totalFiltered = rows.length;
+            setServerPagination({
+              currentPage: 1,
+              totalPages: 1,
+              totalCount: totalFiltered,
+              limit: totalFiltered,
+              hasNextPage: false,
+              hasPrevPage: false,
+            });
+          }
           setError(null);
         } else {
           throw new Error(data.message || `Failed to fetch data for ${cardType}`);
@@ -317,7 +334,7 @@ const DTRTable: React.FC = () => {
         setLoading(false);
       }
     },
-    [cardType]
+    [cardType, hierarchyId]
   );
 
   useEffect(() => {
@@ -414,8 +431,21 @@ const DTRTable: React.FC = () => {
     }
   };
 
-  const handlePageChange = (page: number) => fetchData(page, serverPagination.limit);
-  const handleSearch = (searchTerm: string) => fetchData(1, serverPagination.limit, searchTerm);
+  const handlePageChange = (page: number, limit?: number) => {
+    const pageSize = limit ?? serverPagination.limit;
+    setServerPagination((prev) => ({ ...prev, currentPage: page, limit: pageSize }));
+    fetchData(page, pageSize, searchTerm.trim() || undefined);
+  };
+
+  const handleRowsPerPageChange = (limit: number) => {
+    setServerPagination((prev) => ({ ...prev, currentPage: 1, limit }));
+    fetchData(1, limit, searchTerm.trim() || undefined);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    fetchData(1, serverPagination.limit, value.trim() || undefined);
+  };
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -500,10 +530,17 @@ const DTRTable: React.FC = () => {
                         text: cardTitle,
                         className: 'w-full',
                         emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
-                        rowsPerPageOptions: [10, 25, 50],
-                        initialRowsPerPage: 10,
+                        rowsPerPageOptions: [10, 20, 25, 50],
+                        initialRowsPerPage: serverPagination.limit,
+                        itemsPerPage: serverPagination.limit,
+                        pageSize: serverPagination.limit,
+                        currentPage: serverPagination.currentPage,
+                        totalPages: serverPagination.totalPages,
+                        totalCount: serverPagination.totalCount,
                         showSkeletonActionButtons: true,
                         onPageChange: handlePageChange,
+                        onPageSizeChange: handleRowsPerPageChange,
+                        onRowsPerPageChange: handleRowsPerPageChange,
                         onSearch: handleSearch,
                         serverPagination,
                       },
