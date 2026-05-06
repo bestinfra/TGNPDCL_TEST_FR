@@ -54,26 +54,32 @@ const dummyDtrStatsData = {
 
 const dummyFilterOptions = {
     discoms: [
+        { value: "all", label: "All DISCOMs" },
         { value: "DISCOM1", label: "DISCOM 1" },
         { value: "DISCOM2", label: "DISCOM 2" },
     ],
     circles: [
+        { value: "all", label: "All Circles" },
         { value: "CIRCLE1", label: "Circle 1" },
         { value: "CIRCLE2", label: "Circle 2" },
     ],
     divisions: [
+        { value: "all", label: "All Divisions" },
         { value: "DIV1", label: "Division 1" },
         { value: "DIV2", label: "Division 2" },
     ],
     subDivisions: [
+        { value: "all", label: "All Sub-Divisions" },
         { value: "SUBDIV1", label: "Sub Division 1" },
         { value: "SUBDIV2", label: "Sub Division 2" },
     ],
     sections: [
+        { value: "all", label: "All Sections" },
         { value: "SECTION1", label: "Section 1" },
         { value: "SECTION2", label: "Section 2" },
     ],
     substations: [
+        { value: "all", label: "All Substations" },
         { value: "SUB1", label: "Substation 1" },
         { value: "SUB2", label: "Substation 2" },
     ],
@@ -262,35 +268,7 @@ const DTRDashboard: React.FC = () => {
     });
     const [dtrTableSearch, setDtrTableSearch] = useState("");
 
-    const parseLastCommunicationTs = (value: unknown): number => {
-        if (typeof value !== "string") return Number.NEGATIVE_INFINITY;
-        const raw = value.trim();
-        if (!raw) return Number.NEGATIVE_INFINITY;
-        const upper = raw.toUpperCase();
-        if (upper === "N/A" || upper === "NA" || upper === "-") {
-            return Number.NEGATIVE_INFINITY;
-        }
 
-        const ts = new Date(raw).getTime();
-        if (!Number.isNaN(ts)) return ts;
-
-        // Fallback for formats like "28 Apr 2026 10:55:27 AM"
-        const normalized = raw.replace(",", "").replace(/\s+/g, " ");
-        const m = normalized.match(
-            /^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i,
-        );
-        if (m) {
-            const [, dd, mon, yyyy, hh, mm, ss, ampm] = m;
-            const fallbackTs = new Date(
-                `${mon} ${dd}, ${yyyy} ${hh}:${mm}:${ss} ${ampm}`,
-            ).getTime();
-            return Number.isNaN(fallbackTs)
-                ? Number.NEGATIVE_INFINITY
-                : fallbackTs;
-        }
-
-        return Number.NEGATIVE_INFINITY;
-    };
 
     const [chartMonths, setChartMonths] = useState<string[]>(
         dummyChartData.months,
@@ -884,10 +862,14 @@ const DTRDashboard: React.FC = () => {
                 setOriginalApiData(apiData);
 
                 const transformedData = hierarchyLevels.reduce((acc: any, level) => {
+                    const normalizedTargetLevel = level.levelName.toLowerCase().replace(/[\s-]/g, "");
                     acc[level.optionKey] = [
                         { value: "all", label: level.allLabel },
                         ...apiData
-                            .filter((item: any) => item.levelName === level.levelName)
+                            .filter((item: any) => {
+                                const normalizedItemLevel = item.levelName?.toLowerCase().replace(/[\s-]/g, "");
+                                return normalizedItemLevel === normalizedTargetLevel;
+                            })
                             .map((item: any) => ({
                                 value: item.id.toString(),
                                 label: item.name,
@@ -923,9 +905,11 @@ const DTRDashboard: React.FC = () => {
                         let currentItem = userLocation;
 
                         while (currentItem) {
-                            const level = hierarchyLevels.find(
-                                (item) => item.levelName === currentItem.levelName
-                            );
+                            const level = hierarchyLevels.find((l) => {
+                                const normalizedL = l.levelName.toLowerCase().replace(/[\s-]/g, "");
+                                const normalizedItem = currentItem.levelName?.toLowerCase().replace(/[\s-]/g, "");
+                                return normalizedL === normalizedItem;
+                            });
                             if (level) {
                                 selectedPath[level.filterName] = currentItem.id.toString();
                             }
@@ -1606,11 +1590,14 @@ const DTRDashboard: React.FC = () => {
         );
         if (!childLevel) return {};
 
-        const childItem = originalApiData.find(
-            (item: any) =>
-                item.levelName === childLevel.levelName &&
-                item.id.toString() === childValue,
-        );
+        const childItem = originalApiData.find((item: any) => {
+            const normalizedItemLevel = item.levelName?.toLowerCase().replace(/[\s-]/g, "");
+            const normalizedChildLevel = childLevel.levelName.toLowerCase().replace(/[\s-]/g, "");
+            return (
+                normalizedItemLevel === normalizedChildLevel &&
+                item.id.toString() === childValue
+            );
+        });
 
         if (!childItem) return {};
 
@@ -1624,8 +1611,10 @@ const DTRDashboard: React.FC = () => {
             const parentLevel = hierarchyLevels[currentLevelIndex - 1];
 
             const parentItem = originalApiData.find((item: any) => {
+                const normalizedItemLevel = item.levelName?.toLowerCase().replace(/[\s-]/g, "");
+                const normalizedParentLevel = parentLevel.levelName.toLowerCase().replace(/[\s-]/g, "");
                 return (
-                    item.levelName === parentLevel.levelName &&
+                    normalizedItemLevel === normalizedParentLevel &&
                     item.id === currentItem.parentId
                 );
             });
