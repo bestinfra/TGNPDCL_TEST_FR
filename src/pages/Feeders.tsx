@@ -289,19 +289,30 @@ const Feeders = () => {
             : null);
 
     // Determine the effective DTR ID to use for API calls
+    const isLikelyDtrIdentifier = (value: string) => {
+        if (!value) return false;
+        const v = String(value).trim();
+        // Numeric ids or coded DTR ids like DTR-001 / SS-233 should be treated as DTR identifiers.
+        if (/^\d+$/.test(v)) return true;
+        if (/^(DTR|SS)-/i.test(v)) return true;
+        // Meter numbers like TGNxxxx should NOT be treated as DTR identifiers.
+        if (/^TGN/i.test(v)) return false;
+        return false;
+    };
+
     const getEffectiveDtrId = () => {
         // First try passedData.dtrId (from navigation state)
         if (passedData?.dtrId) {
             return passedData.dtrId;
         }
 
-        // Then try to extract from dtrId parameter
-        if (dtrId && dtrId.match(/\d+/)?.[0]) {
-            return dtrId.match(/\d+/)?.[0];
+        // Route param can either be dtr id/code or feeder meter number.
+        if (dtrId && isLikelyDtrIdentifier(dtrId)) {
+            return dtrId;
         }
 
         // If we have a feederId, we need to find the DTR ID from the backend
-        if (feederId) {
+        if (feederId || passedData?.feederId) {
             return null; // We'll need to handle this specially
         }
 
@@ -315,37 +326,15 @@ const Feeders = () => {
         feederId: string
     ): Promise<string | null> => {
         try {
-            // We need to search for the feeder to find its DTR ID
-            // This could be done by searching through all DTRs or by a specific feeder search endpoint
-            // For now, let's try to search through the DTRs endpoint with a search parameter
-
-            // Option 1: Search through DTRs with feeder name
-            const searchResponse = await fetch(
-                `${BACKEND_URL}/dtrs?search=${feederId}`
+            // Directly search meter listing first; this endpoint already links meters to DTR ids/codes.
+            const meterSearchResponse = await fetch(
+                `${BACKEND_URL}/dtrs/all-meters?search=${encodeURIComponent(feederId)}&page=1&pageSize=1`
             );
-            if (searchResponse.ok) {
-                const searchData = await searchResponse.json();
-                if (searchData.success && searchData.data.length > 0) {
-                    // Find the DTR that contains this feeder
-                    for (const dtr of searchData.data) {
-                        // Check if this DTR has the feeder
-                        const dtrResponse = await fetch(
-                            `${BACKEND_URL}/dtrs/${dtr.dtrId || dtr.dtrNumber}`
-                        );
-                        if (dtrResponse.ok) {
-                            const dtrData = await dtrResponse.json();
-                            if (dtrData.success && dtrData.data?.feeders) {
-                                const hasFeeder = dtrData.data.feeders.some(
-                                    (feeder: any) =>
-                                        feeder.serialNumber === feederId ||
-                                        feeder.meterNumber === feederId
-                                );
-                                if (hasFeeder) {
-                                    return dtr.dtrId || dtr.dtrNumber;
-                                }
-                            }
-                        }
-                    }
+            if (meterSearchResponse.ok) {
+                const meterSearchData = await meterSearchResponse.json();
+                const first = meterSearchData?.data?.[0];
+                if (first?.dtrId && first.dtrId !== "N/A") {
+                    return String(first.dtrId);
                 }
             }
 
@@ -1418,12 +1407,13 @@ const Feeders = () => {
     // Effect to resolve DTR ID from feeder ID when needed
     useEffect(() => {
         const resolveDtrId = async () => {
-            if (!resolvedDtrId && feederId) {
+            const feederIdentifier = feederId || passedData?.feederId;
+            if (!resolvedDtrId && feederIdentifier) {
                 console.log(
                     "useEffect - resolveDtrId - Looking for DTR ID for feeder:",
-                    feederId
+                    feederIdentifier
                 );
-                const foundDtrId = await findDtrIdFromFeederId(feederId);
+                const foundDtrId = await findDtrIdFromFeederId(feederIdentifier);
                 if (foundDtrId) {
                     console.log(
                         "useEffect - resolveDtrId - Found DTR ID:",
@@ -1433,14 +1423,14 @@ const Feeders = () => {
                 } else {
                     console.warn(
                         "useEffect - resolveDtrId - Could not find DTR ID for feeder:",
-                        feederId
+                        feederIdentifier
                     );
                 }
             }
         };
 
         resolveDtrId();
-    }, [feederId, resolvedDtrId]);
+    }, [feederId, passedData?.feederId, resolvedDtrId]);
 
     // Effect to log time range changes for debugging
     // useEffect(() => {}, [consumptionTimeRange, kvaTimeRange]);
@@ -1910,6 +1900,26 @@ const Feeders = () => {
                                                             ) {
                                                                 return "N/A";
                                                             }
+                                                            // Backend now sends display-ready date string.
+                                                            if (
+                                                                raw.includes(
+                                                                    ","
+                                                                ) &&
+                                                                (raw.includes(
+                                                                    "AM"
+                                                                ) ||
+                                                                    raw.includes(
+                                                                        "PM"
+                                                                    ) ||
+                                                                    raw.includes(
+                                                                        "am"
+                                                                    ) ||
+                                                                    raw.includes(
+                                                                        "pm"
+                                                                    ))
+                                                            ) {
+                                                                return raw;
+                                                            }
                                                             try {
                                                                 // Try to parse robustly: handle both "YYYY-MM-DD HH:mm:ss" and ISO forms
                                                                 const parseSource =
@@ -1940,6 +1950,8 @@ const Feeders = () => {
                                                                             minute: "2-digit",
                                                                             second: "2-digit",
                                                                             hour12: true,
+                                                                            timeZone:
+                                                                                "Asia/Kolkata",
                                                                         }
                                                                     );
                                                                 }
