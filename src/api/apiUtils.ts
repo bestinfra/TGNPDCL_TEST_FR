@@ -3,6 +3,11 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 /**
  * Make API requests to the backend
  */
@@ -22,8 +27,9 @@ export class ApiClient {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
-      },
+        ...getAuthHeaders(),
+        ...(options.headers as Record<string, string> | undefined),
+      } as HeadersInit,
       credentials: 'include', // Include cookies for authentication
       ...options,
     });
@@ -42,6 +48,7 @@ export class ApiClient {
     const isFormData = data instanceof FormData;
 
     const headers: Record<string, string> = {
+      ...getAuthHeaders(),
       ...options.headers as Record<string, string>,
     };
 
@@ -75,6 +82,7 @@ export class ApiClient {
     const isFormData = data instanceof FormData;
 
     const headers: Record<string, string> = {
+      ...getAuthHeaders(),
       ...options.headers as Record<string, string>,
     };
 
@@ -107,8 +115,9 @@ export class ApiClient {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
-      },
+        ...getAuthHeaders(),
+        ...(options.headers as Record<string, string> | undefined),
+      } as HeadersInit,
       credentials: 'include', // Include cookies for authentication
       ...options,
     });

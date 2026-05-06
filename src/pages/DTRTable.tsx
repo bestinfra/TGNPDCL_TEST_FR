@@ -34,66 +34,26 @@ const nonActionableCardTypes: string[] = [
 ];
 
 const DTRTable: React.FC = () => {
-    const navigate = useNavigate();
-    const [tableData, setTableData] = useState<TableData[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [cardType, setCardType] = useState<string | null>(null);
-    const [cardTitle, setCardTitle] = useState<string>("DTR Management");
+  const navigate = useNavigate();
+  const [tableData, setTableData] = useState<TableData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cardType, setCardType] = useState<string | null>(null);
+  const [cardTitle, setCardTitle] = useState<string>('DTR Management');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hierarchyId, setHierarchyId] = useState<string | null>(null);
     const normalizedCardType = useMemo(
-        () => cardType?.toLowerCase() ?? null,
+        () => cardType?.toLowerCase() || "",
         [cardType],
     );
-    const [serverPagination, setServerPagination] = useState<Pagination>({
-        currentPage: 1,
-        totalPages: 1,
-        totalCount: 0,
-        limit: 10,
-        hasNextPage: false,
-        hasPrevPage: false,
-    });
-    const [lastSearch, setLastSearch] = useState<string | undefined>(undefined);
-
-    const paginationFromApi = (
-        pagination: unknown,
-        pageRequested: number,
-        pageSizeRequested: number,
-        rowCount: number,
-    ): Pagination => {
-        const p = pagination as Record<string, unknown> | null | undefined;
-        if (p != null && typeof p.totalCount === "number") {
-            const limit =
-                typeof p.limit === "number" && p.limit > 0
-                    ? p.limit
-                    : pageSizeRequested;
-            const totalCount = Number(p.totalCount) || 0;
-            const totalPages = Math.max(
-                1,
-                typeof p.totalPages === "number" && p.totalPages > 0
-                    ? p.totalPages
-                    : Math.ceil(totalCount / limit) || 1,
-            );
-            return {
-                currentPage:
-                    typeof p.currentPage === "number"
-                        ? p.currentPage
-                        : pageRequested,
-                totalPages,
-                totalCount,
-                limit,
-                hasNextPage: Boolean(p.hasNextPage),
-                hasPrevPage: Boolean(p.hasPrevPage),
-            };
-        }
-        return {
-            currentPage: pageRequested,
-            totalPages: Math.max(1, rowCount > 0 ? 1 : 1),
-            totalCount: rowCount,
-            limit: pageSizeRequested,
-            hasNextPage: false,
-            hasPrevPage: false,
-        };
-    };
+  const [serverPagination, setServerPagination] = useState<Pagination>({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
     const safeSetTableData = (data: TableData[]) => {
         if (data && data.length > 0) {
@@ -109,15 +69,17 @@ const DTRTable: React.FC = () => {
         }
     };
 
-    // Apply URL params only once
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const type = urlParams.get("type");
-        const title = urlParams.get("title");
+  // Apply URL params only once
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    const title = urlParams.get('title');
+    const selectedHierarchyId = urlParams.get('hierarchyId') || urlParams.get('lastSelectedId');
 
-        if (type) setCardType(type.toLowerCase());
-        if (title) setCardTitle(decodeURIComponent(title));
-    }, []);
+    if (type) setCardType(type);
+    if (title) setCardTitle(decodeURIComponent(title));
+    if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
+  }, []);
 
     const getTableColumns = () => {
         switch (normalizedCardType) {
@@ -318,60 +280,47 @@ const DTRTable: React.FC = () => {
             try {
                 if (!normalizedCardType) return;
 
-                let url = "";
-                const params = new URLSearchParams();
-                params.append("page", page.toString());
-                params.append("pageSize", pageSize.toString());
-                if (search) params.append("search", search);
+        let url = '';
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('pageSize', pageSize.toString());
+        if (search) params.append('search', search);
+        if (hierarchyId) params.append('hierarchyId', hierarchyId);
 
-                switch (normalizedCardType) {
-                    case "total-dtrs":
-                        url = `${BACKEND_URL}/dtrs?${params.toString()}`;
-                        break;
-                    case "communicating-meters":
-                        url = `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
-                        break;
-                    case "non-communicating-meters":
-                        url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
-                        break;
-                    case "total-lt-feeders":
-                        url = `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
-                        break;
-                    case "fuse-blown":
-                        url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
-                        break;
-                    case "overloaded-feeders":
-                        url = `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
-                        break;
-                    case "underloaded-feeders":
-                        url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
-                        break;
-                    case "ht-fuse-blown":
-                        url = `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
-                        break;
-                    case "lt-fuse-blown":
-                        url = `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
-                        break;
-                    case "unbalanced-dtrs":
-                        url = `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
-                        break;
-                    case "power-failure-feeders":
-                        url = `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
-                        break;
-                    case "daily-kw":
-                    case "daily-kwh":
-                    case "daily-kva":
-                    case "daily-kvah":
-                    case "daily-kvar":
-                    case "daily-kvarh":
-                    case "monthly-kw":
-                    case "monthly-kwh":
-                    case "monthly-kva":
-                    case "monthly-kvah":
-                    case "monthly-kvar":
-                    case "monthly-kvarh":
-                        url = `${BACKEND_URL}/dtrs/stats`;
-                        break;
+        switch (cardType) {
+          case 'total-dtrs':
+            url = `${BACKEND_URL}/dtrs?${params.toString()}`;
+            break;
+          case 'communicating-meters':
+            url = `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
+            break;
+          case 'non-communicating-meters':
+            url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
+            break;
+          case 'total-lt-feeders':
+            url = `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
+            break;
+          case 'fuse-blown':
+            url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
+            break;
+          case 'overloaded-feeders':
+            url = `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
+            break;
+          case 'underloaded-feeders':
+            url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
+            break;
+          case 'ht-fuse-blown':
+            url = `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
+            break;
+          case 'lt-fuse-blown':
+            url = `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
+            break;
+          case 'unbalanced-dtrs':
+            url = `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
+            break;
+          case 'power-failure-feeders':
+            url = `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
+            break;
 
                     default:
                         if (
@@ -499,50 +448,47 @@ const DTRTable: React.FC = () => {
 
                     safeSetTableData(rows);
 
-                    if (consumptionMetricCardTypes.has(normalizedCardType)) {
-                        setServerPagination({
-                            currentPage: 1,
-                            totalPages: 1,
-                            totalCount: rows.length,
-                            limit: Math.max(rows.length, 1),
-                            hasNextPage: false,
-                            hasPrevPage: false,
-                        });
-                    } else {
-                        setServerPagination(
-                            paginationFromApi(
-                                data.pagination,
-                                page,
-                                pageSize,
-                                rows.length,
-                            ),
-                        );
-                    }
-                    setError(null);
-                } else {
-                    throw new Error(
-                        data.message ||
-                            `Failed to fetch data for ${normalizedCardType}`,
-                    );
-                }
-            } catch (err: any) {
-                setError(
-                    err.message || "Failed to fetch data. Please try again.",
-                );
-                console.error(`❌ Error fetching ${normalizedCardType}:`, err);
-            } finally {
-                setLoading(false);
-            }
-        },
-        [normalizedCardType],
-    );
+          // Derive pagination after filter
+          if (data.pagination) {
+            setServerPagination({
+              currentPage: data.pagination.currentPage,
+              totalPages: data.pagination.totalPages,
+              totalCount: data.pagination.totalCount,
+              limit: data.pagination.limit,
+              hasNextPage: data.pagination.hasNextPage,
+              hasPrevPage: data.pagination.hasPrevPage,
+            });
+          } else {
+            // Fallback for endpoints without pagination object
+            const totalFiltered = rows.length;
+            setServerPagination({
+              currentPage: 1,
+              totalPages: 1,
+              totalCount: totalFiltered,
+              limit: totalFiltered,
+              hasNextPage: false,
+              hasPrevPage: false,
+            });
+          }
+          setError(null);
+        } else {
+          throw new Error(data.message || `Failed to fetch data for ${cardType}`);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch data. Please try again.');
+        console.error(`❌ Error fetching ${cardType}:`, err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [cardType, hierarchyId]
+  );
 
     useEffect(() => {
         if (!normalizedCardType) return;
         setTableData([]);
         setLoading(true);
         setError(null);
-        setLastSearch(undefined);
         setServerPagination({
             currentPage: 1,
             totalPages: 1,
@@ -637,161 +583,129 @@ const DTRTable: React.FC = () => {
         }
     };
 
-    const handlePageChange = (page: number, limit?: number) => {
-        const lim =
-            typeof limit === "number" && limit > 0
-                ? limit
-                : serverPagination.limit;
-        fetchData(page, lim, lastSearch);
-    };
+  const handlePageChange = (page: number, limit?: number) => {
+    const pageSize = limit ?? serverPagination.limit;
+    setServerPagination((prev) => ({ ...prev, currentPage: page, limit: pageSize }));
+    fetchData(page, pageSize, searchTerm.trim() || undefined);
+  };
 
-    const handleSearch = (searchTerm: string) => {
-        setLastSearch(searchTerm);
-        fetchData(1, serverPagination.limit, searchTerm);
-    };
+  const handleRowsPerPageChange = (limit: number) => {
+    setServerPagination((prev) => ({ ...prev, currentPage: 1, limit }));
+    fetchData(1, limit, searchTerm.trim() || undefined);
+  };
 
-    const handleRowsPerPageChange = (limit: number) => {
-        fetchData(1, limit, lastSearch);
-    };
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    fetchData(1, serverPagination.limit, value.trim() || undefined);
+  };
 
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <Page
-                sections={[
-                    ...(error
-                        ? [
-                              {
-                                  layout: {
-                                      type: "column",
-                                      gap: "gap-4",
-                                      rows: [
-                                          {
-                                              layout: "column",
-                                              columns: [
-                                                  {
-                                                      name: "Error",
-                                                      props: {
-                                                          visibleErrors: [
-                                                              error,
-                                                          ],
-                                                          showRetry: true,
-                                                          onRetry: () =>
-                                                              fetchData(
-                                                                  1,
-                                                                  serverPagination.limit,
-                                                                  lastSearch,
-                                                              ),
-                                                      },
-                                                  },
-                                              ],
-                                          },
-                                      ],
-                                  },
-                              },
-                          ]
-                        : []),
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Page
+        sections={[
+          ...(error
+            ? [
+                {
+                  layout: {
+                    type: 'column',
+                    gap: 'gap-4',
+                    rows: [
+                      {
+                        layout: 'column',
+                        columns: [
+                          {
+                            name: 'Error',
+                            props: {
+                              visibleErrors: [error],
+                              showRetry: true,
+                              onRetry: () => fetchData(),
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ]
+            : []),
+          {
+            layout: {
+              type: 'column',
+              gap: 'gap-4',
+              rows: [
+                {
+                  layout: 'row',
+                  columns: [
                     {
-                        layout: {
-                            type: "column",
-                            gap: "gap-4",
-                            rows: [
-                                {
-                                    layout: "row",
-                                    columns: [
-                                        {
-                                            name: "PageHeader",
-                                            props: {
-                                                title: cardTitle,
-                                                onBackClick: () =>
-                                                    navigate("/dtr-dashboard"),
-                                                backButtonText:
-                                                    "Back to Dashboard",
-                                                buttonsLabel:
-                                                    normalizedCardType ===
-                                                    "total-lt-feeders"
-                                                        ? "Export"
-                                                        : "Add New",
-                                                variant: "primary",
-                                                onClick: undefined,
-                                            },
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
+                      name: 'PageHeader',
+                      props: {
+                        title: cardTitle,
+                        onBackClick: () => navigate('/dtr-dashboard'),
+                        backButtonText: 'Back to Dashboard',
+                        buttonsLabel: cardType === 'total-lt-feeders' ? 'Export' : 'Add New',
+                        variant: 'primary',
+                        onClick: undefined,
+                      },
                     },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            layout: {
+              type: 'column',
+              gap: 'gap-4',
+              rows: [
+                {
+                  layout: 'column',
+                  columns: [
                     {
-                        layout: {
-                            type: "column",
-                            gap: "gap-4",
-                            rows: [
-                                {
-                                    layout: "column",
-                                    columns: [
-                                        {
-                                            name: "Table",
-                                            key:
-                                                normalizedCardType || "default",
-                                            props: {
-                                                data: tableData,
-                                                columns: getTableColumns(),
-                                                loading,
-                                                searchable: true,
-                                                sortable: true,
-                                                pagination: true,
-                                                showHeader: true,
-                                                showActions:
-                                                    !nonActionableCardTypes.includes(
-                                                        normalizedCardType ||
-                                                            "",
-                                                    ),
-                                                onView: !nonActionableCardTypes.includes(
-                                                    normalizedCardType || "",
-                                                )
-                                                    ? handleView
-                                                    : undefined,
-                                                // onEdit: !nonActionableCardTypes.includes(normalizedCardType || '') ? handleEdit : undefined,
-                                                onRowClick:
-                                                    !nonActionableCardTypes.includes(
-                                                        normalizedCardType ||
-                                                            "",
-                                                    )
-                                                        ? handleView
-                                                        : undefined,
-                                                text: cardTitle,
-                                                className: "w-full",
-                                                emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
-                                                rowsPerPageOptions: [
-                                                    10, 25, 50, 100,
-                                                ],
-                                                initialRowsPerPage: 10,
-                                                showSkeletonActionButtons: true,
-                                                onPageChange: handlePageChange,
-                                                onRowsPerPageChange:
-                                                    handleRowsPerPageChange,
-                                                onSearch: handleSearch,
-                                                serverPagination,
-                                                pageSize: serverPagination.limit,
-                                                itemsPerPage:
-                                                    serverPagination.limit,
-                                                totalCount:
-                                                    serverPagination.totalCount,
-                                                currentPage:
-                                                    serverPagination.currentPage,
-                                                totalPages:
-                                                    serverPagination.totalPages,
-                                                showPagination: true,
-                                            },
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
+                      name: 'Table',
+                      key: cardType || 'default',
+                      props: {
+                        data: tableData,
+                        columns: getTableColumns(),
+                        loading,
+                        searchable: true,
+                        sortable: true,
+                        pagination: true,
+                        showHeader: true,
+                        showActions: !nonActionableCardTypes.includes(cardType || ''),
+                        onView: !nonActionableCardTypes.includes(cardType || '')
+                          ? handleView
+                          : undefined,
+                        // onEdit: !nonActionableCardTypes.includes(cardType || '') ? handleEdit : undefined,
+                        onRowClick: !nonActionableCardTypes.includes(cardType || '')
+                          ? handleView
+                          : undefined,
+                        text: cardTitle,
+                        className: 'w-full',
+                        emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
+                        rowsPerPageOptions: [10, 20, 25, 50],
+                        initialRowsPerPage: serverPagination.limit,
+                        itemsPerPage: serverPagination.limit,
+                        pageSize: serverPagination.limit,
+                        currentPage: serverPagination.currentPage,
+                        totalPages: serverPagination.totalPages,
+                        totalCount: serverPagination.totalCount,
+                        showSkeletonActionButtons: true,
+                        onPageChange: handlePageChange,
+                        onPageSizeChange: handleRowsPerPageChange,
+                        onRowsPerPageChange: handleRowsPerPageChange,
+                        onSearch: handleSearch,
+                        serverPagination,
+                      },
                     },
-                ]}
-            />
-        </Suspense>
-    );
+                  ],
+                },
+              ],
+            },
+          },
+        ]}
+      />
+    </Suspense>
+  );
 };
 
 export default DTRTable;
