@@ -1866,10 +1866,6 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Average Power",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("monthly-kw", "Avg kW (Monthly)")
-                ),
         },
         {
             title: "Total kWh",
@@ -1878,10 +1874,6 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Active Energy",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("monthly-kwh", "Total kWh (Monthly)")
-                ),
         },
         {
             title: "Total kVA",
@@ -1890,10 +1882,6 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Average Apparent",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("monthly-kva", "Avg kVA (Monthly)")
-                ),
         },
         {
             title: "Total kVAh",
@@ -1902,10 +1890,6 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Apparent Energy",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("monthly-kvah", "Total kVAh (Monthly)")
-                ),
         },
         {
             title: "Total kVAR",
@@ -1914,10 +1898,6 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Reactive Power",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("monthly-kvar", "Avg kVAR (Monthly)")
-                ),
         },
         {
             title: "Total kVARh",
@@ -1926,10 +1906,6 @@ const DTRDashboard: React.FC = () => {
             subtitle1: "Monthly Reactive Energy",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("monthly-kvarh", "Total kVARh (Monthly)")
-                ),
         },
     ];
 
@@ -1966,10 +1942,6 @@ const DTRDashboard: React.FC = () => {
                     }`,
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            buildDtrTableUrl("daily-kw", "Total kW (Current)")
-                        ),
                 },
                 {
                     title: "Total kWh",
@@ -1978,10 +1950,6 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Active Energy",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            buildDtrTableUrl("daily-kwh", "Total kWh (Today)")
-                        ),
                 },
                 {
                     title: "Total kVA",
@@ -1997,10 +1965,6 @@ const DTRDashboard: React.FC = () => {
                     }`,
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            buildDtrTableUrl("daily-kva", "Total kVA (Current)")
-                        ),
                 },
                 {
                     title: "Total kVAh",
@@ -2009,10 +1973,6 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Apparent Energy",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            buildDtrTableUrl("daily-kvah", "Total kVAh (Today)")
-                        ),
                 },
                 {
                     title: "Total kVAR",
@@ -2021,10 +1981,6 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Reactive Power",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            buildDtrTableUrl("daily-kvar", "Total kVAR (Current)")
-                        ),
                 },
                 {
                     title: "Total kVARh",
@@ -2033,10 +1989,6 @@ const DTRDashboard: React.FC = () => {
                     subtitle1: "Today's Reactive Energy",
                     bg: "bg-stat-icon-gradient",
                     loading: isStatsLoading,
-                    onValueClick: () =>
-                        navigate(
-                            buildDtrTableUrl("daily-kvarh", "Total kVARh (Today)")
-                        ),
                 },
             ];
         } else {
@@ -2372,7 +2324,6 @@ const DTRDashboard: React.FC = () => {
                                                         card.bg ||
                                                         "bg-stat-icon-gradient",
                                                     loading: card.loading,
-                                                    onValueClick: card.onValueClick,
                                                 },
                                                 span: {
                                                     col: 1 as const,
