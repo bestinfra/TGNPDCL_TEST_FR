@@ -268,35 +268,7 @@ const DTRDashboard: React.FC = () => {
     });
     const [dtrTableSearch, setDtrTableSearch] = useState("");
 
-    const parseLastCommunicationTs = (value: unknown): number => {
-        if (typeof value !== "string") return Number.NEGATIVE_INFINITY;
-        const raw = value.trim();
-        if (!raw) return Number.NEGATIVE_INFINITY;
-        const upper = raw.toUpperCase();
-        if (upper === "N/A" || upper === "NA" || upper === "-") {
-            return Number.NEGATIVE_INFINITY;
-        }
 
-        const ts = new Date(raw).getTime();
-        if (!Number.isNaN(ts)) return ts;
-
-        // Fallback for formats like "28 Apr 2026 10:55:27 AM"
-        const normalized = raw.replace(",", "").replace(/\s+/g, " ");
-        const m = normalized.match(
-            /^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i,
-        );
-        if (m) {
-            const [, dd, mon, yyyy, hh, mm, ss, ampm] = m;
-            const fallbackTs = new Date(
-                `${mon} ${dd}, ${yyyy} ${hh}:${mm}:${ss} ${ampm}`,
-            ).getTime();
-            return Number.isNaN(fallbackTs)
-                ? Number.NEGATIVE_INFINITY
-                : fallbackTs;
-        }
-
-        return Number.NEGATIVE_INFINITY;
-    };
 
     const [chartMonths, setChartMonths] = useState<string[]>(
         dummyChartData.months,
