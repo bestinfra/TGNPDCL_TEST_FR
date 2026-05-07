@@ -2376,18 +2376,27 @@ const DTRDashboard: React.FC = () => {
                                                         "Communicating"
                                                     ) {
                                                         navigate(
-                                                            "/dtr-table?type=communicating-meters&title=Communicating%20Meters",
+                                                            buildDtrTableUrl(
+                                                                "communicating-meters",
+                                                                "Communicating Meters",
+                                                            ),
                                                         );
                                                     } else if (
                                                         segmentName ===
                                                         "Non-Communicating"
                                                     ) {
                                                         navigate(
-                                                            "/dtr-table?type=non-communicating-meters&title=Non-Communicating%20Meters",
+                                                            buildDtrTableUrl(
+                                                                "non-communicating-meters",
+                                                                "Non-Communicating Meters",
+                                                            ),
                                                         );
                                                     } else {
                                                         navigate(
-                                                            "/dtr-table?type=communicating-meters&title=Communicating%20Meters",
+                                                            buildDtrTableUrl(
+                                                                "communicating-meters",
+                                                                "Communicating Meters",
+                                                            ),
                                                         );
                                                     }
                                                 },
