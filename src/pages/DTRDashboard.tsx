@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
 }
@@ -1544,6 +1544,70 @@ const DTRDashboard: React.FC = () => {
         retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, limit);
     };
 
+    /** Federated Table shows `${limit} Per Page` on the trigger; hide real text so CSS ::after always reads "Select rows". */
+    useLayoutEffect(() => {
+        const applyStaticRowsLabel = () => {
+            const root = document.querySelector(".circle-wise-dtr-table");
+            if (!root) {
+                return;
+            }
+            root.querySelectorAll('div[role="combobox"]').forEach((combo) => {
+                const span =
+                    combo.querySelector(":scope > span.flex-1") ??
+                    combo.querySelector(':scope > span[class*="flex-1"]');
+                if (!(span instanceof HTMLElement)) {
+                    return;
+                }
+                span.style.setProperty("color", "transparent", "important");
+                span.style.setProperty("text-shadow", "none", "important");
+                span.style.setProperty("position", "relative", "important");
+            });
+        };
+
+        const mo = new MutationObserver(() => {
+            applyStaticRowsLabel();
+        });
+
+        const bind = () => {
+            applyStaticRowsLabel();
+            const r = document.querySelector(".circle-wise-dtr-table");
+            if (r) {
+                mo.observe(r, {
+                    subtree: true,
+                    childList: true,
+                    characterData: true,
+                });
+            }
+        };
+
+        bind();
+        let raf2 = 0;
+        const raf1 = requestAnimationFrame(() => {
+            bind();
+            raf2 = requestAnimationFrame(bind);
+        });
+        const t1 = window.setTimeout(bind, 120);
+        const t2 = window.setTimeout(bind, 400);
+        const t3 = window.setTimeout(bind, 1200);
+        const t4 = window.setTimeout(bind, 2000);
+
+        return () => {
+            mo.disconnect();
+            cancelAnimationFrame(raf1);
+            cancelAnimationFrame(raf2);
+            window.clearTimeout(t1);
+            window.clearTimeout(t2);
+            window.clearTimeout(t3);
+            window.clearTimeout(t4);
+        };
+    }, [
+        circleWisePagination.limit,
+        circleWisePagination.currentPage,
+        circleWisePagination.totalCount,
+        isCircleWiseTableLoading,
+        circleWiseTableData.length,
+    ]);
+
     const handleSearch = (searchTerm: string) => {
         setDtrTableSearch(searchTerm || "");
         retryTableAPI(undefined, 1, serverPagination.limit || 10, searchTerm);
@@ -2189,6 +2253,32 @@ const DTRDashboard: React.FC = () => {
 
     return (
         <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <style>
+                {`
+                .circle-wise-dtr-table div[role="combobox"] > span.flex-1,
+                .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"] {
+                    position: relative !important;
+                }
+                .circle-wise-dtr-table div[role="combobox"] > span.flex-1::after,
+                .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"]::after {
+                    content: "Select rows";
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    white-space: nowrap;
+                    font-size: 0.875rem;
+                    line-height: 1.25rem;
+                    font-weight: 500;
+                    font-family: inherit;
+                    color: rgb(82 82 91) !important;
+                }
+                .dark .circle-wise-dtr-table div[role="combobox"] > span.flex-1::after,
+                .dark .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"]::after {
+                    color: rgb(212 212 216) !important;
+                }
+                `}
+            </style>
             <Page
                 sections={[
                     // Error Section - Above PageHeader
@@ -2510,6 +2600,7 @@ const DTRDashboard: React.FC = () => {
                                 props: {
                                     data: circleWiseTableData,
                                     columns: circleWiseTableColumns,
+                                    className: "circle-wise-dtr-table",
                                     showHeader: true,
                                     headerTitle: "Circle-wise DTR Statistics",
                                     searchable: false,
