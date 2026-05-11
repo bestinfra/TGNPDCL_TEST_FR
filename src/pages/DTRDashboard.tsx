@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
 }
@@ -33,6 +33,17 @@ function pickStat(
         return row1[key] as string | number;
     }
     return fallback;
+}
+
+/** Pass through API row fields; only `sNo` is derived for display order. */
+function mapCircleWiseRowToTableData(
+    row: Record<string, unknown>,
+    sNo: number,
+): TableData {
+    return {
+        ...(row as TableData),
+        sNo,
+    };
 }
 
 const dummyDtrStatsData = {
@@ -266,6 +277,19 @@ const DTRDashboard: React.FC = () => {
         hasNextPage: false,
         hasPrevPage: false,
     });
+    const [circleWiseTableData, setCircleWiseTableData] = useState<TableData[]>(
+        [],
+    );
+    const [circleWisePagination, setCircleWisePagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 5,
+        hasNextPage: false,
+        hasPrevPage: false,
+    });
+    const [isCircleWiseTableLoading, setIsCircleWiseTableLoading] =
+        useState(true);
     const [dtrTableSearch, setDtrTableSearch] = useState("");
 
 
@@ -721,6 +745,118 @@ const DTRDashboard: React.FC = () => {
         } finally {
             setTimeout(() => {
                 setIsTableLoading(false);
+            }, 1000);
+        }
+    };
+
+    const retryCircleWiseStatsAPI = async (
+        lastSelectedId?: string | null,
+        page = 1,
+        pageSize = 5,
+    ) => {
+        setIsCircleWiseTableLoading(true);
+        try {
+            const params = new URLSearchParams();
+            params.append("page", String(page));
+            params.append("pageSize", String(pageSize));
+            if (lastSelectedId) {
+                params.append("hierarchyId", lastSelectedId);
+            }
+
+            const data = await apiClient.get(
+                `/dtrs/circle-wise-stats?${params.toString()}`,
+            );
+
+            let rows: any[] = [];
+            let pagination: Record<string, any> = {};
+            let totalCount = 0;
+
+            if (data && typeof data === "object" && !Array.isArray(data)) {
+                const body = data as Record<string, any>;
+                if (body.success === false) {
+                    throw new Error(
+                        body.message ||
+                            "Failed to fetch circle-wise DTR statistics",
+                    );
+                }
+                if (Array.isArray(body.data)) {
+                    rows = body.data;
+                } else if (Array.isArray(body.rows)) {
+                    rows = body.rows;
+                } else if (Array.isArray(body.circles)) {
+                    rows = body.circles;
+                }
+                pagination = body.pagination || {};
+                totalCount =
+                    pagination.totalCount ??
+                    body.totalCount ??
+                    body.total ??
+                    rows.length;
+            } else if (Array.isArray(data)) {
+                rows = data;
+                totalCount = data.length;
+            } else {
+                throw new Error(
+                    (data as any)?.message ||
+                        "Failed to fetch circle-wise DTR statistics",
+                );
+            }
+
+            const resolvedPage =
+                pagination.currentPage ?? (data as any)?.page ?? page;
+            const resolvedLimit =
+                pagination.limit ??
+                pagination.pageSize ??
+                (data as any)?.pageSize ??
+                pageSize;
+
+            const mapped: TableData[] = rows.map((raw, idx) =>
+                mapCircleWiseRowToTableData(
+                    raw as Record<string, unknown>,
+                    (resolvedPage - 1) * resolvedLimit + idx + 1,
+                ),
+            );
+
+            setCircleWiseTableData(mapped);
+            setCircleWisePagination({
+                currentPage: resolvedPage,
+                totalPages: Math.max(
+                    1,
+                    Math.ceil(
+                        (totalCount || 0) /
+                            (resolvedLimit > 0 ? resolvedLimit : pageSize),
+                    ) || 1,
+                ),
+                totalCount: totalCount || 0,
+                limit: resolvedLimit,
+                hasNextPage:
+                    pagination.hasNextPage ??
+                    resolvedPage * resolvedLimit < (totalCount || 0),
+                hasPrevPage: pagination.hasPrevPage ?? resolvedPage > 1,
+            });
+            setFailedApis((prev) =>
+                prev.filter((api) => api.id !== "circleWiseStats"),
+            );
+        } catch {
+            setCircleWiseTableData([]);
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "circleWiseStats")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "circleWiseStats",
+                            name: "Circle-wise DTR Statistics",
+                            retryFunction: retryCircleWiseStatsAPI,
+                            errorMessage:
+                                "Failed to load Circle-wise DTR Statistics. Please try again.",
+                        },
+                    ];
+                }
+                return prev;
+            });
+        } finally {
+            setTimeout(() => {
+                setIsCircleWiseTableLoading(false);
             }, 1000);
         }
     };
@@ -1245,6 +1381,7 @@ const DTRDashboard: React.FC = () => {
         fetchDTRAlertsTrends();
         fetchMeterStatus();
         fetchAllDTRsForMap();
+        retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, 5);
     }, []);
 
     // Refetch chart data when chart time range changes
@@ -1394,6 +1531,82 @@ const DTRDashboard: React.FC = () => {
     const handleRowsPerPageChange = (limit: number) => {
         retryTableAPI(undefined, 1, limit, dtrTableSearch);
     };
+
+    const handleCircleWisePageChange = (page: number, limit?: number) => {
+        const pageSize =
+            typeof limit === "number" && limit > 0
+                ? limit
+                : circleWisePagination.limit || 5;
+        retryCircleWiseStatsAPI(lastSelectedId || undefined, page, pageSize);
+    };
+
+    const handleCircleWiseRowsPerPageChange = (limit: number) => {
+        retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, limit);
+    };
+
+    /** Federated Table shows `${limit} Per Page` on the trigger; hide real text so CSS ::after always reads "Select rows". */
+    useLayoutEffect(() => {
+        const applyStaticRowsLabel = () => {
+            const root = document.querySelector(".circle-wise-dtr-table");
+            if (!root) {
+                return;
+            }
+            root.querySelectorAll('div[role="combobox"]').forEach((combo) => {
+                const span =
+                    combo.querySelector(":scope > span.flex-1") ??
+                    combo.querySelector(':scope > span[class*="flex-1"]');
+                if (!(span instanceof HTMLElement)) {
+                    return;
+                }
+                span.style.setProperty("color", "transparent", "important");
+                span.style.setProperty("text-shadow", "none", "important");
+                span.style.setProperty("position", "relative", "important");
+            });
+        };
+
+        const mo = new MutationObserver(() => {
+            applyStaticRowsLabel();
+        });
+
+        const bind = () => {
+            applyStaticRowsLabel();
+            const r = document.querySelector(".circle-wise-dtr-table");
+            if (r) {
+                mo.observe(r, {
+                    subtree: true,
+                    childList: true,
+                    characterData: true,
+                });
+            }
+        };
+
+        bind();
+        let raf2 = 0;
+        const raf1 = requestAnimationFrame(() => {
+            bind();
+            raf2 = requestAnimationFrame(bind);
+        });
+        const t1 = window.setTimeout(bind, 120);
+        const t2 = window.setTimeout(bind, 400);
+        const t3 = window.setTimeout(bind, 1200);
+        const t4 = window.setTimeout(bind, 2000);
+
+        return () => {
+            mo.disconnect();
+            cancelAnimationFrame(raf1);
+            cancelAnimationFrame(raf2);
+            window.clearTimeout(t1);
+            window.clearTimeout(t2);
+            window.clearTimeout(t3);
+            window.clearTimeout(t4);
+        };
+    }, [
+        circleWisePagination.limit,
+        circleWisePagination.currentPage,
+        circleWisePagination.totalCount,
+        isCircleWiseTableLoading,
+        circleWiseTableData.length,
+    ]);
 
     const handleSearch = (searchTerm: string) => {
         setDtrTableSearch(searchTerm || "");
@@ -1692,6 +1905,11 @@ const DTRDashboard: React.FC = () => {
             );
             retryMeterStatusAPI(lastId || undefined);
             fetchAllDTRsForMap(lastId || undefined);
+            retryCircleWiseStatsAPI(
+                lastId || undefined,
+                1,
+                circleWisePagination.limit || 5,
+            );
         } catch (error) {
             // Error applying filters handled silently
         }
@@ -1717,6 +1935,7 @@ const DTRDashboard: React.FC = () => {
         retryChartAPI(undefined, selectedChartTimeRange.toLowerCase());
         retryMeterStatusAPI();
         fetchAllDTRsForMap();
+        retryCircleWiseStatsAPI(undefined, 1, 5);
     };
 
     // DTR statistics cards data - Using API data
@@ -2015,8 +2234,51 @@ const DTRDashboard: React.FC = () => {
         // { key: "status", label: "Status" },
     ];
 
+    const circleWiseTableColumns = [
+        { key: "sNo", label: "S.No" },
+        { key: "circle", label: "Circle" },
+        { key: "totalDTRs", label: "Total DTRs" },
+        { key: "totalLTFeeders", label: "Total LT Feeders" },
+        { key: "totalFuseBlown", label: "Total Fuse Blown" },
+        { key: "overloadedDTRs", label: "Overloaded DTRs" },
+        { key: "underloadedDTRs", label: "Underloaded DTRs" },
+        { key: "ltSideFuseBlown", label: "LT Side Fuse Blown" },
+        { key: "unbalancedDTRs", label: "Unbalanced DTRs" },
+        { key: "powerFailureFeeders", label: "Power Failure Feeders" },
+        { key: "htSideFuseBlown", label: "HT Side Fuse Blown" },
+        { key: "communicating", label: "Communicating" },
+        { key: "notCommunicating", label: "Non-Communicating" },
+        { key: "commPercentage", label: "Comm. %" },
+    ];
+
     return (
         <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <style>
+                {`
+                .circle-wise-dtr-table div[role="combobox"] > span.flex-1,
+                .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"] {
+                    position: relative !important;
+                }
+                .circle-wise-dtr-table div[role="combobox"] > span.flex-1::after,
+                .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"]::after {
+                    content: "Select rows";
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    white-space: nowrap;
+                    font-size: 0.875rem;
+                    line-height: 1.25rem;
+                    font-weight: 500;
+                    font-family: inherit;
+                    color: rgb(82 82 91) !important;
+                }
+                .dark .circle-wise-dtr-table div[role="combobox"] > span.flex-1::after,
+                .dark .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"]::after {
+                    color: rgb(212 212 216) !important;
+                }
+                `}
+            </style>
             <Page
                 sections={[
                     // Error Section - Above PageHeader
@@ -2324,6 +2586,46 @@ const DTRDashboard: React.FC = () => {
                                 },
                             ],
                         },
+                    },
+                    {
+                        layout: {
+                            type: "grid" as const,
+                            className:
+                                "w-full min-w-0 overflow-x-auto gap-4",
+                            columns: 2,
+                        },
+                        components: [
+                            {
+                                name: "Table",
+                                props: {
+                                    data: circleWiseTableData,
+                                    columns: circleWiseTableColumns,
+                                    className: "circle-wise-dtr-table",
+                                    showHeader: true,
+                                    headerTitle: "Circle-wise DTR Statistics",
+                                    searchable: false,
+                                    sortable: true,
+                                    pagination: true,
+                                    showPagination: true,
+                                    serverPagination: circleWisePagination,
+                                    totalCount: circleWisePagination.totalCount,
+                                    currentPage: circleWisePagination.currentPage,
+                                    totalPages: circleWisePagination.totalPages,
+                                    pageSize: circleWisePagination.limit,
+                                    itemsPerPage: circleWisePagination.limit,
+                                    rowsPerPageOptions: [5, 10, 15, 50],
+                                    loading: isCircleWiseTableLoading,
+                                    onPageChange: handleCircleWisePageChange,
+                                    onRowsPerPageChange:
+                                        handleCircleWiseRowsPerPageChange,
+                                    emptyMessage: "No data found",
+                                    showActions: false,
+                                    availableTimeRanges: [],
+                                    enableHorizontalScroll: true,
+                                },
+                                span: { col: 2, row: 1 },
+                            },
+                        ],
                     },
                     // DTRs Table section
                     {
