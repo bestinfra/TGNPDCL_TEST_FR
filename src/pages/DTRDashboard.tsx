@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
 }
@@ -35,14 +35,11 @@ function pickStat(
     return fallback;
 }
 
-/** Pass through API row fields; only `sNo` is derived for display order. */
-function mapCircleWiseRowToTableData(
-    row: Record<string, unknown>,
-    sNo: number,
-): TableData {
+/** Pass through API row; `serialNo` holds backend sNo — federated Table ignores row.sNo and recomputes index for key "sNo". */
+function mapCircleWiseRowToTableData(row: Record<string, unknown>): TableData {
     return {
         ...(row as TableData),
-        sNo,
+        serialNo: (row.sNo ?? row.serialNo) as TableData["serialNo"],
     };
 }
 
@@ -290,6 +287,9 @@ const DTRDashboard: React.FC = () => {
     });
     const [isCircleWiseTableLoading, setIsCircleWiseTableLoading] =
         useState(true);
+    /** Rows-per-page trigger label; federated Table only shows options when `serverPagination.limit` matches — NaN until user picks. */
+    const [circleWiseRowsPerPageLabel, setCircleWiseRowsPerPageLabel] =
+        useState("Select rows");
     const [dtrTableSearch, setDtrTableSearch] = useState("");
 
 
@@ -758,7 +758,7 @@ const DTRDashboard: React.FC = () => {
         try {
             const params = new URLSearchParams();
             params.append("page", String(page));
-            params.append("pageSize", String(pageSize));
+            params.append("limit", String(pageSize));
             if (lastSelectedId) {
                 params.append("hierarchyId", lastSelectedId);
             }
@@ -769,7 +769,6 @@ const DTRDashboard: React.FC = () => {
 
             let rows: any[] = [];
             let pagination: Record<string, any> = {};
-            let totalCount = 0;
 
             if (data && typeof data === "object" && !Array.isArray(data)) {
                 const body = data as Record<string, any>;
@@ -787,14 +786,16 @@ const DTRDashboard: React.FC = () => {
                     rows = body.circles;
                 }
                 pagination = body.pagination || {};
-                totalCount =
-                    pagination.totalCount ??
-                    body.totalCount ??
-                    body.total ??
-                    rows.length;
             } else if (Array.isArray(data)) {
                 rows = data;
-                totalCount = data.length;
+                pagination = {
+                    currentPage: 1,
+                    totalPages: 1,
+                    totalRecords: data.length,
+                    limit: pageSize,
+                    hasNextPage: false,
+                    hasPreviousPage: false,
+                };
             } else {
                 throw new Error(
                     (data as any)?.message ||
@@ -802,37 +803,25 @@ const DTRDashboard: React.FC = () => {
                 );
             }
 
-            const resolvedPage =
-                pagination.currentPage ?? (data as any)?.page ?? page;
-            const resolvedLimit =
-                pagination.limit ??
-                pagination.pageSize ??
-                (data as any)?.pageSize ??
-                pageSize;
+            const pg = pagination;
+            const resolvedPage = pg.currentPage ?? page;
+            const resolvedLimit = pg.limit ?? pageSize;
 
-            const mapped: TableData[] = rows.map((raw, idx) =>
-                mapCircleWiseRowToTableData(
-                    raw as Record<string, unknown>,
-                    (resolvedPage - 1) * resolvedLimit + idx + 1,
-                ),
+            const mapped: TableData[] = rows.map((raw) =>
+                mapCircleWiseRowToTableData(raw as Record<string, unknown>),
             );
 
             setCircleWiseTableData(mapped);
             setCircleWisePagination({
                 currentPage: resolvedPage,
-                totalPages: Math.max(
-                    1,
-                    Math.ceil(
-                        (totalCount || 0) /
-                            (resolvedLimit > 0 ? resolvedLimit : pageSize),
-                    ) || 1,
-                ),
-                totalCount: totalCount || 0,
+                totalPages: pg.totalPages ?? 1,
+                totalCount:
+                    pg.totalRecords ??
+                    pg.totalCount ??
+                    0,
                 limit: resolvedLimit,
-                hasNextPage:
-                    pagination.hasNextPage ??
-                    resolvedPage * resolvedLimit < (totalCount || 0),
-                hasPrevPage: pagination.hasPrevPage ?? resolvedPage > 1,
+                hasNextPage: Boolean(pg.hasNextPage),
+                hasPrevPage: Boolean(pg.hasPrevPage ?? pg.hasPreviousPage),
             });
             setFailedApis((prev) =>
                 prev.filter((api) => api.id !== "circleWiseStats"),
@@ -1533,6 +1522,9 @@ const DTRDashboard: React.FC = () => {
     };
 
     const handleCircleWisePageChange = (page: number, limit?: number) => {
+        if (typeof limit === "number" && limit > 0) {
+            setCircleWiseRowsPerPageLabel(`${limit} Per Page`);
+        }
         const pageSize =
             typeof limit === "number" && limit > 0
                 ? limit
@@ -1541,72 +1533,25 @@ const DTRDashboard: React.FC = () => {
     };
 
     const handleCircleWiseRowsPerPageChange = (limit: number) => {
+        setCircleWiseRowsPerPageLabel(`${limit} Per Page`);
         retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, limit);
     };
 
-    /** Federated Table shows `${limit} Per Page` on the trigger; hide real text so CSS ::after always reads "Select rows". */
-    useLayoutEffect(() => {
-        const applyStaticRowsLabel = () => {
-            const root = document.querySelector(".circle-wise-dtr-table");
-            if (!root) {
-                return;
-            }
-            root.querySelectorAll('div[role="combobox"]').forEach((combo) => {
-                const span =
-                    combo.querySelector(":scope > span.flex-1") ??
-                    combo.querySelector(':scope > span[class*="flex-1"]');
-                if (!(span instanceof HTMLElement)) {
-                    return;
-                }
-                span.style.setProperty("color", "transparent", "important");
-                span.style.setProperty("text-shadow", "none", "important");
-                span.style.setProperty("position", "relative", "important");
-            });
+    const circleWisePaginationForTable = useMemo(() => {
+        if (circleWiseRowsPerPageLabel === "Select rows") {
+            return {
+                ...circleWisePagination,
+                limit: Number.NaN as unknown as number,
+            };
+        }
+        const parsed = Number(String(circleWiseRowsPerPageLabel).split(/\s+/)[0]);
+        const coerced =
+            Number.isFinite(parsed) && parsed > 0 ? parsed : circleWisePagination.limit;
+        return {
+            ...circleWisePagination,
+            limit: coerced,
         };
-
-        const mo = new MutationObserver(() => {
-            applyStaticRowsLabel();
-        });
-
-        const bind = () => {
-            applyStaticRowsLabel();
-            const r = document.querySelector(".circle-wise-dtr-table");
-            if (r) {
-                mo.observe(r, {
-                    subtree: true,
-                    childList: true,
-                    characterData: true,
-                });
-            }
-        };
-
-        bind();
-        let raf2 = 0;
-        const raf1 = requestAnimationFrame(() => {
-            bind();
-            raf2 = requestAnimationFrame(bind);
-        });
-        const t1 = window.setTimeout(bind, 120);
-        const t2 = window.setTimeout(bind, 400);
-        const t3 = window.setTimeout(bind, 1200);
-        const t4 = window.setTimeout(bind, 2000);
-
-        return () => {
-            mo.disconnect();
-            cancelAnimationFrame(raf1);
-            cancelAnimationFrame(raf2);
-            window.clearTimeout(t1);
-            window.clearTimeout(t2);
-            window.clearTimeout(t3);
-            window.clearTimeout(t4);
-        };
-    }, [
-        circleWisePagination.limit,
-        circleWisePagination.currentPage,
-        circleWisePagination.totalCount,
-        isCircleWiseTableLoading,
-        circleWiseTableData.length,
-    ]);
+    }, [circleWiseRowsPerPageLabel, circleWisePagination]);
 
     const handleSearch = (searchTerm: string) => {
         setDtrTableSearch(searchTerm || "");
@@ -1888,6 +1833,8 @@ const DTRDashboard: React.FC = () => {
 
         setLastSelectedId(lastId);
 
+        setCircleWiseRowsPerPageLabel("Select rows");
+
         try {
             const params = new URLSearchParams();
             Object.entries(filterValues).forEach(([key, value]) => {
@@ -1926,6 +1873,7 @@ const DTRDashboard: React.FC = () => {
             substation: "all",
         });
         setLastSelectedId(null);
+        setCircleWiseRowsPerPageLabel("Select rows");
         await fetchFilterOptions();
 
         // Automatically refetch all data after reset
@@ -2235,7 +2183,7 @@ const DTRDashboard: React.FC = () => {
     ];
 
     const circleWiseTableColumns = [
-        { key: "sNo", label: "S.No" },
+        { key: "serialNo", label: "S.No", align: "center" as const },
         { key: "circle", label: "Circle" },
         { key: "totalDTRs", label: "Total DTRs" },
         { key: "totalLTFeeders", label: "Total LT Feeders" },
@@ -2255,27 +2203,25 @@ const DTRDashboard: React.FC = () => {
         <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <style>
                 {`
-                .circle-wise-dtr-table div[role="combobox"] > span.flex-1,
-                .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"] {
-                    position: relative !important;
+                /* Do not clip the federated Dropdown listbox (absolute); matches floating Latest Alerts behavior */
+                .circle-wise-dtr-table {
+                    overflow: visible !important;
                 }
-                .circle-wise-dtr-table div[role="combobox"] > span.flex-1::after,
-                .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"]::after {
-                    content: "Select rows";
-                    position: absolute;
-                    left: 0;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    white-space: nowrap;
-                    font-size: 0.875rem;
-                    line-height: 1.25rem;
-                    font-weight: 500;
-                    font-family: inherit;
-                    color: rgb(82 82 91) !important;
+                .circle-wise-dtr-table .font-manrope.flex.flex-row.justify-between {
+                    overflow: visible !important;
+                    position: relative;
+                    z-index: 40;
                 }
-                .dark .circle-wise-dtr-table div[role="combobox"] > span.flex-1::after,
-                .dark .circle-wise-dtr-table div[role="combobox"] > span[class*="flex-1"]::after {
-                    color: rgb(212 212 216) !important;
+                .circle-wise-dtr-table .font-manrope .w-40 {
+                    position: relative;
+                    z-index: 50;
+                    overflow: visible !important;
+                }
+                .circle-wise-dtr-table .relative.w-full.flex.flex-col.gap-1 {
+                    overflow: visible !important;
+                }
+                .circle-wise-dtr-table [role="listbox"] {
+                    z-index: 200 !important;
                 }
                 `}
             </style>
@@ -2590,8 +2536,7 @@ const DTRDashboard: React.FC = () => {
                     {
                         layout: {
                             type: "grid" as const,
-                            className:
-                                "w-full min-w-0 overflow-x-auto gap-4",
+                            className: "w-full min-w-0 gap-4",
                             columns: 2,
                         },
                         components: [
@@ -2607,7 +2552,7 @@ const DTRDashboard: React.FC = () => {
                                     sortable: true,
                                     pagination: true,
                                     showPagination: true,
-                                    serverPagination: circleWisePagination,
+                                    serverPagination: circleWisePaginationForTable,
                                     totalCount: circleWisePagination.totalCount,
                                     currentPage: circleWisePagination.currentPage,
                                     totalPages: circleWisePagination.totalPages,
