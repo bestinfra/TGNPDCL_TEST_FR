@@ -1,12 +1,13 @@
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
 import { lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
+import {
+    fetchAssetBulkUploadTemplateMeta,
+    postAssetsBulkUpload,
+} from "../api/apiUtils";
+import { downloadConsumerBulkUploadTemplateXlsx } from "../utils/excelExport";
 const Page = lazy(() => import("SuperAdmin/Page"));
-
-type UploadFormValues = {
-    uploadFile: File;
-};
 
 interface HierarchyNode {
     hierarchy_id: string | number;
@@ -435,7 +436,9 @@ const DownloadIcon = () => (
 
 export default function AssetManagment() {
     const navigate = useNavigate();
-    const [showUpload, setShowUpload] = useState(false);
+    const [bulkFlowLoading, setBulkFlowLoading] = useState(false);
+    const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+    const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([]);
     const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
     const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>(
@@ -2022,6 +2025,245 @@ export default function AssetManagment() {
         return flattened;
     };
 
+    const clearBulkUploadErrors = useCallback(() => {
+        setBulkUploadErrors([]);
+    }, []);
+
+    const removeBulkUploadError = useCallback((indexToRemove: number) => {
+        setBulkUploadErrors((prev) =>
+            prev.filter((_, index) => index !== indexToRemove),
+        );
+    }, []);
+
+    const handleCloseBulkUploadModal = useCallback(() => {
+        setIsBulkUploadModalOpen(false);
+    }, []);
+
+    const handleDownloadBulkTemplate = useCallback(async () => {
+        try {
+            setBulkFlowLoading(true);
+            const meta = await fetchAssetBulkUploadTemplateMeta();
+            downloadConsumerBulkUploadTemplateXlsx(
+                meta,
+                "meter_bulk_upload_template.xlsx",
+            );
+        } catch (error) {
+            console.error("Error downloading bulk upload template:", error);
+            setBulkUploadErrors((prev) => {
+                if (!prev.includes("Failed to export template")) {
+                    return [...prev, "Failed to export template"];
+                }
+                return prev;
+            });
+        } finally {
+            setBulkFlowLoading(false);
+        }
+    }, []);
+
+    const handleBulkUploadSubmit = useCallback(
+        async (formData: Record<string, unknown>) => {
+            let uploadFile = formData?.uploadFile as File | FileList | undefined;
+            if (uploadFile instanceof FileList && uploadFile.length > 0) {
+                uploadFile = uploadFile[0];
+            }
+
+            if (!uploadFile || !(uploadFile instanceof File)) {
+                setBulkUploadErrors((prev) => [...prev, "Please upload a file"]);
+                return;
+            }
+
+            const allowedTypes = [".xlsx", ".xls", ".csv"];
+            const fileExtension =
+                "." + uploadFile.name.split(".").pop()?.toLowerCase();
+
+            if (!allowedTypes.includes(fileExtension)) {
+                setBulkUploadErrors((prev) => [
+                    ...prev,
+                    "Please upload Excel (.xlsx, .xls) or CSV (.csv) files only",
+                ]);
+                return;
+            }
+
+            try {
+                setBulkFlowLoading(true);
+                console.log("Upload Request:", formData);
+
+                const { parsed, raw } = await postAssetsBulkUpload(uploadFile);
+                const response =
+                    raw && typeof raw === "object"
+                        ? (raw as Record<string, unknown>)
+                        : {};
+                console.log("UPLOAD RESPONSE:", response);
+                console.log("UPLOAD RESPONSE DATA:", response.data);
+                console.log("[BulkUpload] Parsed summary:", {
+                    ok: parsed.ok,
+                    created: parsed.created,
+                    failed: parsed.failed,
+                });
+
+                const hasAnyOutcome =
+                    parsed.created > 0 ||
+                    parsed.failed > 0 ||
+                    parsed.failedRows.length > 0;
+
+                /** HTTP layer already OK; backend may use success:false for partial failures. */
+                const showSuccessUi =
+                    parsed.ok || hasAnyOutcome;
+
+                if (showSuccessUi) {
+                    const partialNote =
+                        !parsed.ok && hasAnyOutcome
+                            ? "Note: response indicated incomplete success.\n\n"
+                            : "";
+                    const failedCount = Math.max(
+                        parsed.failed,
+                        parsed.failedRows.length,
+                    );
+                    const firstErr = parsed.failedRows[0]?.error ?? "";
+                    const isDuplicateMeterMsg =
+                        /meter\s+already\s+exist/i.test(firstErr);
+                    const duplicateMessage =
+                        failedCount > 1
+                            ? "Meters already exist"
+                            : "Meter already exists";
+                    const failureDetailText =
+                        parsed.failed > 0 && parsed.failedRows.length
+                            ? isDuplicateMeterMsg
+                                ? duplicateMessage
+                                : firstErr
+                            : "";
+                    const summary =
+                        partialNote +
+                        `${parsed.message}\nCreated: ${parsed.created}\nFailed: ${parsed.failed}` +
+                        (failureDetailText ? `\n\n${failureDetailText}` : "");
+                    window.alert(summary);
+                    setIsBulkUploadModalOpen(false);
+                    await fetchMeterData(
+                        currentPage,
+                        meterTableLimit,
+                        "",
+                        lastSelectedId,
+                    );
+                    await fetchAssets(lastSelectedId ?? undefined);
+                } else {
+                    throw new Error(parsed.message || "Upload failed");
+                }
+            } catch (error) {
+                console.error("Bulk upload error:", error);
+                setBulkUploadErrors((prev) => [
+                    ...prev,
+                    error instanceof Error
+                        ? error.message
+                        : "Bulk upload failed",
+                ]);
+            } finally {
+                setBulkFlowLoading(false);
+            }
+        },
+        [
+            currentPage,
+            meterTableLimit,
+            lastSelectedId,
+            fetchMeterData,
+            fetchAssets,
+        ],
+    );
+
+    const bulkUploadErrorSections = useMemo(() => {
+        if (bulkUploadErrors.length === 0) return [];
+        return [
+            {
+                layout: {
+                    type: "column" as const,
+                    gap: "gap-4",
+                },
+                rows: [
+                    {
+                        layout: "column" as const,
+                        gap: "gap-4",
+                        columns: [
+                            {
+                                name: "Error",
+                                props: {
+                                    visibleErrors: bulkUploadErrors,
+                                    onRetry: clearBulkUploadErrors,
+                                    onClose: () => removeBulkUploadError(0),
+                                    showRetry: true,
+                                    maxVisibleErrors: 3,
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ];
+    }, [bulkUploadErrors, clearBulkUploadErrors, removeBulkUploadError]);
+
+    const bulkUploadModalSection = useMemo(
+        () => ({
+            layout: {
+                type: "column" as const,
+                gap: "gap-0",
+                className: "w-full",
+            },
+            components: [
+                {
+                    name: "Modal",
+                    props: {
+                        isOpen: isBulkUploadModalOpen,
+                        onClose: handleCloseBulkUploadModal,
+                        title: "Bulk Upload",
+                        size: "sm",
+                        showCloseIcon: true,
+                        backdropClosable: true,
+                        centered: true,
+                        showForm: true,
+                        formFields: [
+                            {
+                                type: "chosenfile" as const,
+                                name: "uploadFile",
+                                required: true,
+                                accept: ".xlsx,.xls,.csv",
+                                placeholder:
+                                    "Drag & drop here, or click to browse",
+                                dragAndDrop: true,
+                                onChange: () => {},
+                                downloadLink: {
+                                    text: "Download Template",
+                                    icon: "download",
+                                    onClick: handleDownloadBulkTemplate,
+                                },
+                            },
+                        ],
+                        onSave: handleBulkUploadSubmit,
+                        saveButtonLabel: "Submit",
+                        cancelButtonLabel: "Cancel",
+                        gridLayout: {
+                            gridRows: 2,
+                            gridColumns: 1,
+                            gap: "gap-4",
+                        },
+                    },
+                },
+            ],
+        }),
+        [
+            isBulkUploadModalOpen,
+            handleCloseBulkUploadModal,
+            handleDownloadBulkTemplate,
+            handleBulkUploadSubmit,
+        ],
+    );
+
+    const bulkUploadButton = useMemo(
+        () => ({
+            label: "Bulk Upload",
+            variant: "secondary" as const,
+            onClick: () => setIsBulkUploadModalOpen(true),
+        }),
+        [],
+    );
+
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <Page
@@ -2060,165 +2302,54 @@ export default function AssetManagment() {
                               },
                           ]
                         : []),
+                    ...bulkUploadErrorSections,
 
                     {
                         layout: {
-                            type: "column",
-                            gap: "gap-4",
-                            rows: [
-                                {
-                                    layout: "row",
-                                    columns: [
+                            type: "grid" as const,
+                            columns: 1,
+                            className: "",
+                        },
+                        components: [
+                            {
+                                name: "PageHeader",
+                                props: {
+                                    title: "Meter Management",
+                                    onBackClick: () =>
+                                        window.history.back(),
+                                    backButtonText:
+                                        "Back to Dashboard",
+                                    showMenu: true,
+                                    menuItems: [
                                         {
-                                            name: "PageHeader",
-                                            props: {
-                                                title: "Meter Management",
-                                                onBackClick: () =>
-                                                    window.history.back(),
-                                                backButtonText:
-                                                    "Back to Dashboard",
-                                                showMenu: true,
-                                                menuItems: [
-                                                    {
-                                                        id: "Table View",
-                                                        label: "Table View",
-                                                    },
-                                                    {
-                                                        id: "HierarchyView",
-                                                        label: "Hierarchy View",
-                                                    },
-                                                ],
-                                                onMenuItemClick:
-                                                    handleMenuClick,
+                                            id: "Table View",
+                                            label: "Table View",
+                                        },
+                                        {
+                                            id: "HierarchyView",
+                                            label: "Hierarchy View",
+                                        },
+                                    ],
+                                    onMenuItemClick:
+                                        handleMenuClick,
 
-                                                // ✅ THIS IS THE KEY CHANGE
-                                                buttons: [
-                                                    {
-                                                        label: isExporting
-                                                            ? "Exporting..."
-                                                            : "Export",
-                                                        variant: "primary",
-                                                        onClick:
-                                                            handleExportData,
-                                                        disabled: isExporting,
-                                                    },
-                                                    // {
-                                                    //     label: "Upload",
-                                                    //     variant: "secondary",
-                                                    //     onClick: () => {
-                                                    //         setShowUpload(true);
-                                                    //     },
-                                                    // },
-                                                ],
-                                            },
+                                    buttons: [
+                                        bulkUploadButton,
+                                        {
+                                            label: isExporting
+                                                ? "Exporting..."
+                                                : "Export",
+                                            variant: "primary",
+                                            onClick:
+                                                handleExportData,
+                                            disabled: isExporting,
                                         },
                                     ],
                                 },
-                            ],
-                        },
+                            },
+                        ],
                     },
-                    {
-                        layout: {
-                            type: "column",
-                            rows: [
-                                {
-                                    layout: "row",
-                                    columns: [
-                                        {
-                                            name: "Modal",
-                                            props: {
-                                                isOpen: showUpload,
-                                                onClose: () =>
-                                                    setShowUpload(false),
-                                                title: "Upload File",
-                                                size: "lg",
-                                                showCloseIcon: true,
-                                                backdropClosable: true,
-                                                centered: true,
-                                                showForm: true,
-
-                                                formFields: [
-                                                    {
-                                                        name: "uploadFile",
-                                                        type: "chosenfile",
-                                                        label: "Upload File",
-                                                        dragAndDrop: true,
-                                                        accept: ".csv,.xlsx,.xls",
-                                                        required: true,
-                                                        colSpan: 3,
-                                                        rowSpan: 1,
-                                                    },
-                                                ],
-
-                                                onSave: async (
-                                                    values: UploadFormValues,
-                                                ) => {
-                                                    try {
-                                                        const file =
-                                                            values.uploadFile;
-
-                                                        if (!file) {
-                                                            alert(
-                                                                "Please select a file",
-                                                            );
-                                                            return;
-                                                        }
-
-                                                        const formData =
-                                                            new FormData();
-                                                        formData.append(
-                                                            "file",
-                                                            file,
-                                                        );
-
-                                                        const response =
-                                                            await fetch(
-                                                                "http://localhost:4249/api/assets/bulk-upload",
-                                                                {
-                                                                    method: "POST",
-                                                                    body: formData,
-                                                                    credentials:
-                                                                        "include",
-                                                                },
-                                                            );
-
-                                                        const data =
-                                                            await response.json();
-                                                        console.log(
-                                                            "UPLOAD RESPONSE 👉",
-                                                            data,
-                                                        );
-
-                                                        if (response.ok) {
-                                                            setShowUpload(
-                                                                false,
-                                                            );
-                                                        } else {
-                                                            alert(
-                                                                data.message ||
-                                                                    "Upload failed",
-                                                            );
-                                                        }
-                                                    } catch (error) {
-                                                        console.error(
-                                                            "UPLOAD ERROR 👉",
-                                                            error,
-                                                        );
-                                                        alert(
-                                                            "Something went wrong while uploading",
-                                                        );
-                                                    }
-                                                },
-
-                                                saveButtonLabel: "Submit",
-                                                cancelButtonLabel: "Cancel",
-                                            },
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    },
+                    bulkUploadModalSection,
                     ...(viewMode === "hierarchy"
                         ? [
                               // Filter Section for Hierarchy View
@@ -2752,8 +2883,9 @@ export default function AssetManagment() {
                                                           loading:
                                                               viewMode ===
                                                               "table"
-                                                                  ? isLoadingMeterData
-                                                                  : false,
+                                                                  ? isLoadingMeterData ||
+                                                                    bulkFlowLoading
+                                                                  : bulkFlowLoading,
                                                           emptyMessage:
                                                               viewMode ===
                                                               "table"

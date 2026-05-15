@@ -41,11 +41,235 @@ function pickStat(
     return fallback;
 }
 
-/** Pass through API row; `serialNo` holds backend sNo — federated Table ignores row.sNo and recomputes index for key "sNo". */
-function mapCircleWiseRowToTableData(row: Record<string, unknown>): TableData {
+/** Top-level API string fields only; skips empty and placeholder tokens so the next key can supply the value. */
+function hierarchyStr(raw: Record<string, unknown>, ...keys: string[]): string {
+    for (const k of keys) {
+        const v = raw[k];
+        if (v === undefined || v === null) continue;
+        const s = String(v).trim();
+        if (s === "") continue;
+        const lower = s.toLowerCase();
+        if (
+            lower === "na" ||
+            lower === "n/a" ||
+            lower === "null" ||
+            lower === "undefined"
+        ) {
+            continue;
+        }
+        return s;
+    }
+    return "";
+}
+
+/** Same as `hierarchyStr` on `raw`, then on optional one-level objects if present. */
+function hierarchyStrLayered(
+    raw: Record<string, unknown>,
+    ...keys: string[]
+): string {
+    const direct = hierarchyStr(raw, ...keys);
+    if (direct !== "") return direct;
+    for (const nk of ["hierarchy", "organization", "location"] as const) {
+        const nest = raw[nk];
+        if (!nest || typeof nest !== "object" || Array.isArray(nest)) continue;
+        const inner = hierarchyStr(nest as Record<string, unknown>, ...keys);
+        if (inner !== "") return inner;
+    }
+    return "";
+}
+
+function hierarchyScalar(
+    raw: Record<string, unknown>,
+    ...keys: string[]
+): string | number {
+    for (const k of keys) {
+        const v = raw[k];
+        if (v === undefined || v === null || v === "") continue;
+        if (typeof v === "number" && !Number.isNaN(v)) return v;
+        return String(v);
+    }
+    return "";
+}
+
+function mapCircleWiseApiRowToDetailTableData(
+    raw: Record<string, unknown>,
+    index: number,
+): TableData {
+    console.log("RAW ROW", raw);
+    const serial =
+        raw.serialNo ??
+        raw.sNo ??
+        raw.slNo ??
+        raw.s_no ??
+        raw.rowIndex ??
+        index + 1;
     return {
-        ...(row as TableData),
-        serialNo: (row.sNo ?? row.serialNo) as TableData["serialNo"],
+        serialNo: serial as TableData["serialNo"],
+        discom:
+            hierarchyStr(raw, "discom", "discomName", "discom_name") ||
+            "TGNPDCL",
+        circle: hierarchyStrLayered(
+            raw,
+            "circle",
+            "circleName",
+            "circle_name",
+            "CIRCLE",
+            "CIRCLE_NAME",
+            "circleTitle",
+            "circle_title",
+            "circle_nm",
+            "circleNm",
+            "circleLabel",
+            "circle_label",
+            "cir_name",
+            "cirName",
+            "org_circle_name",
+            "orgCircleName",
+            "circle_code",
+        ),
+        division: hierarchyStrLayered(
+            raw,
+            "division",
+            "divisionName",
+            "division_name",
+            "DIVISION",
+            "DIVISION_NAME",
+            "divisionTitle",
+            "division_title",
+            "division_nm",
+            "divisionNm",
+            "div_name",
+            "divName",
+            "org_division_name",
+            "orgDivisionName",
+            "division_code",
+        ),
+        subDivision: hierarchyStrLayered(
+            raw,
+            "subDivision",
+            "sub_division",
+            "subDivisionName",
+            "subdivision",
+            "SUB_DIVISION",
+            "sub_division_name",
+            "subdivision_name",
+            "subDivision_title",
+            "sub_div_nm",
+            "subdiv_name",
+            "subDivName",
+            "subdiv_nm",
+            "sub_div_name",
+            "org_sub_division_name",
+            "sub_division_code",
+        ),
+        section: hierarchyStrLayered(
+            raw,
+            "section",
+            "sectionName",
+            "section_name",
+            "SECTION",
+            "SECTION_NAME",
+            "sec_name",
+            "secName",
+            "section_nm",
+            "sectionNm",
+            "sectionTitle",
+            "section_title",
+            "section_code",
+            "sec_code",
+        ),
+        substation: hierarchyStrLayered(
+            raw,
+            "substation",
+            "substationName",
+            "sub_station",
+            "substation_name",
+            "SUBSTATION",
+            "SUBSTATION_NAME",
+            "ss_name",
+            "ssName",
+            "substation_title",
+            "substationTitle",
+            "substation_nm",
+            "substationNm",
+            "ss_nm",
+            "ss_title",
+            "substation_code",
+            "ss_code",
+        ),
+        feeder: hierarchyStrLayered(
+            raw,
+            "feeder",
+            "feederName",
+            "feeder_name",
+            "FEEDER",
+            "FEEDER_NAME",
+            "feeder_title",
+            "feederTitle",
+            "feeder_nm",
+            "feederNm",
+            "feederNo",
+            "feeder_no",
+            "fdr_name",
+            "fdrName",
+            "fdr_title",
+            "feeder_code",
+            "feederId",
+            "feeder_id",
+        ),
+        dtrLocation: hierarchyStr(
+            raw,
+            "dtrLocation",
+            "dtr_location",
+            "location",
+            "dtrLocationName",
+            "dtrName",
+            "dtr_name",
+        ),
+        dtrNumber: hierarchyStr(
+            raw,
+            "dtrNumber",
+            "dtr_number",
+            "dtrNo",
+            "dtr_id",
+            "dtrId",
+        ),
+        meterNumber: hierarchyStr(
+            raw,
+            "meterNumber",
+            "meter_number",
+            "meterNo",
+            "meterSlNo",
+        ),
+        capacityKva: hierarchyScalar(
+            raw,
+            "capacityKva",
+            "capacity_kva",
+            "capacity",
+            "kva",
+        ),
+        meterStatus:
+            hierarchyStr(
+                raw,
+                "meterStatus",
+                "meter_status",
+                "meterStatusName",
+            ) || "—",
+        commStatus:
+            hierarchyStr(
+                raw,
+                "commStatus",
+                "communicationStatus",
+                "comm_status",
+            ) || "—",
+        lastCommunicationDate:
+            hierarchyStr(
+                raw,
+                "lastCommunicationDate",
+                "last_communication_date",
+                "lastCommunication",
+                "last_communication",
+            ) || "—",
     };
 }
 
@@ -306,8 +530,7 @@ const DTRDashboard: React.FC = () => {
     const [circleWiseRowsPerPageLabel, setCircleWiseRowsPerPageLabel] =
         useState("Select rows");
     const [dtrTableSearch, setDtrTableSearch] = useState("");
-
-
+    const [circleWiseSearchTerm, setCircleWiseSearchTerm] = useState("");
 
     const [chartMonths, setChartMonths] = useState<string[]>(
         dummyChartData.months,
@@ -768,75 +991,94 @@ const DTRDashboard: React.FC = () => {
         lastSelectedId?: string | null,
         page = 1,
         pageSize = 5,
+        searchOverride?: string,
     ) => {
         setIsCircleWiseTableLoading(true);
         try {
+            const searchTerm = (searchOverride ?? circleWiseSearchTerm).trim();
             const params = new URLSearchParams();
             params.append("page", String(page));
-            params.append("limit", String(pageSize));
+            params.append("pageSize", String(pageSize));
             if (lastSelectedId) {
                 params.append("hierarchyId", lastSelectedId);
             }
-
+            if (searchTerm) {
+                params.append("search", searchTerm);
+            }
             const data = await apiClient.get(
-                `/dtrs/circle-wise-stats?${params.toString()}`,
+                `/dtrs/all-meters?${params.toString()}`,
             );
 
-            let rows: any[] = [];
-            let pagination: Record<string, any> = {};
-
-            if (data && typeof data === "object" && !Array.isArray(data)) {
-                const body = data as Record<string, any>;
-                if (body.success === false) {
-                    throw new Error(
-                        body.message ||
-                            "Failed to fetch circle-wise DTR statistics",
-                    );
-                }
-                if (Array.isArray(body.data)) {
-                    rows = body.data;
-                } else if (Array.isArray(body.rows)) {
-                    rows = body.rows;
-                } else if (Array.isArray(body.circles)) {
-                    rows = body.circles;
-                }
-                pagination = body.pagination || {};
-            } else if (Array.isArray(data)) {
-                rows = data;
-                pagination = {
-                    currentPage: 1,
-                    totalPages: 1,
-                    totalRecords: data.length,
-                    limit: pageSize,
-                    hasNextPage: false,
-                    hasPreviousPage: false,
-                };
-            } else {
+            if (!data || typeof data !== "object" || data.success === false) {
                 throw new Error(
-                    (data as any)?.message ||
-                        "Failed to fetch circle-wise DTR statistics",
+                    (data as { message?: string })?.message ||
+                        "Failed to fetch hierarchy table data",
                 );
             }
 
-            const pg = pagination;
-            const resolvedPage = pg.currentPage ?? page;
-            const resolvedLimit = pg.limit ?? pageSize;
+            const rows = Array.isArray(data.data) ? data.data : [];
 
-            const mapped: TableData[] = rows.map((raw) =>
-                mapCircleWiseRowToTableData(raw as Record<string, unknown>),
+            const pg = (data.pagination || {}) as Record<string, unknown>;
+
+            const resolvedLimit =
+                (typeof pg.limit === "number" && pg.limit > 0
+                    ? pg.limit
+                    : null) ??
+                (typeof pg.pageSize === "number" && pg.pageSize > 0
+                    ? pg.pageSize
+                    : null) ??
+                pageSize;
+
+            const tableRows = rows.map((raw: unknown, i: number) =>
+                mapCircleWiseApiRowToDetailTableData(
+                    raw as Record<string, unknown>,
+                    i,
+                ),
             );
 
-            setCircleWiseTableData(mapped);
+            const resolvedPage =
+                (typeof pg.currentPage === "number" && pg.currentPage > 0
+                    ? pg.currentPage
+                    : null) ?? page;
+
+            const totalCountRaw =
+                pg.totalCount ?? pg.totalRecords ?? tableRows.length;
+            const totalCount =
+                typeof totalCountRaw === "number"
+                    ? totalCountRaw
+                    : Number(totalCountRaw) || tableRows.length;
+
+            const totalPagesRaw = pg.totalPages;
+            const totalPages =
+                typeof totalPagesRaw === "number" && totalPagesRaw > 0
+                    ? totalPagesRaw
+                    : Math.max(
+                          1,
+                          Math.ceil(totalCount / Math.max(1, resolvedLimit)),
+                      );
+
+            const derivedHasNext =
+                resolvedPage * resolvedLimit < totalCount;
+            const hasNextPage =
+                pg.hasNextPage !== undefined && pg.hasNextPage !== null
+                    ? Boolean(pg.hasNextPage)
+                    : derivedHasNext;
+            const hasPrevPage =
+                pg.hasPrevPage !== undefined && pg.hasPrevPage !== null
+                    ? Boolean(pg.hasPrevPage)
+                    : pg.hasPreviousPage !== undefined &&
+                        pg.hasPreviousPage !== null
+                      ? Boolean(pg.hasPreviousPage)
+                      : resolvedPage > 1;
+
+            setCircleWiseTableData(tableRows);
             setCircleWisePagination({
                 currentPage: resolvedPage,
-                totalPages: pg.totalPages ?? 1,
-                totalCount:
-                    pg.totalRecords ??
-                    pg.totalCount ??
-                    0,
+                totalPages,
+                totalCount,
                 limit: resolvedLimit,
-                hasNextPage: Boolean(pg.hasNextPage),
-                hasPrevPage: Boolean(pg.hasPrevPage ?? pg.hasPreviousPage),
+                hasNextPage,
+                hasPrevPage,
             });
             setFailedApis((prev) =>
                 prev.filter((api) => api.id !== "circleWiseStats"),
@@ -1552,6 +1794,23 @@ const DTRDashboard: React.FC = () => {
         retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, limit);
     };
 
+    const handleCircleWiseSearch = (searchTerm: string) => {
+        const term = searchTerm || "";
+        setCircleWiseSearchTerm(term);
+        const lim =
+            circleWiseRowsPerPageLabel === "Select rows"
+                ? circleWisePagination.limit || 5
+                : Number(String(circleWiseRowsPerPageLabel).split(/\s+/)[0]) ||
+                  circleWisePagination.limit ||
+                  5;
+        void retryCircleWiseStatsAPI(
+            lastSelectedId || undefined,
+            1,
+            lim,
+            term,
+        );
+    };
+
     const circleWisePaginationForTable = useMemo(() => {
         if (circleWiseRowsPerPageLabel === "Select rows") {
             return {
@@ -1604,19 +1863,37 @@ const DTRDashboard: React.FC = () => {
     const circleWiseTableColumns = useMemo(
         () => [
             { key: "serialNo", label: "S.No", align: "center" as const },
+            { key: "discom", label: "DISCOM" },
             { key: "circle", label: "Circle" },
-            { key: "totalDTRs", label: "Total DTRs" },
-            { key: "totalLTFeeders", label: "Total LT Feeders" },
-            { key: "totalFuseBlown", label: "Total Fuse Blown" },
-            { key: "overloadedDTRs", label: "Overloaded DTRs" },
-            { key: "underloadedDTRs", label: "Underloaded DTRs" },
-            { key: "ltSideFuseBlown", label: "LT Side Fuse Blown" },
-            { key: "unbalancedDTRs", label: "Unbalanced DTRs" },
-            { key: "powerFailureFeeders", label: "Power Failure Feeders" },
-            { key: "htSideFuseBlown", label: "HT Side Fuse Blown" },
-            { key: "communicating", label: "Communicating" },
-            { key: "notCommunicating", label: "Non-Communicating" },
-            { key: "commPercentage", label: "Comm. %" },
+            { key: "division", label: "Division" },
+            { key: "subDivision", label: "Sub-Division" },
+            { key: "section", label: "Section" },
+            { key: "substation", label: "Substation" },
+            { key: "feeder", label: "Feeder" },
+            { key: "dtrLocation", label: "DTR Location" },
+            { key: "dtrNumber", label: "DTR Number" },
+            { key: "meterNumber", label: "Meter Number" },
+            { key: "capacityKva", label: "Capacity (kVA)" },
+            {
+                key: "meterStatus",
+                label: "Meter Status",
+                statusIndicator: {},
+                isActive: (
+                    value: string | number | boolean | null | undefined,
+                ) => String(value).toLowerCase() === "active",
+            },
+            {
+                key: "commStatus",
+                label: "Communication Status",
+                statusIndicator: {},
+                isActive: (
+                    value: string | number | boolean | null | undefined,
+                ) => String(value).toLowerCase() === "active",
+            },
+            {
+                key: "lastCommunicationDate",
+                label: "Last Communication Date",
+            },
         ],
         [],
     );
@@ -2007,6 +2284,7 @@ const DTRDashboard: React.FC = () => {
         });
         setLastSelectedId(null);
         setCircleWiseRowsPerPageLabel("Select rows");
+        setCircleWiseSearchTerm("");
         await fetchFilterOptions();
 
         // Automatically refetch all data after reset
@@ -2339,33 +2617,9 @@ const DTRDashboard: React.FC = () => {
                 .circle-wise-dtr-table [role="listbox"] {
                     z-index: 200 !important;
                 }
-                .circle-wise-dtr-table tbody td[data-label="Total DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="Total LT Feeders"],
-                .circle-wise-dtr-table tbody td[data-label="Total Fuse Blown"],
-                .circle-wise-dtr-table tbody td[data-label="Overloaded DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="Underloaded DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="LT Side Fuse Blown"],
-                .circle-wise-dtr-table tbody td[data-label="Unbalanced DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="Power Failure Feeders"],
-                .circle-wise-dtr-table tbody td[data-label="HT Side Fuse Blown"],
-                .circle-wise-dtr-table tbody td[data-label="Communicating"],
-                .circle-wise-dtr-table tbody td[data-label="Non-Communicating"],
-                .circle-wise-dtr-table tbody td[data-label="Comm. %"] {
-                    cursor: pointer;
-                }
-                .circle-wise-dtr-table tbody td[data-label="Total DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Total LT Feeders"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Total Fuse Blown"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Overloaded DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Underloaded DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="LT Side Fuse Blown"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Unbalanced DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Power Failure Feeders"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="HT Side Fuse Blown"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Communicating"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Non-Communicating"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Comm. %"]:hover {
-                    background-color: rgba(128, 128, 128, 0.08);
+                .circle-wise-dtr-table .overflow-x-auto,
+                .circle-wise-dtr-table table {
+                    min-width: max-content;
                 }
                 `}
             </style>
@@ -2689,10 +2943,10 @@ const DTRDashboard: React.FC = () => {
                                 props: {
                                     data: circleWiseTableData,
                                     columns: circleWiseTableColumns,
-                                    className: "circle-wise-dtr-table",
+                                    className: "circle-wise-dtr-table min-w-0",
                                     showHeader: true,
                                     headerTitle: "Circle-wise DTR Statistics",
-                                    searchable: false,
+                                    searchable: true,
                                     sortable: true,
                                     pagination: true,
                                     showPagination: true,
@@ -2702,11 +2956,12 @@ const DTRDashboard: React.FC = () => {
                                     totalPages: circleWisePagination.totalPages,
                                     pageSize: circleWisePagination.limit,
                                     itemsPerPage: circleWisePagination.limit,
-                                    rowsPerPageOptions: [5, 10, 15, 50],
+                                    rowsPerPageOptions: [5, 10, 15, 25, 50],
                                     loading: isCircleWiseTableLoading,
                                     onPageChange: handleCircleWisePageChange,
                                     onRowsPerPageChange:
                                         handleCircleWiseRowsPerPageChange,
+                                    onSearch: handleCircleWiseSearch,
                                     emptyMessage: "No data found",
                                     showActions: false,
                                     availableTimeRanges: [],
