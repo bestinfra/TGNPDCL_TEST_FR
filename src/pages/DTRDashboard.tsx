@@ -6,7 +6,6 @@ import React, {
     useCallback,
     useRef,
 } from "react";
-import * as XLSX from "xlsx";
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
 }
@@ -50,206 +49,14 @@ function mapCircleWiseRowToTableData(row: Record<string, unknown>): TableData {
     };
 }
 
-/**
- * Same `type` values as Circle Card `buildDtrTableUrl(...)` / `DTRTable` query (`cardType`).
- * Circle-wise export calls the same list endpoints with `hierarchyId` = row circle id instead of navigating.
- */
-const circleWiseColumnKeyToCardTableType = {
-    totalDTRs: "total-dtrs",
-    totalLTFeeders: "total-lt-feeders",
-    totalFuseBlown: "fuse-blown",
-    overloadedDTRs: "overloaded-feeders",
-    underloadedDTRs: "underloaded-feeders",
-    ltSideFuseBlown: "lt-fuse-blown",
-    unbalancedDTRs: "unbalanced-dtrs",
-    powerFailureFeeders: "power-failure-feeders",
-    htSideFuseBlown: "ht-fuse-blown",
-} as const;
-
-type CircleWiseExportableColumnKey = keyof typeof circleWiseColumnKeyToCardTableType;
-
-/** Same `type` as Communication Status PieChart → DTRTable for meter lists. */
-const circleWiseCommCountColumnKeyToCardType = {
-    communicating: "communicating-meters",
-    notCommunicating: "non-communicating-meters",
-} as const;
-
-type CircleWiseCommCountColumnKey = keyof typeof circleWiseCommCountColumnKeyToCardType;
-
-/** All circle-wise columns that support Excel export on click. */
-type CircleWiseExcelExportColumnKey =
-    | CircleWiseExportableColumnKey
-    | CircleWiseCommCountColumnKey
-    | "commPercentage";
-
-type DtrCircleCardDrillTableType =
-    | (typeof circleWiseColumnKeyToCardTableType)[CircleWiseExportableColumnKey]
-    | (typeof circleWiseCommCountColumnKeyToCardType)[CircleWiseCommCountColumnKey];
-
-/** Mirrors `DTRTable` `fetchData` URL switch — keep in sync with `src/pages/DTRTable.tsx`. */
-function getDtrListDetailApiPathForCardTableType(
-    cardType: DtrCircleCardDrillTableType,
-): string {
-    switch (cardType) {
-        case "total-dtrs":
-            return "/dtrs";
-        case "total-lt-feeders":
-            return "/dtrs/all-meters";
-        case "fuse-blown":
-            return "/dtrs/fuse-blown-meters";
-        case "overloaded-feeders":
-            return "/dtrs/overloaded-dtrs";
-        case "underloaded-feeders":
-            return "/dtrs/underloaded-dtrs";
-        case "ht-fuse-blown":
-            return "/dtrs/ht-fuse-blown";
-        case "lt-fuse-blown":
-            return "/dtrs/lt-fuse-blown";
-        case "unbalanced-dtrs":
-            return "/dtrs/unbalanced-dtrs";
-        case "power-failure-feeders":
-            return "/dtrs/power-failure-feeders";
-        case "communicating-meters":
-            return "/dtrs/communicating-meters";
-        case "non-communicating-meters":
-            return "/dtrs/non-communicating-meters";
-        default: {
-            const _exhaustive: never = cardType;
-            return _exhaustive;
-        }
-    }
-}
-
-/** Remote `Table` sets `data-label={column.label}` on each `<td>` — used when `column.render` is not honored across federation. */
-const circleWiseExportColumnLabelToKey: Record<
-    string,
-    CircleWiseExcelExportColumnKey
-> = {
-    "Total DTRs": "totalDTRs",
-    "Total LT Feeders": "totalLTFeeders",
-    "Total Fuse Blown": "totalFuseBlown",
-    "Overloaded DTRs": "overloadedDTRs",
-    "Underloaded DTRs": "underloadedDTRs",
-    "LT Side Fuse Blown": "ltSideFuseBlown",
-    "Unbalanced DTRs": "unbalancedDTRs",
-    "Power Failure Feeders": "powerFailureFeeders",
-    "HT Side Fuse Blown": "htSideFuseBlown",
-    Communicating: "communicating",
-    "Non-Communicating": "notCommunicating",
-    "Comm. %": "commPercentage",
-};
-
-function getCircleWiseHierarchyId(row: TableData): string | null {
-    const candidates: unknown[] = [
-        row.circleId,
-        row.circleID,
-        row.hierarchyId,
-        row.hierarchy_id,
-        row.organizationId,
-        row.organization_id,
-        row.nodeId,
-        row.node_id,
-        row.areaId,
-        row.area_id,
-        row.parentId,
-        row.parent_id,
-        row.circle_id,
-        row.id,
-    ];
-    for (const raw of candidates) {
-        if (raw === undefined || raw === null) continue;
-        const s = String(raw).trim();
-        if (s !== "" && s !== "0") return s;
-    }
-    return null;
-}
-
-function isCircleWiseNumericCell(cellValue: unknown): boolean {
-    if (cellValue === undefined || cellValue === null || cellValue === "")
-        return false;
-    if (typeof cellValue === "number") return Number.isFinite(cellValue);
-    if (typeof cellValue !== "string") return false;
-    const t = cellValue.trim().toUpperCase();
-    if (t === "NA" || t === "N/A" || t === "-") return false;
-    const normalized = t.replace(/,/g, "").replace(/\s+/g, "");
-    if (normalized === "") return false;
-    return !Number.isNaN(Number(normalized));
-}
-
-function sanitizeCircleWiseFileBasePart(value: string): string {
-    const t = value.replace(/[^\w.-]+/g, "_").replace(/_+/g, "_");
-    return (t.length > 0 ? t : "export").slice(0, 80);
-}
-
-/** Normalize `response.data` for `XLSX.utils.json_to_sheet` (object keys → column headers). */
-function normalizeCircleWiseExportRows(data: unknown): Record<string, unknown>[] {
-    if (Array.isArray(data)) {
-        return data.filter(
-            (row): row is Record<string, unknown> =>
-                row !== null && typeof row === "object" && !Array.isArray(row),
-        ) as Record<string, unknown>[];
-    }
-    if (data !== null && typeof data === "object" && !Array.isArray(data)) {
-        return [data as Record<string, unknown>];
-    }
-    return [];
-}
-
-/** Same pattern as `exportToExcel` in `excelExport.ts` — reliable in Vite/Chrome after async fetch. */
-function triggerCircleWiseXlsxDownload(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.rel = "noopener";
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-
-function exportCircleWiseExcelFromRows(
-    rows: Record<string, unknown>[],
-    fileBase: string,
-): void {
-    console.log("[Circle-wise export] exportCircleWiseExcelFromRows", {
-        rowCount: rows.length,
-        fileBase,
-    });
-    try {
-        const wb = XLSX.utils.book_new();
-        const sheetRows =
-            rows.length > 0 ? rows : [{ message: "No records" }];
-        const ws = XLSX.utils.json_to_sheet(sheetRows);
-        XLSX.utils.book_append_sheet(wb, ws, "Data");
-        const buf = XLSX.write(wb, {
-            bookType: "xlsx",
-            type: "array",
-        });
-        const blob = new Blob([buf as BlobPart], {
-            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        console.log("[Circle-wise export] workbook written", {
-            byteLength:
-                buf instanceof ArrayBuffer
-                    ? buf.byteLength
-                    : (buf as Uint8Array).byteLength,
-        });
-        const filename = `${sanitizeCircleWiseFileBasePart(fileBase)}.xlsx`;
-        triggerCircleWiseXlsxDownload(blob, filename);
-        console.log(
-            "[Circle-wise export] download trigger finished",
-            filename,
-        );
-    } catch (err) {
-        console.error(
-            "[Circle-wise export] exportCircleWiseExcelFromRows failed",
-            err,
-        );
-        throw err;
-    }
-}
+import {
+    circleWiseExportColumnLabelToKey,
+    handleCircleWiseExport,
+    isNumericCell,
+    resolveHierarchyId,
+    type CircleWiseExcelExportColumnKey,
+    type CircleWiseTableRow,
+} from "../utils/circleWiseExport";
 
 const dummyDtrStatsData = {
     totalDtrs: "0",
@@ -1762,85 +1569,6 @@ const DTRDashboard: React.FC = () => {
     }, [circleWiseRowsPerPageLabel, circleWisePagination]);
 
     const circleWiseExcelExportLockRef = useRef(false);
-    /** Single request: backend returns full `data` payload for export. */
-    const CIRCLE_WISE_EXPORT_PAGE_SIZE = 50_000;
-
-    const fetchCircleWiseDetailAllPages = useCallback(
-        async (cardTableType: DtrCircleCardDrillTableType, hierarchyId: string) => {
-            const endpoint = getDtrListDetailApiPathForCardTableType(cardTableType);
-            const params = new URLSearchParams({
-                page: "1",
-                pageSize: String(CIRCLE_WISE_EXPORT_PAGE_SIZE),
-                hierarchyId,
-            });
-            const res = await apiClient.get(
-                `${endpoint}?${params.toString()}`,
-            );
-            if (!res?.success) {
-                throw new Error(
-                    typeof res?.message === "string"
-                        ? res.message
-                        : "Failed to load details",
-                );
-            }
-            const rows = normalizeCircleWiseExportRows(res.data);
-            console.log("[Circle-wise export] API success (same as DTRTable)", {
-                cardTableType,
-                rawDataType: Array.isArray(res.data) ? "array" : typeof res.data,
-                normalizedRowCount: rows.length,
-            });
-            return rows;
-        },
-        [],
-    );
-
-    const downloadCircleWiseDetailXlsx = useCallback(
-        (rows: Record<string, unknown>[], fileBase: string) => {
-            exportCircleWiseExcelFromRows(rows, fileBase);
-        },
-        [],
-    );
-
-    const resolveCircleWiseExportHierarchyId = useCallback(
-        (row: TableData): string | null => {
-            const fromRow = getCircleWiseHierarchyId(row);
-            if (fromRow) return fromRow;
-            const name = String(row.circle ?? "").trim();
-            if (!name) return null;
-            const opt = filterOptions.circles.find(
-                (c) =>
-                    String(c.label ?? "").trim() === name ||
-                    String(c.value) === name,
-            );
-            if (
-                opt?.value != null &&
-                String(opt.value).trim() !== "" &&
-                opt.value !== "all"
-            ) {
-                return String(opt.value);
-            }
-            return null;
-        },
-        [filterOptions.circles],
-    );
-
-    const fetchMeterStatusSnapshotForExcel = useCallback(
-        async (hierarchyId: string) => {
-            /** Same URL as `retryMeterStatusAPI` when a hierarchy is selected (Communication Status chart). */
-            const res = await apiClient.get(
-                `/dtrs/meter-status?hierarchyId=${encodeURIComponent(hierarchyId)}`,
-            );
-            if (!res?.success) {
-                throw new Error(
-                    typeof res?.message === "string"
-                        ? res.message
-                        : "Failed to load meter status",
-                );
-            }
-            return normalizeCircleWiseExportRows(res.data);
-        },
-        [],
-    );
 
     const handleCircleWiseStatExportClick = useCallback(
         async (
@@ -1849,7 +1577,7 @@ const DTRDashboard: React.FC = () => {
             _cellValue: unknown,
         ) => {
             if (circleWiseExcelExportLockRef.current) return;
-            const hierarchyId = resolveCircleWiseExportHierarchyId(row);
+            const hierarchyId = resolveHierarchyId(row, filterOptions.circles);
             if (!hierarchyId) {
                 console.warn(
                     "[Circle-wise export] Row is missing circleId / hierarchy id (checked row fields + Circle dropdown options).",
@@ -1859,52 +1587,18 @@ const DTRDashboard: React.FC = () => {
             }
             circleWiseExcelExportLockRef.current = true;
             try {
-                let rowsOut: Record<string, unknown>[];
-                if (columnKey === "commPercentage") {
-                    rowsOut = await fetchMeterStatusSnapshotForExcel(
-                        hierarchyId,
-                    );
-                } else if (
-                    columnKey === "communicating" ||
-                    columnKey === "notCommunicating"
-                ) {
-                    const cardType =
-                        circleWiseCommCountColumnKeyToCardType[columnKey];
-                    rowsOut = await fetchCircleWiseDetailAllPages(
-                        cardType,
-                        hierarchyId,
-                    );
-                } else {
-                    const cardTableType =
-                        circleWiseColumnKeyToCardTableType[
-                            columnKey as CircleWiseExportableColumnKey
-                        ];
-                    rowsOut = await fetchCircleWiseDetailAllPages(
-                        cardTableType,
-                        hierarchyId,
-                    );
-                }
-                const circleLabel = sanitizeCircleWiseFileBasePart(
-                    String(row.circle ?? "circle"),
-                );
-                const fileBase = `${circleLabel}_${columnKey}`;
-                console.log(
-                    "[Circle-wise export] calling downloadCircleWiseDetailXlsx",
-                    { fileBase, rowsOut: rowsOut.length },
-                );
-                downloadCircleWiseDetailXlsx(rowsOut, fileBase);
+                await handleCircleWiseExport({
+                    row: row as CircleWiseTableRow,
+                    columnKey,
+                    hierarchyId,
+                });
             } catch (e) {
                 console.error("[Circle-wise export]", e);
             } finally {
                 circleWiseExcelExportLockRef.current = false;
             }
         },
-        [
-            fetchCircleWiseDetailAllPages,
-            fetchMeterStatusSnapshotForExcel,
-            downloadCircleWiseDetailXlsx,
-            resolveCircleWiseExportHierarchyId,
-        ],
+        [filterOptions.circles],
     );
 
     const circleWiseTableColumns = useMemo(
@@ -1974,7 +1668,7 @@ const DTRDashboard: React.FC = () => {
                 cellValue,
             });
 
-            if (!isCircleWiseNumericCell(cellValue)) {
+            if (!isNumericCell(cellValue)) {
                 console.log(
                     "[Circle-wise] click ignored (non-numeric / empty)",
                     { cellValue },
