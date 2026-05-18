@@ -1,11 +1,5 @@
 import { lazy } from "react";
-import React, {
-    useState,
-    useEffect,
-    useMemo,
-    useCallback,
-    useRef,
-} from "react";
+import React, { useState, useEffect, useCallback } from "react";
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
 }
@@ -13,6 +7,14 @@ import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { apiClient } from "../api/apiUtils";
+import {
+    buildCircleWiseDrillTableUrl,
+    circleWiseExportColumnLabelToKey,
+    isNumericCell,
+    resolveHierarchyId,
+    type CircleWiseExcelExportColumnKey,
+    type CircleWiseTableRow,
+} from "../utils/circleWiseExport";
 import { io, Socket } from "socket.io-client";
 
 /** Stat from `/dtrs/stats` row1; use `??` semantics so `0` is not replaced by a fallback. */
@@ -41,22 +43,16 @@ function pickStat(
     return fallback;
 }
 
-/** Pass through API row; `serialNo` holds backend sNo — federated Table ignores row.sNo and recomputes index for key "sNo". */
-function mapCircleWiseRowToTableData(row: Record<string, unknown>): TableData {
+/** Pass through API row fields; only `sNo` is derived for display order. */
+function mapCircleWiseRowToTableData(
+    row: Record<string, unknown>,
+    sNo: number,
+): TableData {
     return {
         ...(row as TableData),
-        serialNo: (row.sNo ?? row.serialNo) as TableData["serialNo"],
+        sNo,
     };
 }
-
-import {
-    circleWiseExportColumnLabelToKey,
-    handleCircleWiseExport,
-    isNumericCell,
-    resolveHierarchyId,
-    type CircleWiseExcelExportColumnKey,
-    type CircleWiseTableRow,
-} from "../utils/circleWiseExport";
 
 const dummyDtrStatsData = {
     totalDtrs: "0",
@@ -302,9 +298,6 @@ const DTRDashboard: React.FC = () => {
     });
     const [isCircleWiseTableLoading, setIsCircleWiseTableLoading] =
         useState(true);
-    /** Rows-per-page trigger label; federated Table only shows options when `serverPagination.limit` matches — NaN until user picks. */
-    const [circleWiseRowsPerPageLabel, setCircleWiseRowsPerPageLabel] =
-        useState("Select rows");
     const [dtrTableSearch, setDtrTableSearch] = useState("");
 
 
@@ -773,7 +766,7 @@ const DTRDashboard: React.FC = () => {
         try {
             const params = new URLSearchParams();
             params.append("page", String(page));
-            params.append("limit", String(pageSize));
+            params.append("pageSize", String(pageSize));
             if (lastSelectedId) {
                 params.append("hierarchyId", lastSelectedId);
             }
@@ -784,6 +777,7 @@ const DTRDashboard: React.FC = () => {
 
             let rows: any[] = [];
             let pagination: Record<string, any> = {};
+            let totalCount = 0;
 
             if (data && typeof data === "object" && !Array.isArray(data)) {
                 const body = data as Record<string, any>;
@@ -801,16 +795,14 @@ const DTRDashboard: React.FC = () => {
                     rows = body.circles;
                 }
                 pagination = body.pagination || {};
+                totalCount =
+                    pagination.totalCount ??
+                    body.totalCount ??
+                    body.total ??
+                    rows.length;
             } else if (Array.isArray(data)) {
                 rows = data;
-                pagination = {
-                    currentPage: 1,
-                    totalPages: 1,
-                    totalRecords: data.length,
-                    limit: pageSize,
-                    hasNextPage: false,
-                    hasPreviousPage: false,
-                };
+                totalCount = data.length;
             } else {
                 throw new Error(
                     (data as any)?.message ||
@@ -818,25 +810,37 @@ const DTRDashboard: React.FC = () => {
                 );
             }
 
-            const pg = pagination;
-            const resolvedPage = pg.currentPage ?? page;
-            const resolvedLimit = pg.limit ?? pageSize;
+            const resolvedPage =
+                pagination.currentPage ?? (data as any)?.page ?? page;
+            const resolvedLimit =
+                pagination.limit ??
+                pagination.pageSize ??
+                (data as any)?.pageSize ??
+                pageSize;
 
-            const mapped: TableData[] = rows.map((raw) =>
-                mapCircleWiseRowToTableData(raw as Record<string, unknown>),
+            const mapped: TableData[] = rows.map((raw, idx) =>
+                mapCircleWiseRowToTableData(
+                    raw as Record<string, unknown>,
+                    (resolvedPage - 1) * resolvedLimit + idx + 1,
+                ),
             );
 
             setCircleWiseTableData(mapped);
             setCircleWisePagination({
                 currentPage: resolvedPage,
-                totalPages: pg.totalPages ?? 1,
-                totalCount:
-                    pg.totalRecords ??
-                    pg.totalCount ??
-                    0,
+                totalPages: Math.max(
+                    1,
+                    Math.ceil(
+                        (totalCount || 0) /
+                            (resolvedLimit > 0 ? resolvedLimit : pageSize),
+                    ) || 1,
+                ),
+                totalCount: totalCount || 0,
                 limit: resolvedLimit,
-                hasNextPage: Boolean(pg.hasNextPage),
-                hasPrevPage: Boolean(pg.hasPrevPage ?? pg.hasPreviousPage),
+                hasNextPage:
+                    pagination.hasNextPage ??
+                    resolvedPage * resolvedLimit < (totalCount || 0),
+                hasPrevPage: pagination.hasPrevPage ?? resolvedPage > 1,
             });
             setFailedApis((prev) =>
                 prev.filter((api) => api.id !== "circleWiseStats"),
@@ -1537,9 +1541,6 @@ const DTRDashboard: React.FC = () => {
     };
 
     const handleCircleWisePageChange = (page: number, limit?: number) => {
-        if (typeof limit === "number" && limit > 0) {
-            setCircleWiseRowsPerPageLabel(`${limit} Per Page`);
-        }
         const pageSize =
             typeof limit === "number" && limit > 0
                 ? limit
@@ -1548,77 +1549,23 @@ const DTRDashboard: React.FC = () => {
     };
 
     const handleCircleWiseRowsPerPageChange = (limit: number) => {
-        setCircleWiseRowsPerPageLabel(`${limit} Per Page`);
         retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, limit);
     };
 
-    const circleWisePaginationForTable = useMemo(() => {
-        if (circleWiseRowsPerPageLabel === "Select rows") {
-            return {
-                ...circleWisePagination,
-                limit: Number.NaN as unknown as number,
-            };
-        }
-        const parsed = Number(String(circleWiseRowsPerPageLabel).split(/\s+/)[0]);
-        const coerced =
-            Number.isFinite(parsed) && parsed > 0 ? parsed : circleWisePagination.limit;
-        return {
-            ...circleWisePagination,
-            limit: coerced,
-        };
-    }, [circleWiseRowsPerPageLabel, circleWisePagination]);
-
-    const circleWiseExcelExportLockRef = useRef(false);
-
-    const handleCircleWiseStatExportClick = useCallback(
-        async (
-            columnKey: CircleWiseExcelExportColumnKey,
-            row: TableData,
-            _cellValue: unknown,
-        ) => {
-            if (circleWiseExcelExportLockRef.current) return;
-            const hierarchyId = resolveHierarchyId(row, filterOptions.circles);
-            if (!hierarchyId) {
-                console.warn(
-                    "[Circle-wise export] Row is missing circleId / hierarchy id (checked row fields + Circle dropdown options).",
-                    { circle: row.circle, keys: Object.keys(row) },
+    const resolveCircleWiseTableRow = useCallback(
+        (
+            circleFromDom: string,
+            rowIndex: number,
+        ): TableData | undefined => {
+            if (circleFromDom) {
+                const match = circleWiseTableData.find(
+                    (r) => String(r.circle ?? "").trim() === circleFromDom,
                 );
-                return;
+                if (match) return match;
             }
-            circleWiseExcelExportLockRef.current = true;
-            try {
-                await handleCircleWiseExport({
-                    row: row as CircleWiseTableRow,
-                    columnKey,
-                    hierarchyId,
-                });
-            } catch (e) {
-                console.error("[Circle-wise export]", e);
-            } finally {
-                circleWiseExcelExportLockRef.current = false;
-            }
+            return circleWiseTableData[rowIndex];
         },
-        [filterOptions.circles],
-    );
-
-    const circleWiseTableColumns = useMemo(
-        () => [
-            { key: "serialNo", label: "S.No", align: "center" as const },
-            { key: "circle", label: "Circle" },
-            { key: "totalDTRs", label: "Total DTRs" },
-            { key: "totalLTFeeders", label: "Total LT Feeders" },
-            { key: "totalFuseBlown", label: "Total Fuse Blown" },
-            { key: "overloadedDTRs", label: "Overloaded DTRs" },
-            { key: "underloadedDTRs", label: "Underloaded DTRs" },
-            { key: "ltSideFuseBlown", label: "LT Side Fuse Blown" },
-            { key: "unbalancedDTRs", label: "Unbalanced DTRs" },
-            { key: "powerFailureFeeders", label: "Power Failure Feeders" },
-            { key: "htSideFuseBlown", label: "HT Side Fuse Blown" },
-            { key: "communicating", label: "Communicating" },
-            { key: "notCommunicating", label: "Non-Communicating" },
-            { key: "commPercentage", label: "Comm. %" },
-        ],
-        [],
+        [circleWiseTableData],
     );
 
     useEffect(() => {
@@ -1629,62 +1576,62 @@ const DTRDashboard: React.FC = () => {
             const raw = e.target;
             if (!(raw instanceof Element)) return;
             const td = raw.closest("td[data-label]");
-            if (!td) return;
-            if (!td.closest(tableRootSelector)) return;
+            if (!td?.closest(tableRootSelector)) return;
             const tr = td.closest("tr");
             if (!tr || tr.parentElement?.tagName !== "TBODY") return;
 
             const label = (td.getAttribute("data-label") ?? "").trim();
-            if (!label) return;
-            const columnKey = circleWiseExportColumnLabelToKey[label];
-            if (!columnKey) return;
+            if (!label || label === "S.No") return;
 
             const circleCell = tr.querySelector('td[data-label="Circle"]');
             const circleFromDom = circleCell?.textContent?.trim() ?? "";
-            let row: TableData | undefined = circleFromDom
-                ? circleWiseTableData.find(
-                      (r) =>
-                          String(r.circle ?? "").trim() === circleFromDom,
-                  )
-                : undefined;
-            if (!row) {
-                const tbody = tr.parentElement as HTMLTableSectionElement;
-                const bodyRows = Array.from(tbody.querySelectorAll("tr"));
-                const rowIndex = bodyRows.indexOf(tr as HTMLTableRowElement);
-                row = circleWiseTableData[rowIndex];
+            const tbody = tr.parentElement as HTMLTableSectionElement;
+            const bodyRows = Array.from(tbody.querySelectorAll("tr"));
+            const rowIndex = bodyRows.indexOf(tr as HTMLTableRowElement);
+            const row = resolveCircleWiseTableRow(circleFromDom, rowIndex);
+            if (!row) return;
+
+            let columnKey: CircleWiseExcelExportColumnKey | "circle" | undefined;
+            if (label === "Circle") {
+                columnKey = "circle";
+            } else {
+                columnKey = circleWiseExportColumnLabelToKey[label];
             }
-            if (!row) {
-                console.log("[Circle-wise] click: could not resolve row", {
-                    circleFromDom,
-                });
-                return;
+            if (!columnKey) return;
+
+            if (columnKey !== "circle") {
+                const cellValue = row[columnKey];
+                if (!isNumericCell(cellValue)) return;
             }
 
-            const cellValue = row[columnKey];
-            console.log("[Circle-wise] click cell", {
-                label,
+            const url = buildCircleWiseDrillTableUrl(
                 columnKey,
-                circleFromDom,
-                cellValue,
-            });
-
-            if (!isNumericCell(cellValue)) {
-                console.log(
-                    "[Circle-wise] click ignored (non-numeric / empty)",
-                    { cellValue },
-                );
+                row as CircleWiseTableRow,
+                filterOptions.circles,
+            );
+            if (!url) {
+                if (!resolveHierarchyId(row as CircleWiseTableRow, filterOptions.circles)) {
+                    console.warn(
+                        "[Circle-wise drill] Missing hierarchy id for row",
+                        { circle: row.circle },
+                    );
+                }
                 return;
             }
 
             e.preventDefault();
             e.stopPropagation();
-            void handleCircleWiseStatExportClick(columnKey, row, cellValue);
+            navigate(url);
         };
 
         document.addEventListener("click", onClickCapture, true);
         return () =>
             document.removeEventListener("click", onClickCapture, true);
-    }, [circleWiseTableData, handleCircleWiseStatExportClick]);
+    }, [
+        navigate,
+        filterOptions.circles,
+        resolveCircleWiseTableRow,
+    ]);
 
     const handleSearch = (searchTerm: string) => {
         setDtrTableSearch(searchTerm || "");
@@ -1966,8 +1913,6 @@ const DTRDashboard: React.FC = () => {
 
         setLastSelectedId(lastId);
 
-        setCircleWiseRowsPerPageLabel("Select rows");
-
         try {
             const params = new URLSearchParams();
             Object.entries(filterValues).forEach(([key, value]) => {
@@ -2006,7 +1951,6 @@ const DTRDashboard: React.FC = () => {
             substation: "all",
         });
         setLastSelectedId(null);
-        setCircleWiseRowsPerPageLabel("Select rows");
         await fetchFilterOptions();
 
         // Automatically refetch all data after reset
@@ -2315,57 +2259,29 @@ const DTRDashboard: React.FC = () => {
         // { key: "status", label: "Status" },
     ];
 
+    const circleWiseTableColumns = [
+        { key: "sNo", label: "S.No" },
+        { key: "circle", label: "Circle" },
+        { key: "totalDTRs", label: "Total DTRs" },
+        { key: "totalLTFeeders", label: "Total LT Feeders" },
+        { key: "totalFuseBlown", label: "Total Fuse Blown" },
+        { key: "overloadedDTRs", label: "Overloaded DTRs" },
+        { key: "underloadedDTRs", label: "Underloaded DTRs" },
+        { key: "ltSideFuseBlown", label: "LT Side Fuse Blown" },
+        { key: "unbalancedDTRs", label: "Unbalanced DTRs" },
+        { key: "powerFailureFeeders", label: "Power Failure Feeders" },
+        { key: "htSideFuseBlown", label: "HT Side Fuse Blown" },
+        { key: "communicating", label: "Communicating" },
+        { key: "notCommunicating", label: "Non-Communicating" },
+        { key: "commPercentage", label: "Comm. %" },
+    ];
+
     return (
         <div className="overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <style>
                 {`
-                /* Do not clip the federated Dropdown listbox (absolute); matches floating Latest Alerts behavior */
-                .circle-wise-dtr-table {
-                    overflow: visible !important;
-                }
-                .circle-wise-dtr-table .font-manrope.flex.flex-row.justify-between {
-                    overflow: visible !important;
-                    position: relative;
-                    z-index: 40;
-                }
-                .circle-wise-dtr-table .font-manrope .w-40 {
-                    position: relative;
-                    z-index: 50;
-                    overflow: visible !important;
-                }
-                .circle-wise-dtr-table .relative.w-full.flex.flex-col.gap-1 {
-                    overflow: visible !important;
-                }
-                .circle-wise-dtr-table [role="listbox"] {
-                    z-index: 200 !important;
-                }
-                .circle-wise-dtr-table tbody td[data-label="Total DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="Total LT Feeders"],
-                .circle-wise-dtr-table tbody td[data-label="Total Fuse Blown"],
-                .circle-wise-dtr-table tbody td[data-label="Overloaded DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="Underloaded DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="LT Side Fuse Blown"],
-                .circle-wise-dtr-table tbody td[data-label="Unbalanced DTRs"],
-                .circle-wise-dtr-table tbody td[data-label="Power Failure Feeders"],
-                .circle-wise-dtr-table tbody td[data-label="HT Side Fuse Blown"],
-                .circle-wise-dtr-table tbody td[data-label="Communicating"],
-                .circle-wise-dtr-table tbody td[data-label="Non-Communicating"],
-                .circle-wise-dtr-table tbody td[data-label="Comm. %"] {
+                .circle-wise-dtr-table tbody td[data-label]:not([data-label="S.No"]) {
                     cursor: pointer;
-                }
-                .circle-wise-dtr-table tbody td[data-label="Total DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Total LT Feeders"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Total Fuse Blown"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Overloaded DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Underloaded DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="LT Side Fuse Blown"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Unbalanced DTRs"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Power Failure Feeders"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="HT Side Fuse Blown"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Communicating"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Non-Communicating"]:hover,
-                .circle-wise-dtr-table tbody td[data-label="Comm. %"]:hover {
-                    background-color: rgba(128, 128, 128, 0.08);
                 }
                 `}
             </style>
@@ -2680,7 +2596,8 @@ const DTRDashboard: React.FC = () => {
                     {
                         layout: {
                             type: "grid" as const,
-                            className: "w-full min-w-0 gap-4",
+                            className:
+                                "w-full min-w-0 overflow-x-auto gap-4",
                             columns: 2,
                         },
                         components: [
@@ -2689,14 +2606,14 @@ const DTRDashboard: React.FC = () => {
                                 props: {
                                     data: circleWiseTableData,
                                     columns: circleWiseTableColumns,
-                                    className: "circle-wise-dtr-table",
+                                    className: "circle-wise-dtr-table min-w-0",
                                     showHeader: true,
                                     headerTitle: "Circle-wise DTR Statistics",
                                     searchable: false,
                                     sortable: true,
                                     pagination: true,
                                     showPagination: true,
-                                    serverPagination: circleWisePaginationForTable,
+                                    serverPagination: circleWisePagination,
                                     totalCount: circleWisePagination.totalCount,
                                     currentPage: circleWisePagination.currentPage,
                                     totalPages: circleWisePagination.totalPages,
