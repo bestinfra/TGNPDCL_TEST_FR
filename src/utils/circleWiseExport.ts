@@ -1,5 +1,10 @@
 import * as XLSX from "xlsx";
 import { apiClient } from "../api/apiUtils";
+import {
+    DTR_STATS_DRILL_TABLE_COLUMNS,
+    DTR_STATS_ENDPOINT_MAP,
+    mapApiRowToDtrStatsTableRow,
+} from "./dtrStatsTable";
 
 /** Row shape from Circle-wise table / API (matches dashboard `TableData`). */
 export type CircleWiseTableRow = Record<
@@ -16,13 +21,13 @@ export type CircleWiseCircleOption = { value: string; label: string };
 export const columnToTypeMap = {
     totalDTRs: "total-dtrs",
     totalLTFeeders: "total-lt-feeders",
-    totalFuseBlown: "fuse-blown",
-    overloadedDTRs: "overloaded-feeders",
-    underloadedDTRs: "underloaded-feeders",
-    ltSideFuseBlown: "lt-fuse-blown",
+    totalFuseBlown: "total-fuse-blown",
+    overloadedDTRs: "overloaded-dtrs",
+    underloadedDTRs: "underloaded-dtrs",
+    ltSideFuseBlown: "lt-side-fuse-blown",
     unbalancedDTRs: "unbalanced-dtrs",
     powerFailureFeeders: "power-failure-feeders",
-    htSideFuseBlown: "ht-fuse-blown",
+    htSideFuseBlown: "ht-side-fuse-blown",
     communicating: "communicating-meters",
     notCommunicating: "non-communicating-meters",
     commPercentage: "meter-status",
@@ -33,136 +38,23 @@ export type CircleWiseExcelExportColumnKey = keyof typeof columnToTypeMap;
 export type CircleWiseExportApiKey =
     (typeof columnToTypeMap)[CircleWiseExcelExportColumnKey];
 
-/** Base paths — keep in sync with `src/pages/DTRTable.tsx` list `fetchData` URLs. */
+/** Base paths — keep in sync with `src/utils/dtrStatsTable.ts`. */
 export const typeToApiMap: Record<CircleWiseExportApiKey, string> = {
-    "total-dtrs": "/dtrs",
-    "total-lt-feeders": "/dtrs/all-meters",
-    "fuse-blown": "/dtrs/fuse-blown-meters",
-    "overloaded-feeders": "/dtrs/overloaded-dtrs",
-    "underloaded-feeders": "/dtrs/underloaded-dtrs",
-    "ht-fuse-blown": "/dtrs/ht-fuse-blown",
-    "lt-fuse-blown": "/dtrs/lt-fuse-blown",
-    "unbalanced-dtrs": "/dtrs/unbalanced-dtrs",
-    "power-failure-feeders": "/dtrs/power-failure-feeders",
+    ...DTR_STATS_ENDPOINT_MAP,
     "communicating-meters": "/dtrs/communicating-meters",
     "non-communicating-meters": "/dtrs/non-communicating-meters",
     "meter-status": "/dtrs/meter-status",
 };
 
 /** Federated `Table` columns for circle-wise drill-down (`view=hierarchy` on `/dtr-table`). */
-export const hierarchyDetailTableColumns = [
-    { key: "sNo", label: "S.No" },
-    { key: "discom", label: "DISCOM" },
-    { key: "circle", label: "Circle" },
-    { key: "division", label: "Division" },
-    { key: "subDivision", label: "Sub-Division" },
-    { key: "section", label: "Section" },
-    { key: "substation", label: "Substation" },
-    { key: "feeder", label: "Feeder" },
-    { key: "dtrLocation", label: "DTR Location" },
-    { key: "dtrNumber", label: "DTR Number" },
-    { key: "meterNumber", label: "Meter Number" },
-    { key: "capacityKva", label: "Capacity (kVA)" },
-    { key: "meterStatus", label: "Meter Status" },
-    {
-        key: "communicationStatus",
-        label: "Communication Status",
-        statusIndicator: {},
-        isActive: (value: string | number | boolean | null | undefined) =>
-            String(value).toLowerCase() === "active",
-    },
-    { key: "lastCommunicationDate", label: "Last Communication Date" },
-] as const;
-
-function pickField(
-    raw: Record<string, unknown>,
-    ...keys: string[]
-): string | number | boolean | null | undefined {
-    for (const k of keys) {
-        const v = raw[k];
-        if (v !== undefined && v !== null && String(v).trim() !== "") {
-            return v as string | number | boolean;
-        }
-    }
-    return "";
-}
+export const hierarchyDetailTableColumns = [...DTR_STATS_DRILL_TABLE_COLUMNS];
 
 /** Normalize list API rows to hierarchy detail column keys (same labels as `hierarchyDetailTableColumns`). */
 export function mapRowToHierarchyDetailTableRow(
     raw: Record<string, unknown>,
     sNo: number,
 ): Record<string, string | number | boolean | null | undefined> {
-    return {
-        sNo,
-        discom: pickField(raw, "discom", "discomName", "DISCOM"),
-        circle: pickField(raw, "circle", "circleName", "Circle"),
-        division: pickField(raw, "division", "divisionName", "Division"),
-        subDivision: pickField(
-            raw,
-            "subDivision",
-            "sub_division",
-            "subDivisionName",
-            "Sub-Division",
-        ),
-        section: pickField(raw, "section", "sectionName", "Section"),
-        substation: pickField(
-            raw,
-            "substation",
-            "substationName",
-            "Substation",
-        ),
-        feeder: pickField(raw, "feeder", "feederName", "Feeder"),
-        dtrLocation: pickField(
-            raw,
-            "dtrLocation",
-            "location",
-            "meterlocation",
-            "DTR Location",
-        ),
-        dtrNumber: pickField(
-            raw,
-            "dtrNumber",
-            "dtrNo",
-            "dtrName",
-            "dtrId",
-            "DTR Number",
-        ),
-        meterNumber: pickField(
-            raw,
-            "meterNumber",
-            "meterNo",
-            "meter_number",
-            "Meter Number",
-        ),
-        capacityKva: pickField(
-            raw,
-            "capacityKva",
-            "capacity",
-            "capacity_kva",
-            "Capacity (kVA)",
-        ),
-        meterStatus: pickField(
-            raw,
-            "meterStatus",
-            "status",
-            "Meter Status",
-        ),
-        communicationStatus: pickField(
-            raw,
-            "communicationStatus",
-            "commStatus",
-            "Communication Status",
-        ),
-        lastCommunicationDate: pickField(
-            raw,
-            "lastCommunicationDate",
-            "lastCommunication",
-            "lastReadingDate",
-            "Last Communication Date",
-        ),
-        dtrId: pickField(raw, "dtrId", "feederId"),
-        meterNo: pickField(raw, "meterNo", "meterNumber"),
-    };
+    return mapApiRowToDtrStatsTableRow(raw, sNo);
 }
 
 /** Remote `Table` sets `data-label={column.label}` on each `<td>`. */

@@ -381,7 +381,13 @@ const DTRDetailPage = () => {
     Record<string, { value: string; label: string }[]>
   >({});
 
-  const getNumericDtrId = useCallback(() => dtrId && dtrId.match(/\d+/)?.[0], [dtrId]);
+  const getNumericDtrId = useCallback(() => {
+    const trimmed = dtrId?.trim();
+    if (!trimmed || !/^\d+$/.test(trimmed)) {
+      return null;
+    }
+    return trimmed;
+  }, [dtrId]);
 
   const buildHierarchyOptionsFromData = useCallback((apiData: any[]) => {
     const next: Record<string, { value: string; label: string }[]> = {};
@@ -627,7 +633,7 @@ const DTRDetailPage = () => {
     setIsUpdatingStatus(true);
 
     try {
-      const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+      const numericDtrId = getNumericDtrId();
       if (!numericDtrId) {
         throw new Error('Invalid DTR ID format');
       }
@@ -747,8 +753,7 @@ const DTRDetailPage = () => {
   const fetchAlertsData = async (pageOverride?: number, limitOverride?: number) => {
     setIsAlertsLoading(true);
     try {
-      // Extract numeric DTR ID from the URL parameter
-      const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+      const numericDtrId = getNumericDtrId();
       if (!numericDtrId) {
         throw new Error('Invalid DTR ID format');
       }
@@ -766,7 +771,7 @@ const DTRDetailPage = () => {
         limitOverride,
       });
 
-      const response = await fetch(`${BACKEND_URL}/dtrs/${dtrId}/alerts?${params.toString()}`);
+      const response = await fetch(`${BACKEND_URL}/dtrs/${numericDtrId}/alerts?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch alerts data');
 
       const data = await response.json();
@@ -855,7 +860,7 @@ const DTRDetailPage = () => {
     const fetchDtrData = async () => {
       setIsDtrLoading(true);
       try {
-        const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+        const numericDtrId = getNumericDtrId();
         if (!numericDtrId) {
           throw new Error('Invalid DTR ID format');
         }
@@ -910,7 +915,7 @@ const DTRDetailPage = () => {
     const fetchConsumptionData = async () => {
       setIsConsumptionLoading(true);
       try {
-        const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+        const numericDtrId = getNumericDtrId();
         if (!numericDtrId) {
           throw new Error('Invalid DTR ID format');
         }
@@ -985,7 +990,7 @@ const DTRDetailPage = () => {
       setIsFeedersLoading(true);
       try {
         // Extract numeric DTR ID from the URL parameter
-        const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+        const numericDtrId = getNumericDtrId();
         if (!numericDtrId) {
           throw new Error('Invalid DTR ID format');
         }
@@ -1055,7 +1060,7 @@ const DTRDetailPage = () => {
       setIsKvaMetricsLoading(true);
       try {
         // Extract numeric DTR ID from the URL parameter
-        const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+        const numericDtrId = getNumericDtrId();
         if (!numericDtrId) {
           throw new Error('Invalid DTR ID format');
         }
@@ -1110,7 +1115,7 @@ const DTRDetailPage = () => {
       setIsStatsLoading(true);
       try {
         // Extract numeric DTR ID from the URL parameter
-        const numericDtrId = dtrId && dtrId.match(/\d+/)?.[0];
+        const numericDtrId = getNumericDtrId();
         if (!numericDtrId) {
           throw new Error('Invalid DTR ID format');
         }
