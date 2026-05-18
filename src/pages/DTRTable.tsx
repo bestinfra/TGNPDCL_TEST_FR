@@ -8,6 +8,11 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
+import { exportToExcel } from "../utils/excelExport";
+import {
+    hierarchyDetailTableColumns,
+    mapRowToHierarchyDetailTableRow,
+} from "../utils/circleWiseExport";
 
 const Page = lazy(() => import("SuperAdmin/Page"));
 
@@ -33,15 +38,20 @@ const nonActionableCardTypes: string[] = [
     // 'daily-kva','monthly-kva'
 ];
 
+/** Max rows per export API request (matches circle-wise export pattern). */
+const EXPORT_FETCH_PAGE_SIZE = 50_000;
+
 const DTRTable: React.FC = () => {
   const navigate = useNavigate();
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cardType, setCardType] = useState<string | null>(null);
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
   const [searchTerm, setSearchTerm] = useState('');
   const [hierarchyId, setHierarchyId] = useState<string | null>(null);
+  const [hierarchyDetailView, setHierarchyDetailView] = useState(false);
     const normalizedCardType = useMemo(
         () => cardType?.toLowerCase() || "",
         [cardType],
@@ -79,9 +89,13 @@ const DTRTable: React.FC = () => {
     if (type) setCardType(type);
     if (title) setCardTitle(decodeURIComponent(title));
     if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
+    setHierarchyDetailView(urlParams.get("view") === "hierarchy");
   }, []);
 
     const getTableColumns = () => {
+        if (hierarchyDetailView) {
+            return [...hierarchyDetailTableColumns];
+        }
         switch (normalizedCardType) {
             case "communicating-meters":
             case "non-communicating-meters":
@@ -274,75 +288,123 @@ const DTRTable: React.FC = () => {
         }
     };
 
+    const buildListApiUrl = useCallback(
+        (page: number, pageSize: number, search?: string): string | null => {
+            if (!cardType) return null;
+
+            const params = new URLSearchParams();
+            params.append("page", page.toString());
+            params.append("pageSize", pageSize.toString());
+            if (search) params.append("search", search);
+            if (hierarchyId) params.append("hierarchyId", hierarchyId);
+
+            switch (cardType) {
+                case "total-dtrs":
+                    return `${BACKEND_URL}/dtrs?${params.toString()}`;
+                case "communicating-meters":
+                    return `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
+                case "non-communicating-meters":
+                    return `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
+                case "total-lt-feeders":
+                    return `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
+                case "fuse-blown":
+                    return `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
+                case "overloaded-feeders":
+                    return `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
+                case "underloaded-feeders":
+                    return `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
+                case "ht-fuse-blown":
+                    return `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
+                case "lt-fuse-blown":
+                    return `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
+                case "unbalanced-dtrs":
+                    return `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
+                case "power-failure-feeders":
+                    return `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
+                default:
+                    if (nonActionableCardTypes.includes(normalizedCardType)) {
+                        return null;
+                    }
+                    throw new Error(`Unsupported card type: ${cardType}`);
+            }
+        },
+        [cardType, hierarchyId, normalizedCardType],
+    );
+
+    const fetchAllRowsForExport = useCallback(async (): Promise<TableData[]> => {
+        const search = searchTerm.trim() || undefined;
+        const allRows: TableData[] = [];
+        let page = 1;
+        let hasNextPage = true;
+
+        while (hasNextPage) {
+            const url = buildListApiUrl(page, EXPORT_FETCH_PAGE_SIZE, search);
+            if (!url) break;
+
+            const response = await fetch(url, { credentials: "include" });
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch export data for ${normalizedCardType}`,
+                );
+            }
+
+            const contentType = response.headers.get("content-type");
+            if (!contentType?.includes("application/json")) {
+                throw new Error("Invalid response format");
+            }
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(
+                    data.message ||
+                        `Failed to fetch export data for ${cardType}`,
+                );
+            }
+
+            const rows: TableData[] = Array.isArray(data.data)
+                ? data.data
+                : [];
+            allRows.push(...rows);
+
+            const pg = data.pagination;
+            if (pg && typeof pg === "object") {
+                hasNextPage = Boolean(pg.hasNextPage) && rows.length > 0;
+                page = (pg.currentPage ?? page) + 1;
+            } else {
+                hasNextPage = false;
+            }
+        }
+
+        return allRows;
+    }, [
+        buildListApiUrl,
+        cardType,
+        normalizedCardType,
+        searchTerm,
+    ]);
+
     const fetchData = useCallback(
         async (page: number = 1, pageSize: number = 10, search?: string) => {
             setLoading(true);
             try {
                 if (!normalizedCardType) return;
 
-        let url = '';
-        const params = new URLSearchParams();
-        params.append('page', page.toString());
-        params.append('pageSize', pageSize.toString());
-        if (search) params.append('search', search);
-        if (hierarchyId) params.append('hierarchyId', hierarchyId);
-
-        switch (cardType) {
-          case 'total-dtrs':
-            url = `${BACKEND_URL}/dtrs?${params.toString()}`;
-            break;
-          case 'communicating-meters':
-            url = `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
-            break;
-          case 'non-communicating-meters':
-            url = `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
-            break;
-          case 'total-lt-feeders':
-            url = `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
-            break;
-          case 'fuse-blown':
-            url = `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
-            break;
-          case 'overloaded-feeders':
-            url = `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
-            break;
-          case 'underloaded-feeders':
-            url = `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
-            break;
-          case 'ht-fuse-blown':
-            url = `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
-            break;
-          case 'lt-fuse-blown':
-            url = `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
-            break;
-          case 'unbalanced-dtrs':
-            url = `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
-            break;
-          case 'power-failure-feeders':
-            url = `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
-            break;
-
-                    default:
-                        if (
-                            nonActionableCardTypes.includes(normalizedCardType)
-                        ) {
-                            safeSetTableData([]);
-                            setServerPagination({
-                                currentPage: 1,
-                                totalPages: 1,
-                                totalCount: 0,
-                                limit: pageSize,
-                                hasNextPage: false,
-                                hasPrevPage: false,
-                            });
-                            setError(null);
-                            setLoading(false);
-                            return;
-                        } else {
-                            throw new Error(
-                                `Unsupported card type: ${normalizedCardType}`,
-                            );
-                        }
+                const url = buildListApiUrl(page, pageSize, search);
+                if (!url) {
+                    if (nonActionableCardTypes.includes(normalizedCardType)) {
+                        safeSetTableData([]);
+                        setServerPagination({
+                            currentPage: 1,
+                            totalPages: 1,
+                            totalCount: 0,
+                            limit: pageSize,
+                            hasNextPage: false,
+                            hasPrevPage: false,
+                        });
+                        setError(null);
+                        setLoading(false);
+                    }
+                    return;
                 }
 
                 console.log(
@@ -446,17 +508,30 @@ const DTRTable: React.FC = () => {
 
                     // No client-side filter needed; backend returns filtered rows
 
-                    safeSetTableData(rows);
+                    const pagination = data.pagination;
+                    const resolvedPage = pagination?.currentPage ?? page;
+                    const resolvedLimit = pagination?.limit ?? pageSize;
+
+                    const tableRows = hierarchyDetailView
+                        ? rows.map((raw: TableData, idx: number) =>
+                              mapRowToHierarchyDetailTableRow(
+                                  raw as Record<string, unknown>,
+                                  (resolvedPage - 1) * resolvedLimit + idx + 1,
+                              ),
+                          )
+                        : rows;
+
+                    safeSetTableData(tableRows as TableData[]);
 
           // Derive pagination after filter
-          if (data.pagination) {
+          if (pagination) {
             setServerPagination({
-              currentPage: data.pagination.currentPage,
-              totalPages: data.pagination.totalPages,
-              totalCount: data.pagination.totalCount,
-              limit: data.pagination.limit,
-              hasNextPage: data.pagination.hasNextPage,
-              hasPrevPage: data.pagination.hasPrevPage,
+              currentPage: pagination.currentPage,
+              totalPages: pagination.totalPages,
+              totalCount: pagination.totalCount,
+              limit: pagination.limit,
+              hasNextPage: pagination.hasNextPage,
+              hasPrevPage: pagination.hasPrevPage,
             });
           } else {
             // Fallback for endpoints without pagination object
@@ -481,7 +556,7 @@ const DTRTable: React.FC = () => {
         setLoading(false);
       }
     },
-    [cardType, hierarchyId]
+    [cardType, hierarchyId, buildListApiUrl, normalizedCardType, hierarchyDetailView]
   );
 
     useEffect(() => {
@@ -599,6 +674,58 @@ const DTRTable: React.FC = () => {
     fetchData(1, serverPagination.limit, value.trim() || undefined);
   };
 
+  const handleExport = async () => {
+    if (!normalizedCardType) return;
+    setExportLoading(true);
+    const fileBase =
+      (cardTitle || normalizedCardType || "dtr-export")
+        .replace(/[^\w\s-]+/g, "")
+        .trim()
+        .replace(/\s+/g, "-")
+        .slice(0, 80) || normalizedCardType;
+
+    const runClientExport = (rows: TableData[]) => {
+      const tableCols = getTableColumns();
+      const sNoCol = tableCols.find((c) => c.label === "S.No");
+      const otherCols = tableCols.filter((c) => c.label !== "S.No");
+
+      const formatted = rows.map((row, index) => {
+        // Ensure S.No is always present and always the first Excel column.
+        const excelRow: Record<string, unknown> = {
+          [sNoCol?.label || "S.No"]: index + 1,
+        };
+
+        otherCols.forEach((c) => {
+          const key = (c as { key: string }).key;
+          const label = String((c as { label: string }).label);
+          excelRow[label] = (row as Record<string, unknown>)[key];
+        });
+        return excelRow;
+      });
+
+      exportToExcel(formatted, {
+        fileName: fileBase,
+        sheetName: (cardTitle || "Data").slice(0, 31),
+      });
+    };
+
+    try {
+      const allRows = await fetchAllRowsForExport();
+      if (allRows.length === 0) {
+        window.alert("No data available to export.");
+        return;
+      }
+      runClientExport(allRows);
+    } catch (err) {
+      console.error("[DTRTable] Export", err);
+      window.alert(
+        err instanceof Error ? err.message : "Export failed. Please try again.",
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Page
@@ -642,9 +769,10 @@ const DTRTable: React.FC = () => {
                         title: cardTitle,
                         onBackClick: () => navigate('/dtr-dashboard'),
                         backButtonText: 'Back to Dashboard',
-                        buttonsLabel: cardType === 'total-lt-feeders' ? 'Export' : 'Add New',
+                        buttonsLabel: 'Export',
                         variant: 'primary',
-                        onClick: undefined,
+                        onClick: handleExport,
+                        disabled: exportLoading,
                       },
                     },
                   ],
@@ -666,7 +794,7 @@ const DTRTable: React.FC = () => {
                       props: {
                         data: tableData,
                         columns: getTableColumns(),
-                        loading,
+                        loading: loading || exportLoading,
                         searchable: true,
                         sortable: true,
                         pagination: true,

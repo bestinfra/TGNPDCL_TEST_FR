@@ -153,3 +153,34 @@ export const exportMeterStatusData = (
     
     exportToExcel(exportData, { fileName, sheetName: 'Meter Status' });
 };
+
+/** Single-row header sheet for bulk-import template (Consumers-style). */
+export function downloadAssetBulkUploadTemplateXlsx(
+    meta: { sheetName: string; columns: string[] },
+    fileName: string,
+): void {
+    const safeName = (meta.sheetName || 'Template').slice(0, 31);
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet([meta.columns]);
+    XLSX.utils.book_append_sheet(workbook, worksheet, safeName);
+    const out = fileName.endsWith('.xlsx') ? fileName : `${fileName}.xlsx`;
+    const excelBuffer = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+    });
+    const blob = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = out;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
+
+/** Alias for shared Consumers bulk-upload hook naming. */
+export const downloadConsumerBulkUploadTemplateXlsx =
+    downloadAssetBulkUploadTemplateXlsx;

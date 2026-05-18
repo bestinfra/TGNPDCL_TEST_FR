@@ -1,9 +1,168 @@
-import { useState, useEffect, lazy } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 const Page = lazy(() => import('SuperAdmin/Page'));
 import { FILTER_STYLES } from '@/contexts/FilterStyleContext';
 import BACKEND_URL from '../config';
 import { formatDateTime } from '@/utils/dateFormat';
+import { apiClient } from '@/api/apiUtils';
+import { getStoredUser } from '@/api/subAppAuth';
+
+const HIERARCHY_FORM_LEVELS = [
+  { key: 'discom', levelName: 'DISCOM', label: 'DISCOM' },
+  { key: 'circle', levelName: 'Circle', label: 'Circle' },
+  { key: 'division', levelName: 'Division', label: 'Division' },
+  { key: 'subDivision', levelName: 'Sub division', label: 'Sub-Division' },
+  { key: 'section', levelName: 'Section', label: 'Section' },
+  { key: 'substation', levelName: 'Substation', label: 'Substation' },
+] as const;
+
+const HIERARCHY_TYPE_TO_KEY: Record<string, string> = {
+  DISCOM: 'discom',
+  Circle: 'circle',
+  Division: 'division',
+  'Sub-Division': 'subDivision',
+  Section: 'section',
+  Substation: 'substation',
+};
+
+const normalizeLevelName = (name: string) => name.toLowerCase().replace(/[\s-]/g, '');
+
+/** Who can see Update Capacity / Update Hierarchy (temporary: TGNPDCL_Admin login). */
+const isSupportUser = (): boolean => {
+  const user = getStoredUser();
+  if (!user) return false;
+
+  const role = String(user?.role ?? '').toUpperCase();
+  const accessLevel = String(user?.accessLevel ?? '').toUpperCase();
+  const username = String(user?.username ?? '').toUpperCase();
+
+  if (role === 'SUPPORT' || accessLevel === 'SUPPORT') return true;
+
+  // Temporary: allow TGNPDCL_Admin login used for testing
+  if (username === 'TGNPDCL_ADMIN') return true;
+
+  const roles = Array.isArray(user?.roles)
+    ? user.roles.map((r: string) => String(r).toUpperCase())
+    : [];
+  if (roles.includes('TGNPDCL_ADMIN')) return true;
+
+  return false;
+};
+
+type CapacityUpdateModalProps = {
+  isOpen: boolean;
+  initialCapacity: string;
+  isUpdating: boolean;
+  onClose: () => void;
+  onConfirm: (capacity: number) => void;
+};
+
+/** Local modal — avoids federated form submit navigating to GET /api/dtrs/capacity */
+function CapacityUpdateModal({
+  isOpen,
+  initialCapacity,
+  isUpdating,
+  onClose,
+  onConfirm,
+}: CapacityUpdateModalProps) {
+  const [draft, setDraft] = useState(initialCapacity);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(initialCapacity);
+    }
+  }, [isOpen, initialCapacity]);
+
+  if (!isOpen) return null;
+
+  const handleUpdateClick = () => {
+    const capacity = Number(draft);
+    if (!Number.isFinite(capacity) || capacity <= 0) {
+      window.alert('Please enter a valid capacity value.');
+      return;
+    }
+    onConfirm(capacity);
+  };
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleUpdateClick();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+      onClick={isUpdating ? undefined : onClose}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-md rounded-3xl border border-primary-border bg-white p-6 shadow-lg dark:border-dark-border dark:bg-primary-dark-light"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="update-capacity-title"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2
+            id="update-capacity-title"
+            className="text-lg font-bold text-primary dark:text-white"
+          >
+            Update Capacity
+          </h2>
+          <button
+            type="button"
+            className="text-secondary hover:text-primary dark:text-subinfo"
+            onClick={onClose}
+            disabled={isUpdating}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleFormSubmit} noValidate>
+          <label
+            htmlFor="capacityKvaInput"
+            className="mb-2 block text-sm font-medium text-primary dark:text-white"
+          >
+            Capacity (kVA)
+          </label>
+          <input
+            id="capacityKvaInput"
+            type="number"
+            min={1}
+            step="any"
+            className="w-full rounded-2xl border border-primary-border bg-background-secondary px-4 py-3 text-sm font-medium text-primary outline-none focus:border-primary dark:border-dark-border dark:bg-white/5 dark:text-white"
+            placeholder="Enter capacity in kVA"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            disabled={isUpdating}
+            autoFocus
+          />
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              className="rounded-full border border-primary-border px-5 py-2.5 text-sm font-medium text-primary dark:border-dark-border dark:text-white"
+              onClick={onClose}
+              disabled={isUpdating}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-secondary px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+              onClick={handleUpdateClick}
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Updating...' : 'Update'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 // Dummy data for fallback
 const dummyDTRData = {
@@ -206,6 +365,246 @@ const DTRDetailPage = () => {
   const [pendingStatus, setPendingStatus] = useState<string>('');
   const [previousStatus, setPreviousStatus] = useState<string>('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const showSupportActions = isSupportUser();
+  const [dataRefreshKey, setDataRefreshKey] = useState(0);
+
+  const [isCapacityModalOpen, setIsCapacityModalOpen] = useState(false);
+  const [capacityModalInitial, setCapacityModalInitial] = useState('');
+  const [isUpdatingCapacity, setIsUpdatingCapacity] = useState(false);
+
+  const [isHierarchyModalOpen, setIsHierarchyModalOpen] = useState(false);
+  const [isUpdatingHierarchy, setIsUpdatingHierarchy] = useState(false);
+  const [isHierarchyOptionsLoading, setIsHierarchyOptionsLoading] = useState(false);
+  const [hierarchyValues, setHierarchyValues] = useState<Record<string, string>>({});
+  const [hierarchyOptions, setHierarchyOptions] = useState<
+    Record<string, { value: string; label: string }[]>
+  >({});
+
+  const getNumericDtrId = useCallback(() => dtrId && dtrId.match(/\d+/)?.[0], [dtrId]);
+
+  const buildHierarchyOptionsFromData = useCallback((apiData: any[]) => {
+    const next: Record<string, { value: string; label: string }[]> = {};
+    HIERARCHY_FORM_LEVELS.forEach((level) => {
+      const normalizedTarget = normalizeLevelName(level.levelName);
+      next[level.key] = apiData
+        .filter(
+          (item: any) =>
+            normalizeLevelName(String(item.levelName ?? '')) === normalizedTarget,
+        )
+        .map((item: any) => ({
+          value: item.id.toString(),
+          label: item.name,
+        }));
+    });
+    return next;
+  }, []);
+
+  const resolveHierarchyLocationId = (values: Record<string, string>) => {
+    const keys = ['substation', 'section', 'subDivision', 'division', 'circle', 'discom'] as const;
+    for (const key of keys) {
+      const v = values[key];
+      if (v) return v;
+    }
+    return '';
+  };
+
+  const handleOpenCapacityModal = () => {
+    const raw = dtr.capacity;
+    const initial = raw && raw !== 'N/A' && raw !== '0' ? String(raw) : '';
+    setCapacityModalInitial(initial);
+    setIsCapacityModalOpen(true);
+  };
+
+  const handleCloseCapacityModal = () => {
+    if (isUpdatingCapacity) return;
+    setIsCapacityModalOpen(false);
+  };
+
+  const handleCapacityUpdate = useCallback(
+    async (capacityValue: number) => {
+    const numericDtrId = getNumericDtrId();
+    if (!numericDtrId) {
+      window.alert('Invalid DTR ID');
+      return;
+    }
+
+    setIsUpdatingCapacity(true);
+    try {
+      const data = await apiClient.put('/dtrs/capacity', {
+        dtrId: Number(numericDtrId),
+        capacity: capacityValue,
+      });
+      if (data?.success) {
+        window.alert(data.message || 'DTR capacity updated successfully');
+        setDtr((prev) => ({ ...prev, capacity: String(capacityValue) }));
+        setDataRefreshKey((k) => k + 1);
+        setIsCapacityModalOpen(false);
+      } else {
+        window.alert(data?.message || 'Failed to update DTR capacity');
+      }
+    } catch (error) {
+      console.error('Error updating DTR capacity:', error);
+      window.alert(
+        error instanceof Error ? error.message : 'Failed to update DTR capacity. Please try again.',
+      );
+    } finally {
+      setIsUpdatingCapacity(false);
+    }
+    },
+    [getNumericDtrId],
+  );
+
+  const loadChildHierarchyOptions = async (
+    parentFilterKey: string,
+    parentValue: string,
+  ) => {
+    const parentIndex = HIERARCHY_FORM_LEVELS.findIndex((l) => l.key === parentFilterKey);
+    if (parentIndex < 0 || parentIndex >= HIERARCHY_FORM_LEVELS.length - 1) return;
+
+    const childLevel = HIERARCHY_FORM_LEVELS[parentIndex + 1];
+    const params = new URLSearchParams();
+    params.append('parentId', parentValue);
+    const data = await apiClient.get(`/dtrs/filter/filter-options?${params.toString()}`);
+    if (!data?.success) return;
+
+    const childOptions = (data.data || []).map((item: any) => ({
+      value: item.id.toString(),
+      label: item.name,
+    }));
+
+    setHierarchyOptions((prev) => {
+      const next = { ...prev, [childLevel.key]: childOptions };
+      for (let i = parentIndex + 2; i < HIERARCHY_FORM_LEVELS.length; i++) {
+        next[HIERARCHY_FORM_LEVELS[i].key] = [];
+      }
+      return next;
+    });
+
+    setHierarchyValues((prev) => {
+      const next = { ...prev, [parentFilterKey]: parentValue };
+      for (let i = parentIndex + 1; i < HIERARCHY_FORM_LEVELS.length; i++) {
+        next[HIERARCHY_FORM_LEVELS[i].key] = '';
+      }
+      return next;
+    });
+  };
+
+  const handleHierarchyLevelChange = async (filterKey: string, value: string) => {
+    setHierarchyValues((prev) => ({ ...prev, [filterKey]: value }));
+
+    const levelIndex = HIERARCHY_FORM_LEVELS.findIndex((l) => l.key === filterKey);
+    if (levelIndex < 0) return;
+
+    const cleared: Record<string, string> = { [filterKey]: value };
+    for (let i = levelIndex + 1; i < HIERARCHY_FORM_LEVELS.length; i++) {
+      cleared[HIERARCHY_FORM_LEVELS[i].key] = '';
+    }
+    setHierarchyValues((prev) => ({ ...prev, ...cleared }));
+
+    setHierarchyOptions((prev) => {
+      const next = { ...prev };
+      for (let i = levelIndex + 1; i < HIERARCHY_FORM_LEVELS.length; i++) {
+        next[HIERARCHY_FORM_LEVELS[i].key] = [];
+      }
+      return next;
+    });
+
+    if (!value) return;
+    await loadChildHierarchyOptions(filterKey, value);
+  };
+
+  const handleOpenHierarchyModal = async () => {
+    setIsHierarchyModalOpen(true);
+    setIsHierarchyOptionsLoading(true);
+    try {
+      const data = await apiClient.get('/dtrs/filter/filter-options');
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to load hierarchy options');
+      }
+      const apiData = data.data || [];
+      setHierarchyOptions(buildHierarchyOptionsFromData(apiData));
+
+      const initialValues: Record<string, string> = {};
+      locationHierarchy.forEach((loc: any) => {
+        const key = HIERARCHY_TYPE_TO_KEY[loc.type];
+        if (key && loc.id != null) {
+          initialValues[key] = String(loc.id);
+        }
+      });
+      setHierarchyValues(initialValues);
+    } catch (error) {
+      console.error('Error loading hierarchy options:', error);
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to load hierarchy options. Please try again.',
+      );
+      setIsHierarchyModalOpen(false);
+    } finally {
+      setIsHierarchyOptionsLoading(false);
+    }
+  };
+
+  const handleCloseHierarchyModal = () => {
+    if (isUpdatingHierarchy) return;
+    setIsHierarchyModalOpen(false);
+  };
+
+  const handleConfirmHierarchyUpdate = async () => {
+    const numericDtrId = getNumericDtrId();
+    if (!numericDtrId) {
+      window.alert('Invalid DTR ID');
+      return;
+    }
+
+    const locationId = resolveHierarchyLocationId(hierarchyValues);
+    if (!locationId) {
+      window.alert('Please select a hierarchy location (at least Substation).');
+      return;
+    }
+
+    setIsUpdatingHierarchy(true);
+    try {
+      const data = await apiClient.put(`/dtrs/hierarchy?dtrId=${numericDtrId}`, {
+        locationId: Number(locationId),
+      });
+      if (data?.success) {
+        window.alert(data.message || 'DTR hierarchy updated successfully');
+        setDataRefreshKey((k) => k + 1);
+        setIsHierarchyModalOpen(false);
+      } else {
+        window.alert(data?.message || 'Failed to update DTR hierarchy');
+      }
+    } catch (error) {
+      console.error('Error updating DTR hierarchy:', error);
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update DTR hierarchy. Please try again.',
+      );
+    } finally {
+      setIsUpdatingHierarchy(false);
+    }
+  };
+
+  const hierarchyFormFields = useMemo(
+    () =>
+      HIERARCHY_FORM_LEVELS.map((level) => ({
+        type: 'dropdown' as const,
+        label: level.label,
+        name: level.key,
+        searchable: false,
+        value: hierarchyValues[level.key] || '',
+        required: level.key === 'substation',
+        options: hierarchyOptions[level.key] || [],
+        onChange: (value: string) => {
+          void handleHierarchyLevelChange(level.key, value);
+        },
+        disabled: isHierarchyOptionsLoading,
+      })),
+    [hierarchyOptions, hierarchyValues, isHierarchyOptionsLoading],
+  );
 
   const handleDtrStatusChange = (value: string) => {
     if (value === 'na') {
@@ -848,7 +1247,7 @@ const DTRDetailPage = () => {
     fetchAlertsData();
     fetchFeederStats();
     fetchKVAMetrics();
-  }, [dtrId]);
+  }, [dtrId, dataRefreshKey]);
 
   const handleAlertsPageChange = async (page: number, limit: number) => {
     setAlertsPagination((prev) => ({
@@ -1076,9 +1475,32 @@ const DTRDetailPage = () => {
                         title: 'DTR Details',
                         onBackClick: () => navigate('/dtr-dashboard'),
                         backButtonText: 'Back to Dashboard',
-                        buttonsLabel: 'Export Data',
-                        variant: 'primary',
-                        onClick: () => handleExportData(),
+                        buttons: [
+                          ...(showSupportActions
+                            ? [
+                                {
+                                  label: 'Update Capacity',
+                                  variant: 'secondary',
+                                  onClick: handleOpenCapacityModal,
+                                  disabled: isUpdatingCapacity,
+                                },
+                                {
+                                  label: 'Update Hierarchy',
+                                  variant: 'secondary',
+                                  onClick: () => {
+                                    void handleOpenHierarchyModal();
+                                  },
+                                  disabled:
+                                    isUpdatingHierarchy || isHierarchyOptionsLoading,
+                                },
+                              ]
+                            : []),
+                          {
+                            label: 'Export Data',
+                            variant: 'primary',
+                            onClick: () => handleExportData(),
+                          },
+                        ],
                       },
                     },
                   ],
@@ -1687,12 +2109,46 @@ const DTRDetailPage = () => {
                         size: 'md',
                       },
                     },
+                    {
+                      name: 'Modal',
+                      props: {
+                        isOpen: isHierarchyModalOpen,
+                        onClose: handleCloseHierarchyModal,
+                        title: 'Update Hierarchy',
+                        size: 'md',
+                        showCloseIcon: true,
+                        backdropClosable: !isUpdatingHierarchy,
+                        centered: true,
+                        showForm: true,
+                        formFields: hierarchyFormFields,
+                        onSave: () => {
+                          void handleConfirmHierarchyUpdate();
+                        },
+                        saveButtonLabel: isUpdatingHierarchy ? 'Updating...' : 'Update',
+                        cancelButtonLabel: 'Cancel',
+                        cancelButtonVariant: 'secondary',
+                        gridLayout: {
+                          gridRows: 6,
+                          gridColumns: 1,
+                          gap: 'gap-4',
+                        },
+                      },
+                    },
                   ],
                 },
               ],
             },
           },
         ]}
+      />
+      <CapacityUpdateModal
+        isOpen={isCapacityModalOpen}
+        initialCapacity={capacityModalInitial}
+        isUpdating={isUpdatingCapacity}
+        onClose={handleCloseCapacityModal}
+        onConfirm={(capacity) => {
+          void handleCapacityUpdate(capacity);
+        }}
       />
     </div>
   );

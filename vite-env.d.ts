@@ -69,3 +69,9 @@ declare module '*.json' {
   const content: any;
   export default content;
 }
+
+declare module 'SuperAdmin/Table' {
+  import type { ComponentType } from 'react';
+  const Table: ComponentType<Record<string, unknown>>;
+  export default Table;
+}
