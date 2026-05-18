@@ -9,6 +9,10 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
 import { exportToExcel } from "../utils/excelExport";
+import {
+    hierarchyDetailTableColumns,
+    mapRowToHierarchyDetailTableRow,
+} from "../utils/circleWiseExport";
 
 const Page = lazy(() => import("SuperAdmin/Page"));
 
@@ -47,6 +51,7 @@ const DTRTable: React.FC = () => {
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
   const [searchTerm, setSearchTerm] = useState('');
   const [hierarchyId, setHierarchyId] = useState<string | null>(null);
+  const [hierarchyDetailView, setHierarchyDetailView] = useState(false);
     const normalizedCardType = useMemo(
         () => cardType?.toLowerCase() || "",
         [cardType],
@@ -84,9 +89,13 @@ const DTRTable: React.FC = () => {
     if (type) setCardType(type);
     if (title) setCardTitle(decodeURIComponent(title));
     if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
+    setHierarchyDetailView(urlParams.get("view") === "hierarchy");
   }, []);
 
     const getTableColumns = () => {
+        if (hierarchyDetailView) {
+            return [...hierarchyDetailTableColumns];
+        }
         switch (normalizedCardType) {
             case "communicating-meters":
             case "non-communicating-meters":
@@ -499,17 +508,30 @@ const DTRTable: React.FC = () => {
 
                     // No client-side filter needed; backend returns filtered rows
 
-                    safeSetTableData(rows);
+                    const pagination = data.pagination;
+                    const resolvedPage = pagination?.currentPage ?? page;
+                    const resolvedLimit = pagination?.limit ?? pageSize;
+
+                    const tableRows = hierarchyDetailView
+                        ? rows.map((raw: TableData, idx: number) =>
+                              mapRowToHierarchyDetailTableRow(
+                                  raw as Record<string, unknown>,
+                                  (resolvedPage - 1) * resolvedLimit + idx + 1,
+                              ),
+                          )
+                        : rows;
+
+                    safeSetTableData(tableRows as TableData[]);
 
           // Derive pagination after filter
-          if (data.pagination) {
+          if (pagination) {
             setServerPagination({
-              currentPage: data.pagination.currentPage,
-              totalPages: data.pagination.totalPages,
-              totalCount: data.pagination.totalCount,
-              limit: data.pagination.limit,
-              hasNextPage: data.pagination.hasNextPage,
-              hasPrevPage: data.pagination.hasPrevPage,
+              currentPage: pagination.currentPage,
+              totalPages: pagination.totalPages,
+              totalCount: pagination.totalCount,
+              limit: pagination.limit,
+              hasNextPage: pagination.hasNextPage,
+              hasPrevPage: pagination.hasPrevPage,
             });
           } else {
             // Fallback for endpoints without pagination object
@@ -534,7 +556,7 @@ const DTRTable: React.FC = () => {
         setLoading(false);
       }
     },
-    [cardType, hierarchyId, buildListApiUrl, normalizedCardType]
+    [cardType, hierarchyId, buildListApiUrl, normalizedCardType, hierarchyDetailView]
   );
 
     useEffect(() => {
