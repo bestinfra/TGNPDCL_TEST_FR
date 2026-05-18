@@ -126,7 +126,7 @@ export function resolveHierarchyId(
     return null;
 }
 
-/** `type` query for `/dtr-table` — mirrors Circle Card `buildDtrTableUrl` / `DTRTable`. */
+/** `type` query for `/dtr-table` — mirrors dashboard stat cards / `DTRTable`. */
 export function getCardTableTypeForCircleWiseColumn(
     columnKey: CircleWiseExcelExportColumnKey,
 ): string | null {
@@ -136,41 +136,99 @@ export function getCardTableTypeForCircleWiseColumn(
     return columnToTypeMap[columnKey] ?? null;
 }
 
+export function getCircleWiseMetricTitle(
+    columnKey: CircleWiseExcelExportColumnKey,
+): string {
+    const entry = Object.entries(circleWiseExportColumnLabelToKey).find(
+        ([, k]) => k === columnKey,
+    );
+    return entry?.[0] ?? columnKey;
+}
+
+/** Table column `key` on circle-wise rows → export/drill column key. */
+export const circleWiseTableColumnKeyToExportKey: Record<
+    string,
+    CircleWiseExcelExportColumnKey
+> = {
+    totalDTRs: "totalDTRs",
+    totalLTFeeders: "totalLTFeeders",
+    totalFuseBlown: "totalFuseBlown",
+    overloadedDTRs: "overloadedDTRs",
+    underloadedDTRs: "underloadedDTRs",
+    ltSideFuseBlown: "ltSideFuseBlown",
+    unbalancedDTRs: "unbalancedDTRs",
+    powerFailureFeeders: "powerFailureFeeders",
+    htSideFuseBlown: "htSideFuseBlown",
+    communicating: "communicating",
+    notCommunicating: "notCommunicating",
+};
+
+/** Shared `/dtr-table` URL builder (dashboard cards + circle-wise numeric cells). */
+export function buildDtrTableDrillUrl(options: {
+    type: string;
+    title: string;
+    circle?: string;
+    hierarchyId?: string | null;
+    lastSelectedId?: string | null;
+}): string {
+    const params = new URLSearchParams();
+    params.set("type", options.type);
+    params.set("title", options.title);
+    const circleLabel = options.circle?.trim();
+    if (circleLabel) params.set("circle", circleLabel);
+    const hid =
+        options.hierarchyId?.toString().trim() ||
+        options.lastSelectedId?.toString().trim();
+    if (hid) params.set("hierarchyId", hid);
+    return `/dtr-table?${params.toString()}`;
+}
+
 /**
- * Build `/dtr-table` URL for circle-wise cell drill-down (same endpoints as stat cards, scoped to row circle).
- * `view=hierarchy` selects `hierarchyDetailTableColumns` on `DTRTable`.
+ * Circle-wise numeric cell → same drill-down table as dashboard stat cards.
+ * Example: `/dtr-table?type=total-dtrs&title=Total+DTRs&circle=Hanumakonda&hierarchyId=…`
  */
+export function buildCircleWiseStatDrillUrl(
+    columnKey: CircleWiseExcelExportColumnKey,
+    row: CircleWiseTableRow,
+    circleOptions: CircleWiseCircleOption[],
+    lastSelectedId?: string | null,
+): string | null {
+    const cardType = getCardTableTypeForCircleWiseColumn(columnKey);
+    if (!cardType) return null;
+
+    const circleLabel = String(row.circle ?? "").trim();
+    const hierarchyId = resolveHierarchyId(row, circleOptions);
+
+    return buildDtrTableDrillUrl({
+        type: cardType,
+        title: getCircleWiseMetricTitle(columnKey),
+        circle: circleLabel || undefined,
+        hierarchyId,
+        lastSelectedId: hierarchyId ? null : lastSelectedId,
+    });
+}
+
+/** @deprecated Use `buildCircleWiseStatDrillUrl` */
 export function buildCircleWiseDrillTableUrl(
     columnKey: CircleWiseExcelExportColumnKey | "circle",
     row: CircleWiseTableRow,
     circleOptions: CircleWiseCircleOption[],
+    lastSelectedId?: string | null,
 ): string | null {
-    const hierarchyId = resolveHierarchyId(row, circleOptions);
-    if (!hierarchyId) return null;
-
-    const cardType =
-        columnKey === "circle"
-            ? "total-lt-feeders"
-            : getCardTableTypeForCircleWiseColumn(columnKey);
-    if (!cardType) return null;
-
-    const circleLabel = String(row.circle ?? "").trim();
-    const metricLabel =
-        columnKey === "circle"
-            ? "Hierarchy Detail"
-            : Object.entries(circleWiseExportColumnLabelToKey).find(
-                  ([, k]) => k === columnKey,
-              )?.[0] ?? columnKey;
-    const title = circleLabel
-        ? `${circleLabel} — ${metricLabel}`
-        : metricLabel;
-
-    const params = new URLSearchParams();
-    params.set("type", cardType);
-    params.set("title", title);
-    params.set("hierarchyId", hierarchyId);
-    params.set("view", "hierarchy");
-    return `/dtr-table?${params.toString()}`;
+    if (columnKey === "circle") {
+        return buildCircleWiseStatDrillUrl(
+            "totalDTRs",
+            row,
+            circleOptions,
+            lastSelectedId,
+        );
+    }
+    return buildCircleWiseStatDrillUrl(
+        columnKey,
+        row,
+        circleOptions,
+        lastSelectedId,
+    );
 }
 
 export function isNumericCell(cellValue: unknown): boolean {

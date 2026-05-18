@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback } from "react";
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
 }
@@ -7,6 +7,13 @@ import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
 import { apiClient } from "../api/apiUtils";
+import {
+    buildCircleWiseStatDrillUrl,
+    buildDtrTableDrillUrl,
+    circleWiseExportColumnLabelToKey,
+    isNumericCell,
+    type CircleWiseExcelExportColumnKey,
+} from "../utils/circleWiseExport";
 import { io, Socket } from "socket.io-client";
 
 /** Stat from `/dtrs/stats` row1; use `??` semantics so `0` is not replaced by a fallback. */
@@ -353,14 +360,12 @@ const DTRDashboard: React.FC = () => {
     });
     const [mapZoom, setMapZoom] = useState(13);
 
-    // Helper to build DTR table URL with current lastSelectedId
-    const buildDtrTableUrl = (type: string, title: string) => {
-        const params = new URLSearchParams();
-        params.set("type", type);
-        params.set("title", title);
-        if (lastSelectedId) params.set("lastSelectedId", lastSelectedId);
-        return `/dtr-table?${params.toString()}`;
-    };
+    const buildDtrTableUrl = (type: string, title: string) =>
+        buildDtrTableDrillUrl({
+            type,
+            title,
+            lastSelectedId,
+        });
 
     // Function to calculate map center and zoom based on DTR locations
     const calculateMapCenterAndZoom = (dtrData: any[]) => {
@@ -2170,6 +2175,62 @@ const DTRDashboard: React.FC = () => {
         // { key: "status", label: "Status" },
     ];
 
+    const handleCircleWiseNumericCellClick = useCallback(
+        (
+            row: TableData,
+            exportKey: CircleWiseExcelExportColumnKey,
+            cellValue: unknown,
+        ) => {
+            if (!isNumericCell(cellValue)) return;
+            const url = buildCircleWiseStatDrillUrl(
+                exportKey,
+                row,
+                filterOptions.circles,
+                lastSelectedId,
+            );
+            if (url) navigate(url);
+        },
+        [filterOptions.circles, lastSelectedId, navigate],
+    );
+
+    useLayoutEffect(() => {
+        const onClickCapture = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const cell = target.closest("td[data-label]");
+            if (!cell) return;
+
+            const label = cell.getAttribute("data-label");
+            if (!label || label === "S.No" || label === "Circle" || label === "Comm. %") {
+                return;
+            }
+
+            const exportKey = circleWiseExportColumnLabelToKey[label];
+            if (!exportKey || exportKey === "commPercentage") return;
+
+            const rowEl = cell.closest("tr");
+            const tbody = rowEl?.closest("tbody");
+            if (!rowEl || !tbody) return;
+
+            const rowIndex = Array.from(tbody.querySelectorAll("tr")).indexOf(
+                rowEl as HTMLTableRowElement,
+            );
+            if (rowIndex < 0) return;
+
+            const row = circleWiseTableData[rowIndex];
+            if (!row?.circle || !("totalDTRs" in row)) return;
+
+            const cellValue = cell.textContent?.trim() ?? "";
+            if (!isNumericCell(cellValue)) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            handleCircleWiseNumericCellClick(row, exportKey, cellValue);
+        };
+
+        document.addEventListener("click", onClickCapture, true);
+        return () => document.removeEventListener("click", onClickCapture, true);
+    }, [circleWiseTableData, handleCircleWiseNumericCellClick]);
+
     const circleWiseTableColumns = [
         { key: "sNo", label: "S.No" },
         { key: "circle", label: "Circle" },
@@ -2501,7 +2562,7 @@ const DTRDashboard: React.FC = () => {
                         layout: {
                             type: "grid" as const,
                             className:
-                                "w-full min-w-0 overflow-x-auto gap-4",
+                                "circle-wise-stats-table-host w-full min-w-0 overflow-x-auto gap-4",
                             columns: 2,
                         },
                         components: [

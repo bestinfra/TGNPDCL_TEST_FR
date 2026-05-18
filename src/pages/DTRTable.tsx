@@ -64,6 +64,7 @@ const DTRTable: React.FC = () => {
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
   const [searchTerm, setSearchTerm] = useState('');
   const [hierarchyId, setHierarchyId] = useState<string | null>(null);
+  const [circleFilter, setCircleFilter] = useState<string | null>(null);
   const [hierarchyDetailView, setHierarchyDetailView] = useState(false);
     const normalizedCardType = useMemo(() => {
         const raw = cardType?.toLowerCase().trim() || "";
@@ -98,10 +99,12 @@ const DTRTable: React.FC = () => {
     const type = urlParams.get('type');
     const title = urlParams.get('title');
     const selectedHierarchyId = urlParams.get('hierarchyId') || urlParams.get('lastSelectedId');
+    const circleParam = urlParams.get('circle');
 
     if (type) setCardType(normalizeDtrStatsCardType(type) || type);
     if (title) setCardTitle(decodeURIComponent(title));
     if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
+    if (circleParam) setCircleFilter(decodeURIComponent(circleParam));
     setHierarchyDetailView(urlParams.get("view") === "hierarchy");
   }, []);
 
@@ -215,21 +218,36 @@ const DTRTable: React.FC = () => {
         (page: number, pageSize: number, search?: string): string | null => {
             if (!cardType) return null;
 
+            const scopedSearch =
+                search?.trim() ||
+                (!hierarchyId && circleFilter?.trim()
+                    ? circleFilter.trim()
+                    : undefined);
+
             const params = new URLSearchParams();
             params.append("page", page.toString());
             params.append("pageSize", pageSize.toString());
-            if (search) params.append("search", search);
+            if (scopedSearch) params.append("search", scopedSearch);
             if (hierarchyId) params.append("hierarchyId", hierarchyId);
+            if (circleFilter?.trim()) {
+                params.append("circle", circleFilter.trim());
+            }
 
             const statsUrl = buildDtrStatsListApiUrl(
                 BACKEND_URL,
                 cardType,
                 page,
                 pageSize,
-                search,
+                scopedSearch,
                 hierarchyId,
             );
-            if (statsUrl) return statsUrl;
+            if (statsUrl) {
+                if (circleFilter?.trim() && !statsUrl.includes("circle=")) {
+                    const sep = statsUrl.includes("?") ? "&" : "?";
+                    return `${statsUrl}${sep}circle=${encodeURIComponent(circleFilter.trim())}`;
+                }
+                return statsUrl;
+            }
 
             switch (cardType) {
                 case "communicating-meters":
@@ -243,7 +261,7 @@ const DTRTable: React.FC = () => {
                     throw new Error(`Unsupported card type: ${cardType}`);
             }
         },
-        [cardType, hierarchyId, normalizedCardType],
+        [cardType, hierarchyId, circleFilter, normalizedCardType],
     );
 
     const fetchAllRowsForExport = useCallback(async (): Promise<TableData[]> => {
