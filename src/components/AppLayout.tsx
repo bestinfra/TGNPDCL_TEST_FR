@@ -1,5 +1,6 @@
 import React, { lazy, useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { navigateToDtrDetail, resolveDtrDbId } from "../utils/dtrNavigation";
 const Header = lazy(() => import("SuperAdmin/Header"));
 const Sidebar = lazy(() => import("SuperAdmin/Sidebar"));
 
@@ -530,28 +531,31 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         if (result._searchType === "meter") {
             // For meter searches: Navigate to /feeder page with state
             const originalData = result._originalData;
-            const dtrId = originalData.dtrNumber || originalData.id;
+            const dtrDbId = resolveDtrDbId(originalData);
+            if (!dtrDbId) {
+                console.error("Missing DTR ID for meter search result", originalData);
+                return;
+            }
             const meterNumber =
                 originalData.meter.meterNumber ||
                 originalData.meter.serialNumber;
 
-            navigate(`/feeder/${dtrId}`, {
+            navigate(`/feeder/${dtrDbId}`, {
                 state: {
                     feederData: {
                         feederName: meterNumber,
                         dtrNumber: originalData.dtrNumber,
-                        dtrId: dtrId,
+                        dtrId: dtrDbId,
                     },
-                    dtrId: dtrId,
+                    id: dtrDbId,
+                    dtrId: dtrDbId,
                     dtrName: originalData.dtrNumber,
                     highlightMeter: meterNumber,
                 },
             });
         } else if (result._searchType === "dtr") {
-            // For DTR searches: Navigate to /dtr-detail page
             const originalData = result._originalData;
-            const dtrId = originalData.dtrNumber || originalData.id;
-            navigate(`/dtr-detail/${dtrId}`);
+            navigateToDtrDetail(navigate, originalData, "search suggestion");
         } else {
             // Fallback for other search types (consumers, etc.)
             if (result.consumerNumber) {
@@ -568,13 +572,6 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
         try {
             const trimmedQuery = query.trim();
-
-            // Direct DTR navigation if starts with "DTR"
-            if (trimmedQuery.toUpperCase().startsWith("DTR")) {
-                const dtrNumber = trimmedQuery.replace(/^DTR[-_]?/i, "");
-                navigate(`/dtr-detail/${dtrNumber}`);
-                return;
-            }
 
             // Search using API
             const fullUrl = `${baseApiUrl}/dtrs/search?query=${encodeURIComponent(
@@ -593,9 +590,18 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
                     // If result has meter info and query is likely a meter number (short, numeric)
                     if (firstResult.meter && /^\d{1,4}$/.test(trimmedQuery)) {
-                        const dtrId = firstResult.dtrNumber || firstResult.id;
-                        navigate(`/feeder/${dtrId}`, {
+                        const dtrDbId = resolveDtrDbId(firstResult);
+                        if (!dtrDbId) {
+                            console.error(
+                                "Missing DTR ID for feeder search",
+                                firstResult,
+                            );
+                            return;
+                        }
+                        navigate(`/feeder/${dtrDbId}`, {
                             state: {
+                                id: dtrDbId,
+                                dtrId: dtrDbId,
                                 highlightMeter:
                                     firstResult.meter.meterNumber ||
                                     firstResult.meter.serialNumber,
@@ -603,10 +609,15 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                         });
                         return;
                     } else {
-                        // Navigate to DTR detail
-                        const dtrId = firstResult.dtrNumber || firstResult.id;
-                        navigate(`/dtr-detail/${dtrId}`);
-                        return;
+                        if (
+                            navigateToDtrDetail(
+                                navigate,
+                                firstResult,
+                                "global search",
+                            )
+                        ) {
+                            return;
+                        }
                     }
                 }
             }

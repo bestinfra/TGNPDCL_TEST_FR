@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import BACKEND_URL from "../config";
 import { FILTER_STYLES } from "../contexts/FilterStyleContext";
 import { exportChartData } from "../utils/excelExport";
+import { navigateToDtrDetail } from "../utils/dtrNavigation";
 const Page = lazy(() => import("SuperAdmin/Page"));
 
 // Dummy data for fallbackf
@@ -264,6 +265,7 @@ const Feeders = () => {
             alertId?: string;
             occuredOn?: string;
         };
+        id?: string | number;
         dtrId?: string;
         dtrName?: string;
         dtrNumber?: string;
@@ -301,7 +303,9 @@ const Feeders = () => {
     };
 
     const getEffectiveDtrId = () => {
-        // First try passedData.dtrId (from navigation state)
+        if (passedData?.id != null) {
+            return String(passedData.id);
+        }
         if (passedData?.dtrId) {
             return passedData.dtrId;
         }
@@ -1631,13 +1635,22 @@ const Feeders = () => {
                                                 onBackClick: () => {
                                                     if (isIndividualFeeder) {
                                                         // Go back to the specific DTR detail page if we have the DTR ID
-                                                        if (passedData?.dtrId) {
-                                                            navigate(
-                                                                `/dtr-detail/${passedData.dtrId}`
-                                                            );
+                                                        if (
+                                                            passedData &&
+                                                            navigateToDtrDetail(
+                                                                navigate,
+                                                                {
+                                                                    id:
+                                                                        passedData.id ??
+                                                                        passedData.dtrId,
+                                                                },
+                                                                "feeder back",
+                                                            )
+                                                        ) {
+                                                            /* navigated */
                                                         } else {
                                                             navigate(
-                                                                "/dtr-dashboard"
+                                                                "/dtr-dashboard",
                                                             );
                                                         }
                                                     } else {
