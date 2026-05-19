@@ -22,10 +22,6 @@ import {
     normalizeDtrStatsCardType,
     resolveDtrStatsEndpoint,
 } from "../utils/dtrStatsTable";
-import {
-    navigateToDtrDetail,
-    resolveDtrDbId,
-} from "../utils/dtrNavigation";
 
 const Page = lazy(() => import("SuperAdmin/Page"));
 
@@ -533,41 +529,33 @@ const DTRTable: React.FC = () => {
         const statsType = normalizeDtrStatsCardType(normalizedCardType);
 
         if (statsType === "total-lt-feeders") {
-            const dbId = resolveDtrDbId(row);
-            if (dbId) {
-                navigate(`/feeder/${dbId}`, {
-                    state: {
-                        feederData: {
-                            meterNumber: row.meterNumber ?? row.meterNo,
-                            dtrId: dbId,
-                            dtrName: row.dtrNumber ?? row.dtrName,
-                            location: row.dtrLocation ?? row.location,
-                            communicationStatus: row.communicationStatus,
-                            lastCommunicationDate:
-                                row.lastCommunicationDate,
-                        },
-                        id: dbId,
-                        dtrId: dbId,
+            if (!row?.dtrNumber) return;
+            const feederDtrId = String(row.dtrNumber).trim();
+            if (!feederDtrId) return;
+            navigate(`/feeder/${feederDtrId}`, {
+                state: {
+                    feederData: {
+                        meterNumber: row.meterNumber ?? row.meterNo,
+                        dtrId: feederDtrId,
                         dtrName: row.dtrNumber ?? row.dtrName,
+                        location: row.dtrLocation ?? row.location,
+                        communicationStatus: row.communicationStatus,
+                        lastCommunicationDate: row.lastCommunicationDate,
                     },
-                });
-                return;
-            }
+                    dtrId: feederDtrId,
+                    dtrName: row.dtrNumber ?? row.dtrName,
+                },
+            });
+            return;
         }
 
         if (
             isDtrStatsDrillType(statsType) &&
             statsType !== "total-lt-feeders"
         ) {
-            if (
-                navigateToDtrDetail(
-                    navigate,
-                    row,
-                    `DTR table (${statsType})`,
-                )
-            ) {
-                return;
-            }
+            if (!row?.id) return;
+            navigate(`/dtr-detail/${row.id}`);
+            return;
         }
 
         // For meter-related tables, navigate to meter search
@@ -597,15 +585,9 @@ const DTRTable: React.FC = () => {
                 "monthly-kvarh",
             ].includes(normalizedCardType || "")
         ) {
-            if (
-                navigateToDtrDetail(
-                    navigate,
-                    row,
-                    `DTR table consumption (${normalizedCardType})`,
-                )
-            ) {
-                return;
-            }
+            if (!row?.id) return;
+            navigate(`/dtr-detail/${row.id}`);
+            return;
         }
     };
 

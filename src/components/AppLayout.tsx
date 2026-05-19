@@ -1,6 +1,5 @@
 import React, { lazy, useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { navigateToDtrDetail, resolveDtrDbId } from "../utils/dtrNavigation";
 const Header = lazy(() => import("SuperAdmin/Header"));
 const Sidebar = lazy(() => import("SuperAdmin/Sidebar"));
 
@@ -531,31 +530,29 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         if (result._searchType === "meter") {
             // For meter searches: Navigate to /feeder page with state
             const originalData = result._originalData;
-            const dtrDbId = resolveDtrDbId(originalData);
-            if (!dtrDbId) {
-                console.error("Missing DTR ID for meter search result", originalData);
-                return;
-            }
+            if (!originalData?.dtrId) return;
+            const feederDtrId = String(originalData.dtrId).trim();
+            if (!feederDtrId) return;
             const meterNumber =
                 originalData.meter.meterNumber ||
                 originalData.meter.serialNumber;
 
-            navigate(`/feeder/${dtrDbId}`, {
+            navigate(`/feeder/${feederDtrId}`, {
                 state: {
                     feederData: {
                         feederName: meterNumber,
                         dtrNumber: originalData.dtrNumber,
-                        dtrId: dtrDbId,
+                        dtrId: feederDtrId,
                     },
-                    id: dtrDbId,
-                    dtrId: dtrDbId,
+                    dtrId: feederDtrId,
                     dtrName: originalData.dtrNumber,
                     highlightMeter: meterNumber,
                 },
             });
         } else if (result._searchType === "dtr") {
             const originalData = result._originalData;
-            navigateToDtrDetail(navigate, originalData, "search suggestion");
+            if (!originalData?.id) return;
+            navigate(`/dtr-detail/${originalData.id}`);
         } else {
             // Fallback for other search types (consumers, etc.)
             if (result.consumerNumber) {
@@ -590,18 +587,12 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
 
                     // If result has meter info and query is likely a meter number (short, numeric)
                     if (firstResult.meter && /^\d{1,4}$/.test(trimmedQuery)) {
-                        const dtrDbId = resolveDtrDbId(firstResult);
-                        if (!dtrDbId) {
-                            console.error(
-                                "Missing DTR ID for feeder search",
-                                firstResult,
-                            );
-                            return;
-                        }
-                        navigate(`/feeder/${dtrDbId}`, {
+                        if (!firstResult?.dtrId) return;
+                        const feederDtrId = String(firstResult.dtrId).trim();
+                        if (!feederDtrId) return;
+                        navigate(`/feeder/${feederDtrId}`, {
                             state: {
-                                id: dtrDbId,
-                                dtrId: dtrDbId,
+                                dtrId: feederDtrId,
                                 highlightMeter:
                                     firstResult.meter.meterNumber ||
                                     firstResult.meter.serialNumber,
@@ -609,15 +600,9 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                         });
                         return;
                     } else {
-                        if (
-                            navigateToDtrDetail(
-                                navigate,
-                                firstResult,
-                                "global search",
-                            )
-                        ) {
-                            return;
-                        }
+                        if (!firstResult?.id) return;
+                        navigate(`/dtr-detail/${firstResult.id}`);
+                        return;
                     }
                 }
             }

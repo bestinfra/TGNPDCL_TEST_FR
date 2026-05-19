@@ -57,7 +57,7 @@ type CapacityUpdateModalProps = {
   onConfirm: (capacity: number) => void;
 };
 
-/** Local modal — avoids federated form submit navigating to GET /api/dtrs/capacity */
+/** Local modal ? avoids federated form submit navigating to GET /api/dtrs/capacity */
 function CapacityUpdateModal({
   isOpen,
   initialCapacity,
@@ -116,7 +116,7 @@ function CapacityUpdateModal({
             disabled={isUpdating}
             aria-label="Close"
           >
-            ✕
+            ?
           </button>
         </div>
 
@@ -293,7 +293,7 @@ const DTRDetailPage = () => {
   const { dtrId } = useParams();
   const navigate = useNavigate();
 
-  // kVARh = √(kVAh² - kWh²)
+  // kVARh = ?(kVAh? - kWh?)
   const calculateKvarh = (kvah: number, kwh: number): number => {
     const kvarhSquared = Math.pow(kvah, 2) - Math.pow(kwh, 2);
     const calculatedKvarh = kvarhSquared > 0 ? Math.sqrt(kvarhSquared) : 0;
@@ -383,7 +383,7 @@ const DTRDetailPage = () => {
 
   const getNumericDtrId = useCallback(() => {
     const trimmed = dtrId?.trim();
-    if (!trimmed || !/^\d+$/.test(trimmed)) {
+    if (!trimmed) {
       return null;
     }
     return trimmed;
@@ -764,7 +764,7 @@ const DTRDetailPage = () => {
       params.append('page', String(pageToUse));
       params.append('pageSize', String(limitToUse));
 
-      console.log('🔍 [DTRDetailPage] Fetching alerts with:', {
+      console.log('?? [DTRDetailPage] Fetching alerts with:', {
         pageToUse,
         limitToUse,
         pageOverride,
@@ -869,35 +869,33 @@ const DTRDetailPage = () => {
         if (!response.ok) throw new Error('Failed to fetch DTR data');
 
         const data = await response.json();
+        const dtrData = data.data?.dtr;
 
-        if (data.success) {
-          const transformedDtrData = {
-            name: data.data?.dtr?.serialNumber || 'N/A',
-            dtrNo: data.data?.dtr?.dtrNumber || 'N/A',
-            division: 'N/A',
-            subDivision: 'N/A',
-            substation: 'N/A',
-            feeder: 'N/A',
-            feederNo: 'N/A',
-            condition: data.data?.dtr?.status || 'N/A',
-            capacity: data.data?.dtr?.capacity || 'N/A',
-            address:
-              data.data?.feeders?.[0]?.location?.name || data.data?.feeders?.[0]?.city || 'N/A',
-            location: {
-              lat: data.data?.feeders?.[0]?.latitude || 0,
-              lng: data.data?.feeders?.[0]?.longitude || 0,
-            },
-            lastCommunication: data.data?.dtr?.lastCommunication || null,
-            stats: dtr.stats,
-          };
-
-          setDtr(transformedDtrData);
-        } else {
+        if (!dtrData) {
           throw new Error(data.message || 'Failed to fetch DTR data');
         }
+
+        setDtr({
+          name: dtrData.serialNumber,
+          dtrNo: dtrData.dtrNumber,
+          division: 'N/A',
+          subDivision: 'N/A',
+          substation: 'N/A',
+          feeder: 'N/A',
+          feederNo: 'N/A',
+          condition: dtrData.status,
+          capacity: dtrData.capacity,
+          address:
+            data.data?.feeders?.[0]?.location?.name || data.data?.feeders?.[0]?.city,
+          location: {
+            lat: data.data?.feeders?.[0]?.latitude ?? 0,
+            lng: data.data?.feeders?.[0]?.longitude ?? 0,
+          },
+          lastCommunication: dtrData.lastCommunication ?? null,
+          stats: dtr.stats,
+        });
       } catch (error) {
         console.error('Error fetching DTR data:', error);
-        setDtr(dummyDTRData);
         setErrors((prev) => {
           if (!prev.includes('Failed to fetch DTR data')) {
             const updated = [...prev, 'Failed to fetch DTR data'];
@@ -955,17 +953,17 @@ const DTRDetailPage = () => {
             },
           });
 
-          console.log('📊 [DTR Consumption] Daily Data:', {
+          console.log('?? [DTR Consumption] Daily Data:', {
             totalKwh: data.data?.dailyData?.totalKwh,
             totalKvah: data.data?.dailyData?.totalKvah,
             totalKvarh: data.data?.dailyData?.totalKvarh,
           });
-          console.log('📊 [DTR Consumption] Monthly Data:', {
+          console.log('?? [DTR Consumption] Monthly Data:', {
             totalKwh: data.data?.monthlyData?.totalKwh,
             totalKvah: data.data?.monthlyData?.totalKvah,
             totalKvarh: data.data?.monthlyData?.totalKvarh,
           });
-          console.log('📊 [RightAngle] Data for component:', dtrConsumptionData);
+          console.log('?? [RightAngle] Data for component:', dtrConsumptionData);
         } else {
           throw new Error(data.message || 'Failed to fetch consumption data');
         }
@@ -1213,7 +1211,7 @@ const DTRDetailPage = () => {
             },
           ];
 
-          // console.log('📊 [DTR Statistics] Final Stats Array:', updatedStats);
+          // console.log('?? [DTR Statistics] Final Stats Array:', updatedStats);
 
           setStats(updatedStats);
 
@@ -1414,6 +1412,7 @@ const DTRDetailPage = () => {
       navigate(`/feeder/${feederId}`, {
         state: {
           feederData,
+          id: dtrId,
           dtrId: dtrId,
           dtrName: dtr.name,
         },
@@ -1426,6 +1425,7 @@ const DTRDetailPage = () => {
     navigate(`/feeder/${row.feederName}`, {
       state: {
         feederData: row,
+        id: dtrId,
         dtrId: dtrId,
         dtrName: dtr.name,
       },

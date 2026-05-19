@@ -582,7 +582,7 @@ const DTRDashboard: React.FC = () => {
                 return {
                     position: { lat: lat, lng: lng },
                     title: dtr.dtrName || `DTR ${dtr.dtrId}`,
-                    id: dtr.dtrId || dtr.dtrNumber,
+                    id: dtr.id,
                     idLabel: "DTR ID",
                     status: markerStatus,
                     icon: getMarkerIcon(markerStatus),
@@ -1490,7 +1490,8 @@ const DTRDashboard: React.FC = () => {
     };
 
     const handleViewDTR = (row: TableData) => {
-        navigate(`/dtr-detail/${row.dtrId}`);
+        if (!row?.id) return;
+        navigate(`/dtr-detail/${row.id}`);
     };
 
     const handleViewFeeder = (row: TableData) => {
@@ -2722,8 +2723,10 @@ const DTRDashboard: React.FC = () => {
                                     // selectable: true,
                                     showActions: true,
                                     text: "DTR Management Table",
-                                    onRowClick: (row: TableData) =>
-                                        navigate(`/dtr-detail/${row.dtrId}`),
+                                    onRowClick: (row: TableData) => {
+                                        if (!row?.id) return;
+                                        navigate(`/dtr-detail/${row.id}`);
+                                    },
                                     onView: handleViewDTR,
                                     availableTimeRanges: [],
                                     onPageChange: handlePageChange,
