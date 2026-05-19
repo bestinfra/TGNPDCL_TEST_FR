@@ -1,5 +1,10 @@
 import * as XLSX from "xlsx";
 import { apiClient } from "../api/apiUtils";
+import {
+    DTR_STATS_DRILL_TABLE_COLUMNS,
+    DTR_STATS_ENDPOINT_MAP,
+    mapApiRowToDtrStatsTableRow,
+} from "./dtrStatsTable";
 
 /** Row shape from Circle-wise table / API (matches dashboard `TableData`). */
 export type CircleWiseTableRow = Record<
@@ -16,13 +21,13 @@ export type CircleWiseCircleOption = { value: string; label: string };
 export const columnToTypeMap = {
     totalDTRs: "total-dtrs",
     totalLTFeeders: "total-lt-feeders",
-    totalFuseBlown: "fuse-blown",
-    overloadedDTRs: "overloaded-feeders",
-    underloadedDTRs: "underloaded-feeders",
-    ltSideFuseBlown: "lt-fuse-blown",
+    totalFuseBlown: "total-fuse-blown",
+    overloadedDTRs: "overloaded-dtrs",
+    underloadedDTRs: "underloaded-dtrs",
+    ltSideFuseBlown: "lt-side-fuse-blown",
     unbalancedDTRs: "unbalanced-dtrs",
     powerFailureFeeders: "power-failure-feeders",
-    htSideFuseBlown: "ht-fuse-blown",
+    htSideFuseBlown: "ht-side-fuse-blown",
     communicating: "communicating-meters",
     notCommunicating: "non-communicating-meters",
     commPercentage: "meter-status",
@@ -33,136 +38,23 @@ export type CircleWiseExcelExportColumnKey = keyof typeof columnToTypeMap;
 export type CircleWiseExportApiKey =
     (typeof columnToTypeMap)[CircleWiseExcelExportColumnKey];
 
-/** Base paths — keep in sync with `src/pages/DTRTable.tsx` list `fetchData` URLs. */
+/** Base paths — keep in sync with `src/utils/dtrStatsTable.ts`. */
 export const typeToApiMap: Record<CircleWiseExportApiKey, string> = {
-    "total-dtrs": "/dtrs",
-    "total-lt-feeders": "/dtrs/all-meters",
-    "fuse-blown": "/dtrs/fuse-blown-meters",
-    "overloaded-feeders": "/dtrs/overloaded-dtrs",
-    "underloaded-feeders": "/dtrs/underloaded-dtrs",
-    "ht-fuse-blown": "/dtrs/ht-fuse-blown",
-    "lt-fuse-blown": "/dtrs/lt-fuse-blown",
-    "unbalanced-dtrs": "/dtrs/unbalanced-dtrs",
-    "power-failure-feeders": "/dtrs/power-failure-feeders",
+    ...DTR_STATS_ENDPOINT_MAP,
     "communicating-meters": "/dtrs/communicating-meters",
     "non-communicating-meters": "/dtrs/non-communicating-meters",
     "meter-status": "/dtrs/meter-status",
 };
 
 /** Federated `Table` columns for circle-wise drill-down (`view=hierarchy` on `/dtr-table`). */
-export const hierarchyDetailTableColumns = [
-    { key: "sNo", label: "S.No" },
-    { key: "discom", label: "DISCOM" },
-    { key: "circle", label: "Circle" },
-    { key: "division", label: "Division" },
-    { key: "subDivision", label: "Sub-Division" },
-    { key: "section", label: "Section" },
-    { key: "substation", label: "Substation" },
-    { key: "feeder", label: "Feeder" },
-    { key: "dtrLocation", label: "DTR Location" },
-    { key: "dtrNumber", label: "DTR Number" },
-    { key: "meterNumber", label: "Meter Number" },
-    { key: "capacityKva", label: "Capacity (kVA)" },
-    { key: "meterStatus", label: "Meter Status" },
-    {
-        key: "communicationStatus",
-        label: "Communication Status",
-        statusIndicator: {},
-        isActive: (value: string | number | boolean | null | undefined) =>
-            String(value).toLowerCase() === "active",
-    },
-    { key: "lastCommunicationDate", label: "Last Communication Date" },
-] as const;
-
-function pickField(
-    raw: Record<string, unknown>,
-    ...keys: string[]
-): string | number | boolean | null | undefined {
-    for (const k of keys) {
-        const v = raw[k];
-        if (v !== undefined && v !== null && String(v).trim() !== "") {
-            return v as string | number | boolean;
-        }
-    }
-    return "";
-}
+export const hierarchyDetailTableColumns = [...DTR_STATS_DRILL_TABLE_COLUMNS];
 
 /** Normalize list API rows to hierarchy detail column keys (same labels as `hierarchyDetailTableColumns`). */
 export function mapRowToHierarchyDetailTableRow(
     raw: Record<string, unknown>,
     sNo: number,
 ): Record<string, string | number | boolean | null | undefined> {
-    return {
-        sNo,
-        discom: pickField(raw, "discom", "discomName", "DISCOM"),
-        circle: pickField(raw, "circle", "circleName", "Circle"),
-        division: pickField(raw, "division", "divisionName", "Division"),
-        subDivision: pickField(
-            raw,
-            "subDivision",
-            "sub_division",
-            "subDivisionName",
-            "Sub-Division",
-        ),
-        section: pickField(raw, "section", "sectionName", "Section"),
-        substation: pickField(
-            raw,
-            "substation",
-            "substationName",
-            "Substation",
-        ),
-        feeder: pickField(raw, "feeder", "feederName", "Feeder"),
-        dtrLocation: pickField(
-            raw,
-            "dtrLocation",
-            "location",
-            "meterlocation",
-            "DTR Location",
-        ),
-        dtrNumber: pickField(
-            raw,
-            "dtrNumber",
-            "dtrNo",
-            "dtrName",
-            "dtrId",
-            "DTR Number",
-        ),
-        meterNumber: pickField(
-            raw,
-            "meterNumber",
-            "meterNo",
-            "meter_number",
-            "Meter Number",
-        ),
-        capacityKva: pickField(
-            raw,
-            "capacityKva",
-            "capacity",
-            "capacity_kva",
-            "Capacity (kVA)",
-        ),
-        meterStatus: pickField(
-            raw,
-            "meterStatus",
-            "status",
-            "Meter Status",
-        ),
-        communicationStatus: pickField(
-            raw,
-            "communicationStatus",
-            "commStatus",
-            "Communication Status",
-        ),
-        lastCommunicationDate: pickField(
-            raw,
-            "lastCommunicationDate",
-            "lastCommunication",
-            "lastReadingDate",
-            "Last Communication Date",
-        ),
-        dtrId: pickField(raw, "dtrId", "feederId"),
-        meterNo: pickField(raw, "meterNo", "meterNumber"),
-    };
+    return mapApiRowToDtrStatsTableRow(raw, sNo);
 }
 
 /** Remote `Table` sets `data-label={column.label}` on each `<td>`. */
@@ -234,7 +126,7 @@ export function resolveHierarchyId(
     return null;
 }
 
-/** `type` query for `/dtr-table` — mirrors Circle Card `buildDtrTableUrl` / `DTRTable`. */
+/** `type` query for `/dtr-table` — mirrors dashboard stat cards / `DTRTable`. */
 export function getCardTableTypeForCircleWiseColumn(
     columnKey: CircleWiseExcelExportColumnKey,
 ): string | null {
@@ -244,41 +136,99 @@ export function getCardTableTypeForCircleWiseColumn(
     return columnToTypeMap[columnKey] ?? null;
 }
 
+export function getCircleWiseMetricTitle(
+    columnKey: CircleWiseExcelExportColumnKey,
+): string {
+    const entry = Object.entries(circleWiseExportColumnLabelToKey).find(
+        ([, k]) => k === columnKey,
+    );
+    return entry?.[0] ?? columnKey;
+}
+
+/** Table column `key` on circle-wise rows → export/drill column key. */
+export const circleWiseTableColumnKeyToExportKey: Record<
+    string,
+    CircleWiseExcelExportColumnKey
+> = {
+    totalDTRs: "totalDTRs",
+    totalLTFeeders: "totalLTFeeders",
+    totalFuseBlown: "totalFuseBlown",
+    overloadedDTRs: "overloadedDTRs",
+    underloadedDTRs: "underloadedDTRs",
+    ltSideFuseBlown: "ltSideFuseBlown",
+    unbalancedDTRs: "unbalancedDTRs",
+    powerFailureFeeders: "powerFailureFeeders",
+    htSideFuseBlown: "htSideFuseBlown",
+    communicating: "communicating",
+    notCommunicating: "notCommunicating",
+};
+
+/** Shared `/dtr-table` URL builder (dashboard cards + circle-wise numeric cells). */
+export function buildDtrTableDrillUrl(options: {
+    type: string;
+    title: string;
+    circle?: string;
+    hierarchyId?: string | null;
+    lastSelectedId?: string | null;
+}): string {
+    const params = new URLSearchParams();
+    params.set("type", options.type);
+    params.set("title", options.title);
+    const circleLabel = options.circle?.trim();
+    if (circleLabel) params.set("circle", circleLabel);
+    const hid =
+        options.hierarchyId?.toString().trim() ||
+        options.lastSelectedId?.toString().trim();
+    if (hid) params.set("hierarchyId", hid);
+    return `/dtr-table?${params.toString()}`;
+}
+
 /**
- * Build `/dtr-table` URL for circle-wise cell drill-down (same endpoints as stat cards, scoped to row circle).
- * `view=hierarchy` selects `hierarchyDetailTableColumns` on `DTRTable`.
+ * Circle-wise numeric cell → same drill-down table as dashboard stat cards.
+ * Example: `/dtr-table?type=total-dtrs&title=Total+DTRs&circle=Hanumakonda&hierarchyId=…`
  */
+export function buildCircleWiseStatDrillUrl(
+    columnKey: CircleWiseExcelExportColumnKey,
+    row: CircleWiseTableRow,
+    circleOptions: CircleWiseCircleOption[],
+    lastSelectedId?: string | null,
+): string | null {
+    const cardType = getCardTableTypeForCircleWiseColumn(columnKey);
+    if (!cardType) return null;
+
+    const circleLabel = String(row.circle ?? "").trim();
+    const hierarchyId = resolveHierarchyId(row, circleOptions);
+
+    return buildDtrTableDrillUrl({
+        type: cardType,
+        title: getCircleWiseMetricTitle(columnKey),
+        circle: circleLabel || undefined,
+        hierarchyId,
+        lastSelectedId: hierarchyId ? null : lastSelectedId,
+    });
+}
+
+/** @deprecated Use `buildCircleWiseStatDrillUrl` */
 export function buildCircleWiseDrillTableUrl(
     columnKey: CircleWiseExcelExportColumnKey | "circle",
     row: CircleWiseTableRow,
     circleOptions: CircleWiseCircleOption[],
+    lastSelectedId?: string | null,
 ): string | null {
-    const hierarchyId = resolveHierarchyId(row, circleOptions);
-    if (!hierarchyId) return null;
-
-    const cardType =
-        columnKey === "circle"
-            ? "total-lt-feeders"
-            : getCardTableTypeForCircleWiseColumn(columnKey);
-    if (!cardType) return null;
-
-    const circleLabel = String(row.circle ?? "").trim();
-    const metricLabel =
-        columnKey === "circle"
-            ? "Hierarchy Detail"
-            : Object.entries(circleWiseExportColumnLabelToKey).find(
-                  ([, k]) => k === columnKey,
-              )?.[0] ?? columnKey;
-    const title = circleLabel
-        ? `${circleLabel} — ${metricLabel}`
-        : metricLabel;
-
-    const params = new URLSearchParams();
-    params.set("type", cardType);
-    params.set("title", title);
-    params.set("hierarchyId", hierarchyId);
-    params.set("view", "hierarchy");
-    return `/dtr-table?${params.toString()}`;
+    if (columnKey === "circle") {
+        return buildCircleWiseStatDrillUrl(
+            "totalDTRs",
+            row,
+            circleOptions,
+            lastSelectedId,
+        );
+    }
+    return buildCircleWiseStatDrillUrl(
+        columnKey,
+        row,
+        circleOptions,
+        lastSelectedId,
+    );
 }
 
 export function isNumericCell(cellValue: unknown): boolean {

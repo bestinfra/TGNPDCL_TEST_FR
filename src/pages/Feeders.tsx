@@ -264,6 +264,7 @@ const Feeders = () => {
             alertId?: string;
             occuredOn?: string;
         };
+        id?: string | number;
         dtrId?: string;
         dtrName?: string;
         dtrNumber?: string;
@@ -301,7 +302,9 @@ const Feeders = () => {
     };
 
     const getEffectiveDtrId = () => {
-        // First try passedData.dtrId (from navigation state)
+        if (passedData?.id != null) {
+            return String(passedData.id);
+        }
         if (passedData?.dtrId) {
             return passedData.dtrId;
         }
@@ -1631,13 +1634,13 @@ const Feeders = () => {
                                                 onBackClick: () => {
                                                     if (isIndividualFeeder) {
                                                         // Go back to the specific DTR detail page if we have the DTR ID
-                                                        if (passedData?.dtrId) {
+                                                        if (!passedData?.id) {
                                                             navigate(
-                                                                `/dtr-detail/${passedData.dtrId}`
+                                                                "/dtr-dashboard",
                                                             );
                                                         } else {
                                                             navigate(
-                                                                "/dtr-dashboard"
+                                                                `/dtr-detail/${passedData.id}`,
                                                             );
                                                         }
                                                     } else {

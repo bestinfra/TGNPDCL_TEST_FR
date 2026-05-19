@@ -13,6 +13,15 @@ import {
     hierarchyDetailTableColumns,
     mapRowToHierarchyDetailTableRow,
 } from "../utils/circleWiseExport";
+import {
+    buildDtrStatsListApiUrl,
+    DTR_STATS_DRILL_TABLE_COLUMNS,
+    isDtrStatsDrillType,
+    mapApiRowToDtrStatsTableRow,
+    mapDtrStatsTableRows,
+    normalizeDtrStatsCardType,
+    resolveDtrStatsEndpoint,
+} from "../utils/dtrStatsTable";
 
 const Page = lazy(() => import("SuperAdmin/Page"));
 
@@ -51,11 +60,12 @@ const DTRTable: React.FC = () => {
   const [cardTitle, setCardTitle] = useState<string>('DTR Management');
   const [searchTerm, setSearchTerm] = useState('');
   const [hierarchyId, setHierarchyId] = useState<string | null>(null);
+  const [circleFilter, setCircleFilter] = useState<string | null>(null);
   const [hierarchyDetailView, setHierarchyDetailView] = useState(false);
-    const normalizedCardType = useMemo(
-        () => cardType?.toLowerCase() || "",
-        [cardType],
-    );
+    const normalizedCardType = useMemo(() => {
+        const raw = cardType?.toLowerCase().trim() || "";
+        return normalizeDtrStatsCardType(raw) || raw;
+    }, [cardType]);
   const [serverPagination, setServerPagination] = useState<Pagination>({
     currentPage: 1,
     totalPages: 1,
@@ -85,16 +95,21 @@ const DTRTable: React.FC = () => {
     const type = urlParams.get('type');
     const title = urlParams.get('title');
     const selectedHierarchyId = urlParams.get('hierarchyId') || urlParams.get('lastSelectedId');
+    const circleParam = urlParams.get('circle');
 
-    if (type) setCardType(type);
+    if (type) setCardType(normalizeDtrStatsCardType(type) || type);
     if (title) setCardTitle(decodeURIComponent(title));
     if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
+    if (circleParam) setCircleFilter(decodeURIComponent(circleParam));
     setHierarchyDetailView(urlParams.get("view") === "hierarchy");
   }, []);
 
     const getTableColumns = () => {
         if (hierarchyDetailView) {
             return [...hierarchyDetailTableColumns];
+        }
+        if (isDtrStatsDrillType(normalizedCardType)) {
+            return [...DTR_STATS_DRILL_TABLE_COLUMNS];
         }
         switch (normalizedCardType) {
             case "communicating-meters":
@@ -113,99 +128,6 @@ const DTRTable: React.FC = () => {
                         key: "lastCommunicationDate",
                         label: "Last Communication",
                     },
-                ];
-            case "total-dtrs":
-                return [
-                    { key: "sNo", label: "S.No" },
-                    { key: "dtrId", label: "DTR ID" },
-                    { key: "dtrName", label: "DTR Name" },
-                    { key: "feedersCount", label: "Feeders Count" },
-                    {
-                        key: "commStatus",
-                        label: "Communication-Status",
-                        statusIndicator: {},
-                        isActive: (
-                            value: string | number | boolean | null | undefined,
-                        ) => String(value).toLowerCase() === "active",
-                    },
-                    { key: "lastCommunication", label: "Last Communication" },
-                ];
-            case "total-lt-feeders":
-                return [
-                    { key: "sNo", label: "S.No" },
-                    { key: "dtrId", label: "DTR ID" },
-                    { key: "dtrName", label: "DTR Name" },
-                    { key: "meterNo", label: "Meter Number" },
-                    {
-                        key: "communicationStatus",
-                        label: "Communication Status",
-                    },
-                    { key: "location", label: "Location" },
-                    {
-                        key: "lastCommunicationDate",
-                        label: "Last Communication Date",
-                    },
-
-                    //{ key: 'installationDate', label: 'Installation Date' },
-                ];
-            case "fuse-blown":
-            case "lt-fuse-blown":
-            case "ht-fuse-blown":
-                return [
-                    { key: "slNo", label: "S.No" },
-                    { key: "dtrId", label: "DTR ID" },
-                    { key: "dtrName", label: "DTR Name" },
-                    { key: "meterNo", label: "Meter Number" },
-                    { key: "location", label: "Location" },
-                    { key: "fuseType", label: "Fuse Type" },
-                    {
-                        key: "lastReadingDate",
-                        label: "Last Communication Date",
-                    },
-                ];
-            case "overloaded-feeders":
-            case "underloaded-feeders":
-                return [
-                    { key: "slNo", label: "S.No" },
-                    { key: "dtrId", label: "DTR ID" },
-                    { key: "dtrName", label: "DTR Name" },
-                    { key: "manufacturer", label: "Manufacturer" },
-                    {
-                        key: "communicationStatus",
-                        label: "Communication Status",
-                    },
-                    { key: "feedersCount", label: "Feeders Count" },
-                    { key: "capacity", label: "Capacity" },
-                    { key: "loadPercentage", label: "Load %" },
-                    { key: "location", label: "Location" },
-                    { key: "lastCommunication", label: "Last Communication" },
-                ];
-            case "unbalanced-dtrs":
-                return [
-                    { key: "slNo", label: "S.No" },
-                    { key: "dtrId", label: "DTR ID" },
-                    { key: "dtrName", label: "DTR Name" },
-                    { key: "location", label: "Location" },
-                    {
-                        key: "communicationStatus",
-                        label: "Communication Status",
-                    },
-                    { key: "neutralCurrent", label: "Neutral Current" },
-                    { key: "lastCommunication", label: "Last Communication" },
-                ];
-            case "power-failure-feeders":
-                return [
-                    { key: "slNo", label: "S.No" },
-                    { key: "feederId", label: "DTR ID" },
-                    { key: "feederName", label: "DTR Name" },
-                    { key: "meterNo", label: "Meter Number" },
-                    {
-                        key: "communicationStatus",
-                        label: "Communication Status",
-                    },
-                    { key: "location", label: "Location" },
-                    { key: "failureTime", label: "Failure Time" },
-                    { key: "lastCommunication", label: "Last Communication" },
                 ];
             case "daily-kwh":
             case "monthly-kwh":
@@ -292,35 +214,42 @@ const DTRTable: React.FC = () => {
         (page: number, pageSize: number, search?: string): string | null => {
             if (!cardType) return null;
 
+            const scopedSearch =
+                search?.trim() ||
+                (!hierarchyId && circleFilter?.trim()
+                    ? circleFilter.trim()
+                    : undefined);
+
             const params = new URLSearchParams();
             params.append("page", page.toString());
             params.append("pageSize", pageSize.toString());
-            if (search) params.append("search", search);
+            if (scopedSearch) params.append("search", scopedSearch);
             if (hierarchyId) params.append("hierarchyId", hierarchyId);
+            if (circleFilter?.trim()) {
+                params.append("circle", circleFilter.trim());
+            }
+
+            const statsUrl = buildDtrStatsListApiUrl(
+                BACKEND_URL,
+                cardType,
+                page,
+                pageSize,
+                scopedSearch,
+                hierarchyId,
+            );
+            if (statsUrl) {
+                if (circleFilter?.trim() && !statsUrl.includes("circle=")) {
+                    const sep = statsUrl.includes("?") ? "&" : "?";
+                    return `${statsUrl}${sep}circle=${encodeURIComponent(circleFilter.trim())}`;
+                }
+                return statsUrl;
+            }
 
             switch (cardType) {
-                case "total-dtrs":
-                    return `${BACKEND_URL}/dtrs?${params.toString()}`;
                 case "communicating-meters":
                     return `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
                 case "non-communicating-meters":
                     return `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
-                case "total-lt-feeders":
-                    return `${BACKEND_URL}/dtrs/all-meters?${params.toString()}`;
-                case "fuse-blown":
-                    return `${BACKEND_URL}/dtrs/fuse-blown-meters?${params.toString()}`;
-                case "overloaded-feeders":
-                    return `${BACKEND_URL}/dtrs/overloaded-dtrs?${params.toString()}`;
-                case "underloaded-feeders":
-                    return `${BACKEND_URL}/dtrs/underloaded-dtrs?${params.toString()}`;
-                case "ht-fuse-blown":
-                    return `${BACKEND_URL}/dtrs/ht-fuse-blown?${params.toString()}`;
-                case "lt-fuse-blown":
-                    return `${BACKEND_URL}/dtrs/lt-fuse-blown?${params.toString()}`;
-                case "unbalanced-dtrs":
-                    return `${BACKEND_URL}/dtrs/unbalanced-dtrs?${params.toString()}`;
-                case "power-failure-feeders":
-                    return `${BACKEND_URL}/dtrs/power-failure-feeders?${params.toString()}`;
                 default:
                     if (nonActionableCardTypes.includes(normalizedCardType)) {
                         return null;
@@ -328,7 +257,7 @@ const DTRTable: React.FC = () => {
                     throw new Error(`Unsupported card type: ${cardType}`);
             }
         },
-        [cardType, hierarchyId, normalizedCardType],
+        [cardType, hierarchyId, circleFilter, normalizedCardType],
     );
 
     const fetchAllRowsForExport = useCallback(async (): Promise<TableData[]> => {
@@ -361,9 +290,14 @@ const DTRTable: React.FC = () => {
                 );
             }
 
-            const rows: TableData[] = Array.isArray(data.data)
-                ? data.data
-                : [];
+            let rows: TableData[] = Array.isArray(data.data) ? data.data : [];
+            if (isDtrStatsDrillType(normalizedCardType)) {
+                rows = mapDtrStatsTableRows(
+                    rows as Record<string, unknown>[],
+                    page,
+                    EXPORT_FETCH_PAGE_SIZE,
+                ) as TableData[];
+            }
             allRows.push(...rows);
 
             const pg = data.pagination;
@@ -407,6 +341,9 @@ const DTRTable: React.FC = () => {
                     return;
                 }
 
+                if (isDtrStatsDrillType(normalizedCardType)) {
+                    resolveDtrStatsEndpoint(normalizedCardType);
+                }
                 console.log(
                     `[DTRTable] Fetching data for ${normalizedCardType} from: ${url}`,
                 );
@@ -417,10 +354,11 @@ const DTRTable: React.FC = () => {
                 });
 
                 const response = await fetch(url, { credentials: "include" });
-                if (!response.ok)
+                if (!response.ok) {
                     throw new Error(
-                        `Failed to fetch data for ${normalizedCardType}`,
+                        `Failed to fetch data for ${normalizedCardType} (${response.status} ${response.statusText}) — ${url}`,
                     );
+                }
 
                 const contentType = response.headers.get("content-type");
                 if (!contentType?.includes("application/json"))
@@ -512,6 +450,7 @@ const DTRTable: React.FC = () => {
                     const resolvedPage = pagination?.currentPage ?? page;
                     const resolvedLimit = pagination?.limit ?? pageSize;
 
+                    const statsDrill = isDtrStatsDrillType(normalizedCardType);
                     const tableRows = hierarchyDetailView
                         ? rows.map((raw: TableData, idx: number) =>
                               mapRowToHierarchyDetailTableRow(
@@ -519,7 +458,16 @@ const DTRTable: React.FC = () => {
                                   (resolvedPage - 1) * resolvedLimit + idx + 1,
                               ),
                           )
-                        : rows;
+                        : statsDrill
+                          ? rows.map((raw: TableData, idx: number) =>
+                                mapApiRowToDtrStatsTableRow(
+                                    raw as Record<string, unknown>,
+                                    (resolvedPage - 1) * resolvedLimit +
+                                        idx +
+                                        1,
+                                ),
+                            )
+                          : rows;
 
                     safeSetTableData(tableRows as TableData[]);
 
@@ -578,45 +526,36 @@ const DTRTable: React.FC = () => {
     const handleView = (row: TableData) => {
         if (!row) return;
 
-        if (normalizedCardType === "total-lt-feeders") {
-            const dtrId = row.dtrId;
-            if (dtrId != null) {
-                navigate(`/feeder/${dtrId}`, {
-                    state: {
-                        feederData: {
-                            meterNumber: row.meterNo,
-                            dtrId: dtrId,
-                            dtrName: row.dtrName,
-                            location: row.location,
-                            communicationStatus: row.communicationStatus,
-                            lastCommunicationDate: row.lastCommunicationDate,
-                        },
-                        dtrId: dtrId,
-                        dtrName: row.dtrName,
+        const statsType = normalizeDtrStatsCardType(normalizedCardType);
+
+        if (statsType === "total-lt-feeders") {
+            if (!row?.dtrNumber) return;
+            const feederDtrId = String(row.dtrNumber).trim();
+            if (!feederDtrId) return;
+            navigate(`/feeder/${feederDtrId}`, {
+                state: {
+                    feederData: {
+                        meterNumber: row.meterNumber ?? row.meterNo,
+                        dtrId: feederDtrId,
+                        dtrName: row.dtrNumber ?? row.dtrName,
+                        location: row.dtrLocation ?? row.location,
+                        communicationStatus: row.communicationStatus,
+                        lastCommunicationDate: row.lastCommunicationDate,
                     },
-                });
-                return;
-            }
+                    dtrId: feederDtrId,
+                    dtrName: row.dtrNumber ?? row.dtrName,
+                },
+            });
+            return;
         }
 
-        // For DTR-related tables, navigate to DTR detail page
         if (
-            [
-                "total-dtrs",
-                "fuse-blown",
-                "ht-fuse-blown",
-                "lt-fuse-blown",
-                "overloaded-feeders",
-                "underloaded-feeders",
-                "unbalanced-dtrs",
-                "power-failure-feeders",
-            ].includes(normalizedCardType || "")
+            isDtrStatsDrillType(statsType) &&
+            statsType !== "total-lt-feeders"
         ) {
-            const dtrId = row.dtrId || row.feederId; // feederId is used for power-failure-feeders
-            if (dtrId != null) {
-                navigate(`/dtr-detail/${dtrId}`);
-                return;
-            }
+            if (!row?.id) return;
+            navigate(`/dtr-detail/${row.id}`);
+            return;
         }
 
         // For meter-related tables, navigate to meter search
@@ -625,11 +564,6 @@ const DTRTable: React.FC = () => {
                 normalizedCardType === "non-communicating-meters") &&
             row.meterNo != null
         ) {
-            navigate(`/meters?search=${row.meterNo}`);
-            return;
-        }
-
-        if (normalizedCardType === "fuse-blown" && row.meterNo != null) {
             navigate(`/meters?search=${row.meterNo}`);
             return;
         }
@@ -651,10 +585,9 @@ const DTRTable: React.FC = () => {
                 "monthly-kvarh",
             ].includes(normalizedCardType || "")
         ) {
-            if (row.dtrId != null) {
-                navigate(`/dtr-detail/${row.dtrId}`);
-                return;
-            }
+            if (!row?.id) return;
+            navigate(`/dtr-detail/${row.id}`);
+            return;
         }
     };
 
@@ -808,7 +741,7 @@ const DTRTable: React.FC = () => {
                           ? handleView
                           : undefined,
                         text: cardTitle,
-                        className: 'w-full',
+                        className: 'w-full min-w-0 overflow-x-auto',
                         emptyMessage: `No ${cardTitle.toLowerCase()} data found`,
                         rowsPerPageOptions: [10, 20, 25, 50],
                         initialRowsPerPage: serverPagination.limit,
