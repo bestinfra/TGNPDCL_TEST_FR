@@ -3,10 +3,13 @@ import React, {
     Suspense,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useState,
 } from "react";
 import { apiClient } from "@/api/apiUtils";
+import { applyCircleWiseTotalsRowHighlight } from "../utils/circleWiseTableHighlight";
+import "../pages/DTRDashboard.circleWiseTable.css";
 
 const Table = lazy(() => import("SuperAdmin/Table"));
 
@@ -15,7 +18,7 @@ interface TableData {
 }
 
 export interface CircleWiseStatRow {
-    sNo: number;
+    sNo: number | null;
     circle: string;
     totalDTRs: number;
     totalLTFeeders: number;
@@ -76,8 +79,9 @@ function mapApiRow(raw: Record<string, unknown>): CircleWiseStatRow {
         const n = Number(v);
         return Number.isFinite(n) ? n : 0;
     };
+    const isTotal = raw.isTotal === true;
     return {
-        sNo: int(raw.sNo),
+        sNo: isTotal ? null : int(raw.sNo),
         circle: raw.circle == null ? "" : String(raw.circle).trim(),
         totalDTRs: int(raw.totalDTRs),
         totalLTFeeders: int(raw.totalLTFeeders),
@@ -123,7 +127,7 @@ const CircleWiseDTRStatisticsTable: React.FC<
                 success?: boolean;
                 message?: string;
                 data?: unknown[];
-                pagination?: Record<string, unknown>;
+                totals?: Record<string, unknown>;
             };
             if (!data?.success) {
                 throw new Error(
@@ -132,11 +136,16 @@ const CircleWiseDTRStatisticsTable: React.FC<
                 );
             }
             const rawRows = Array.isArray(data.data) ? data.data : [];
-            setRows(
-                rawRows.map((r: unknown) =>
-                    mapApiRow(r as Record<string, unknown>),
-                ),
+            const mapped = rawRows.map((r: unknown) =>
+                mapApiRow(r as Record<string, unknown>),
             );
+            if (data.totals && typeof data.totals === "object") {
+                mapped.push({
+                    ...mapApiRow({ ...data.totals, isTotal: true }),
+                    isTotal: true,
+                } as CircleWiseStatRow & { isTotal: boolean });
+            }
+            setRows(mapped);
         } catch (e) {
             setRows([]);
             setError(
@@ -168,8 +177,19 @@ const CircleWiseDTRStatisticsTable: React.FC<
         setSearchInput(value ?? "");
     }, []);
 
+    useLayoutEffect(() => {
+        if (loading || rows.length === 0) return;
+
+        const run = () => applyCircleWiseTotalsRowHighlight();
+        run();
+        const frameId = requestAnimationFrame(run);
+        return () => cancelAnimationFrame(frameId);
+    }, [rows, loading]);
+
     return (
-        <div className={`w-full min-w-0 ${className}`.trim()}>
+        <div
+            className={`circle-wise-stats-table-host w-full min-w-0 ${className}`.trim()}
+        >
             {error ? (
                 <p className="mb-2 font-manrope text-sm text-red-600 dark:text-red-400">
                     {error}
@@ -188,7 +208,7 @@ const CircleWiseDTRStatisticsTable: React.FC<
                     showHeader={true}
                     headerTitle="Circle-wise DTR Statistics"
                     searchable={true}
-                    sortable={true}
+                    sortable={false}
                     pagination={false}
                     showPagination={false}
                     loading={loading}
