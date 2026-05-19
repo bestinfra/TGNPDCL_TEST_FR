@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, lazy, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 const Page = lazy(() => import('SuperAdmin/Page'));
 import { FILTER_STYLES } from '@/contexts/FilterStyleContext';
 import BACKEND_URL from '../config';
 import { formatDateTime } from '@/utils/dateFormat';
 import { apiClient } from '@/api/apiUtils';
 import { getStoredUser } from '@/api/subAppAuth';
+import { mapApiRowToDtrStatsTableRow } from '@/utils/dtrStatsTable';
 
 const HIERARCHY_FORM_LEVELS = [
   { key: 'discom', levelName: 'DISCOM', label: 'DISCOM' },
@@ -168,6 +169,8 @@ function CapacityUpdateModal({
 const dummyDTRData = {
   name: '0',
   dtrNo: '0',
+  meterNo: '',
+  meterNumber: '',
   division: '0',
   subDivision: '0',
   substation: '0',
@@ -273,6 +276,9 @@ const dummyFeedersData = [
   {
     sNo: 1,
     feederName: 'NA',
+    meterNumber: undefined as string | undefined,
+    serialNumber: undefined as string | undefined,
+    feederId: undefined as number | undefined,
     loadStatus: 'N/A',
     condition: 'N/A',
     capacity: 'N/A',
@@ -289,9 +295,18 @@ const dummyAlertsData = [
   },
 ];
 
+type DtrDetailNavState = {
+  division?: string;
+  subDivision?: string;
+  meterNo?: string;
+  meterNumber?: string;
+};
+
 const DTRDetailPage = () => {
   const { dtrId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const rowNavState = location.state as DtrDetailNavState | null;
 
   // kVARh = ?(kVAh? - kWh?)
   const calculateKvarh = (kvah: number, kwh: number): number => {
@@ -875,11 +890,30 @@ const DTRDetailPage = () => {
           throw new Error(data.message || 'Failed to fetch DTR data');
         }
 
+        const detailPayload = data.data ?? {};
+        const mappedDetail = mapApiRowToDtrStatsTableRow(
+          {
+            ...(typeof detailPayload.dtr === 'object' && detailPayload.dtr
+              ? detailPayload.dtr
+              : {}),
+            ...detailPayload,
+            ...(rowNavState ?? {}),
+            meterNo: rowNavState?.meterNo ?? rowNavState?.meterNumber,
+            meterNumber: rowNavState?.meterNumber ?? rowNavState?.meterNo,
+          },
+          1,
+        );
+        const detailMeter = mappedDetail.meterNumber;
+
         setDtr({
           name: dtrData.serialNumber,
           dtrNo: dtrData.dtrNumber,
-          division: 'N/A',
-          subDivision: 'N/A',
+          meterNo: detailMeter ? String(detailMeter) : '',
+          meterNumber: detailMeter ? String(detailMeter) : '',
+          division: mappedDetail.division ? String(mappedDetail.division) : 'N/A',
+          subDivision: mappedDetail.subDivision
+            ? String(mappedDetail.subDivision)
+            : 'N/A',
           substation: 'N/A',
           feeder: 'N/A',
           feederNo: 'N/A',
@@ -999,16 +1033,35 @@ const DTRDetailPage = () => {
         const data = await response.json();
 
         if (data.success) {
-          // Transform the API response to match the expected structure
+          const selectedMeterDisplay = String(
+            mapApiRowToDtrStatsTableRow(
+              {
+                meterNo: rowNavState?.meterNo ?? rowNavState?.meterNumber,
+                meterNumber: rowNavState?.meterNumber ?? rowNavState?.meterNo,
+              },
+              1,
+            ).meterNumber || '',
+          ).trim();
+
           const transformedFeedersData =
-            data.data?.feeders?.map((feeder: any, index: number) => ({
-              sNo: index + 1,
-              feederName: feeder.serialNumber || feeder.meterNumber || 'N/A',
-              loadStatus: feeder.status || 'N/A',
-              condition: feeder.status || 'N/A',
-              capacity: 'N/A', // Not available in current API
-              address: feeder.location?.name || feeder.city || 'N/A',
-            })) || [];
+            data.data?.feeders?.map((feeder: any, index: number) => {
+              return {
+                sNo: index + 1,
+                feederName: selectedMeterDisplay || 'N/A',
+                meterNumber: selectedMeterDisplay || undefined,
+                serialNumber: feeder.serialNumber,
+                feederId: feeder.feederId,
+                loadStatus: feeder.status || 'N/A',
+                condition: feeder.status || 'N/A',
+                capacity: 'N/A', // Not available in current API
+                address:
+                  (typeof feeder.location === 'string'
+                    ? feeder.location
+                    : feeder.location?.name) ||
+                  feeder.city ||
+                  'N/A',
+              };
+            }) || [];
 
           setFeedersData(transformedFeedersData);
 
@@ -1406,12 +1459,22 @@ const DTRDetailPage = () => {
 
   // Handle feeder row click
   const handleFeederClick = (feederId: string) => {
-    // Find the feeder data for the clicked feeder
-    const feederData = feedersData.find((feeder) => feeder.feederName === feederId);
+    const meterRouteId = (row: (typeof feedersData)[number]) =>
+      String(row.serialNumber || row.meterNumber || row.feederName || '');
+
+    // Find the feeder data for the clicked feeder (match display name or meter id)
+    const feederData = feedersData.find(
+      (feeder) =>
+        feeder.feederName === feederId ||
+        feeder.serialNumber === feederId ||
+        feeder.meterNumber === feederId,
+    );
     if (feederData) {
-      navigate(`/feeder/${feederId}`, {
+      const routeId = meterRouteId(feederData) || feederId;
+      navigate(`/feeder/${routeId}`, {
         state: {
           feederData,
+          feederId: routeId,
           id: dtrId,
           dtrId: dtrId,
           dtrName: dtr.name,
@@ -1421,10 +1484,12 @@ const DTRDetailPage = () => {
   };
 
   // Handle feeder view action
-  const handleFeederView = (row: any) => {
-    navigate(`/feeder/${row.feederName}`, {
+  const handleFeederView = (row: (typeof feedersData)[number]) => {
+    const routeId = row.serialNumber || row.meterNumber || row.feederName;
+    navigate(`/feeder/${routeId}`, {
       state: {
         feederData: row,
+        feederId: routeId,
         id: dtrId,
         dtrId: dtrId,
         dtrName: dtr.name,
@@ -1592,17 +1657,13 @@ const DTRDetailPage = () => {
                               },
                               {
                                 title: 'Division',
-                                value:
-                                  locationHierarchy.find((loc) => loc.type === 'Division')?.name ||
-                                  'N/A',
+                                value: dtr.division || 'N/A',
                                 align: 'start',
                                 gap: 'gap-1',
                               },
                               {
                                 title: 'Sub-Division',
-                                value:
-                                  locationHierarchy.find((loc) => loc.type === 'Sub-Division')
-                                    ?.name || 'N/A',
+                                value: dtr.subDivision || 'N/A',
                                 align: 'start',
                                 gap: 'gap-1',
                               },
