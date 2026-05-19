@@ -15,6 +15,7 @@ import {
     type CircleWiseExcelExportColumnKey,
 } from "../utils/circleWiseExport";
 import { io, Socket } from "socket.io-client";
+import "./DTRDashboard.circleWiseTable.css";
 
 /** Stat from `/dtrs/stats` row1; use `??` semantics so `0` is not replaced by a fallback. */
 function pickStat(
@@ -287,14 +288,6 @@ const DTRDashboard: React.FC = () => {
     const [circleWiseTableData, setCircleWiseTableData] = useState<TableData[]>(
         [],
     );
-    const [circleWisePagination, setCircleWisePagination] = useState({
-        currentPage: 1,
-        totalPages: 1,
-        totalCount: 0,
-        limit: 5,
-        hasNextPage: false,
-        hasPrevPage: false,
-    });
     const [isCircleWiseTableLoading, setIsCircleWiseTableLoading] =
         useState(true);
     const [dtrTableSearch, setDtrTableSearch] = useState("");
@@ -756,14 +749,10 @@ const DTRDashboard: React.FC = () => {
 
     const retryCircleWiseStatsAPI = async (
         lastSelectedId?: string | null,
-        page = 1,
-        pageSize = 5,
     ) => {
         setIsCircleWiseTableLoading(true);
         try {
             const params = new URLSearchParams();
-            params.append("page", String(page));
-            params.append("pageSize", String(pageSize));
             if (lastSelectedId) {
                 params.append("hierarchyId", lastSelectedId);
             }
@@ -773,8 +762,6 @@ const DTRDashboard: React.FC = () => {
             );
 
             let rows: any[] = [];
-            let pagination: Record<string, any> = {};
-            let totalCount = 0;
 
             if (data && typeof data === "object" && !Array.isArray(data)) {
                 const body = data as Record<string, any>;
@@ -791,15 +778,8 @@ const DTRDashboard: React.FC = () => {
                 } else if (Array.isArray(body.circles)) {
                     rows = body.circles;
                 }
-                pagination = body.pagination || {};
-                totalCount =
-                    pagination.totalCount ??
-                    body.totalCount ??
-                    body.total ??
-                    rows.length;
             } else if (Array.isArray(data)) {
                 rows = data;
-                totalCount = data.length;
             } else {
                 throw new Error(
                     (data as any)?.message ||
@@ -807,38 +787,14 @@ const DTRDashboard: React.FC = () => {
                 );
             }
 
-            const resolvedPage =
-                pagination.currentPage ?? (data as any)?.page ?? page;
-            const resolvedLimit =
-                pagination.limit ??
-                pagination.pageSize ??
-                (data as any)?.pageSize ??
-                pageSize;
-
             const mapped: TableData[] = rows.map((raw, idx) =>
                 mapCircleWiseRowToTableData(
                     raw as Record<string, unknown>,
-                    (resolvedPage - 1) * resolvedLimit + idx + 1,
+                    idx + 1,
                 ),
             );
 
             setCircleWiseTableData(mapped);
-            setCircleWisePagination({
-                currentPage: resolvedPage,
-                totalPages: Math.max(
-                    1,
-                    Math.ceil(
-                        (totalCount || 0) /
-                            (resolvedLimit > 0 ? resolvedLimit : pageSize),
-                    ) || 1,
-                ),
-                totalCount: totalCount || 0,
-                limit: resolvedLimit,
-                hasNextPage:
-                    pagination.hasNextPage ??
-                    resolvedPage * resolvedLimit < (totalCount || 0),
-                hasPrevPage: pagination.hasPrevPage ?? resolvedPage > 1,
-            });
             setFailedApis((prev) =>
                 prev.filter((api) => api.id !== "circleWiseStats"),
             );
@@ -1386,7 +1342,7 @@ const DTRDashboard: React.FC = () => {
         fetchDTRAlertsTrends();
         fetchMeterStatus();
         fetchAllDTRsForMap();
-        retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, 5);
+        retryCircleWiseStatsAPI(lastSelectedId || undefined);
     }, []);
 
     // Refetch chart data when chart time range changes
@@ -1536,18 +1492,6 @@ const DTRDashboard: React.FC = () => {
 
     const handleRowsPerPageChange = (limit: number) => {
         retryTableAPI(undefined, 1, limit, dtrTableSearch);
-    };
-
-    const handleCircleWisePageChange = (page: number, limit?: number) => {
-        const pageSize =
-            typeof limit === "number" && limit > 0
-                ? limit
-                : circleWisePagination.limit || 5;
-        retryCircleWiseStatsAPI(lastSelectedId || undefined, page, pageSize);
-    };
-
-    const handleCircleWiseRowsPerPageChange = (limit: number) => {
-        retryCircleWiseStatsAPI(lastSelectedId || undefined, 1, limit);
     };
 
     const handleSearch = (searchTerm: string) => {
@@ -1847,11 +1791,7 @@ const DTRDashboard: React.FC = () => {
             );
             retryMeterStatusAPI(lastId || undefined);
             fetchAllDTRsForMap(lastId || undefined);
-            retryCircleWiseStatsAPI(
-                lastId || undefined,
-                1,
-                circleWisePagination.limit || 5,
-            );
+            retryCircleWiseStatsAPI(lastId || undefined);
         } catch (error) {
             // Error applying filters handled silently
         }
@@ -1877,7 +1817,7 @@ const DTRDashboard: React.FC = () => {
         retryChartAPI(undefined, selectedChartTimeRange.toLowerCase());
         retryMeterStatusAPI();
         fetchAllDTRsForMap();
-        retryCircleWiseStatsAPI(undefined, 1, 5);
+        retryCircleWiseStatsAPI(undefined);
     };
 
     // DTR statistics cards data - Using API data
@@ -2244,8 +2184,8 @@ const DTRDashboard: React.FC = () => {
         { key: "unbalancedDTRs", label: "Unbalanced DTRs" },
         { key: "powerFailureFeeders", label: "Power Failure Feeders" },
         { key: "htSideFuseBlown", label: "HT Side Fuse Blown" },
-        { key: "communicating", label: "Communicating" },
-        { key: "notCommunicating", label: "Non-Communicating" },
+        { key: "communicating", label: "Comm." },
+        { key: "notCommunicating", label: "Non-Comm." },
         { key: "commPercentage", label: "Comm. %" },
     ];
 
@@ -2563,7 +2503,7 @@ const DTRDashboard: React.FC = () => {
                         layout: {
                             type: "grid" as const,
                             className:
-                                "circle-wise-stats-table-host w-full min-w-0 overflow-x-auto gap-4",
+                                "circle-wise-stats-table-host w-full min-w-0 overflow-x-hidden gap-4",
                             columns: 2,
                         },
                         components: [
@@ -2576,23 +2516,14 @@ const DTRDashboard: React.FC = () => {
                                     headerTitle: "Circle-wise DTR Statistics",
                                     searchable: false,
                                     sortable: true,
-                                    pagination: true,
-                                    showPagination: true,
-                                    serverPagination: circleWisePagination,
-                                    totalCount: circleWisePagination.totalCount,
-                                    currentPage: circleWisePagination.currentPage,
-                                    totalPages: circleWisePagination.totalPages,
-                                    pageSize: circleWisePagination.limit,
-                                    itemsPerPage: circleWisePagination.limit,
-                                    rowsPerPageOptions: [5, 10, 15, 50],
+                                    pagination: false,
+                                    showPagination: false,
                                     loading: isCircleWiseTableLoading,
-                                    onPageChange: handleCircleWisePageChange,
-                                    onRowsPerPageChange:
-                                        handleCircleWiseRowsPerPageChange,
                                     emptyMessage: "No data found",
                                     showActions: false,
                                     availableTimeRanges: [],
-                                    enableHorizontalScroll: true,
+                                    enableHorizontalScroll: false,
+                                    className: "w-full min-w-0",
                                 },
                                 span: { col: 2, row: 1 },
                             },

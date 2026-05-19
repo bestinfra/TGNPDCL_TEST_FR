@@ -73,6 +73,8 @@ export const circleWiseExportColumnLabelToKey: Record<
     "HT Side Fuse Blown": "htSideFuseBlown",
     Communicating: "communicating",
     "Non-Communicating": "notCommunicating",
+    "Comm.": "communicating",
+    "Non-Comm.": "notCommunicating",
     "Comm. %": "commPercentage",
 };
 

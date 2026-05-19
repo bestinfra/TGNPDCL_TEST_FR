@@ -554,7 +554,14 @@ const DTRTable: React.FC = () => {
             statsType !== "total-lt-feeders"
         ) {
             if (!row?.id) return;
-            navigate(`/dtr-detail/${row.id}`);
+            navigate(`/dtr-detail/${row.id}`, {
+                state: {
+                    division: row.division,
+                    subDivision: row.subDivision,
+                    meterNo: row.meterNo,
+                    meterNumber: row.meterNumber,
+                },
+            });
             return;
         }
 
@@ -586,7 +593,14 @@ const DTRTable: React.FC = () => {
             ].includes(normalizedCardType || "")
         ) {
             if (!row?.id) return;
-            navigate(`/dtr-detail/${row.id}`);
+            navigate(`/dtr-detail/${row.id}`, {
+                state: {
+                    division: row.division,
+                    subDivision: row.subDivision,
+                    meterNo: row.meterNo,
+                    meterNumber: row.meterNumber,
+                },
+            });
             return;
         }
     };
