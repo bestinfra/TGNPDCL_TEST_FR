@@ -109,23 +109,11 @@ const CircleWiseDTRStatisticsTable: React.FC<
     const [error, setError] = useState<string | null>(null);
     const [searchInput, setSearchInput] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState<number | null>(null);
-    const [lastApiLimit, setLastApiLimit] = useState(5);
-    const [totalCount, setTotalCount] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
-    const [hasNextPage, setHasNextPage] = useState(false);
-    const [hasPrevPage, setHasPrevPage] = useState(false);
-
-    const effectiveLimit = limit ?? 5;
-
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const params = new URLSearchParams();
-            params.set("page", String(page));
-            params.set("limit", String(effectiveLimit));
             const q = debouncedSearch.trim();
             if (q) params.set("search", q);
 
@@ -149,35 +137,6 @@ const CircleWiseDTRStatisticsTable: React.FC<
                     mapApiRow(r as Record<string, unknown>),
                 ),
             );
-
-            const pg = data.pagination || {};
-            const lim =
-                typeof pg.limit === "number" && pg.limit > 0
-                    ? pg.limit
-                    : effectiveLimit;
-            setLastApiLimit(lim);
-
-            const tc =
-                typeof pg.totalRecords === "number"
-                    ? pg.totalRecords
-                    : typeof pg.totalCount === "number"
-                      ? pg.totalCount
-                      : rawRows.length;
-            const tp =
-                typeof pg.totalPages === "number" && pg.totalPages >= 0
-                    ? pg.totalPages
-                    : Math.max(tc === 0 ? 0 : 1, Math.ceil(tc / Math.max(1, lim)));
-
-            setTotalCount(tc);
-            setTotalPages(tp);
-            setHasNextPage(Boolean(pg.hasNextPage));
-            setHasPrevPage(
-                pg.hasPrevPage !== undefined
-                    ? Boolean(pg.hasPrevPage)
-                    : Boolean(pg.hasPreviousPage)
-                      ? Boolean(pg.hasPreviousPage)
-                      : page > 1,
-            );
         } catch (e) {
             setRows([]);
             setError(
@@ -186,7 +145,7 @@ const CircleWiseDTRStatisticsTable: React.FC<
         } finally {
             setLoading(false);
         }
-    }, [page, effectiveLimit, debouncedSearch]);
+    }, [debouncedSearch]);
 
     useEffect(() => {
         void load();
@@ -195,12 +154,7 @@ const CircleWiseDTRStatisticsTable: React.FC<
     useEffect(() => {
         const id = window.setTimeout(() => {
             const next = searchInput.trim();
-            setDebouncedSearch((prev) => {
-                if (prev !== next) {
-                    queueMicrotask(() => setPage(1));
-                }
-                return next;
-            });
+            setDebouncedSearch(next);
         }, 350);
         return () => window.clearTimeout(id);
     }, [searchInput]);
@@ -209,47 +163,6 @@ const CircleWiseDTRStatisticsTable: React.FC<
         () => rows as unknown as TableData[],
         [rows],
     );
-
-    const activePageSize = limit ?? lastApiLimit;
-
-    const serverPagination = useMemo(
-        () => ({
-            currentPage: page,
-            totalPages: Math.max(totalPages, 1),
-            totalCount,
-            limit:
-                limit === null
-                    ? (Number.NaN as unknown as number)
-                    : (limit ?? lastApiLimit),
-            hasNextPage,
-            hasPrevPage,
-        }),
-        [
-            page,
-            totalPages,
-            totalCount,
-            limit,
-            lastApiLimit,
-            hasNextPage,
-            hasPrevPage,
-        ],
-    );
-
-    const handlePageChange = useCallback((newPage: number, newLimit?: number) => {
-        if (
-            typeof newLimit === "number" &&
-            newLimit > 0 &&
-            Number.isFinite(newLimit)
-        ) {
-            setLimit(newLimit);
-        }
-        setPage(newPage);
-    }, []);
-
-    const handleRowsPerPageChange = useCallback((lim: number) => {
-        setLimit(lim);
-        setPage(1);
-    }, []);
 
     const handleSearch = useCallback((value: string) => {
         setSearchInput(value ?? "");
@@ -276,23 +189,12 @@ const CircleWiseDTRStatisticsTable: React.FC<
                     headerTitle="Circle-wise DTR Statistics"
                     searchable={true}
                     sortable={true}
-                    pagination={true}
-                    showPagination={true}
-                    serverPagination={serverPagination}
-                    totalCount={totalCount}
-                    currentPage={page}
-                    totalPages={Math.max(totalPages, 1)}
-                    pageSize={activePageSize}
-                    itemsPerPage={activePageSize}
-                    initialRowsPerPage={activePageSize}
-                    rowsPerPageOptions={[5, 10, 15, 50]}
+                    pagination={false}
+                    showPagination={false}
                     loading={loading}
                     emptyMessage="No data found"
                     showActions={false}
                     availableTimeRanges={[]}
-                    onPageChange={handlePageChange}
-                    onRowsPerPageChange={handleRowsPerPageChange}
-                    onPageSizeChange={handleRowsPerPageChange}
                     onSearch={handleSearch}
                     enableHorizontalScroll={true}
                     searchPlaceholder="Search by Circle..."

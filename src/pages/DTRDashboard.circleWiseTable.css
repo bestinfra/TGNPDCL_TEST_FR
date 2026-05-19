@@ -1,0 +1,50 @@
+/* Circle-wise DTR Statistics — compact fit only (DTRDashboard) */
+.circle-wise-stats-table-host {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.circle-wise-stats-table-host .overflow-x-auto,
+.circle-wise-stats-table-host [class*='overflow-x-auto'] {
+  overflow-x: hidden !important;
+}
+
+.circle-wise-stats-table-host table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: auto;
+}
+
+.circle-wise-stats-table-host th,
+.circle-wise-stats-table-host td {
+  min-width: 0 !important;
+  padding: var(--space-1, 4px) var(--space-2, 8px) !important;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+}
+
+.circle-wise-stats-table-host th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.circle-wise-stats-table-host td {
+  white-space: nowrap;
+}
+
+.circle-wise-stats-table-host td[data-label='Circle'] {
+  max-width: 6.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.circle-wise-stats-table-host th:first-child,
+.circle-wise-stats-table-host td:first-child {
+  width: 2.25rem;
+  padding-inline: var(--space-1, 4px) !important;
+}
