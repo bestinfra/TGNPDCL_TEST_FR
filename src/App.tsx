@@ -11,6 +11,7 @@ import AppLayout from "@/components/AppLayout";
 import Login from "@/pages/SubLogin";
 import DTRDashboard from "@/pages/DTRDashboard";
 import AssetManagement from "@/pages/AssetManagement";
+import Meters from "@/pages/Meters";
 import Users from "@/pages/Users";
 import UserDetail from "@/pages/UserDetail";
 import AddUser from "@/pages/AddUser";
@@ -125,7 +126,10 @@ const App: React.FC = () => {
                                                     }
                                                 />
 
-                                                {/* <Route path="/meters" element={<MetersList />} /> */}
+                                                <Route
+                                                    path="/meters"
+                                                    element={<Meters />}
+                                                />
                                                 <Route
                                                     path="/meter-details/:meterId"
                                                     element={<MeterDetails />}
