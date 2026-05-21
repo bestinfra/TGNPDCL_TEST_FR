@@ -1,4 +1,11 @@
-import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
+import {
+    Suspense,
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+    type FormEvent,
+} from "react";
 import { lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
@@ -15,6 +22,258 @@ interface HierarchyNode {
     hierarchy_type_title: string;
     children?: HierarchyNode[];
 }
+
+/** Row shape from GET /assets (Get All Assets) for table view */
+interface AssetTableRow {
+    slNo: number | string;
+    discom: string;
+    circle: string;
+    division: string;
+    subDivision: string;
+    section: string;
+    substation: string;
+    feeder: string;
+    dtrNumber: string;
+    meterNumber: string;
+    /** Unique row id from GET /assets (meter PK) — required for PATCH /assets/location?id= */
+    id: number | "";
+}
+
+const mapAssetApiRowToTableRow = (
+    row: Record<string, unknown>,
+): AssetTableRow => ({
+    slNo:
+        row.slNo == null || row.slNo === ""
+            ? "-"
+            : typeof row.slNo === "number" || typeof row.slNo === "string"
+              ? row.slNo
+              : String(row.slNo),
+    discom: String(row.discom ?? "-"),
+    circle: String(row.circle ?? "-"),
+    division: String(row.division ?? "-"),
+    subDivision: String(row.subDivision ?? "-"),
+    section: String(row.section ?? "-"),
+    substation: String(row.substation ?? "-"),
+    feeder: String(row.feeder ?? "-"),
+    dtrNumber: String(row.dtrNumber ?? "-"),
+    meterNumber: String(row.meterNumber ?? "-"),
+    id: (() => {
+        const raw = row.id;
+        if (raw == null || raw === "") return "";
+        if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+        const n = Number(String(raw).trim());
+        return Number.isFinite(n) && n > 0 ? n : "";
+    })(),
+});
+
+/** PATCH body keys for asset table row edit (only hierarchy display fields) */
+const ASSET_EDIT_PATCH_KEYS = [
+    "discom",
+    "circle",
+    "division",
+    "subDivision",
+    "section",
+    "substation",
+    "feeder",
+    "dtrNumber",
+    "meterNumber",
+] as const;
+
+type AssetEditPatchKey = (typeof ASSET_EDIT_PATCH_KEYS)[number];
+
+const ASSET_EDIT_FIELD_LABELS: Record<AssetEditPatchKey, string> = {
+    discom: "DISCOM",
+    circle: "Circle",
+    division: "Division",
+    subDivision: "Sub-Division",
+    section: "Section",
+    substation: "Substation",
+    feeder: "Feeder",
+    dtrNumber: "DTR Number",
+    meterNumber: "Meter Number",
+};
+
+const displayAssetEditFieldValue = (value: string) =>
+    value === "-" ? "" : value;
+
+const getAssetEditFormInitialData = (
+    row: AssetTableRow,
+): Record<string, string> => {
+    const initial: Record<string, string> = {};
+    ASSET_EDIT_PATCH_KEYS.forEach((key) => {
+        initial[key] = displayAssetEditFieldValue(String(row[key] ?? ""));
+    });
+    return initial;
+};
+
+/** Changed editable fields only (id is added in save handler). */
+const buildAssetEditFieldChanges = (
+    formData: Record<string, unknown>,
+    original: AssetTableRow,
+): Record<string, string> => {
+    const changes: Record<string, string> = {};
+    ASSET_EDIT_PATCH_KEYS.forEach((key) => {
+        const newVal =
+            typeof formData[key] === "string" ? formData[key].trim() : "";
+        const oldVal = displayAssetEditFieldValue(String(original[key] ?? ""));
+        if (newVal !== oldVal && newVal.length > 0) {
+            changes[key] = newVal;
+        }
+    });
+    return changes;
+};
+
+/** Local edit modal — same approach as DTRDetailPage CapacityUpdateModal (noValidate, no federated form validation) */
+type EditLocationModalProps = {
+    isOpen: boolean;
+    initialValues: Record<string, string>;
+    resetKey: string | number;
+    isSaving: boolean;
+    onClose: () => void;
+    onSave: (formData: Record<string, unknown>) => void;
+};
+
+function EditLocationModal({
+    isOpen,
+    initialValues,
+    resetKey,
+    isSaving,
+    onClose,
+    onSave,
+}: EditLocationModalProps) {
+    const [draft, setDraft] = useState<Record<string, string>>(initialValues);
+
+    // Reset draft only when modal opens or row changes — not every parent re-render
+    useEffect(() => {
+        if (isOpen) {
+            setDraft(initialValues);
+        }
+    }, [isOpen, resetKey]);
+
+    if (!isOpen) {
+        return null;
+    }
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        onSave(draft);
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+            onClick={isSaving ? undefined : onClose}
+            role="presentation"
+        >
+            <div
+                className="w-full max-w-2xl rounded-3xl border border-primary-border bg-white p-6 shadow-lg dark:border-dark-border dark:bg-primary-dark-light"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-location-title"
+            >
+                <div className="mb-4 flex items-center justify-between">
+                    <h2
+                        id="edit-location-title"
+                        className="text-lg font-bold text-primary dark:text-white"
+                    >
+                        Edit Location
+                    </h2>
+                    <button
+                        type="button"
+                        className="text-secondary hover:text-primary dark:text-subinfo"
+                        onClick={onClose}
+                        disabled={isSaving}
+                        aria-label="Close"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} noValidate>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {ASSET_EDIT_PATCH_KEYS.map((fieldName) => (
+                            <div key={fieldName} className="flex flex-col gap-2">
+                                <label
+                                    htmlFor={`edit-location-${fieldName}`}
+                                    className="text-sm font-medium text-primary dark:text-white"
+                                >
+                                    {ASSET_EDIT_FIELD_LABELS[fieldName]}
+                                </label>
+                                <input
+                                    id={`edit-location-${fieldName}`}
+                                    name={fieldName}
+                                    type="text"
+                                    className="w-full rounded-2xl border border-primary-border bg-background-secondary px-4 py-3 text-sm font-medium text-primary outline-none focus:border-primary dark:border-dark-border dark:bg-white/5 dark:text-white"
+                                    placeholder={`Enter ${ASSET_EDIT_FIELD_LABELS[fieldName]}`}
+                                    value={draft[fieldName] ?? ""}
+                                    onChange={(e) =>
+                                        setDraft((prev) => ({
+                                            ...prev,
+                                            [fieldName]: e.target.value,
+                                        }))
+                                    }
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            className="rounded-full border border-primary-border px-5 py-2.5 text-sm font-medium text-primary dark:border-dark-border dark:text-white"
+                            onClick={onClose}
+                            disabled={isSaving}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="rounded-full bg-secondary px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                            disabled={isSaving}
+                        >
+                            {isSaving ? "Saving..." : "Save Changes"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+const ASSET_TABLE_COLUMNS = [
+    { key: "slNo", label: "S.No", sortable: true },
+    { key: "discom", label: "DISCOM", sortable: true, searchable: true },
+    { key: "circle", label: "Circle", sortable: true, searchable: true },
+    { key: "division", label: "Division", sortable: true, searchable: true },
+    {
+        key: "subDivision",
+        label: "Sub-Division",
+        sortable: true,
+        searchable: true,
+    },
+    { key: "section", label: "Section", sortable: true, searchable: true },
+    {
+        key: "substation",
+        label: "Substation",
+        sortable: true,
+        searchable: true,
+    },
+    { key: "feeder", label: "Feeder", sortable: true, searchable: true },
+    {
+        key: "dtrNumber",
+        label: "DTR Number",
+        sortable: true,
+        searchable: true,
+    },
+    {
+        key: "meterNumber",
+        label: "Meter Number",
+        sortable: true,
+        searchable: true,
+    },
+];
 
 // interface DiscomOption {
 //     id: string | number;
@@ -440,6 +699,15 @@ export default function AssetManagment() {
     const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
     const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([]);
     const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
+    const [isEditLocationModalOpen, setIsEditLocationModalOpen] =
+        useState(false);
+    const [assetToEdit, setAssetToEdit] = useState<AssetTableRow | null>(null);
+    const [savingLocationEdit, setSavingLocationEdit] = useState(false);
+    const assetEditInitialValues = useMemo(
+        () =>
+            assetToEdit ? getAssetEditFormInitialData(assetToEdit) : {},
+        [assetToEdit],
+    );
     const [activeTab, setActiveTab] = useState(0);
     const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>(
         [],
@@ -459,7 +727,7 @@ export default function AssetManagment() {
     const [isLoadingAssetTableData, setIsLoadingAssetTableData] =
         useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    /** Page size for /assets table; pagination applied client-side on flattened hierarchy. */
+    /** Page size for GET /assets table; uses server pagination from API. */
     const [assetTableLimit, setAssetTableLimit] = useState(20);
     const [serverPagination, setServerPagination] = useState({
         currentPage: 1,
@@ -485,22 +753,23 @@ export default function AssetManagment() {
     // State for tracking the last selected ID from hierarchy dropdowns
     const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
 
-    // Asset management menu items
+    // Asset management menu items (hierarchy view)
     const assetManagementActions = [
         { id: "view", label: "View", icon: "icons/eye.svg" },
     ];
 
-    // Handle view feeder action
+    // Handle asset hierarchy view action
     const handleViewFeeder = (row: any) => {
-        const meterNumber = row.meterNo || row.meterNumber;
-        const dtrId = row.dtrId;
+        const meterNumber = row.meterNumber;
+        const dtrNumber = row.dtrNumber;
         const validDtrId =
-            dtrId && dtrId !== "N/A" && String(dtrId).trim() !== ""
-                ? String(dtrId)
+            dtrNumber &&
+            dtrNumber !== "N/A" &&
+            String(dtrNumber).trim() !== ""
+                ? String(dtrNumber)
                 : null;
 
         if (meterNumber && meterNumber !== "N/A") {
-            // Prefer DTR route when available; always pass feederId in state for feeder-specific APIs.
             navigate(`/feeder/${validDtrId || meterNumber}`, {
                 state: {
                     feederData: {
@@ -514,13 +783,134 @@ export default function AssetManagment() {
         }
     };
 
-    // Handle asset actions
     const handleAssetAction = (actionId: string, row: any) => {
         switch (actionId) {
             case "view":
                 handleViewFeeder(row);
                 break;
             default:
+        }
+    };
+
+    /** Table may pass a column subset — resolve full row from table state (includes id). */
+    const resolveAssetEditRow = (
+        row: AssetTableRow | Record<string, unknown>,
+    ): AssetTableRow | null => {
+        const candidate = row as AssetTableRow;
+        if (candidate.id !== "" && candidate.id != null) {
+            return candidate;
+        }
+        const dtr = String(row.dtrNumber ?? "");
+        const meter = String(row.meterNumber ?? "");
+        if (!dtr || !meter) return null;
+        const match = assetTableData.find(
+            (r: AssetTableRow) =>
+                r.dtrNumber === dtr &&
+                r.meterNumber === meter &&
+                r.id !== "" &&
+                r.id != null,
+        );
+        return match ?? null;
+    };
+
+    const handleEditAssetLocation = (
+        row: AssetTableRow | Record<string, unknown>,
+    ) => {
+        const selectedRow = resolveAssetEditRow(row);
+        if (!selectedRow?.id) {
+            alert(
+                "This row cannot be edited because it has no asset ID.",
+            );
+            return;
+        }
+        setAssetToEdit(selectedRow);
+        setIsEditLocationModalOpen(true);
+    };
+
+    /** Table edit action — same pattern as RoleManagement `tableActions` Edit entry */
+    const assetTableEditActions = [
+        {
+            id: "edit",
+            label: "Edit",
+            icon: "icons/user-pen.svg",
+            onClick: handleEditAssetLocation,
+        },
+    ];
+
+    const handleCloseEditLocationModal = () => {
+        setIsEditLocationModalOpen(false);
+        setAssetToEdit(null);
+    };
+
+    const handleSaveAssetLocationEdit = async (
+        formData: Record<string, unknown>,
+    ) => {
+        if (!assetToEdit?.id) {
+            return;
+        }
+
+        const fieldChanges = buildAssetEditFieldChanges(
+            formData,
+            assetToEdit,
+        );
+        const assetId = assetToEdit.id;
+        const patchUrl = `${BACKEND_URL}/assets/location?id=${encodeURIComponent(String(assetId))}`;
+
+        if (Object.keys(fieldChanges).length === 0) {
+            console.log(
+                "PATCH skipped: no non-empty changed fields (empty body would fail backend validation)",
+            );
+            handleCloseEditLocationModal();
+            return;
+        }
+
+        // Row id is in query (?id=); body = changed fields only (backend scopes update to that row)
+        const patchBody: Record<string, string> = fieldChanges;
+
+        console.log("PATCH formData (modal draft):", formData);
+        console.log("PATCH original row:", assetToEdit);
+        console.log("PATCH PAYLOAD:", patchBody);
+        console.log("PATCH endpoint:", patchUrl);
+
+        setSavingLocationEdit(true);
+        try {
+            const response = await fetch(
+                patchUrl,
+                {
+                    method: "PATCH",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(patchBody),
+                },
+            );
+
+            const result = await response.json();
+            console.log("PATCH response:", result);
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || "Failed to update location",
+                );
+            }
+
+            handleCloseEditLocationModal();
+            await fetchAssetTableData(
+                currentPage,
+                assetTableLimit,
+                "",
+                lastSelectedId,
+            );
+        } catch (error) {
+            console.error("Error updating asset location:", error);
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to update location. Please try again.",
+            );
+        } finally {
+            setSavingLocationEdit(false);
         }
     };
 
@@ -628,72 +1018,29 @@ export default function AssetManagment() {
         }
     }, [useDummyData]);
 
-    const flattenHierarchyToTableRows = (nodes: HierarchyNode[]): any[] => {
-        const flattened: any[] = [];
-
-        const flattenNode = (
-            node: HierarchyNode,
-            level: number = 0,
-            parentPath: string = "",
-        ) => {
-            const name = node.hierarchy_name || "-";
-            const currentPath = parentPath
-                ? `${parentPath} > ${name}`
-                : name;
-
-            flattened.push({
-                id: node.hierarchy_id,
-                name,
-                type: node.hierarchy_type_title || "-",
-                level,
-                path: currentPath,
-                count: (node as HierarchyNode & { count?: number }).count || 0,
-                parent: parentPath || "Root",
-            });
-
-            if (node.children?.length) {
-                node.children.forEach((child) =>
-                    flattenNode(child, level + 1, currentPath),
-                );
-            }
-        };
-
-        (nodes || []).forEach((node) => flattenNode(node));
-        return flattened;
-    };
-
-    const applyAssetTablePagination = (
-        allRows: any[],
+    const applyAssetTablePaginationFromResponse = (
+        pagination: {
+            currentPage?: number;
+            totalPages?: number;
+            totalCount?: number;
+            limit?: number;
+            hasNextPage?: boolean;
+            hasPrevPage?: boolean;
+        } | null | undefined,
         pageRequested: number,
         limitRequested: number,
     ) => {
-        const totalCount = allRows.length;
-        const totalPages = Math.max(
-            1,
-            Math.ceil(totalCount / limitRequested) || 1,
-        );
-        const currentPageClamped = Math.min(
-            Math.max(1, pageRequested),
-            totalPages,
-        );
-        const start = (currentPageClamped - 1) * limitRequested;
-
-        setAssetTableData(
-            allRows.slice(start, start + limitRequested).map((row, index) => ({
-                ...row,
-                slNo: start + index + 1,
-            })),
-        );
-        setAssetTableLimit(limitRequested);
+        const lim = pagination?.limit ?? limitRequested;
+        setAssetTableLimit(lim);
         setServerPagination({
-            currentPage: currentPageClamped,
-            totalPages,
-            totalCount,
-            limit: limitRequested,
-            hasNextPage: currentPageClamped < totalPages,
-            hasPrevPage: currentPageClamped > 1,
+            currentPage: pagination?.currentPage ?? pageRequested,
+            totalPages: pagination?.totalPages ?? 1,
+            totalCount: pagination?.totalCount ?? 0,
+            limit: lim,
+            hasNextPage: pagination?.hasNextPage ?? false,
+            hasPrevPage: pagination?.hasPrevPage ?? false,
         });
-        setCurrentPage(currentPageClamped);
+        setCurrentPage(pagination?.currentPage ?? pageRequested);
     };
 
     const handleAssetTablePageChange = (page: number, limit?: number) => {
@@ -722,7 +1069,7 @@ export default function AssetManagment() {
         );
     };
 
-    // Fetch asset hierarchy for table view from /assets
+    // Fetch asset table rows from GET /assets (Get All Assets)
     const fetchAssetTableData = async (
         page = 1,
         pageSize = 20,
@@ -731,46 +1078,40 @@ export default function AssetManagment() {
     ) => {
         setIsLoadingAssetTableData(true);
         try {
-            let url = `${BACKEND_URL}/assets`;
-            const queryParams = new URLSearchParams();
+            const queryParams = new URLSearchParams({
+                page: String(page),
+                pageSize: String(pageSize),
+            });
             if (hierarchyId) {
                 queryParams.append("hierarchyId", hierarchyId);
             }
             if (search.trim()) {
                 queryParams.append("search", search.trim());
             }
-            const qs = queryParams.toString();
-            if (qs) {
-                url += `?${qs}`;
-            }
 
-            const response = await fetch(url, {
-                method: "GET",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
+            const response = await fetch(
+                `${BACKEND_URL}/assets?${queryParams.toString()}`,
+                {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                 },
-            });
+            );
 
             const data = await response.json();
 
             if (data.success) {
-                const nodes: HierarchyNode[] = data.data || [];
-                setHierarchicalData(nodes);
-
-                let allRows = flattenHierarchyToTableRows(nodes);
-                const term = search.trim().toLowerCase();
-                if (term) {
-                    allRows = allRows.filter(
-                        (row) =>
-                            String(row.name).toLowerCase().includes(term) ||
-                            String(row.path).toLowerCase().includes(term) ||
-                            String(row.type).toLowerCase().includes(term) ||
-                            String(row.parent).toLowerCase().includes(term),
-                    );
-                }
-
-                applyAssetTablePagination(allRows, page, pageSize);
+                const rows = (data.data || []).map((row: Record<string, unknown>) =>
+                    mapAssetApiRowToTableRow(row),
+                );
+                setAssetTableData(rows);
+                applyAssetTablePaginationFromResponse(
+                    data.pagination,
+                    page,
+                    pageSize,
+                );
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "assetTable"),
                 );
@@ -1485,13 +1826,16 @@ export default function AssetManagment() {
                 }
 
                 const assetsExportData = assetTableData.map((asset, index) => ({
-                    "S.No": asset.slNo || index + 1,
-                    "Asset Name": asset.name || "-",
-                    "Asset Type": asset.type || "-",
-                    "Hierarchy Level": asset.level ?? "-",
-                    "Full Path": asset.path || "-",
-                    Count: asset.count ?? "-",
-                    Parent: asset.parent || "-",
+                    "S.No": asset.slNo ?? index + 1,
+                    DISCOM: asset.discom ?? "-",
+                    Circle: asset.circle ?? "-",
+                    Division: asset.division ?? "-",
+                    "Sub-Division": asset.subDivision ?? "-",
+                    Section: asset.section ?? "-",
+                    Substation: asset.substation ?? "-",
+                    Feeder: asset.feeder ?? "-",
+                    "DTR Number": asset.dtrNumber ?? "-",
+                    "Meter Number": asset.meterNumber ?? "-",
                 }));
 
                 const metersSheet = XLSX.utils.json_to_sheet(assetsExportData);
@@ -2255,8 +2599,9 @@ export default function AssetManagment() {
     );
 
     return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <Page
+        <>
+            <Suspense fallback={<div>Loading...</div>}>
+                <Page
                 sections={[
                     // Error Section (show when there are failed APIs)
                     ...(failedApis.length > 0
@@ -2738,47 +3083,7 @@ export default function AssetManagment() {
                                                           columns:
                                                               viewMode ===
                                                               "table"
-                                                                  ? [
-                                                                        {
-                                                                            key: "slNo",
-                                                                            label: "Sl.No",
-                                                                            sortable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "name",
-                                                                            label: "Asset Name",
-                                                                            sortable: true,
-                                                                            searchable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "type",
-                                                                            label: "Asset Type",
-                                                                            sortable: true,
-                                                                            searchable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "level",
-                                                                            label: "Hierarchy Level",
-                                                                            sortable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "path",
-                                                                            label: "Full Path",
-                                                                            sortable: true,
-                                                                            searchable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "count",
-                                                                            label: "Count",
-                                                                            sortable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "parent",
-                                                                            label: "Parent",
-                                                                            sortable: true,
-                                                                            searchable: true,
-                                                                        },
-                                                                    ]
+                                                                  ? ASSET_TABLE_COLUMNS
                                                                   : [
                                                                         // {
                                                                         //   key: "name",
@@ -2941,27 +3246,24 @@ export default function AssetManagment() {
                                                                   : undefined,
                                                           showActions: true,
                                                           actions:
-                                                              assetManagementActions,
-                                                          onRowClick: (
-                                                              row: any,
+                                                              assetTableEditActions,
+                                                          actionsColumnLabel:
+                                                              "Edit",
+                                                          onEdit: (
+                                                              row: AssetTableRow,
                                                           ) =>
-                                                              handleViewFeeder(
+                                                              handleEditAssetLocation(
                                                                   row,
                                                               ),
                                                           onActionClick: (
                                                               actionId: string,
-                                                              row: any,
+                                                              row: AssetTableRow,
                                                           ) => {
                                                               if (
                                                                   actionId ===
-                                                                  "view"
+                                                                  "edit"
                                                               ) {
-                                                                  handleViewFeeder(
-                                                                      row,
-                                                                  );
-                                                              } else {
-                                                                  handleAssetAction(
-                                                                      actionId,
+                                                                  handleEditAssetLocation(
                                                                       row,
                                                                   );
                                                               }
@@ -3120,7 +3422,16 @@ export default function AssetManagment() {
                         },
                     },
                 ]}
+                />
+            </Suspense>
+            <EditLocationModal
+                isOpen={isEditLocationModalOpen}
+                initialValues={assetEditInitialValues}
+                resetKey={assetToEdit?.id ?? "closed"}
+                isSaving={savingLocationEdit}
+                onClose={handleCloseEditLocationModal}
+                onSave={handleSaveAssetLocationEdit}
             />
-        </Suspense>
+        </>
     );
 }
