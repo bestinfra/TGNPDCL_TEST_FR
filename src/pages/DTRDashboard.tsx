@@ -16,6 +16,7 @@ import {
 } from "../utils/circleWiseExport";
 import { io, Socket } from "socket.io-client";
 import "./DTRDashboard.circleWiseTable.css";
+import { applyCircleWiseTotalsRowHighlight } from "../utils/circleWiseTableHighlight";
 
 /** Stat from `/dtrs/stats` row1; use `??` semantics so `0` is not replaced by a fallback. */
 function pickStat(
@@ -43,14 +44,26 @@ function pickStat(
     return fallback;
 }
 
-/** Pass through API row fields; only `sNo` is derived for display order. */
+/** Pass through API row fields; `sNo` is derived for circle rows only (totals row has no S.No). */
 function mapCircleWiseRowToTableData(
     row: Record<string, unknown>,
-    sNo: number,
+    sNo?: number,
 ): TableData {
+    if (row.isTotal === true) {
+        return {
+            ...(row as TableData),
+            sNo: null,
+            isTotal: true,
+        };
+    }
+    const resolvedSNo =
+        sNo ??
+        (typeof row.sNo === "number" && Number.isFinite(row.sNo)
+            ? row.sNo
+            : undefined);
     return {
         ...(row as TableData),
-        sNo,
+        sNo: resolvedSNo ?? 0,
     };
 }
 
@@ -793,6 +806,20 @@ const DTRDashboard: React.FC = () => {
                     idx + 1,
                 ),
             );
+
+            const totalsRow = (data as Record<string, unknown>)?.totals;
+            if (
+                totalsRow &&
+                typeof totalsRow === "object" &&
+                !Array.isArray(totalsRow)
+            ) {
+                mapped.push(
+                    mapCircleWiseRowToTableData({
+                        ...(totalsRow as Record<string, unknown>),
+                        isTotal: true,
+                    }),
+                );
+            }
 
             setCircleWiseTableData(mapped);
             setFailedApis((prev) =>
@@ -2159,6 +2186,7 @@ const DTRDashboard: React.FC = () => {
 
             const row = circleWiseTableData[rowIndex];
             if (!row?.circle || !("totalDTRs" in row)) return;
+            if (row.isTotal || row.circle === "All Circles") return;
 
             const cellValue = cell.textContent?.trim() ?? "";
             if (!isNumericCell(cellValue)) return;
@@ -2171,6 +2199,15 @@ const DTRDashboard: React.FC = () => {
         document.addEventListener("click", onClickCapture, true);
         return () => document.removeEventListener("click", onClickCapture, true);
     }, [circleWiseTableData, handleCircleWiseNumericCellClick]);
+
+    useLayoutEffect(() => {
+        if (isCircleWiseTableLoading || circleWiseTableData.length === 0) return;
+
+        const run = () => applyCircleWiseTotalsRowHighlight();
+        run();
+        const frameId = requestAnimationFrame(run);
+        return () => cancelAnimationFrame(frameId);
+    }, [circleWiseTableData, isCircleWiseTableLoading]);
 
     const circleWiseTableColumns = [
         { key: "sNo", label: "S.No" },
@@ -2515,7 +2552,7 @@ const DTRDashboard: React.FC = () => {
                                     showHeader: true,
                                     headerTitle: "Circle-wise DTR Statistics",
                                     searchable: false,
-                                    sortable: true,
+                                    sortable: false,
                                     pagination: false,
                                     showPagination: false,
                                     loading: isCircleWiseTableLoading,

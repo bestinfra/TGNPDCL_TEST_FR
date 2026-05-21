@@ -455,11 +455,12 @@ export default function AssetManagment() {
         }>
     >([]);
     const [viewMode, setViewMode] = useState<"hierarchy" | "table">("table");
-    const [meterTableData, setMeterTableData] = useState<any[]>([]);
-    const [isLoadingMeterData, setIsLoadingMeterData] = useState(false);
+    const [assetTableData, setAssetTableData] = useState<any[]>([]);
+    const [isLoadingAssetTableData, setIsLoadingAssetTableData] =
+        useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    /** Page size for /dtrs/all-meters; Table footer uses serverPagination from API. */
-    const [meterTableLimit, setMeterTableLimit] = useState(20);
+    /** Page size for /assets table; pagination applied client-side on flattened hierarchy. */
+    const [assetTableLimit, setAssetTableLimit] = useState(20);
     const [serverPagination, setServerPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -627,195 +628,183 @@ export default function AssetManagment() {
         }
     }, [useDummyData]);
 
-    const applyMeterPaginationFromResponse = (
-        pagination: any,
+    const flattenHierarchyToTableRows = (nodes: HierarchyNode[]): any[] => {
+        const flattened: any[] = [];
+
+        const flattenNode = (
+            node: HierarchyNode,
+            level: number = 0,
+            parentPath: string = "",
+        ) => {
+            const name = node.hierarchy_name || "-";
+            const currentPath = parentPath
+                ? `${parentPath} > ${name}`
+                : name;
+
+            flattened.push({
+                id: node.hierarchy_id,
+                name,
+                type: node.hierarchy_type_title || "-",
+                level,
+                path: currentPath,
+                count: (node as HierarchyNode & { count?: number }).count || 0,
+                parent: parentPath || "Root",
+            });
+
+            if (node.children?.length) {
+                node.children.forEach((child) =>
+                    flattenNode(child, level + 1, currentPath),
+                );
+            }
+        };
+
+        (nodes || []).forEach((node) => flattenNode(node));
+        return flattened;
+    };
+
+    const applyAssetTablePagination = (
+        allRows: any[],
         pageRequested: number,
         limitRequested: number,
     ) => {
-        const lim = pagination?.limit ?? limitRequested;
-        setMeterTableLimit(lim);
+        const totalCount = allRows.length;
+        const totalPages = Math.max(
+            1,
+            Math.ceil(totalCount / limitRequested) || 1,
+        );
+        const currentPageClamped = Math.min(
+            Math.max(1, pageRequested),
+            totalPages,
+        );
+        const start = (currentPageClamped - 1) * limitRequested;
+
+        setAssetTableData(
+            allRows.slice(start, start + limitRequested).map((row, index) => ({
+                ...row,
+                slNo: start + index + 1,
+            })),
+        );
+        setAssetTableLimit(limitRequested);
         setServerPagination({
-            currentPage: pagination?.currentPage ?? pageRequested,
-            totalPages: pagination?.totalPages ?? 1,
-            totalCount: pagination?.totalCount ?? 0,
-            limit: lim,
-            hasNextPage: pagination?.hasNextPage ?? false,
-            hasPrevPage: pagination?.hasPrevPage ?? false,
+            currentPage: currentPageClamped,
+            totalPages,
+            totalCount,
+            limit: limitRequested,
+            hasNextPage: currentPageClamped < totalPages,
+            hasPrevPage: currentPageClamped > 1,
         });
-        setCurrentPage(pagination?.currentPage ?? pageRequested);
+        setCurrentPage(currentPageClamped);
     };
 
-    const handleMeterTablePageChange = (page: number, limit?: number) => {
+    const handleAssetTablePageChange = (page: number, limit?: number) => {
         const lim =
-            typeof limit === "number" && limit > 0 ? limit : meterTableLimit;
+            typeof limit === "number" && limit > 0 ? limit : assetTableLimit;
         setCurrentPage(page);
-        if (lim !== meterTableLimit) {
-            setMeterTableLimit(lim);
+        if (lim !== assetTableLimit) {
+            setAssetTableLimit(lim);
         }
-        fetchMeterData(page, lim, "", lastSelectedId);
+        fetchAssetTableData(page, lim, "", lastSelectedId);
     };
 
-    const handleMeterTableRowsPerPageChange = (limit: number) => {
-        setMeterTableLimit(limit);
+    const handleAssetTableRowsPerPageChange = (limit: number) => {
+        setAssetTableLimit(limit);
         setCurrentPage(1);
-        fetchMeterData(1, limit, "", lastSelectedId);
+        fetchAssetTableData(1, limit, "", lastSelectedId);
     };
 
-    // Retry function for meter data API
-    const retryMeterDataAPI = async (lastSelectedId?: string) => {
-        setIsLoadingMeterData(true);
-        try {
-            const queryParams = new URLSearchParams({
-                page: currentPage.toString(),
-                pageSize: String(meterTableLimit),
-            });
-
-            // Add lastSelectedId if available
-            if (lastSelectedId) {
-                queryParams.append("hierarchyId", lastSelectedId);
-            }
-            if (
-                filterValues.communicationStatus &&
-                filterValues.communicationStatus !== "all"
-            ) {
-                queryParams.append(
-                    "communicationStatus",
-                    filterValues.communicationStatus,
-                );
-            }
-
-            const response = await fetch(
-                `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
-                {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                },
-            );
-
-            const data = await response.json();
-
-            if (data.success) {
-                setMeterTableData(data.data || []);
-                applyMeterPaginationFromResponse(
-                    data.pagination,
-                    currentPage,
-                    meterTableLimit,
-                );
-                setFailedApis((prev) =>
-                    prev.filter((api) => api.id !== "meterData"),
-                );
-            } else {
-                throw new Error(data.message || "Failed to fetch meter data");
-            }
-        } catch (error) {
-            console.error("Error in Meter Data API:", error);
-            setFailedApis((prev) => {
-                if (!prev.find((api) => api.id === "meterData")) {
-                    return [
-                        ...prev,
-                        {
-                            id: "meterData",
-                            name: "Meter Data",
-                            retryFunction: retryMeterDataAPI,
-                            errorMessage:
-                                "Failed to load Meter Data. Please try again.",
-                        },
-                    ];
-                }
-                return prev;
-            });
-        } finally {
-            setIsLoadingMeterData(false);
-        }
+    // Retry function for asset table API
+    const retryAssetTableAPI = async (hierarchyId?: string) => {
+        await fetchAssetTableData(
+            currentPage,
+            assetTableLimit,
+            "",
+            hierarchyId ?? lastSelectedId,
+        );
     };
 
-    // Fetch meter data from new API endpoint
-    const fetchMeterData = async (
+    // Fetch asset hierarchy for table view from /assets
+    const fetchAssetTableData = async (
         page = 1,
         pageSize = 20,
         search = "",
-        lastSelectedId?: string | null,
+        hierarchyId?: string | null,
     ) => {
-        setIsLoadingMeterData(true);
+        setIsLoadingAssetTableData(true);
         try {
-            const queryParams = new URLSearchParams({
-                page: page.toString(),
-                pageSize: pageSize.toString(),
-                ...(search && { search }),
-            });
-
-            // Add lastSelectedId if available
-            if (lastSelectedId) {
-                queryParams.append("hierarchyId", lastSelectedId);
+            let url = `${BACKEND_URL}/assets`;
+            const queryParams = new URLSearchParams();
+            if (hierarchyId) {
+                queryParams.append("hierarchyId", hierarchyId);
             }
-            if (
-                filterValues.communicationStatus &&
-                filterValues.communicationStatus !== "all"
-            ) {
-                queryParams.append(
-                    "communicationStatus",
-                    filterValues.communicationStatus,
-                );
+            if (search.trim()) {
+                queryParams.append("search", search.trim());
+            }
+            const qs = queryParams.toString();
+            if (qs) {
+                url += `?${qs}`;
             }
 
-            const response = await fetch(
-                `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
-                {
-                    method: "GET",
-                    credentials: "include", // Include cookies for authentication
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+            const response = await fetch(url, {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+            });
 
             const data = await response.json();
 
             if (data.success) {
-                setMeterTableData(data.data || []);
-                applyMeterPaginationFromResponse(
-                    data.pagination,
-                    page,
-                    pageSize,
-                );
+                const nodes: HierarchyNode[] = data.data || [];
+                setHierarchicalData(nodes);
+
+                let allRows = flattenHierarchyToTableRows(nodes);
+                const term = search.trim().toLowerCase();
+                if (term) {
+                    allRows = allRows.filter(
+                        (row) =>
+                            String(row.name).toLowerCase().includes(term) ||
+                            String(row.path).toLowerCase().includes(term) ||
+                            String(row.type).toLowerCase().includes(term) ||
+                            String(row.parent).toLowerCase().includes(term),
+                    );
+                }
+
+                applyAssetTablePagination(allRows, page, pageSize);
                 setFailedApis((prev) =>
-                    prev.filter((api) => api.id !== "meterData"),
+                    prev.filter((api) => api.id !== "assetTable"),
                 );
             } else {
-                throw new Error(data.message || "Failed to fetch meter data");
+                throw new Error(data.message || "Failed to fetch assets");
             }
         } catch (error) {
-            console.error("Error fetching meter data:", error);
+            console.error("Error fetching asset table data:", error);
             setFailedApis((prev) => {
-                if (!prev.find((api) => api.id === "meterData")) {
+                if (!prev.find((api) => api.id === "assetTable")) {
                     return [
                         ...prev,
                         {
-                            id: "meterData",
-                            name: "Meter Data",
-                            retryFunction: retryMeterDataAPI,
+                            id: "assetTable",
+                            name: "Asset Table",
+                            retryFunction: retryAssetTableAPI,
                             errorMessage:
-                                "Failed to load Meter Data. Please try again.",
+                                "Failed to load Asset Table. Please try again.",
                         },
                     ];
                 }
                 return prev;
             });
         } finally {
-            setIsLoadingMeterData(false);
+            setIsLoadingAssetTableData(false);
         }
     };
 
-    // Fetch meter data when view mode changes to table or when lastSelectedId changes
+    // Fetch asset table when view mode is table or hierarchy scope changes
     useEffect(() => {
         if (viewMode === "table") {
-            fetchMeterData(currentPage, meterTableLimit, "", lastSelectedId);
+            fetchAssetTableData(currentPage, assetTableLimit, "", lastSelectedId);
         }
-        // Pagination changes call fetchMeterData directly; refetch when scope/filters change.
-    }, [viewMode, lastSelectedId, filterValues.communicationStatus]);
+    }, [viewMode, lastSelectedId]);
 
     // Retry function for filter options API
     const retryFilterOptionsAPI = async () => {
@@ -1467,7 +1456,7 @@ export default function AssetManagment() {
 
             // Refresh data with new filters
             if (viewMode === "table") {
-                fetchMeterData(currentPage, meterTableLimit, "", lastId);
+                fetchAssetTableData(currentPage, assetTableLimit, "", lastId);
             } else if (viewMode === "hierarchy") {
                 fetchAssets(lastId);
             }
@@ -1488,26 +1477,24 @@ export default function AssetManagment() {
 
             if (viewMode === "table") {
                 // Check if there's data to export
-                if (!meterTableData || meterTableData.length === 0) {
+                if (!assetTableData || assetTableData.length === 0) {
                     alert(
                         "No data available to export. Please load data first.",
                     );
                     return;
                 }
 
-                // Export meter table data
-                const metersExportData = meterTableData.map((meter, index) => ({
-                    "S.No": meter.slNo || index + 1,
-                    "DTR ID": meter.dtrId || "-",
-                    "Meter No": meter.meterNo || "-",
-                    "DTR Name": meter.dtrName || "-",
-                    Location: meter.location || "-",
-                    "Communication Status": meter.communicationStatus || "-",
-                    "Last Communication Date":
-                        meter.lastCommunicationDate || "-",
+                const assetsExportData = assetTableData.map((asset, index) => ({
+                    "S.No": asset.slNo || index + 1,
+                    "Asset Name": asset.name || "-",
+                    "Asset Type": asset.type || "-",
+                    "Hierarchy Level": asset.level ?? "-",
+                    "Full Path": asset.path || "-",
+                    Count: asset.count ?? "-",
+                    Parent: asset.parent || "-",
                 }));
 
-                const metersSheet = XLSX.utils.json_to_sheet(metersExportData);
+                const metersSheet = XLSX.utils.json_to_sheet(assetsExportData);
 
                 // Auto-size columns for better readability
                 const setAutoWidth = (worksheet: any) => {
@@ -1538,12 +1525,12 @@ export default function AssetManagment() {
                 XLSX.utils.book_append_sheet(
                     workbook,
                     metersSheet,
-                    "Meters Data",
+                    "Assets Data",
                 );
 
                 // Generate filename with current date
                 const currentDate = new Date().toISOString().split("T")[0];
-                const fileName = `meters-data-${currentDate}.xlsx`;
+                const fileName = `assets-data-${currentDate}.xlsx`;
 
                 // Create and download the file
                 const excelBuffer = XLSX.write(workbook, {
@@ -1802,8 +1789,8 @@ export default function AssetManagment() {
 
         // Refresh data with reset filters
         if (viewMode === "table") {
-            setMeterTableLimit(20);
-            fetchMeterData(1, 20, "", null);
+            setAssetTableLimit(20);
+            fetchAssetTableData(1, 20, "", null);
         } else if (viewMode === "hierarchy") {
             fetchAssets(null);
         }
@@ -2138,13 +2125,15 @@ export default function AssetManagment() {
                         (failureDetailText ? `\n\n${failureDetailText}` : "");
                     window.alert(summary);
                     setIsBulkUploadModalOpen(false);
-                    await fetchMeterData(
+                    await fetchAssetTableData(
                         currentPage,
-                        meterTableLimit,
+                        assetTableLimit,
                         "",
                         lastSelectedId,
                     );
-                    await fetchAssets(lastSelectedId ?? undefined);
+                    if (viewMode === "hierarchy") {
+                        await fetchAssets(lastSelectedId ?? undefined);
+                    }
                 } else {
                     throw new Error(parsed.message || "Upload failed");
                 }
@@ -2162,9 +2151,10 @@ export default function AssetManagment() {
         },
         [
             currentPage,
-            meterTableLimit,
+            assetTableLimit,
             lastSelectedId,
-            fetchMeterData,
+            viewMode,
+            fetchAssetTableData,
             fetchAssets,
         ],
     );
@@ -2314,7 +2304,7 @@ export default function AssetManagment() {
                             {
                                 name: "PageHeader",
                                 props: {
-                                    title: "Meter Management",
+                                    title: "Asset Management",
                                     onBackClick: () =>
                                         window.history.back(),
                                     backButtonText:
@@ -2735,13 +2725,13 @@ export default function AssetManagment() {
                                                           data:
                                                               viewMode ===
                                                               "table"
-                                                                  ? meterTableData
+                                                                  ? assetTableData
                                                                   : getFlattenedTableData(),
                                                           headerTitle:
                                                               viewMode ===
                                                               "table"
-                                                                  ? "Meters"
-                                                                  : "Meters",
+                                                                  ? "Assets"
+                                                                  : "Assets",
                                                           showHeader: true,
                                                           availableTimeRanges:
                                                               [],
@@ -2755,52 +2745,38 @@ export default function AssetManagment() {
                                                                             sortable: true,
                                                                         },
                                                                         {
-                                                                            key: "dtrId",
-                                                                            label: "DTR ID",
+                                                                            key: "name",
+                                                                            label: "Asset Name",
                                                                             sortable: true,
                                                                             searchable: true,
                                                                         },
                                                                         {
-                                                                            key: "meterNo",
-                                                                            label: "Meter No",
+                                                                            key: "type",
+                                                                            label: "Asset Type",
                                                                             sortable: true,
                                                                             searchable: true,
                                                                         },
                                                                         {
-                                                                            key: "dtrName",
-                                                                            label: "DTR Name",
+                                                                            key: "level",
+                                                                            label: "Hierarchy Level",
+                                                                            sortable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "path",
+                                                                            label: "Full Path",
                                                                             sortable: true,
                                                                             searchable: true,
                                                                         },
                                                                         {
-                                                                            key: "location",
-                                                                            label: "Location",
+                                                                            key: "count",
+                                                                            label: "Count",
+                                                                            sortable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "parent",
+                                                                            label: "Parent",
                                                                             sortable: true,
                                                                             searchable: true,
-                                                                        },
-                                                                        {
-                                                                            key: "communicationStatus",
-                                                                            label: "Communication Status",
-                                                                            statusIndicator:
-                                                                                {},
-                                                                            isActive:
-                                                                                (
-                                                                                    value:
-                                                                                        | string
-                                                                                        | number
-                                                                                        | boolean
-                                                                                        | null
-                                                                                        | undefined,
-                                                                                ) =>
-                                                                                    String(
-                                                                                        value,
-                                                                                    ).toLowerCase() ===
-                                                                                    "active",
-                                                                        },
-                                                                        {
-                                                                            key: "lastCommunicationDate",
-                                                                            label: "Last Communication Date",
-                                                                            sortable: true,
                                                                         },
                                                                     ]
                                                                   : [
@@ -2883,14 +2859,11 @@ export default function AssetManagment() {
                                                           loading:
                                                               viewMode ===
                                                               "table"
-                                                                  ? isLoadingMeterData ||
+                                                                  ? isLoadingAssetTableData ||
                                                                     bulkFlowLoading
                                                                   : bulkFlowLoading,
                                                           emptyMessage:
-                                                              viewMode ===
-                                                              "table"
-                                                                  ? "No meters found"
-                                                                  : "No assets found",
+                                                              "No assets found",
                                                           showSearch: true,
                                                           showPagination: true,
                                                           pagination: true,
@@ -2942,12 +2915,12 @@ export default function AssetManagment() {
                                                           onPageChange:
                                                               viewMode ===
                                                               "table"
-                                                                  ? handleMeterTablePageChange
+                                                                  ? handleAssetTablePageChange
                                                                   : undefined,
                                                           onRowsPerPageChange:
                                                               viewMode ===
                                                               "table"
-                                                                  ? handleMeterTableRowsPerPageChange
+                                                                  ? handleAssetTableRowsPerPageChange
                                                                   : undefined,
                                                           onSearch:
                                                               viewMode ===
@@ -2958,9 +2931,9 @@ export default function AssetManagment() {
                                                                         setCurrentPage(
                                                                             1,
                                                                         );
-                                                                        fetchMeterData(
+                                                                        fetchAssetTableData(
                                                                             1,
-                                                                            meterTableLimit,
+                                                                            assetTableLimit,
                                                                             searchTerm,
                                                                             lastSelectedId,
                                                                         );

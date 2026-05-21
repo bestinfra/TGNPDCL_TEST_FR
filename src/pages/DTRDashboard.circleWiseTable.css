@@ -48,3 +48,33 @@
   width: 2.25rem;
   padding-inline: var(--space-1, 4px) !important;
 }
+
+/* All Circles totals row — visually distinct from circle rows */
+.circle-wise-stats-table-host tbody tr.circle-wise-totals-row {
+  font-weight: 600;
+  background-color: var(--color-bg-muted);
+  border-top: 2px solid var(--color-primary);
+  box-shadow: 0 -1px 0 var(--color-border-subtle);
+}
+
+.circle-wise-stats-table-host tbody tr.circle-wise-totals-row td {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background-color: inherit;
+  border-top: 1px solid var(--color-border);
+}
+
+.circle-wise-stats-table-host tbody tr.circle-wise-totals-row td[data-label='Circle'] {
+  font-weight: 700;
+  color: var(--color-primary);
+  max-width: none;
+  white-space: nowrap;
+  text-overflow: clip;
+  overflow: visible;
+}
+
+.circle-wise-stats-table-host tbody tr.circle-wise-totals-row td[data-label='S.No'] {
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}

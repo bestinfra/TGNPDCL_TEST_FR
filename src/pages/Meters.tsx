@@ -1,433 +1,2268 @@
-import { lazy } from 'react';
-import { useState, useEffect, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-const Page = lazy(() => import('SuperAdmin/Page'));
-// Define TableData type locally since we're using federated components
-interface TableData {
-  [key: string]: string | number | boolean | null | undefined;
+import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
+import { lazy } from "react";
+import { useNavigate } from "react-router-dom";
+import BACKEND_URL from "../config";
+import {
+    fetchAssetBulkUploadTemplateMeta,
+    postAssetsBulkUpload,
+} from "../api/apiUtils";
+import { downloadConsumerBulkUploadTemplateXlsx } from "../utils/excelExport";
+const Page = lazy(() => import("SuperAdmin/Page"));
+
+interface HierarchyNode {
+    hierarchy_id: string | number;
+    hierarchy_name: string;
+    hierarchy_type_title: string;
+    children?: HierarchyNode[];
 }
-import type { FormInputConfig, FormInputValue } from '../components/Form/types';
-import BACKEND_URL from '../config';
+
+// interface DiscomOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     region: string;
+// }
+
+// interface CircleOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     discom_id: string | number;
+// }
+
+// interface DivisionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     circle_id: string | number;
+// }
+
+// interface SubDivisionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     division_id: string | number;
+// }
+
+// interface SectionOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     sub_division_id: string | number;
+// }
+
+// interface MeterLocationOption {
+//     id: string | number;
+//     name: string;
+//     code: string;
+//     description: string;
+// }
+
+// interface DropdownData {
+//     discoms: DiscomOption[];
+//     circles: CircleOption[];
+//     divisions: DivisionOption[];
+//     subDivisions: SubDivisionOption[];
+//     sections: SectionOption[];
+//     meterLocations: MeterLocationOption[];
+// }
+
+// Updated filter options structure to match API response
+const dummyFilterOptions = {
+    discoms: [
+        { value: "all", label: "All DISCOMs" },
+        { value: "DISCOM1", label: "DISCOM 1" },
+        { value: "DISCOM2", label: "DISCOM 2" },
+    ],
+    circles: [
+        { value: "all", label: "All Circles" },
+        { value: "CIRCLE1", label: "Circle 1" },
+        { value: "CIRCLE2", label: "Circle 2" },
+    ],
+    divisions: [
+        { value: "all", label: "All Divisions" },
+        { value: "DIV1", label: "Division 1" },
+        { value: "DIV2", label: "Division 2" },
+    ],
+    subDivisions: [
+        { value: "all", label: "All Sub-Divisions" },
+        { value: "SUBDIV1", label: "Sub Division 1" },
+        { value: "SUBDIV2", label: "Sub Division 2" },
+    ],
+    sections: [
+        { value: "all", label: "All Sections" },
+        { value: "SECTION1", label: "Section 1" },
+        { value: "SECTION2", label: "Section 2" },
+    ],
+    meterLocations: [
+        { value: "all", label: "All Meter Locations" },
+        { value: "INDOOR", label: "Indoor" },
+        { value: "OUTDOOR", label: "Outdoor" },
+    ],
+    communicationStatuses: [
+        { value: "all", label: "All communication statuses" },
+        { value: "active", label: "Active" },
+        { value: "inactive", label: "Inactive" },
+    ],
+};
+
+const dummyHierarchyData = [
+    {
+        id: 1,
+        name: "India",
+        hierarchy_type_title: "Country",
+        children: [
+            {
+                id: 2,
+                name: "Tamil Nadu",
+                hierarchy_type_title: "State",
+                children: [
+                    {
+                        id: 3,
+                        name: "Chennai District",
+                        hierarchy_type_title: "District",
+                        children: [
+                            {
+                                id: 4,
+                                name: "Chennai",
+                                hierarchy_type_title: "City",
+                                children: [
+                                    {
+                                        id: 5,
+                                        name: "T. Nagar",
+                                        hierarchy_type_title: "Area",
+                                        count: 150,
+                                    },
+                                    {
+                                        id: 6,
+                                        name: "Velachery",
+                                        hierarchy_type_title: "Area",
+                                        count: 200,
+                                    },
+                                    {
+                                        id: 7,
+                                        name: "Anna Nagar",
+                                        hierarchy_type_title: "Area",
+                                        count: 180,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        id: 8,
+                        name: "Coimbatore District",
+                        hierarchy_type_title: "District",
+                        children: [
+                            {
+                                id: 9,
+                                name: "Coimbatore",
+                                hierarchy_type_title: "City",
+                                children: [
+                                    {
+                                        id: 10,
+                                        name: "RS Puram",
+                                        hierarchy_type_title: "Area",
+                                        count: 120,
+                                    },
+                                    {
+                                        id: 11,
+                                        name: "Gandhipuram",
+                                        hierarchy_type_title: "Area",
+                                        count: 95,
+                                    },
+                                    {
+                                        id: 12,
+                                        name: "Peelamedu",
+                                        hierarchy_type_title: "Area",
+                                        count: 110,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 13,
+                name: "Telangana",
+                hierarchy_type_title: "State",
+                children: [
+                    {
+                        id: 14,
+                        name: "Hyderabad District",
+                        hierarchy_type_title: "District",
+                        children: [
+                            {
+                                id: 15,
+                                name: "Hyderabad",
+                                hierarchy_type_title: "City",
+                                children: [
+                                    {
+                                        id: 16,
+                                        name: "Banjara Hills",
+                                        hierarchy_type_title: "Area",
+                                        count: 85,
+                                    },
+                                    {
+                                        id: 17,
+                                        name: "Madhapur",
+                                        hierarchy_type_title: "Area",
+                                        count: 160,
+                                    },
+                                    {
+                                        id: 18,
+                                        name: "Gachibowli",
+                                        hierarchy_type_title: "Area",
+                                        count: 140,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        id: 19,
+        name: "Kerala",
+        hierarchy_type_title: "State",
+        children: [
+            {
+                id: 20,
+                name: "Kochi District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 25,
+                        name: "Ernakulam",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 26,
+                                name: "Edappally",
+                                hierarchy_type_title: "Area",
+                                count: 60,
+                            },
+                            {
+                                id: 27,
+                                name: "Fort Kochi",
+                                hierarchy_type_title: "Area",
+                                count: 45,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 21,
+                name: "Kozhikode District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 28,
+                        name: "Kozhikode",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 29,
+                                name: "Kallayi",
+                                hierarchy_type_title: "Area",
+                                count: 30,
+                            },
+                            {
+                                id: 30,
+                                name: "Beypore",
+                                hierarchy_type_title: "Area",
+                                count: 25,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 22,
+                name: "Kannur District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 31,
+                        name: "Kannur",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 32,
+                                name: "Thalassery",
+                                hierarchy_type_title: "Area",
+                                count: 20,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 23,
+                name: "Kasaragod District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 33,
+                        name: "Kasaragod",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 34,
+                                name: "Manjeshwar",
+                                hierarchy_type_title: "Area",
+                                count: 15,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 24,
+                name: "Kollam District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 35,
+                        name: "Kollam",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 36,
+                                name: "Chinnakada",
+                                hierarchy_type_title: "Area",
+                                count: 18,
+                            },
+                        ],
+                    },
+                ],
+            },
+            // Added more dummy districts for Kerala
+            {
+                id: 37,
+                name: "Alappuzha District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 38,
+                        name: "Alappuzha",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 39,
+                                name: "Ambalapuzha",
+                                hierarchy_type_title: "Area",
+                                count: 22,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: 40,
+                name: "Thrissur District",
+                hierarchy_type_title: "District",
+                children: [
+                    {
+                        id: 41,
+                        name: "Thrissur",
+                        hierarchy_type_title: "City",
+                        children: [
+                            {
+                                id: 42,
+                                name: "Guruvayur",
+                                hierarchy_type_title: "Area",
+                                count: 28,
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+];
+
+const PlusIcon = () => (
+    <svg
+        className="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4v16m8-8H4"
+        />
+    </svg>
+);
+
+const ListIcon = () => (
+    <svg
+        className="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 10h16M4 14h16M4 18h16"
+        />
+    </svg>
+);
+
+const DownloadIcon = () => (
+    <svg
+        className="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+    </svg>
+);
 
 export default function Meters() {
     const navigate = useNavigate();
-    
-    // State for tracking failed APIs (like Users.tsx)
-    const [failedApis, setFailedApis] = useState<Array<{
-        id: string;
-        name: string;
-        retryFunction: () => Promise<void>;
-        errorMessage: string;
-    }>>([]);
-
-    const [meterData, setMeterData] = useState<
-        {
-            id: number;
-            title: string;
-            value: string | number;
-            icon: string;
-            subtitle1: string;
-            subtitle2: string;
-            iconStyle?: any;
-        }[]
+    const [bulkFlowLoading, setBulkFlowLoading] = useState(false);
+    const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+    const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([]);
+    const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
+    const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>(
+        [],
+    );
+    const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
+    // State for tracking failed APIs
+    const [failedApis, setFailedApis] = useState<
+        Array<{
+            id: string;
+            name: string;
+            retryFunction: (lastSelectedId?: string) => Promise<void>;
+            errorMessage: string;
+        }>
     >([]);
-
-    const [tableData, setTableData] = useState<TableData[]>([]);
+    const [viewMode, setViewMode] = useState<"hierarchy" | "table">("table");
+    const [meterTableData, setMeterTableData] = useState<any[]>([]);
+    const [isLoadingMeterData, setIsLoadingMeterData] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    /** Page size for /dtrs/all-meters; Table footer uses serverPagination from API. */
+    const [meterTableLimit, setMeterTableLimit] = useState(20);
     const [serverPagination, setServerPagination] = useState({
         currentPage: 1,
         totalPages: 1,
         totalCount: 0,
-        limit: 8,
+        limit: 20,
         hasNextPage: false,
         hasPrevPage: false,
     });
+    const [isExporting, setIsExporting] = useState(false);
 
-    const [filters, setFilters] = useState({
-        status: 'all',
-        meterType: 'all',
-        meterMake: 'all',
-        location: 'all',
+    // State for filter values
+    const [filterValues, setFilterValues] = useState({
+        discom: "1",
+        circle: "all",
+        division: "all",
+        subDivision: "all",
+        section: "all",
+        meterLocation: "all",
+        communicationStatus: "all",
     });
 
-    // Loading state
-    const [isLoading, setIsLoading] = useState(true);
-    const [isTableLoading, setIsTableLoading] = useState(true);
+    // State for tracking the last selected ID from hierarchy dropdowns
+    const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
 
-    // Modal state
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedMeter, setSelectedMeter] = useState<TableData | null>(null);
-
-    // Form configuration for editing meter
-    const editMeterFormFields: FormInputConfig[] = [
-        {
-            name: 'meterSerialNumber',
-            label: 'Meter Serial Number',
-            type: 'text',
-            placeholder: 'Enter meter serial number',
-            required: true,
-            row: 1,
-            col: 1,
-        },
-        {
-            name: 'modemSerialNumber',
-            label: 'Modem Serial Number',
-            type: 'text',
-            placeholder: 'Enter modem serial number',
-            required: true,
-            row: 1,
-            col: 2,
-        },
-        {
-            name: 'meterType',
-            label: 'Meter Type',
-            type: 'dropdown',
-            placeholder: 'Select meter type',
-            required: true,
-            row: 2,
-            col: 1,
-            options: [
-                { value: 'Smart', label: 'Smart' },
-                { value: 'Digital', label: 'Digital' },
-                { value: 'Analog', label: 'Analog' },
-            ],
-        },
-        {
-            name: 'meterMake',
-            label: 'Meter Make',
-            type: 'text',
-            placeholder: 'Enter meter make',
-            required: true,
-            row: 2,
-            col: 2,
-        },
-        {
-            name: 'consumerName',
-            label: 'Consumer Name',
-            type: 'text',
-            placeholder: 'Enter consumer name',
-            required: true,
-            row: 3,
-            col: 1,
-        },
-        {
-            name: 'location',
-            label: 'Location',
-            type: 'text',
-            placeholder: 'Enter location',
-            required: true,
-            row: 3,
-            col: 2,
-        },
-        {
-            name: 'installationDate',
-            label: 'Installation Date',
-            type: 'date',
-            placeholder: 'Select installation date',
-            required: true,
-            row: 4,
-            col: 1,
-        },
-        {
-            name: 'status',
-            label: 'Status',
-            type: 'dropdown',
-            placeholder: 'Select status',
-            required: true,
-            row: 4,
-            col: 2,
-            options: [
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-                { value: 'maintenance', label: 'Maintenance' },
-            ],
-        },
+    // Asset management menu items
+    const assetManagementActions = [
+        { id: "view", label: "View", icon: "icons/eye.svg" },
     ];
 
-    // Initialize meter data with fallback values
-    const [initialMeterData] = useState([
-        {
-            id: 1,
-            title: 'Total Meters',
-            value: '-',
-            subtitle1: '-',
-            subtitle2: '-',
-            icon: 'icons/meter.svg',
-        },
-        {
-            id: 2,
-            title: 'Meter Makes',
-            value: '-',
-            subtitle1: '-',
-            subtitle2: '-',
-            icon: 'icons/meter-make.svg',
-        },
-        {
-            id: 3,
-            title: 'Meter Types',
-            value: '-',
-            subtitle1: '-',
-            subtitle2: '-',
-            icon: 'icons/mapped-meter.svg',
-        },
-        {
-            id: 4,
-            title: 'Connection Types',
-            value: '-',
-            subtitle1: '-',
-            subtitle2: '-',
-            icon: 'icons/connection-type.svg',
-        },
-    ]);
+    // Handle view feeder action
+    const handleViewFeeder = (row: any) => {
+        const meterNumber = row.meterNo || row.meterNumber;
+        const dtrId = row.dtrId;
+        const validDtrId =
+            dtrId && dtrId !== "N/A" && String(dtrId).trim() !== ""
+                ? String(dtrId)
+                : null;
 
-    // Retry specific API function (like Users.tsx)
-    const retrySpecificAPI = (apiId: string) => {
-        const api = failedApis.find((a) => a.id === apiId);
-        if (api) {
-            api.retryFunction();
+        if (meterNumber && meterNumber !== "N/A") {
+            // Prefer DTR route when available; always pass feederId in state for feeder-specific APIs.
+            navigate(`/feeder/${validDtrId || meterNumber}`, {
+                state: {
+                    feederData: {
+                        feederName: meterNumber,
+                        dtrNumber: validDtrId || "N/A",
+                    },
+                    dtrId: validDtrId || undefined,
+                    feederId: meterNumber,
+                },
+            });
         }
     };
 
-    const fetchMeters = async (page = 1, limit = 8, filtersOverride = filters) => {
-        setIsTableLoading(true);
+    // Handle asset actions
+    const handleAssetAction = (actionId: string, row: any) => {
+        switch (actionId) {
+            case "view":
+                handleViewFeeder(row);
+                break;
+            default:
+        }
+    };
+
+    // Handle menu item click for view mode toggle
+    const handleMenuClick = (menuId: string) => {
+        switch (menuId) {
+            case "Table View":
+                setViewMode("table");
+                break;
+            case "HierarchyView":
+                setViewMode("hierarchy");
+                break;
+            default:
+        }
+    };
+
+    // Retry function for assets API
+    const retryAssetsAPI = async (lastSelectedId?: string) => {
         try {
-            const params = new URLSearchParams();
-            params.append('page', String(page));
-            params.append('limit', String(limit));
-            if (filtersOverride.status && filtersOverride.status !== 'all')
-                params.append('status', filtersOverride.status);
-            if (filtersOverride.meterType && filtersOverride.meterType !== 'all')
-                params.append('type', filtersOverride.meterType);
-            if (filtersOverride.meterMake && filtersOverride.meterMake !== 'all')
-                params.append('manufacturer', filtersOverride.meterMake);
-            if (filtersOverride.location && filtersOverride.location !== 'all')
-                params.append('location', filtersOverride.location);
-            
-            const response = await fetch(`${BACKEND_URL}/meters?${params.toString()}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            let url = `${BACKEND_URL}/assets`;
+
+            // Add hierarchy filter if available
+            if (lastSelectedId) {
+                url += `?hierarchyId=${lastSelectedId}`;
             }
+
+            const response = await fetch(url);
             const data = await response.json();
-            
+
             if (data.success) {
-                setTableData(
-                    data.data.map((row: any) => ({
-                        ...row,
-                        meterMake: row.meterMake || row.manufacturer || '-',
-                    }))
+                setHierarchicalData(data.data || []);
+                setFailedApis((prev) =>
+                    prev.filter((api) => api.id !== "assets"),
                 );
-                setServerPagination(data.pagination);
-                
-                // Remove from failed APIs if successful
-                setFailedApis(prev => prev.filter(api => api.id !== 'meterTable'));
             } else {
-                throw new Error(data.message || 'Failed to fetch meter table');
+                throw new Error(data.message || "Failed to fetch assets");
             }
-        } catch (err: any) {
-            console.error('Error fetching meter table:', err);
-            
-            // Add to failed APIs
-            setFailedApis(prev => {
-                if (!prev.find(api => api.id === 'meterTable')) {
-                    return [...prev, { 
-                        id: 'meterTable', 
-                        name: 'Meter Table', 
-                        retryFunction: () => fetchMeters(page, limit, filtersOverride), 
-                        errorMessage: 'Failed to load Meter Table. Please try again.' 
-                    }];
+        } catch (error) {
+            console.error("Error in Assets API:", error);
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "assets")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "assets",
+                            name: "Assets",
+                            retryFunction: retryAssetsAPI,
+                            errorMessage:
+                                "Failed to load Assets. Please try again.",
+                        },
+                    ];
                 }
                 return prev;
             });
-            
-            setTableData([]);
-        } finally {
-            setIsTableLoading(false);
+        }
+    };
+
+    // Fetch hierarchical assets from API
+    const fetchAssets = async (lastSelectedId?: string | null) => {
+        try {
+            let url = `${BACKEND_URL}/assets`;
+
+            // Add hierarchy filter if available
+            if (lastSelectedId) {
+                url += `?hierarchyId=${lastSelectedId}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.success) {
+                setHierarchicalData(data.data || []);
+                setFailedApis((prev) =>
+                    prev.filter((api) => api.id !== "assets"),
+                );
+            } else {
+                throw new Error(data.message || "Failed to fetch assets");
+            }
+        } catch (error) {
+            console.error("Error fetching assets:", error);
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "assets")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "assets",
+                            name: "Assets",
+                            retryFunction: retryAssetsAPI,
+                            errorMessage:
+                                "Failed to load Assets. Please try again.",
+                        },
+                    ];
+                }
+                return prev;
+            });
         }
     };
 
     useEffect(() => {
-        const fetchMeterStats = async () => {
-            try {
-                setIsLoading(true);
-                setFailedApis([]);
-                
-                const response = await fetch(`${BACKEND_URL}/meters/stats`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                
-                if (data.success) {
-                    const stats = data.data;
-                    const cards = [
+        if (!useDummyData) {
+            // Add initial delay to simulate loading
+            setTimeout(() => {
+                fetchAssets();
+            }, 1000);
+        }
+    }, [useDummyData]);
+
+    const applyMeterPaginationFromResponse = (
+        pagination: any,
+        pageRequested: number,
+        limitRequested: number,
+    ) => {
+        const lim = pagination?.limit ?? limitRequested;
+        setMeterTableLimit(lim);
+        setServerPagination({
+            currentPage: pagination?.currentPage ?? pageRequested,
+            totalPages: pagination?.totalPages ?? 1,
+            totalCount: pagination?.totalCount ?? 0,
+            limit: lim,
+            hasNextPage: pagination?.hasNextPage ?? false,
+            hasPrevPage: pagination?.hasPrevPage ?? false,
+        });
+        setCurrentPage(pagination?.currentPage ?? pageRequested);
+    };
+
+    const handleMeterTablePageChange = (page: number, limit?: number) => {
+        const lim =
+            typeof limit === "number" && limit > 0 ? limit : meterTableLimit;
+        setCurrentPage(page);
+        if (lim !== meterTableLimit) {
+            setMeterTableLimit(lim);
+        }
+        fetchMeterData(page, lim, "", lastSelectedId);
+    };
+
+    const handleMeterTableRowsPerPageChange = (limit: number) => {
+        setMeterTableLimit(limit);
+        setCurrentPage(1);
+        fetchMeterData(1, limit, "", lastSelectedId);
+    };
+
+    // Retry function for meter data API
+    const retryMeterDataAPI = async (lastSelectedId?: string) => {
+        setIsLoadingMeterData(true);
+        try {
+            const queryParams = new URLSearchParams({
+                page: currentPage.toString(),
+                pageSize: String(meterTableLimit),
+            });
+
+            // Add lastSelectedId if available
+            if (lastSelectedId) {
+                queryParams.append("hierarchyId", lastSelectedId);
+            }
+            if (
+                filterValues.communicationStatus &&
+                filterValues.communicationStatus !== "all"
+            ) {
+                queryParams.append(
+                    "communicationStatus",
+                    filterValues.communicationStatus,
+                );
+            }
+
+            const response = await fetch(
+                `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
+                {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+                setMeterTableData(data.data || []);
+                applyMeterPaginationFromResponse(
+                    data.pagination,
+                    currentPage,
+                    meterTableLimit,
+                );
+                setFailedApis((prev) =>
+                    prev.filter((api) => api.id !== "meterData"),
+                );
+            } else {
+                throw new Error(data.message || "Failed to fetch meter data");
+            }
+        } catch (error) {
+            console.error("Error in Meter Data API:", error);
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "meterData")) {
+                    return [
+                        ...prev,
                         {
-                            id: 1,
-                            title: 'Total Meters',
-                            value: stats.totalMeters || '-',
-                            subtitle1: `${stats.activeMeters || '-'} Active`,
-                            subtitle2: `${stats.inactiveMeters || '-'} Inactive`,
-                            icon: 'icons/meter.svg',
-                        },
-                        {
-                            id: 2,
-                            title: 'Meter Makes',
-                            value: stats.makes?.length || '-',
-                            subtitle1: 'Unique Makes',
-                            subtitle2: 'Available',
-                            icon: 'icons/meter-make.svg',
-                        },
-                        {
-                            id: 3,
-                            title: 'Meter Types',
-                            value: stats.types?.length || '-',
-                            subtitle1: 'Unique Types',
-                            subtitle2: 'Available',
-                            icon: 'icons/mapped-meter.svg',
-                        },
-                        {
-                            id: 4,
-                            title: 'Connection Types',
-                            value: Object.keys(stats.connectionTypes || {}).length || '-',
-                            subtitle1: 'Unique Connection Types',
-                            subtitle2: 'Available',
-                            icon: 'icons/connection-type.svg',
+                            id: "meterData",
+                            name: "Meter Data",
+                            retryFunction: retryMeterDataAPI,
+                            errorMessage:
+                                "Failed to load Meter Data. Please try again.",
                         },
                     ];
-                    setMeterData(cards);
-                } else {
-                    throw new Error(data.message || 'Failed to fetch meter stats');
                 }
-            } catch (err: any) {
-                console.error('Error fetching meter stats:', err);
-                
-                // Add to failed APIs
-                setFailedApis([
-                    {
-                        id: 'meterStats',
-                        name: 'Meter Statistics',
-                        retryFunction: fetchMeterStats,
-                        errorMessage: 'Failed to load Meter Statistics. Please try again.',
-                    },
-                    {
-                        id: 'meterData',
-                        name: 'Meter Data',
-                        retryFunction: fetchMeterStats,
-                        errorMessage: 'Failed to load Meter Data. Please try again.',
-                    },
-                    {
-                        id: 'meterCounts',
-                        name: 'Meter Counts',
-                        retryFunction: fetchMeterStats,
-                        errorMessage: 'Failed to load Meter Counts. Please try again.',
-                    },
-                    {
-                        id: 'meterTypes',
-                        name: 'Meter Types',
-                        retryFunction: fetchMeterStats,
-                        errorMessage: 'Failed to load Meter Types. Please try again.',
-                    }
-                ]);
-                
-                // Set fallback data
-                setMeterData(initialMeterData);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchMeterStats();
-        fetchMeters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const handleFilterChange = (e: {
-        target: { name: string; value: string };
-    }) => {
-        setFilters((f) => {
-            const newFilters = { ...f, [e.target.name]: e.target.value };
-            fetchMeters(1, 8, newFilters);
-            return newFilters;
-        });
-    };
-
-    const handlePageChange = (page: number, limit: number) => {
-        fetchMeters(page, limit);
-    };
-
-    // Handle edit meter
-    const handleEditMeter = (row: TableData) => {
-        setSelectedMeter(row);
-        setIsEditModalOpen(true);
-    };
-
-    // Handle save meter changes
-    const handleSaveMeter = async (formData: Record<string, FormInputValue>) => {
-        setIsLoading(true);
-        try {
-            // Here you would typically make an API call to update the meter
-            
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Update the table data with the new values
-            setTableData(prevData => 
-                prevData.map(meter => 
-                    meter.meterNumber === selectedMeter?.meterNumber 
-                        ? { 
-                            ...meter, 
-                            meterSerialNumber: String(formData.meterSerialNumber || '-'),
-                            modemSerialNumber: String(formData.modemSerialNumber || '-'),
-                            meterType: String(formData.meterType || '-'),
-                            meterMake: String(formData.meterMake || '-'),
-                            consumerName: String(formData.consumerName || '-'),
-                            location: String(formData.location || '-'),
-                            installationDate: String(formData.installationDate || '-'),
-                            status: String(formData.status || '-'),
-                        }
-                        : meter
-                )
-            );
-            
-            setIsEditModalOpen(false);
-            setSelectedMeter(null);
-        } catch (error) {
-            console.error('Error saving meter:', error);
+                return prev;
+            });
         } finally {
-            setIsLoading(false);
+            setIsLoadingMeterData(false);
         }
     };
 
-    // Handle close modal
-    const handleCloseModal = () => {
-        setIsEditModalOpen(false);
-        setSelectedMeter(null);
+    // Fetch meter data from new API endpoint
+    const fetchMeterData = async (
+        page = 1,
+        pageSize = 20,
+        search = "",
+        lastSelectedId?: string | null,
+    ) => {
+        setIsLoadingMeterData(true);
+        try {
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                pageSize: pageSize.toString(),
+                ...(search && { search }),
+            });
+
+            // Add lastSelectedId if available
+            if (lastSelectedId) {
+                queryParams.append("hierarchyId", lastSelectedId);
+            }
+            if (
+                filterValues.communicationStatus &&
+                filterValues.communicationStatus !== "all"
+            ) {
+                queryParams.append(
+                    "communicationStatus",
+                    filterValues.communicationStatus,
+                );
+            }
+
+            const response = await fetch(
+                `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
+                {
+                    method: "GET",
+                    credentials: "include", // Include cookies for authentication
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+                setMeterTableData(data.data || []);
+                applyMeterPaginationFromResponse(
+                    data.pagination,
+                    page,
+                    pageSize,
+                );
+                setFailedApis((prev) =>
+                    prev.filter((api) => api.id !== "meterData"),
+                );
+            } else {
+                throw new Error(data.message || "Failed to fetch meter data");
+            }
+        } catch (error) {
+            console.error("Error fetching meter data:", error);
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "meterData")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "meterData",
+                            name: "Meter Data",
+                            retryFunction: retryMeterDataAPI,
+                            errorMessage:
+                                "Failed to load Meter Data. Please try again.",
+                        },
+                    ];
+                }
+                return prev;
+            });
+        } finally {
+            setIsLoadingMeterData(false);
+        }
     };
 
-    const [tableColumns] = useState([
-        { key: 'sNo', label: 'Sl No' },
-        { key: 'meterSerialNumber', label: 'Meter SI No' },
-        { key: 'modemSerialNumber', label: 'Modem SI No' },
-        { key: 'meterType', label: 'Meter Type' },
-        { key: 'meterMake', label: 'Meter Make' },
-        { key: 'consumerName', label: 'Consumer Name' },
-        { key: 'location', label: 'Location' },
-        { key: 'installationDate', label: 'Installation Date' },
-        { key: 'status', label: 'Status' },
-    ]);
+    // Fetch meter data when view mode changes to table or when lastSelectedId changes
+    useEffect(() => {
+        if (viewMode === "table") {
+            fetchMeterData(currentPage, meterTableLimit, "", lastSelectedId);
+        }
+        // Pagination changes call fetchMeterData directly; refetch when scope/filters change.
+    }, [viewMode, lastSelectedId, filterValues.communicationStatus]);
 
-    // Generate filter options from allMeters
-    const meterTypeOptions = [
-        { value: 'active', label: 'Active' },
-        { value: 'replaced', label: 'Replaced' },
-        { value: 'inactive', label: 'Inactive' },
+    // Retry function for filter options API
+    const retryFilterOptionsAPI = async () => {
+        setDropdownLoading(true);
+        try {
+            const response = await fetch(
+                `${BACKEND_URL}/dtrs/filter/filter-options`,
+            );
+
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Invalid response format");
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                setOriginalApiData(data.data);
+
+                const transformedData = {
+                    discoms: data.data
+                        .filter((item: any) => item.levelName === "DISCOM")
+                        .map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                            code: item.code || item.name,
+                            region: item.region || item.name,
+                        })),
+                    circles: data.data
+                        .filter((item: any) => item.levelName === "Circle")
+                        .map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                            code: item.code || item.name,
+                            discom_id: item.parentId || 1,
+                        })),
+                    divisions: data.data
+                        .filter((item: any) => item.levelName === "Division")
+                        .map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                            code: item.code || item.name,
+                            circle_id: item.parentId || 1,
+                        })),
+                    subDivisions: data.data
+                        .filter(
+                            (item: any) => item.levelName === "Sub division",
+                        )
+                        .map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                            code: item.code || item.name,
+                            division_id: item.parentId || 1,
+                        })),
+                    sections: data.data
+                        .filter((item: any) => item.levelName === "Section")
+                        .map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                            code: item.code || item.name,
+                            sub_division_id: item.parentId || 1,
+                        })),
+                    meterLocations: data.data
+                        .filter(
+                            (item: any) => item.levelName === "DTR Location",
+                        )
+                        .map((item: any) => ({
+                            id: item.id,
+                            name: item.name,
+                            code: item.code || item.name,
+                            description: item.description || item.name,
+                        })),
+                };
+
+                setFilterOptions({
+                    discoms: [
+                        { value: "all", label: "All DISCOMs" },
+                        ...transformedData.discoms.map((item: any) => ({
+                            value: item.id.toString(),
+                            label: item.name,
+                        })),
+                    ],
+                    circles: [
+                        { value: "all", label: "All Circles" },
+                        ...transformedData.circles.map((item: any) => ({
+                            value: item.id.toString(),
+                            label: item.name,
+                        })),
+                    ],
+                    divisions: [
+                        { value: "all", label: "All Divisions" },
+                        ...transformedData.divisions.map((item: any) => ({
+                            value: item.id.toString(),
+                            label: item.name,
+                        })),
+                    ],
+                    subDivisions: [
+                        { value: "all", label: "All Sub-Divisions" },
+                        ...transformedData.subDivisions.map((item: any) => ({
+                            value: item.id.toString(),
+                            label: item.name,
+                        })),
+                    ],
+                    sections: [
+                        { value: "all", label: "All Sections" },
+                        ...transformedData.sections.map((item: any) => ({
+                            value: item.id.toString(),
+                            label: item.name,
+                        })),
+                    ],
+                    meterLocations: [
+                        { value: "all", label: "All Meter Locations" },
+                        ...transformedData.meterLocations.map((item: any) => ({
+                            value: item.id.toString(),
+                            label: item.name,
+                        })),
+                    ],
+                    communicationStatuses:
+                        dummyFilterOptions.communicationStatuses,
+                });
+                setFailedApis((prev) =>
+                    prev.filter((api) => api.id !== "filterOptions"),
+                );
+            } else {
+                throw new Error(
+                    data.message || "Failed to fetch filter options",
+                );
+            }
+        } catch (error) {
+            console.error("Error in Filter Options API:", error);
+            setFailedApis((prev) => {
+                if (!prev.find((api) => api.id === "filterOptions")) {
+                    return [
+                        ...prev,
+                        {
+                            id: "filterOptions",
+                            name: "Filter Options",
+                            retryFunction: retryFilterOptionsAPI,
+                            errorMessage:
+                                "Failed to load Filter Options. Please try again.",
+                        },
+                    ];
+                }
+                return prev;
+            });
+        } finally {
+            setDropdownLoading(false);
+        }
+    };
+
+    // Fetch dropdown data from API
+    useEffect(() => {
+        const fetchDropdownData = async () => {
+            setDropdownLoading(true);
+            try {
+                const response = await fetch(
+                    `${BACKEND_URL}/dtrs/filter/filter-options`,
+                );
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Invalid response format");
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store original API data for parent-child relationships
+                    setOriginalApiData(data.data);
+
+                    // Transform the API data to match dropdown component format
+                    const transformedData = {
+                        discoms: data.data
+                            .filter((item: any) => item.levelName === "DISCOM")
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                region: item.region || item.name,
+                            })),
+                        circles: data.data
+                            .filter((item: any) => item.levelName === "Circle")
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                discom_id: item.parentId || 1,
+                            })),
+                        divisions: data.data
+                            .filter(
+                                (item: any) => item.levelName === "Division",
+                            )
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                circle_id: item.parentId || 1,
+                            })),
+                        subDivisions: data.data
+                            .filter(
+                                (item: any) =>
+                                    item.levelName === "Sub division",
+                            )
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                division_id: item.parentId || 1,
+                            })),
+                        sections: data.data
+                            .filter((item: any) => item.levelName === "Section")
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                sub_division_id: item.parentId || 1,
+                            })),
+                        meterLocations: data.data
+                            .filter(
+                                (item: any) =>
+                                    item.levelName === "DTR Location",
+                            )
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                description: item.description || item.name,
+                            })),
+                    };
+
+                    // setDropdownData(transformedData);
+
+                    // Also update filter options for the new dropdown structure
+                    setFilterOptions({
+                        discoms: [
+                            { value: "all", label: "All DISCOMs" },
+                            ...transformedData.discoms.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        circles: [
+                            { value: "all", label: "All Circles" },
+                            ...transformedData.circles.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        divisions: [
+                            { value: "all", label: "All Divisions" },
+                            ...transformedData.divisions.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        subDivisions: [
+                            { value: "all", label: "All Sub-Divisions" },
+                            ...transformedData.subDivisions.map(
+                                (item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                }),
+                            ),
+                        ],
+                        sections: [
+                            { value: "all", label: "All Sections" },
+                            ...transformedData.sections.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        meterLocations: [
+                            { value: "all", label: "All Meter Locations" },
+                            ...transformedData.meterLocations.map(
+                                (item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                }),
+                            ),
+                        ],
+                        communicationStatuses:
+                            dummyFilterOptions.communicationStatuses,
+                    });
+                    setFailedApis((prev) =>
+                        prev.filter((api) => api.id !== "filterOptions"),
+                    );
+                } else {
+                    throw new Error(
+                        data.message || "Failed to fetch filter options",
+                    );
+                }
+            } catch (error) {
+                console.error("Error fetching filter options:", error);
+                setFailedApis((prev) => {
+                    if (!prev.find((api) => api.id === "filterOptions")) {
+                        return [
+                            ...prev,
+                            {
+                                id: "filterOptions",
+                                name: "Filter Options",
+                                retryFunction: retryFilterOptionsAPI,
+                                errorMessage:
+                                    "Failed to load Filter Options. Please try again.",
+                            },
+                        ];
+                    }
+                    return prev;
+                });
+            } finally {
+                setDropdownLoading(false);
+            }
+        };
+
+        fetchDropdownData();
+    }, []);
+
+    const [isSubNodeChecked, setIsSubNodeChecked] = useState(false);
+
+    // Dropdown data state - Commented out as not currently used
+    // const [dropdownData, setDropdownData] = useState<DropdownData>({
+    //   discoms: [],
+    //   circles: [],
+    //   divisions: [],
+    //   subDivisions: [],
+    //   sections: [],
+    //   meterLocations: []
+    // });
+    const [dropdownLoading, setDropdownLoading] = useState(false);
+
+    // State for filter options from backend
+    const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
+
+    // Store original API data with parent relationships
+    const [originalApiData, setOriginalApiData] = useState<any[]>([]);
+
+    const handleTabChange = (newTabIndex: number) => {
+        setActiveTab(newTabIndex);
+        setIsSubNodeChecked(false); // Reset checkbox state when switching tabs
+    };
+
+    const handleCheckboxChange = (checked: boolean) => {
+        setIsSubNodeChecked(checked);
+    };
+
+    // Retry specific API
+    const retrySpecificAPI = (apiId: string) => {
+        const api = failedApis.find((a) => a.id === apiId);
+        if (api) {
+            api.retryFunction(lastSelectedId || undefined);
+        }
+    };
+
+    // Function to update filter options based on selection
+    const updateFilterOptions = async (
+        filterName: string,
+        selectedValue: any,
+    ) => {
+        const name = selectedValue.target.value;
+        const value = selectedValue.target.value;
+        if (name === "all") return;
+
+        try {
+            const params = new URLSearchParams();
+            params.append("parentId", value);
+            const apiUrl = `${BACKEND_URL}/dtrs/filter/filter-options?${params.toString()}`;
+
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error("Failed to fetch filter options");
+
+            const data = await response.json();
+
+            if (data.success) {
+                const newOptions = data.data || [];
+
+                // Update the appropriate filter options based on filterName
+                // and reset dependent filters
+                switch (filterName) {
+                    case "discom":
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            circles: [
+                                { value: "all", label: "All Circles" },
+                                ...newOptions.map((item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                })),
+                            ],
+                        }));
+                        // Reset dependent filters
+                        setFilterValues((prev) => ({
+                            ...prev,
+                            circle: "all",
+                            division: "all",
+                            subDivision: "all",
+                            section: "all",
+                            meterLocation: "all",
+                        }));
+                        // Clear dependent dropdowns
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            divisions: [
+                                { value: "all", label: "All Divisions" },
+                            ],
+                            subDivisions: [
+                                { value: "all", label: "All Sub-Divisions" },
+                            ],
+                            sections: [{ value: "all", label: "All Sections" }],
+                            meterLocations: [
+                                { value: "all", label: "All Meter Locations" },
+                            ],
+                        }));
+                        break;
+
+                    case "circle":
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            divisions: [
+                                { value: "all", label: "All Divisions" },
+                                ...newOptions.map((item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                })),
+                            ],
+                        }));
+                        // Reset dependent filters
+                        setFilterValues((prev) => ({
+                            ...prev,
+                            division: "all",
+                            subDivision: "all",
+                            section: "all",
+                            meterLocation: "all",
+                        }));
+                        // Clear dependent dropdowns
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            subDivisions: [
+                                { value: "all", label: "All Sub-Divisions" },
+                            ],
+                            sections: [{ value: "all", label: "All Sections" }],
+                            meterLocations: [
+                                { value: "all", label: "All Meter Locations" },
+                            ],
+                        }));
+                        break;
+
+                    case "division":
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            subDivisions: [
+                                { value: "all", label: "All Sub-Divisions" },
+                                ...newOptions.map((item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                })),
+                            ],
+                        }));
+                        // Reset dependent filters
+                        setFilterValues((prev) => ({
+                            ...prev,
+                            subDivision: "all",
+                            section: "all",
+                            meterLocation: "all",
+                        }));
+                        // Clear dependent dropdowns
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            sections: [{ value: "all", label: "All Sections" }],
+                            meterLocations: [
+                                { value: "all", label: "All Meter Locations" },
+                            ],
+                        }));
+                        break;
+
+                    case "subDivision":
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            sections: [
+                                { value: "all", label: "All Sections" },
+                                ...newOptions.map((item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                })),
+                            ],
+                        }));
+                        // Reset dependent filters
+                        setFilterValues((prev) => ({
+                            ...prev,
+                            section: "all",
+                            meterLocation: "all",
+                        }));
+                        // Clear dependent dropdowns
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            meterLocations: [
+                                { value: "all", label: "All Meter Locations" },
+                            ],
+                        }));
+                        break;
+
+                    case "section":
+                        setFilterOptions((prev) => ({
+                            ...prev,
+                            meterLocations: [
+                                { value: "all", label: "All Meter Locations" },
+                                ...newOptions.map((item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                })),
+                            ],
+                        }));
+                        // Reset dependent filters
+                        setFilterValues((prev) => ({
+                            ...prev,
+                            meterLocation: "all",
+                        }));
+                        break;
+                }
+            }
+        } catch (error) {
+            console.error(
+                `❌ Error updating filter options for ${filterName}:`,
+                error,
+            );
+        }
+    };
+
+    // Helper function to find all parent values when child is selected
+    const findAllParentValues = (
+        childFilterName: string,
+        childValue: string,
+    ) => {
+        if (childValue === "all" || !originalApiData.length) return {};
+
+        // Define the complete hierarchy mapping
+        const hierarchyLevels = [
+            { filterName: "discom", levelName: "DISCOM" },
+            { filterName: "circle", levelName: "Circle" },
+            { filterName: "division", levelName: "Division" },
+            { filterName: "subDivision", levelName: "Sub division" },
+            { filterName: "section", levelName: "Section" },
+            { filterName: "meterLocation", levelName: "DTR Location" },
+        ];
+
+        // Find the selected child item
+        const childLevel = hierarchyLevels.find(
+            (level) => level.filterName === childFilterName,
+        );
+        if (!childLevel) return {};
+
+        const childItem = originalApiData.find(
+            (item: any) =>
+                item.levelName === childLevel.levelName &&
+                item.id.toString() === childValue,
+        );
+
+        if (!childItem) return {};
+
+        // Build the complete hierarchy path
+        const parentValues: { [key: string]: string } = {};
+        let currentItem = childItem;
+        let currentLevelIndex = hierarchyLevels.findIndex(
+            (level) => level.filterName === childFilterName,
+        );
+
+        // Walk up the hierarchy to find all parents
+        while (currentItem && currentItem.parentId && currentLevelIndex > 0) {
+            const parentLevel = hierarchyLevels[currentLevelIndex - 1];
+            const parentItem = originalApiData.find(
+                (item: any) =>
+                    item.levelName === parentLevel.levelName &&
+                    item.id === currentItem.parentId,
+            );
+
+            if (parentItem) {
+                parentValues[parentLevel.filterName] = parentItem.id.toString();
+                currentItem = parentItem;
+                currentLevelIndex--;
+            } else {
+                break;
+            }
+        }
+
+        return parentValues;
+    };
+
+    // Filter change handlers
+    const handleFilterChange = async (
+        filterName: string,
+        value: string | { target: { value: string } },
+    ) => {
+        // Handle both string and event object cases
+        const selectedValue =
+            typeof value === "string" ? value : value.target.value;
+
+        if (filterName === "communicationStatus") {
+            setFilterValues((prev) => ({
+                ...prev,
+                communicationStatus: selectedValue,
+            }));
+            return;
+        }
+
+        // Find all parent values if a child is selected
+        const parentValues = findAllParentValues(filterName, selectedValue);
+
+        // Update filter values with the selected value and all its parents
+        const newFilterValues: any = {
+            [filterName]: selectedValue,
+            ...parentValues, // Spread all parent values
+        };
+
+        setFilterValues((prev) => ({
+            ...prev,
+            ...newFilterValues,
+        }));
+
+        // Update dependent filter options - create event-like object for compatibility
+        const eventObject = { target: { value: selectedValue } };
+        await updateFilterOptions(filterName, eventObject);
+    };
+
+    // Handle Get Data button click
+    const handleGetData = async () => {
+        let lastId: string | null = null;
+
+        if (filterValues.meterLocation !== "all") {
+            lastId = filterValues.meterLocation;
+        } else if (filterValues.section !== "all") {
+            lastId = filterValues.section;
+        } else if (filterValues.subDivision !== "all") {
+            lastId = filterValues.subDivision;
+        } else if (filterValues.division !== "all") {
+            lastId = filterValues.division;
+        } else if (filterValues.circle !== "all") {
+            lastId = filterValues.circle;
+        } else if (filterValues.discom !== "all") {
+            lastId = filterValues.discom;
+        }
+
+        setLastSelectedId(lastId);
+
+        try {
+            const params = new URLSearchParams();
+            Object.entries(filterValues).forEach(([key, value]) => {
+                if (value !== "all") {
+                    params.append(key, value);
+                }
+            });
+
+            // Refresh data with new filters
+            if (viewMode === "table") {
+                fetchMeterData(currentPage, meterTableLimit, "", lastId);
+            } else if (viewMode === "hierarchy") {
+                fetchAssets(lastId);
+            }
+        } catch (error) {
+            console.error("Error applying filters:", error);
+        }
+    };
+
+    // Handle Export button click
+    const handleExportData = async () => {
+        if (isExporting) return; // Prevent multiple exports
+
+        setIsExporting(true);
+
+        try {
+            const XLSX = await import("xlsx");
+            const workbook = XLSX.utils.book_new();
+
+            if (viewMode === "table") {
+                // Check if there's data to export
+                if (!meterTableData || meterTableData.length === 0) {
+                    alert(
+                        "No data available to export. Please load data first.",
+                    );
+                    return;
+                }
+
+                // Export meter table data
+                const metersExportData = meterTableData.map((meter, index) => ({
+                    "S.No": meter.slNo || index + 1,
+                    "DTR ID": meter.dtrId || "-",
+                    "Meter No": meter.meterNo || "-",
+                    "DTR Name": meter.dtrName || "-",
+                    Location: meter.location || "-",
+                    "Communication Status": meter.communicationStatus || "-",
+                    "Last Communication Date":
+                        meter.lastCommunicationDate || "-",
+                }));
+
+                const metersSheet = XLSX.utils.json_to_sheet(metersExportData);
+
+                // Auto-size columns for better readability
+                const setAutoWidth = (worksheet: any) => {
+                    const range = XLSX.utils.decode_range(
+                        worksheet["!ref"] || "A1:A1",
+                    );
+                    const colWidths: any[] = [];
+
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        let maxWidth = 10;
+                        for (let R = range.s.r; R <= range.e.r; ++R) {
+                            const cellAddress = XLSX.utils.encode_cell({
+                                r: R,
+                                c: C,
+                            });
+                            const cell = worksheet[cellAddress];
+                            if (cell && cell.v) {
+                                const cellLength = cell.v.toString().length;
+                                maxWidth = Math.max(maxWidth, cellLength);
+                            }
+                        }
+                        colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+                    }
+                    worksheet["!cols"] = colWidths;
+                };
+
+                setAutoWidth(metersSheet);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    metersSheet,
+                    "Meters Data",
+                );
+
+                // Generate filename with current date
+                const currentDate = new Date().toISOString().split("T")[0];
+                const fileName = `meters-data-${currentDate}.xlsx`;
+
+                // Create and download the file
+                const excelBuffer = XLSX.write(workbook, {
+                    bookType: "xlsx",
+                    type: "array",
+                });
+
+                const blob = new Blob([excelBuffer], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else if (viewMode === "hierarchy") {
+                // Check if there's data to export
+                const flattenedData = getFlattenedTableData();
+                if (!flattenedData || flattenedData.length === 0) {
+                    alert(
+                        "No hierarchy data available to export. Please load data first.",
+                    );
+                    return;
+                }
+
+                // Export hierarchy data
+                const hierarchyExportData = flattenedData.map(
+                    (asset, index) => ({
+                        "S.No": index + 1,
+                        "Asset Name": asset.name || "-",
+                        "Asset Type": asset.type || "-",
+                        "Hierarchy Level": asset.level || 0,
+                        "Full Path": asset.path || "-",
+                        Count: asset.count || 0,
+                        Parent: asset.parent || "Root",
+                    }),
+                );
+
+                const hierarchySheet =
+                    XLSX.utils.json_to_sheet(hierarchyExportData);
+
+                // Auto-size columns for better readability
+                const setAutoWidth = (worksheet: any) => {
+                    const range = XLSX.utils.decode_range(
+                        worksheet["!ref"] || "A1:A1",
+                    );
+                    const colWidths: any[] = [];
+
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        let maxWidth = 10;
+                        for (let R = range.s.r; R <= range.e.r; ++R) {
+                            const cellAddress = XLSX.utils.encode_cell({
+                                r: R,
+                                c: C,
+                            });
+                            const cell = worksheet[cellAddress];
+                            if (cell && cell.v) {
+                                const cellLength = cell.v.toString().length;
+                                maxWidth = Math.max(maxWidth, cellLength);
+                            }
+                        }
+                        colWidths[C] = { wch: Math.min(maxWidth + 2, 50) }; // Max width 50
+                    }
+                    worksheet["!cols"] = colWidths;
+                };
+
+                setAutoWidth(hierarchySheet);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    hierarchySheet,
+                    "Asset Hierarchy",
+                );
+
+                // Generate filename with current date
+                const currentDate = new Date().toISOString().split("T")[0];
+                const fileName = `asset-hierarchy-${currentDate}.xlsx`;
+
+                // Create and download the file
+                const excelBuffer = XLSX.write(workbook, {
+                    bookType: "xlsx",
+                    type: "array",
+                });
+
+                const blob = new Blob([excelBuffer], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            console.error("Error exporting data:", error);
+            alert("Failed to export data. Please try again.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    // Handle Reset button click
+    const handleResetFilters = async () => {
+        setFilterValues({
+            discom: "all",
+            circle: "all",
+            division: "all",
+            subDivision: "all",
+            section: "all",
+            meterLocation: "all",
+            communicationStatus: "all",
+        });
+        setLastSelectedId(null);
+
+        // Reset filter options to initial state
+        const fetchFilterOptions = async () => {
+            setDropdownLoading(true);
+            try {
+                const response = await fetch(
+                    `${BACKEND_URL}/dtrs/filter/filter-options`,
+                );
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Invalid response format");
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    setOriginalApiData(data.data);
+
+                    const transformedData = {
+                        discoms: data.data
+                            .filter((item: any) => item.levelName === "DISCOM")
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                region: item.region || item.name,
+                            })),
+                        circles: data.data
+                            .filter((item: any) => item.levelName === "Circle")
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                discom_id: item.parentId || 1,
+                            })),
+                        divisions: data.data
+                            .filter(
+                                (item: any) => item.levelName === "Division",
+                            )
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                circle_id: item.parentId || 1,
+                            })),
+                        subDivisions: data.data
+                            .filter(
+                                (item: any) =>
+                                    item.levelName === "Sub division",
+                            )
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                division_id: item.parentId || 1,
+                            })),
+                        sections: data.data
+                            .filter((item: any) => item.levelName === "Section")
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                sub_division_id: item.parentId || 1,
+                            })),
+                        meterLocations: data.data
+                            .filter(
+                                (item: any) =>
+                                    item.levelName === "DTR Location",
+                            )
+                            .map((item: any) => ({
+                                id: item.id,
+                                name: item.name,
+                                code: item.code || item.name,
+                                description: item.description || item.name,
+                            })),
+                    };
+
+                    setFilterOptions({
+                        discoms: [
+                            { value: "all", label: "All DISCOMs" },
+                            ...transformedData.discoms.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        circles: [
+                            { value: "all", label: "All Circles" },
+                            ...transformedData.circles.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        divisions: [
+                            { value: "all", label: "All Divisions" },
+                            ...transformedData.divisions.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        subDivisions: [
+                            { value: "all", label: "All Sub-Divisions" },
+                            ...transformedData.subDivisions.map(
+                                (item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                }),
+                            ),
+                        ],
+                        sections: [
+                            { value: "all", label: "All Sections" },
+                            ...transformedData.sections.map((item: any) => ({
+                                value: item.id.toString(),
+                                label: item.name,
+                            })),
+                        ],
+                        meterLocations: [
+                            { value: "all", label: "All Meter Locations" },
+                            ...transformedData.meterLocations.map(
+                                (item: any) => ({
+                                    value: item.id.toString(),
+                                    label: item.name,
+                                }),
+                            ),
+                        ],
+                        communicationStatuses:
+                            dummyFilterOptions.communicationStatuses,
+                    });
+                }
+            } catch (error) {
+                console.error("Error resetting filter options:", error);
+            } finally {
+                setDropdownLoading(false);
+            }
+        };
+
+        await fetchFilterOptions();
+
+        // Refresh data with reset filters
+        if (viewMode === "table") {
+            setMeterTableLimit(20);
+            fetchMeterData(1, 20, "", null);
+        } else if (viewMode === "hierarchy") {
+            fetchAssets(null);
+        }
+    };
+
+    const tabs = [
+        {
+            label: "Add Asset Name",
+            content: null,
+            icon: <PlusIcon />,
+        },
+        {
+            label: "Upload List",
+            content: null,
+            icon: <ListIcon />,
+        },
+        {
+            label: "Template",
+            content: null,
+            icon: <DownloadIcon />,
+        },
     ];
-    const meterMakeOptions = [
-        { value: 'prepaid', label: 'Prepaid' },
-        { value: 'postpaid', label: 'Postpaid' },
-    ];
-    const locationOptions = [
-        { value: 'mapped', label: 'Mapped' },
-        { value: 'unmapped', label: 'Unmapped' },
-    ];
+
+    // --- Generate form fields for each tab ---
+    const generateFormFieldsForTab = (tabIndex: number) => {
+        switch (tabIndex) {
+            case 0: // Add Asset Name - Search and Input fields
+                const baseFields = [
+                    {
+                        name: "assetTitle",
+                        type: "text",
+                        label: "Asset Title",
+                        placeholder: "Asset Title (Ex. Locations)",
+                        required: true,
+                        validation: {
+                            required: "Asset title is required",
+                        },
+                        rightIcon: "icons/search.svg",
+                    },
+                    {
+                        name: "assetName",
+                        type: "text",
+                        label: "Asset Name",
+                        placeholder: "Search and select asset name",
+                        required: true,
+                        validation: {
+                            required: "Asset name is required",
+                        },
+                    },
+                    {
+                        name: "isSubNode",
+                        type: "checkbox",
+                        label: "Choose an asset below to assign this as a Sub Node.",
+                        labelClassName:
+                            "text-sm text-TextSecondary dark:text-gray-400",
+                        checkboxLabelClassName:
+                            "text-TextSecondary font-normal",
+                        onChange: handleCheckboxChange,
+                        value: isSubNodeChecked,
+                    },
+                ];
+
+                // Add conditional field when checkbox is checked
+                if (isSubNodeChecked) {
+                    baseFields.push({
+                        name: "parentAssetSearch",
+                        type: "text",
+                        label: "",
+                        placeholder: "Search for parent Node",
+                        required: true,
+                        validation: {
+                            required:
+                                "Parent asset is required when creating a sub node",
+                        },
+                        rightIcon: "icons/search.svg",
+                    });
+                }
+
+                return baseFields;
+
+            case 1: // Upload List - Drag and Drop
+                return [
+                    {
+                        name: "uploadFile",
+                        type: "chosenfile",
+                        label: "Upload File",
+                        rightIcon: "icons/search.svg",
+                        placeholder:
+                            "Drag and drop files here or click to browse",
+                        required: true,
+                        validation: {
+                            required: "File is required",
+                        },
+                        accept: ".csv,.xlsx,.xls",
+                        multiple: true,
+                        dragAndDrop: true,
+                    },
+                ];
+
+            case 2: // Template - Search only
+                return [
+                    {
+                        name: "templateSearch",
+                        type: "text",
+                        label: "Search Templates",
+                        placeholder: "Asset Title (Ex. Locations)",
+                        required: false,
+                        rightIcon: "icons/search.svg",
+                    },
+                ];
+
+            default:
+                return [];
+        }
+    };
+
+    // --- Get current form fields based on active tab ---
+    const currentFormFields = generateFormFieldsForTab(activeTab);
+
+    // --- Get current save button label ---
+    const getSaveButtonLabel = () => {
+        switch (activeTab) {
+            case 0:
+                return "Create Asset";
+            case 1:
+                return "Create List";
+            case 2:
+                return "Download";
+            default:
+                return "Save";
+        }
+    };
+
+    // Recursive function to map all hierarchy levels
+    const mapHierarchyRecursively = (nodes: HierarchyNode[]): any[] => {
+        if (!nodes || nodes.length === 0) {
+            return [
+                {
+                    id: "no-data",
+                    name: "-",
+                    hierarchy_type_title: "No Assets Available",
+                    children: [],
+                },
+            ];
+        }
+        return nodes.map((node) => ({
+            id: node.hierarchy_id,
+            name: node.hierarchy_name,
+            hierarchy_type_title: node.hierarchy_type_title,
+            children: node.children
+                ? mapHierarchyRecursively(node.children)
+                : [],
+        }));
+    };
+
+    // Recursive function to map hierarchy for NodeChart
+    const mapHierarchyForNodeChart = (nodes: any[]): any[] => {
+        if (!nodes || nodes.length === 0) {
+            return [
+                {
+                    name: "-",
+                    backgroundColor: "#f5f5f5",
+                    borderColor: "",
+                    textColor: "#999999",
+                    Areas: [],
+                },
+            ];
+        }
+        return nodes.map((node) => ({
+            name: node.name || node.hierarchy_name,
+            backgroundColor: "#e3f2fd",
+            borderColor: "",
+            textColor: "#424242",
+            Areas: node.children ? mapHierarchyForNodeChart(node.children) : [],
+        }));
+    };
+
+    // Get the data to display - uses real API data when available
+    const getDisplayData = () => {
+        if (useDummyData) {
+            return dummyHierarchyData;
+        }
+        return mapHierarchyRecursively(hierarchicalData);
+    };
+
+    // Flatten hierarchical data for table view
+    const getFlattenedTableData = () => {
+        const flattened: any[] = [];
+
+        const flattenNode = (
+            node: any,
+            level: number = 0,
+            parentPath: string = "",
+        ) => {
+            const currentPath = parentPath
+                ? `${parentPath} > ${node.name}`
+                : node.name;
+
+            flattened.push({
+                id: node.id || node.hierarchy_id,
+                name: node.name || node.hierarchy_name,
+                type: node.hierarchy_type_title,
+                level: level,
+                path: currentPath,
+                count: node.count || 0,
+                parent: parentPath || "Root",
+            });
+
+            if (node.children && node.children.length > 0) {
+                node.children.forEach((child: any) =>
+                    flattenNode(child, level + 1, currentPath),
+                );
+            }
+        };
+
+        const displayData = getDisplayData();
+        displayData.forEach((node) => flattenNode(node));
+
+        return flattened;
+    };
+
+    const clearBulkUploadErrors = useCallback(() => {
+        setBulkUploadErrors([]);
+    }, []);
+
+    const removeBulkUploadError = useCallback((indexToRemove: number) => {
+        setBulkUploadErrors((prev) =>
+            prev.filter((_, index) => index !== indexToRemove),
+        );
+    }, []);
+
+    const handleCloseBulkUploadModal = useCallback(() => {
+        setIsBulkUploadModalOpen(false);
+    }, []);
+
+    const handleDownloadBulkTemplate = useCallback(async () => {
+        try {
+            setBulkFlowLoading(true);
+            const meta = await fetchAssetBulkUploadTemplateMeta();
+            downloadConsumerBulkUploadTemplateXlsx(
+                meta,
+                "meter_bulk_upload_template.xlsx",
+            );
+        } catch (error) {
+            console.error("Error downloading bulk upload template:", error);
+            setBulkUploadErrors((prev) => {
+                if (!prev.includes("Failed to export template")) {
+                    return [...prev, "Failed to export template"];
+                }
+                return prev;
+            });
+        } finally {
+            setBulkFlowLoading(false);
+        }
+    }, []);
+
+    const handleBulkUploadSubmit = useCallback(
+        async (formData: Record<string, unknown>) => {
+            let uploadFile = formData?.uploadFile as File | FileList | undefined;
+            if (uploadFile instanceof FileList && uploadFile.length > 0) {
+                uploadFile = uploadFile[0];
+            }
+
+            if (!uploadFile || !(uploadFile instanceof File)) {
+                setBulkUploadErrors((prev) => [...prev, "Please upload a file"]);
+                return;
+            }
+
+            const allowedTypes = [".xlsx", ".xls", ".csv"];
+            const fileExtension =
+                "." + uploadFile.name.split(".").pop()?.toLowerCase();
+
+            if (!allowedTypes.includes(fileExtension)) {
+                setBulkUploadErrors((prev) => [
+                    ...prev,
+                    "Please upload Excel (.xlsx, .xls) or CSV (.csv) files only",
+                ]);
+                return;
+            }
+
+            try {
+                setBulkFlowLoading(true);
+                console.log("Upload Request:", formData);
+
+                const { parsed, raw } = await postAssetsBulkUpload(uploadFile);
+                const response =
+                    raw && typeof raw === "object"
+                        ? (raw as Record<string, unknown>)
+                        : {};
+                console.log("UPLOAD RESPONSE:", response);
+                console.log("UPLOAD RESPONSE DATA:", response.data);
+                console.log("[BulkUpload] Parsed summary:", {
+                    ok: parsed.ok,
+                    created: parsed.created,
+                    failed: parsed.failed,
+                });
+
+                const hasAnyOutcome =
+                    parsed.created > 0 ||
+                    parsed.failed > 0 ||
+                    parsed.failedRows.length > 0;
+
+                /** HTTP layer already OK; backend may use success:false for partial failures. */
+                const showSuccessUi =
+                    parsed.ok || hasAnyOutcome;
+
+                if (showSuccessUi) {
+                    const partialNote =
+                        !parsed.ok && hasAnyOutcome
+                            ? "Note: response indicated incomplete success.\n\n"
+                            : "";
+                    const failedCount = Math.max(
+                        parsed.failed,
+                        parsed.failedRows.length,
+                    );
+                    const firstErr = parsed.failedRows[0]?.error ?? "";
+                    const isDuplicateMeterMsg =
+                        /meter\s+already\s+exist/i.test(firstErr);
+                    const duplicateMessage =
+                        failedCount > 1
+                            ? "Meters already exist"
+                            : "Meter already exists";
+                    const failureDetailText =
+                        parsed.failed > 0 && parsed.failedRows.length
+                            ? isDuplicateMeterMsg
+                                ? duplicateMessage
+                                : firstErr
+                            : "";
+                    const summary =
+                        partialNote +
+                        `${parsed.message}\nCreated: ${parsed.created}\nFailed: ${parsed.failed}` +
+                        (failureDetailText ? `\n\n${failureDetailText}` : "");
+                    window.alert(summary);
+                    setIsBulkUploadModalOpen(false);
+                    await fetchMeterData(
+                        currentPage,
+                        meterTableLimit,
+                        "",
+                        lastSelectedId,
+                    );
+                    await fetchAssets(lastSelectedId ?? undefined);
+                } else {
+                    throw new Error(parsed.message || "Upload failed");
+                }
+            } catch (error) {
+                console.error("Bulk upload error:", error);
+                setBulkUploadErrors((prev) => [
+                    ...prev,
+                    error instanceof Error
+                        ? error.message
+                        : "Bulk upload failed",
+                ]);
+            } finally {
+                setBulkFlowLoading(false);
+            }
+        },
+        [
+            currentPage,
+            meterTableLimit,
+            lastSelectedId,
+            fetchMeterData,
+            fetchAssets,
+        ],
+    );
+
+    const bulkUploadErrorSections = useMemo(() => {
+        if (bulkUploadErrors.length === 0) return [];
+        return [
+            {
+                layout: {
+                    type: "column" as const,
+                    gap: "gap-4",
+                },
+                rows: [
+                    {
+                        layout: "column" as const,
+                        gap: "gap-4",
+                        columns: [
+                            {
+                                name: "Error",
+                                props: {
+                                    visibleErrors: bulkUploadErrors,
+                                    onRetry: clearBulkUploadErrors,
+                                    onClose: () => removeBulkUploadError(0),
+                                    showRetry: true,
+                                    maxVisibleErrors: 3,
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ];
+    }, [bulkUploadErrors, clearBulkUploadErrors, removeBulkUploadError]);
+
+    const bulkUploadModalSection = useMemo(
+        () => ({
+            layout: {
+                type: "column" as const,
+                gap: "gap-0",
+                className: "w-full",
+            },
+            components: [
+                {
+                    name: "Modal",
+                    props: {
+                        isOpen: isBulkUploadModalOpen,
+                        onClose: handleCloseBulkUploadModal,
+                        title: "Bulk Upload",
+                        size: "sm",
+                        showCloseIcon: true,
+                        backdropClosable: true,
+                        centered: true,
+                        showForm: true,
+                        formFields: [
+                            {
+                                type: "chosenfile" as const,
+                                name: "uploadFile",
+                                required: true,
+                                accept: ".xlsx,.xls,.csv",
+                                placeholder:
+                                    "Drag & drop here, or click to browse",
+                                dragAndDrop: true,
+                                onChange: () => {},
+                                downloadLink: {
+                                    text: "Download Template",
+                                    icon: "download",
+                                    onClick: handleDownloadBulkTemplate,
+                                },
+                            },
+                        ],
+                        onSave: handleBulkUploadSubmit,
+                        saveButtonLabel: "Submit",
+                        cancelButtonLabel: "Cancel",
+                        gridLayout: {
+                            gridRows: 2,
+                            gridColumns: 1,
+                            gap: "gap-4",
+                        },
+                    },
+                },
+            ],
+        }),
+        [
+            isBulkUploadModalOpen,
+            handleCloseBulkUploadModal,
+            handleDownloadBulkTemplate,
+            handleBulkUploadSubmit,
+        ],
+    );
+
+    const bulkUploadButton = useMemo(
+        () => ({
+            label: "Bulk Upload",
+            variant: "secondary" as const,
+            onClick: () => setIsBulkUploadModalOpen(true),
+        }),
+        [],
+    );
 
     return (
         <Suspense fallback={<div>Loading...</div>}>
@@ -436,225 +2271,880 @@ export default function Meters() {
                     // Error Section (show when there are failed APIs)
                     ...(failedApis.length > 0
                         ? [
-                            {
-                                layout: {
-                                    type: 'column' as const,
-                                    gap: 'gap-4',
-                                },
-                                components: [
-                                    {
-                                        name: 'Error',
-                                        props: {
-                                            visibleErrors: failedApis.map(
-                                                (api) => api.errorMessage
-                                            ),
-                                            showRetry: true,
-                                            maxVisibleErrors: 3, // Show max 3 errors at once
-                                            failedApis: failedApis, // Pass all failed APIs for individual retry
-                                            onRetrySpecific: retrySpecificAPI, // Pass the retry function
-                                        },
-                                    },
-                                ],
-                            },
-                        ]
+                              {
+                                  layout: {
+                                      type: "column" as const,
+                                      gap: "gap-4",
+                                      rows: [
+                                          {
+                                              layout: "column" as const,
+                                              columns: [
+                                                  {
+                                                      name: "Error",
+                                                      props: {
+                                                          visibleErrors:
+                                                              failedApis.map(
+                                                                  (api) =>
+                                                                      api.errorMessage,
+                                                              ),
+                                                          showRetry: true,
+                                                          maxVisibleErrors: 3,
+                                                          failedApis:
+                                                              failedApis,
+                                                          onRetrySpecific:
+                                                              retrySpecificAPI,
+                                                      },
+                                                  },
+                                              ],
+                                          },
+                                      ],
+                                  },
+                              },
+                          ]
                         : []),
+                    ...bulkUploadErrorSections,
+
                     {
                         layout: {
-                            type: 'row',
-                            className: '',
-                        },
-                        components: [
-                            {
-                                name: 'PageHeader',
-                                props: {
-                                    title: 'Meters List',
-                                    onBackClick: () => window.history.back(),
-                                    backButtonText: 'Back to Dashboard',
-                                    variant: 'primary',
-                                    showMenu: true,
-                                    showDropdown: false,
-                                    menuItems: [
-                                        { id: 'all', label: 'All Meters' },
-                                        {
-                                            id: 'active',
-                                            label: 'Active Meters',
-                                        },
-                                        {
-                                            id: 'inactive',
-                                            label: 'Inactive Meters',
-                                        },
-                                        {
-                                            id: 'maintenance',
-                                            label: 'Maintenance',
-                                        },
-                                        { id: 'smart', label: 'Smart Meters' },
-                                        {
-                                            id: 'digital',
-                                            label: 'Digital Meters',
-                                        },
-                                    ],
-                                    onMenuItemClick: (_itemId: string) => {
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                    {
-                        layout: {
-                            type: 'column',
-                            rows: [
-                                {
-                                    layout: 'row',
-                                    columns: meterData.map((meter) => ({
-                                         name: 'Card',
-                                         props: {
-                                             title: meter.title,
-                                             value: meter.value,
-                                             icon: meter.icon,
-                                             subtitle1: meter.subtitle1,
-                                             subtitle2: meter.subtitle2,
-                                             bg: "bg-stat-icon-gradient",
-                                             loading: isLoading,
-                                         },
-                                     })),
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        layout: {
-                            type: 'grid',
+                            type: "grid" as const,
                             columns: 1,
-                            gap: 'gap-4',
-                            rows: [
-                                {
-                                    layout: 'grid',
-                                    gridColumns: 3,
-                                    gap: 'gap-4',
-                                    columns: [
-                                        {
-                                            name: 'Dropdown',
-                                            props: {
-                                                name: 'meterType',
-                                                options: meterTypeOptions,
-                                                placeholder: 'Filter By Status',
-                                                value: filters.meterType,
-                                                onChange: handleFilterChange,
-                                                className: 'w-48',
-                                                searchable: false,
-                                            },
-                                        },
-                                        {
-                                            name: 'Dropdown',
-                                            props: {
-                                                name: 'meterMake',
-                                                options: meterMakeOptions,
-                                                placeholder: 'Filter By Meter Types',
-                                                value: filters.meterMake,
-                                                onChange: handleFilterChange,
-                                                className: 'w-48',
-                                                searchable: false,
-                                            },
-                                        },
-                                        {
-                                            name: 'Dropdown',
-                                            props: {
-                                                name: 'location',
-                                                options: locationOptions,
-                                                placeholder:
-                                                    'Filter By Mapping',
-                                                value: filters.location,
-                                                onChange: handleFilterChange,
-                                                className: 'w-48',
-                                                searchable: false,
-                                            },
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        layout: {
-                            type: 'row',
-                            gap: 'gap-4',
-                            className: 'w-full',
-                            rows: [
-                                {
-                                    layout: 'row',
-                                    className: 'w-full',
-                                    columns: [
-                                        {
-                                            name: 'Table',
-                                            props: {
-                                                data: tableData,
-                                                columns: tableColumns,
-                                                showHeader: true,
-                                                availableTimeRanges: [],
-                                                headerTitle: 'Meter Management',
-                                                // dateRange: 'Real-time data',
-                                                searchable: true,
-                                                sortable: true,
-                                                pagination: true,
-                                                showActions: true,
-                                                text: 'Meter Management Table',
-                                                serverPagination: serverPagination,
-                                                onPageChange: handlePageChange,
-                                                onEdit: handleEditMeter,
-                                                onView: (row: TableData) =>
-                                                    navigate(
-                                                        `/meter-details/${row.meterNumber}`
-                                                    ),
-                                                className: 'w-full',
-                                                loading: isTableLoading,
-                                                emptyMessage: 'No meter data found',
-                                            },
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    },
-                    // Edit Meter Modal Section
-                    {
-                        layout: {
-                            type: 'row',
-                            className: '',
+                            className: "",
                         },
                         components: [
                             {
-                                name: 'Modal',
+                                name: "PageHeader",
                                 props: {
-                                    isOpen: isEditModalOpen,
-                                    onClose: handleCloseModal,
-                                    title: `Edit Meter - ${selectedMeter?.meterSerialNumber || selectedMeter?.meterNumber || '-'}`,
-                                    size: 'lg',
-                                    showCloseIcon: true,
-                                    backdropClosable: !isLoading,
-                                    showForm: true,
-                                    formFields: editMeterFormFields,
-                                    onSave: handleSaveMeter,
-                                    saveButtonLabel: isLoading ? "Saving..." : "Save Changes",
-                                    cancelButtonLabel: "Cancel",
-                                    formInitialData: selectedMeter ? {
-                                        meterSerialNumber: selectedMeter.meterSerialNumber || '-',
-                                        modemSerialNumber: selectedMeter.modemSerialNumber || '-',
-                                        meterType: selectedMeter.meterType || '-',
-                                        meterMake: selectedMeter.meterMake || '-',
-                                        consumerName: selectedMeter.consumerName || '-',
-                                        location: selectedMeter.location || '-',
-                                        installationDate: selectedMeter.installationDate || '-',
-                                        status: selectedMeter.status || '-',
-                                    } : {},
-                                    gridLayout: {
-                                        gridRows: 4,
-                                        gridColumns: 2,
-                                        gap: 'gap-4',
-                                        className: 'w-full',
-                                    },
-                                },  
+                                    title: "Meter Management",
+                                    onBackClick: () =>
+                                        window.history.back(),
+                                    backButtonText:
+                                        "Back to Dashboard",
+                                    showMenu: true,
+                                    menuItems: [
+                                        {
+                                            id: "Table View",
+                                            label: "Table View",
+                                        },
+                                        {
+                                            id: "HierarchyView",
+                                            label: "Hierarchy View",
+                                        },
+                                    ],
+                                    onMenuItemClick:
+                                        handleMenuClick,
+
+                                    buttons: [
+                                        bulkUploadButton,
+                                        {
+                                            label: isExporting
+                                                ? "Exporting..."
+                                                : "Export",
+                                            variant: "primary",
+                                            onClick:
+                                                handleExportData,
+                                            disabled: isExporting,
+                                        },
+                                    ],
+                                },
                             },
                         ],
+                    },
+                    bulkUploadModalSection,
+                    ...(viewMode === "hierarchy"
+                        ? [
+                              // Filter Section for Hierarchy View
+                              {
+                                  layout: {
+                                      type: "flex" as const,
+                                      direction: "row" as const,
+                                      gap: "gap-4",
+                                      className:
+                                          "flex items-center justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
+                                  },
+                                  components: [
+                                      {
+                                          name: "Dropdown",
+                                          props: {
+                                              options: filterOptions.discoms,
+                                              value: filterValues.discom,
+                                              onChange: (value: string) =>
+                                                  handleFilterChange(
+                                                      "discom",
+                                                      value,
+                                                  ),
+                                              placeholder: "Select DISCOM",
+                                              loading: dropdownLoading,
+                                              searchable: false,
+                                          },
+                                      },
+                                      {
+                                          name: "Dropdown",
+                                          props: {
+                                              options: filterOptions.circles,
+                                              value: filterValues.circle,
+                                              onChange: (value: string) =>
+                                                  handleFilterChange(
+                                                      "circle",
+                                                      value,
+                                                  ),
+                                              placeholder: "Select Circle",
+                                              loading: dropdownLoading,
+                                              searchable: false,
+                                          },
+                                      },
+                                      {
+                                          name: "Dropdown",
+                                          props: {
+                                              options: filterOptions.divisions,
+                                              value: filterValues.division,
+                                              onChange: (value: string) =>
+                                                  handleFilterChange(
+                                                      "division",
+                                                      value,
+                                                  ),
+                                              placeholder: "Select Division",
+                                              loading: dropdownLoading,
+                                              searchable: false,
+                                          },
+                                      },
+                                      {
+                                          name: "Dropdown",
+                                          props: {
+                                              options:
+                                                  filterOptions.subDivisions,
+                                              value: filterValues.subDivision,
+                                              onChange: (value: string) =>
+                                                  handleFilterChange(
+                                                      "subDivision",
+                                                      value,
+                                                  ),
+                                              placeholder:
+                                                  "Select Sub-Division",
+                                              loading: dropdownLoading,
+                                              searchable: false,
+                                          },
+                                      },
+                                      {
+                                          name: "Dropdown",
+                                          props: {
+                                              options: filterOptions.sections,
+                                              value: filterValues.section,
+                                              onChange: (value: string) =>
+                                                  handleFilterChange(
+                                                      "section",
+                                                      value,
+                                                  ),
+                                              placeholder: "Select Section",
+                                              loading: dropdownLoading,
+                                              searchable: false,
+                                          },
+                                      },
+                                      {
+                                          name: "Dropdown",
+                                          props: {
+                                              options:
+                                                  filterOptions.meterLocations,
+                                              value: filterValues.meterLocation,
+                                              onChange: (value: string) =>
+                                                  handleFilterChange(
+                                                      "meterLocation",
+                                                      value,
+                                                  ),
+                                              placeholder:
+                                                  "Select Meter Location",
+                                              loading: dropdownLoading,
+                                              searchable: false,
+                                          },
+                                      },
+                                      {
+                                          name: "Button",
+                                          props: {
+                                              variant: "primary",
+                                              onClick: handleGetData,
+                                              children: "Get Data",
+                                              className: "self-end h-100%",
+                                              searchable: false,
+                                          },
+                                          align: "center",
+                                      },
+                                      {
+                                          name: "Button",
+                                          props: {
+                                              variant: "secondary",
+                                              onClick: handleResetFilters,
+                                              children: "Reset",
+                                              className: "self-end h-100%",
+                                              searchable: false,
+                                          },
+                                          align: "center",
+                                      },
+                                  ],
+                              },
+                              {
+                                  layout: {
+                                      type: "grid",
+                                      columns: 4,
+                                      className: "h-full",
+                                      rows: [
+                                          {
+                                              layout: "row",
+                                              className:
+                                                  "border border-primary-border dark:border-dark-border rounded-3xl overflow-hidden",
+                                              columns: [
+                                                  {
+                                                      name: "TopLevelHierarchy",
+                                                      props: {
+                                                          nodes: getDisplayData(),
+                                                          title: "Asset Hierarchy",
+                                                          actions:
+                                                              assetManagementActions,
+                                                          onActionClick:
+                                                              handleAssetAction,
+                                                          showActions: true,
+                                                      },
+                                                  },
+                                              ],
+                                          },
+
+                                          {
+                                              layout: "row",
+                                              span: { col: 3, row: 1 },
+                                              className:
+                                                  "h-full border border-primary-border dark:border-dark-border rounded-3xl overflow-hidden",
+                                              columns: [
+                                                  {
+                                                      name: "NodeChart",
+                                                      props: {
+                                                          data: {
+                                                              Location:
+                                                                  mapHierarchyForNodeChart(
+                                                                      getDisplayData(),
+                                                                  ),
+                                                          },
+                                                          width: "100%",
+                                                          height: "100%",
+                                                          type: "hierarchy",
+                                                          enableZoom: true,
+                                                          minZoom: 0.3,
+                                                          maxZoom: 2,
+                                                          initialZoom: 0.8,
+                                                          layout: "horizontal",
+                                                          EdgeStyleLayout:
+                                                              "polyline",
+                                                      },
+                                                  },
+                                              ],
+                                          },
+                                      ],
+                                  },
+                              },
+                          ]
+                        : [
+                              // TABLE VIEW - Full-width table layout
+                              {
+                                  layout: {
+                                      type: "flex" as const,
+                                      direction: "row" as const,
+                                      gap: "gap-4",
+                                      columns: 1,
+                                      className: "w-full flex  flex-col gap-4",
+                                      rows: [
+                                          {
+                                              layout: "flex" as const,
+                                              direction: "row" as const,
+                                              gap: "gap-4",
+                                              className:
+                                                  "flex items-center gap-5 justify-center w-full border gap-5 border-primary-border dark:border-dark-border rounded-3xl p-4 bg-background-secondary dark:bg-primary-dark-light",
+                                              columns: [
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.discoms,
+                                                          value: filterValues.discom,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "discom",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Select DISCOM",
+                                                          loading:
+                                                              dropdownLoading,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.circles,
+                                                          value: filterValues.circle,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "circle",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Select Circle",
+                                                          loading:
+                                                              dropdownLoading,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.divisions,
+                                                          value: filterValues.division,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "division",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Select Division",
+                                                          loading:
+                                                              dropdownLoading,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.subDivisions,
+                                                          value: filterValues.subDivision,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "subDivision",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Select Sub-Division",
+                                                          loading:
+                                                              dropdownLoading,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.sections,
+                                                          value: filterValues.section,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "section",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Select Section",
+                                                          loading:
+                                                              dropdownLoading,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.meterLocations,
+                                                          value: filterValues.meterLocation,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "meterLocation",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Select Meter Location",
+                                                          loading:
+                                                              dropdownLoading,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Dropdown",
+                                                      props: {
+                                                          options:
+                                                              filterOptions.communicationStatuses,
+                                                          value: filterValues.communicationStatus,
+                                                          onChange: (
+                                                              value: string,
+                                                          ) =>
+                                                              handleFilterChange(
+                                                                  "communicationStatus",
+                                                                  value,
+                                                              ),
+                                                          placeholder:
+                                                              "Communication status",
+                                                          loading: false,
+                                                          searchable: false,
+                                                      },
+                                                  },
+                                                  {
+                                                      name: "Button",
+                                                      props: {
+                                                          onClick:
+                                                              handleGetData,
+                                                          variant: "primary",
+                                                          children: "Get Data",
+                                                          className:
+                                                              "h-10 self-end",
+                                                          searchable: false,
+                                                      },
+                                                      align: "center",
+                                                  },
+                                                  {
+                                                      name: "Button",
+                                                      props: {
+                                                          onClick:
+                                                              handleResetFilters,
+                                                          variant: "secondary",
+                                                          children: "Reset",
+                                                          className:
+                                                              "h-10 self-end",
+                                                          searchable: false,
+                                                      },
+                                                      align: "center",
+                                                  },
+                                              ],
+                                          },
+                                          {
+                                              layout: "grid",
+                                              gridColumns: 1,
+                                              gap: "gap-4",
+                                              className: "pb-4",
+                                              columns: [
+                                                  {
+                                                      name: "Table",
+                                                      props: {
+                                                          data:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? meterTableData
+                                                                  : getFlattenedTableData(),
+                                                          headerTitle:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? "Meters"
+                                                                  : "Meters",
+                                                          showHeader: true,
+                                                          availableTimeRanges:
+                                                              [],
+                                                          columns:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? [
+                                                                        {
+                                                                            key: "slNo",
+                                                                            label: "Sl.No",
+                                                                            sortable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "dtrId",
+                                                                            label: "DTR ID",
+                                                                            sortable: true,
+                                                                            searchable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "meterNo",
+                                                                            label: "Meter No",
+                                                                            sortable: true,
+                                                                            searchable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "dtrName",
+                                                                            label: "DTR Name",
+                                                                            sortable: true,
+                                                                            searchable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "location",
+                                                                            label: "Location",
+                                                                            sortable: true,
+                                                                            searchable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "communicationStatus",
+                                                                            label: "Communication Status",
+                                                                            statusIndicator:
+                                                                                {},
+                                                                            isActive:
+                                                                                (
+                                                                                    value:
+                                                                                        | string
+                                                                                        | number
+                                                                                        | boolean
+                                                                                        | null
+                                                                                        | undefined,
+                                                                                ) =>
+                                                                                    String(
+                                                                                        value,
+                                                                                    ).toLowerCase() ===
+                                                                                    "active",
+                                                                        },
+                                                                        {
+                                                                            key: "lastCommunicationDate",
+                                                                            label: "Last Communication Date",
+                                                                            sortable: true,
+                                                                        },
+                                                                    ]
+                                                                  : [
+                                                                        // {
+                                                                        //   key: "name",
+                                                                        //   label: "Asset Name",
+                                                                        //   sortable: true,
+                                                                        //   searchable: true,
+                                                                        // },
+                                                                        // {
+                                                                        //   key: "type",
+                                                                        //   label: "Asset Type",
+                                                                        //   sortable: true,
+                                                                        //   searchable: true,
+                                                                        // },
+                                                                        // {
+                                                                        //   key: "level",
+                                                                        //   label: "Hierarchy Level",
+                                                                        //   sortable: true,
+                                                                        // },
+                                                                        // {
+                                                                        //   key: "path",
+                                                                        //   label: "Full Path",
+                                                                        //   sortable: true,
+                                                                        //   searchable: true,
+                                                                        // },
+                                                                        // {
+                                                                        //   key: "count",
+                                                                        //   label: "Count",
+                                                                        //   sortable: true,
+                                                                        // },
+                                                                        // {
+                                                                        //   key: "parent",
+                                                                        //   label: "Parent",
+                                                                        //   sortable: true,
+                                                                        //   searchable: true,
+                                                                        // },
+                                                                        {
+                                                                            key: "dtrId",
+                                                                            label: "DTR ID",
+                                                                            sortable: true,
+                                                                            searchable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "dtrName",
+                                                                            label: "DTR Name",
+                                                                            sortable: true,
+                                                                            searchable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "feedersCount",
+                                                                            label: "Feeders Count",
+                                                                            sortable: true,
+                                                                        },
+                                                                        {
+                                                                            key: "commStatus",
+                                                                            label: "Communication-Status",
+                                                                            statusIndicator:
+                                                                                {},
+                                                                            isActive:
+                                                                                (
+                                                                                    value:
+                                                                                        | string
+                                                                                        | number
+                                                                                        | boolean
+                                                                                        | null
+                                                                                        | undefined,
+                                                                                ) =>
+                                                                                    String(
+                                                                                        value,
+                                                                                    ).toLowerCase() ===
+                                                                                    "active",
+                                                                        },
+                                                                        {
+                                                                            key: "lastCommunication",
+                                                                            label: "Last Communication",
+                                                                            sortable: true,
+                                                                        },
+                                                                    ],
+                                                          loading:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? isLoadingMeterData ||
+                                                                    bulkFlowLoading
+                                                                  : bulkFlowLoading,
+                                                          emptyMessage:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? "No meters found"
+                                                                  : "No assets found",
+                                                          showSearch: true,
+                                                          showPagination: true,
+                                                          pagination: true,
+                                                          serverPagination:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination
+                                                                  : undefined,
+                                                          pageSize:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination.limit
+                                                                  : 10,
+                                                          itemsPerPage:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination.limit
+                                                                  : undefined,
+                                                          totalCount:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination.totalCount
+                                                                  : undefined,
+                                                          currentPage:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination.currentPage
+                                                                  : undefined,
+                                                          totalPages:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? serverPagination.totalPages
+                                                                  : undefined,
+                                                          rowsPerPageOptions:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? [
+                                                                        10,
+                                                                        20,
+                                                                        50,
+                                                                        100,
+                                                                    ]
+                                                                  : undefined,
+                                                          initialRowsPerPage:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? 20
+                                                                  : undefined,
+                                                          onPageChange:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? handleMeterTablePageChange
+                                                                  : undefined,
+                                                          onRowsPerPageChange:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? handleMeterTableRowsPerPageChange
+                                                                  : undefined,
+                                                          onSearch:
+                                                              viewMode ===
+                                                              "table"
+                                                                  ? (
+                                                                        searchTerm: string,
+                                                                    ) => {
+                                                                        setCurrentPage(
+                                                                            1,
+                                                                        );
+                                                                        fetchMeterData(
+                                                                            1,
+                                                                            meterTableLimit,
+                                                                            searchTerm,
+                                                                            lastSelectedId,
+                                                                        );
+                                                                    }
+                                                                  : undefined,
+                                                          showActions: true,
+                                                          actions:
+                                                              assetManagementActions,
+                                                          onRowClick: (
+                                                              row: any,
+                                                          ) =>
+                                                              handleViewFeeder(
+                                                                  row,
+                                                              ),
+                                                          onActionClick: (
+                                                              actionId: string,
+                                                              row: any,
+                                                          ) => {
+                                                              if (
+                                                                  actionId ===
+                                                                  "view"
+                                                              ) {
+                                                                  handleViewFeeder(
+                                                                      row,
+                                                                  );
+                                                              } else {
+                                                                  handleAssetAction(
+                                                                      actionId,
+                                                                      row,
+                                                                  );
+                                                              }
+                                                          },
+                                                      },
+                                                  },
+                                              ],
+                                          },
+                                      ],
+                                  },
+                              },
+                          ]),
+                    {
+                        layout: {
+                            type: "column",
+                            gap: "gap-0",
+                            rows: [
+                                {
+                                    layout: "row",
+                                    columns: [
+                                        {
+                                            name: "Modal",
+                                            props: {
+                                                isOpen: isAddAssetModalOpen,
+                                                onClose: () => {
+                                                    setIsAddAssetModalOpen(
+                                                        false,
+                                                    );
+                                                    setActiveTab(0);
+                                                    setIsSubNodeChecked(false);
+                                                },
+                                                title: "Add New Asset",
+                                                size: "xl",
+                                                showCloseIcon: true,
+                                                showTabs: true,
+                                                tabs: tabs,
+                                                activeTabIndex: activeTab,
+                                                onTabChange: handleTabChange,
+                                                showForm: true,
+                                                formFields: currentFormFields,
+                                                onSave: async (
+                                                    formData: Record<
+                                                        string,
+                                                        any
+                                                    >,
+                                                ) => {
+                                                    try {
+                                                        let apiData;
+
+                                                        switch (activeTab) {
+                                                            case 0: // Add Asset Name
+                                                                apiData = {
+                                                                    location_type_name:
+                                                                        formData.assetTitle,
+                                                                    location_names:
+                                                                        formData.assetName
+                                                                            ? [
+                                                                                  formData.assetName,
+                                                                              ]
+                                                                            : [],
+                                                                    parent_location:
+                                                                        formData.isSubNode &&
+                                                                        formData.parentAssetSearch
+                                                                            ? formData.parentAssetSearch
+                                                                            : null,
+                                                                };
+                                                                break;
+
+                                                            case 1: // Upload List
+                                                                setIsAddAssetModalOpen(
+                                                                    false,
+                                                                );
+                                                                return;
+
+                                                            case 2: // Template
+                                                                setIsAddAssetModalOpen(
+                                                                    false,
+                                                                );
+                                                                return;
+
+                                                            default:
+                                                                apiData =
+                                                                    formData;
+                                                        }
+
+                                                        const response =
+                                                            await fetch(
+                                                                `${BACKEND_URL}/assets`,
+                                                                {
+                                                                    method: "POST",
+                                                                    headers: {
+                                                                        "Content-Type":
+                                                                            "application/json",
+                                                                    },
+                                                                    body: JSON.stringify(
+                                                                        apiData,
+                                                                    ),
+                                                                },
+                                                            );
+
+                                                        const result =
+                                                            await response.json();
+
+                                                        if (result.success) {
+                                                            window.location.reload();
+                                                        } else {
+                                                            console.error(
+                                                                "Failed to add asset:",
+                                                                result.message,
+                                                            );
+                                                            alert(
+                                                                `Failed to add asset: ${result.message}`,
+                                                            );
+                                                        }
+                                                    } catch (error) {
+                                                        console.error(
+                                                            "Error adding asset:",
+                                                            error,
+                                                        );
+                                                        alert(
+                                                            "Error adding asset. Please try again.",
+                                                        );
+                                                    }
+
+                                                    setIsAddAssetModalOpen(
+                                                        false,
+                                                    );
+                                                },
+                                                saveButtonLabel:
+                                                    getSaveButtonLabel(),
+                                                cancelButtonLabel: "Cancel",
+                                                cancelButtonVariant:
+                                                    "secondary",
+                                                confirmButtonVariant: "primary",
+                                                formId: "add-asset-form",
+                                                gridLayout: {
+                                                    gridRows:
+                                                        currentFormFields.length,
+                                                    gridColumns: 1,
+                                                    gap: "gap-4",
+                                                },
+                                                tabsSize: "md",
+                                                tabsShowTabIcons: true,
+                                                tabsShowTabLabels: true,
+                                                tabsTabListClassName:
+                                                    "bg-primary-lightest border-primary-border",
+                                                tabsActiveTabButtonClassName:
+                                                    "bg-primary text-white",
+                                                tabsInactiveTabButtonClassName:
+                                                    "text-neutral hover:bg-primary-lightest",
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
                     },
                 ]}
             />
