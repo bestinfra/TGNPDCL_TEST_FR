@@ -622,7 +622,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         "/meter-alerts": "Meter Events",
         "/meter-alert": "Meter Events",
         "/reports": "MIS Reports",
-        "/asset-management": "Meter Management",
+        "/asset-management": "Asset Management",
         "/users": "Users",
         "/users/:userId": "User Detail",
         "/add-user": "Add User",
@@ -631,7 +631,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         "/tickets/:ticketId": "Ticket View",
         "/add-ticket": "Add Ticket",
         "/data-logger": "Data Logger",
-        "/meters": "Meter List",
+        "/meters": "Meter Management",
         "/meter-details/:meterId": "Meter Details",
         "/": "DTR Dashboard",
     };
