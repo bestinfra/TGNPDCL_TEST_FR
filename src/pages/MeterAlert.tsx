@@ -3,13 +3,12 @@ import React, { useState, useEffect, lazy } from "react";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { apiClient } from "../api/apiUtils";
 // import dayjs from "dayjs";
-// Dummy data for fallback
 type AlertTypeOption = {
     value: string;
     label: string;
 };
 
-const dummyFilterOptions: {
+const defaultFilterOptions: {
     statusOptions: { value: string; label: string }[];
     alertTypeOptions: AlertTypeOption[];
 } = {
@@ -58,7 +57,7 @@ const MeterAlert: React.FC = () => {
     // Data states
     const [alertTableData, setAlertTableData] = useState<any[]>([]);
     const [alertTableColumns, setAlertTableColumns] = useState<any[]>([]);
-    const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
+    const [filterOptions, setFilterOptions] = useState(defaultFilterOptions);
     const [isTamperOptionsLoading, setIsTamperOptionsLoading] = useState(false);
 
     const handleExportData = () => {
@@ -554,7 +553,7 @@ const MeterAlert: React.FC = () => {
                     }));
                 }
             } catch (_e) {
-                // keep dummy fallback
+                // keep default filter options on error
             } finally {
                 if (!cancelled) setIsTamperOptionsLoading(false);
             }
