@@ -12,6 +12,7 @@ import AppLayout from "@/components/AppLayout";
 import Login from "@/pages/SubLogin";
 import DTRDashboard from "@/pages/DTRDashboard";
 import AssetManagement from "@/pages/AssetManagement";
+import DailyReports from "@/pages/DailyReports";
 import Meters from "@/pages/Meters";
 import Users from "@/pages/Users";
 import UserDetail from "@/pages/UserDetail";
@@ -70,6 +71,10 @@ const App: React.FC = () => {
                                                     element={
                                                         <AssetManagement />
                                                     }
+                                                />
+                                                <Route
+                                                    path="/daily-reports"
+                                                    element={<DailyReports />}
                                                 />
                                                 <Route
                                                     path="/users"

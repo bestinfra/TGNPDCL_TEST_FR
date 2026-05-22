@@ -143,9 +143,9 @@ function buildSidebarMenusFromPermissions(perms: string[]): SidebarMenuItem[] {
 
     if (hasDailyConsumptionPermission(perms)) {
         items.push({
-            title: "Daily Consumption",
+            title: "Daily Reports",
             icon: "icons/consumption.svg",
-            link: "/asset-management",
+            link: "/daily-reports",
         });
     }
 
@@ -282,11 +282,12 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
                 }
             }
 
-            // Return dummy data as fallback
-            return getDummyNotifications();
+            setNotifications([]);
+            return [];
         } catch (error) {
             console.error("Error fetching notifications:", error);
-            return getDummyNotifications();
+            setNotifications([]);
+            return [];
         }
     };
 
@@ -391,34 +392,6 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             return false;
         }
     };
-
-    // Dummy notifications fallback
-    function getDummyNotifications() {
-        return [
-            {
-                id: "1",
-                type: "HT_FUSE_BLOWN",
-                title: "HT Fuse Blown Alert",
-                message: "HT fuse blown detected on DTR-001",
-                created_at: new Date().toISOString(),
-                is_read: false,
-                abnormalitytype: "HT Fuse Blown",
-                level: 2,
-                status: "active",
-            },
-            {
-                id: "2",
-                type: "METER_ABNORMALITY",
-                title: "Meter Abnormality",
-                message: "Abnormal reading detected on meter MTR-123",
-                created_at: new Date().toISOString(),
-                is_read: true,
-                abnormalitytype: "Voltage Drop",
-                level: 1,
-                status: "resolved",
-            },
-        ];
-    }
 
     // Load notification stats and notifications on component mount
     useEffect(() => {
@@ -528,8 +501,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             const freshNotifications = await fetchNotificationsList();
             return freshNotifications;
         } catch (error) {
-            // Return dummy data as fallback
-            return getDummyNotifications();
+            return [];
         }
     }, [notifications]);
 
@@ -789,6 +761,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         "/meter-alert": "Meter Events",
         "/reports": "MIS Reports",
         "/asset-management": "Asset Management",
+        "/daily-reports": "Daily Reports",
         "/users": "Users",
         "/users/:userId": "User Detail",
         "/add-user": "Add User",

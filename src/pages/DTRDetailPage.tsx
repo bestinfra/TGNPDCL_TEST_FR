@@ -168,8 +168,7 @@ function CapacityUpdateModal({
   );
 }
 
-// Dummy data for fallback
-const dummyDTRData = {
+const initialDtrDetailData = {
   name: '0',
   dtrNo: '0',
   meterNo: '',
@@ -262,27 +261,13 @@ const dummyDTRData = {
   ],
 };
 
-const dummyDailyConsumptionData = {
-  xAxisData: ['N/A'],
-  seriesData: [
-    {
-      name: 'Consumption',
-      data: [0],
-    },
-  ],
+const emptyDailyConsumptionData = {
+  xAxisData: [] as string[],
+  seriesData: [] as { name: string; data: number[] }[],
   totalKwh: 0,
   totalKvah: 0,
   totalKvarh: 0,
 };
-
-const dummyAlertsData = [
-  {
-    alertId: 'NA',
-    type: 'N/A',
-    feederName: 'NA',
-    occuredOn: 'NA',
-  },
-];
 
 type DtrDetailNavState = {
   division?: string;
@@ -304,8 +289,8 @@ const DTRDetailPage = () => {
     return calculatedKvarh;
   };
 
-  const [dtr, setDtr] = useState(dummyDTRData);
-  const [dailyConsumptionData, setDailyConsumptionData] = useState(dummyDailyConsumptionData);
+  const [dtr, setDtr] = useState(initialDtrDetailData);
+  const [dailyConsumptionData, setDailyConsumptionData] = useState(emptyDailyConsumptionData);
   const [dtrConsumptionData, setDtrConsumptionData] = useState<any>({
     daily: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
     monthly: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
@@ -314,7 +299,7 @@ const DTRDetailPage = () => {
   const [feedersData, setFeedersData] = useState<
     ReturnType<typeof mapDtrApiFeederToFeedersTableRow>[]
   >([]);
-  const [alertsData, setAlertsData] = useState(dummyAlertsData);
+  const [alertsData, setAlertsData] = useState<any[]>([]);
   const [alertsPagination, setAlertsPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -337,7 +322,7 @@ const DTRDetailPage = () => {
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
-  const [stats, setStats] = useState(dummyDTRData.stats);
+  const [stats, setStats] = useState(initialDtrDetailData.stats);
   const [kvaMetricsData, setKvaMetricsData] = useState<any>({
     dailyData: { xAxisData: [], sums: [] },
     monthlyData: { xAxisData: [], sums: [] },
@@ -816,7 +801,7 @@ const DTRDetailPage = () => {
       }
     } catch (error) {
       console.error('Error fetching alerts data:', error);
-      setAlertsData(dummyAlertsData);
+      setAlertsData([]);
       setErrors((prev) => {
         if (!prev.includes('Failed to fetch alerts data')) {
           const updated = [...prev, 'Failed to fetch alerts data'];
@@ -1000,7 +985,7 @@ const DTRDetailPage = () => {
         }
       } catch (error) {
         console.error('Error fetching consumption data:', error);
-        setDailyConsumptionData(dummyDailyConsumptionData);
+        setDailyConsumptionData(emptyDailyConsumptionData);
         setErrors((prev) => {
           if (!prev.includes('Failed to fetch consumption data')) {
             const updated = [...prev, 'Failed to fetch consumption data'];

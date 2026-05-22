@@ -10,8 +10,7 @@ interface TableData {
 import BACKEND_URL from '../config';
 import { exportChartData } from '../utils/excelExport';
 
-// Dummy data for fallback
-const dummyTicketStats = {
+const emptyTicketStats = {
   total: 0,
   open: 0,
   inProgress: 0,
@@ -19,52 +18,18 @@ const dummyTicketStats = {
   closed: 0,
 };
 
-const dummyTicketTrends = {
-  xAxisData: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  seriesData: [
-    {
-      name: 'Open Tickets',
-      data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
-    {
-      name: 'In Progress Tickets',
-      data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
-    {
-      name: 'Resolved Tickets',
-      data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
-    {
-      name: 'Closed Tickets',
-      data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
-  ],
+const emptyTicketTrends = {
+  xAxisData: [] as string[],
+  seriesData: [] as { name: string; data: number[] }[],
   seriesColors: ['#163b7c', '#55b56c', '#dc272c', '#ed8c22'],
 };
-
-const dummyTickets = [
-  {
-    id: 1,
-    ticketNumber: '0',
-    dtrNumber: '0',
-    subject: '0',
-    priority: '0',
-    status: '0',
-    assignedTo: '0',
-    createdAt: '0',
-    category: '0',
-    meterSerialNo: '0',
-    description: '0',
-  },
-];
 
 export default function Tickets() {
   const navigate = useNavigate();
 
-  // State for API data with smart fallbacks
-  const [ticketStats, setTicketStats] = useState(dummyTicketStats);
-  const [ticketTrends, setTicketTrends] = useState(dummyTicketTrends);
-  const [tickets, setTickets] = useState(dummyTickets);
+  const [ticketStats, setTicketStats] = useState(emptyTicketStats);
+  const [ticketTrends, setTicketTrends] = useState(emptyTicketTrends);
+  const [tickets, setTickets] = useState<TableData[]>([]);
 
   // Loading states
   const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -165,7 +130,7 @@ export default function Tickets() {
       }
     } catch (err: any) {
       console.error('Error in Tickets Stats:', err);
-      setTicketStats(dummyTicketStats);
+      setTicketStats(emptyTicketStats);
     } finally {
       // Add a small delay to make loading state visible
       setTimeout(() => {
@@ -199,7 +164,7 @@ export default function Tickets() {
       }
     } catch (err: any) {
       console.error('Error in Tickets Trends:', err);
-      setTicketTrends(dummyTicketTrends);
+      setTicketTrends(emptyTicketTrends);
     } finally {
       // Add a small delay to make loading state visible
       setTimeout(() => {
@@ -249,7 +214,7 @@ export default function Tickets() {
       }
     } catch (err: any) {
       console.error('Error in Tickets Table:', err);
-      setTickets(dummyTickets);
+      setTickets([]);
     } finally {
       // Add a small delay to make loading state visible
       setTimeout(() => {
@@ -292,7 +257,7 @@ export default function Tickets() {
         }
       } catch (err: any) {
         console.error('Error in Tickets Stats:', err);
-        setTicketStats(dummyTicketStats);
+        setTicketStats(emptyTicketStats);
 
         // Add to failed APIs
         setFailedApis((prev) => {
@@ -346,7 +311,7 @@ export default function Tickets() {
         }
       } catch (err: any) {
         console.error('Error in Tickets Trends:', err);
-        setTicketTrends(dummyTicketTrends);
+        setTicketTrends(emptyTicketTrends);
 
         // Add to failed APIs
         setFailedApis((prev) => {
@@ -411,7 +376,7 @@ export default function Tickets() {
       }
     } catch (err: any) {
       console.error('Error in Tickets Table:', err);
-      setTickets(dummyTickets);
+      setTickets([]);
 
       // Add to failed APIs
       setFailedApis((prev) => {
@@ -672,9 +637,9 @@ export default function Tickets() {
                     {
                       name: 'BarChart',
                       props: {
-                        xAxisData: ticketTrends?.xAxisData || dummyTicketTrends.xAxisData,
-                        seriesData: ticketTrends?.seriesData || dummyTicketTrends.seriesData,
-                        seriesColors: ticketTrends?.seriesColors || dummyTicketTrends.seriesColors,
+                        xAxisData: ticketTrends?.xAxisData ?? [],
+                        seriesData: ticketTrends?.seriesData ?? [],
+                        seriesColors: ticketTrends?.seriesColors ?? emptyTicketTrends.seriesColors,
                         height: '400px',
                         showHeader: true,
                         headerTitle: 'Ticket Statistics',
@@ -705,7 +670,7 @@ export default function Tickets() {
                     {
                       name: 'Table',
                       props: {
-                        data: tickets || dummyTickets,
+                        data: tickets,
                         columns: tableColumns,
                         showHeader: true,
                         headerTitle: 'Recent Tickets',
