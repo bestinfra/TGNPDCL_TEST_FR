@@ -246,3 +246,78 @@ export function mapDtrStatsTableRows(
         mapApiRowToDtrStatsTableRow(raw, (page - 1) * pageSize + idx + 1),
     );
 }
+
+/** Feeder/meter label from GET /dtrs/:id `feeders[]` (Karimnagar / fuse-blown flow). */
+export function pickFeederMeterDisplay(
+    feeder: Record<string, unknown>,
+): string {
+    const value = pickField(
+        feeder,
+        "meterNumber",
+        "meterNo",
+        "meter_number",
+        "Meter Number",
+        "serialNumber",
+        "serial_number",
+        "Serial Number",
+    );
+    return typeof value === "string" ? value : String(value ?? "").trim();
+}
+
+/** DTR Detail → DTR Feeders table row (single standard mapper for all entry paths). */
+export function mapDtrApiFeederToFeedersTableRow(
+    feeder: Record<string, unknown>,
+    index: number,
+) {
+    const feederName = pickFeederMeterDisplay(feeder);
+    const meterNumber = pickField(
+        feeder,
+        "meterNumber",
+        "meterNo",
+        "meter_number",
+    );
+    const serialNumber = pickField(feeder, "serialNumber", "serial_number");
+    const rawFeederId = pickField(feeder, "feederId", "id", "meterId");
+    const feederId =
+        rawFeederId !== "" && Number.isFinite(Number(rawFeederId))
+            ? Number(rawFeederId)
+            : undefined;
+    const location = feeder.location;
+    const status = pickField(feeder, "status", "loadStatus", "condition");
+
+    return {
+        sNo: index + 1,
+        feederName,
+        meterNumber: meterNumber ? String(meterNumber) : undefined,
+        serialNumber: serialNumber ? String(serialNumber) : undefined,
+        feederId,
+        loadStatus: status ? String(status) : "",
+        condition: status ? String(status) : "",
+        capacity: "",
+        address:
+            (typeof location === "string"
+                ? location
+                : (location as { name?: string } | null)?.name) ||
+            pickField(feeder, "city") ||
+            "",
+    };
+}
+
+/** Route param for `/dtr-detail/:dtrId` — DB id preferred, else DTR number string. */
+export function resolveDtrDetailRouteParam(
+    row: Record<string, unknown> | null | undefined,
+): string | null {
+    if (!row) return null;
+    const dbId = pickField(row, "id", "dtrDbId", "dtr_id");
+    if (dbId !== "") return String(dbId);
+    const dtrNumber = pickField(
+        row,
+        "dtrNumber",
+        "dtrId",
+        "dtrNo",
+        "dtr_id",
+        "DTR Number",
+    );
+    if (dtrNumber !== "") return String(dtrNumber);
+    return null;
+}
