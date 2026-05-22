@@ -6,7 +6,10 @@ import BACKEND_URL from '../config';
 import { formatDateTime } from '@/utils/dateFormat';
 import { apiClient } from '@/api/apiUtils';
 import { getStoredUser } from '@/api/subAppAuth';
-import { mapApiRowToDtrStatsTableRow } from '@/utils/dtrStatsTable';
+import {
+  mapApiRowToDtrStatsTableRow,
+  mapDtrApiFeederToFeedersTableRow,
+} from '@/utils/dtrStatsTable';
 
 const HIERARCHY_FORM_LEVELS = [
   { key: 'discom', levelName: 'DISCOM', label: 'DISCOM' },
@@ -272,20 +275,6 @@ const dummyDailyConsumptionData = {
   totalKvarh: 0,
 };
 
-const dummyFeedersData = [
-  {
-    sNo: 1,
-    feederName: 'NA',
-    meterNumber: undefined as string | undefined,
-    serialNumber: undefined as string | undefined,
-    feederId: undefined as number | undefined,
-    loadStatus: 'N/A',
-    condition: 'N/A',
-    capacity: 'N/A',
-    address: 'NA',
-  },
-];
-
 const dummyAlertsData = [
   {
     alertId: 'NA',
@@ -322,7 +311,9 @@ const DTRDetailPage = () => {
     monthly: { totalKwh: 0, totalKvah: 0, totalKvarh: 0 },
   });
   const [selectedTimeRange, setSelectedTimeRange] = useState<'Daily' | 'Monthly'>('Daily');
-  const [feedersData, setFeedersData] = useState(dummyFeedersData);
+  const [feedersData, setFeedersData] = useState<
+    ReturnType<typeof mapDtrApiFeederToFeedersTableRow>[]
+  >([]);
   const [alertsData, setAlertsData] = useState(dummyAlertsData);
   const [alertsPagination, setAlertsPagination] = useState({
     currentPage: 1,
@@ -337,6 +328,12 @@ const DTRDetailPage = () => {
   const [_isDtrLoading, setIsDtrLoading] = useState(true);
   const [_isConsumptionLoading, setIsConsumptionLoading] = useState(true);
   const [isFeedersLoading, setIsFeedersLoading] = useState(true);
+
+  useEffect(() => {
+    if (isFeedersLoading) return;
+    console.log('Rendered Feeders:', feedersData);
+  }, [feedersData, isFeedersLoading]);
+
   const [isAlertsLoading, setIsAlertsLoading] = useState(true);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isKvaMetricsLoading, setIsKvaMetricsLoading] = useState(false);
@@ -1031,39 +1028,20 @@ const DTRDetailPage = () => {
         if (!response.ok) throw new Error('Failed to fetch feeders data');
 
         const data = await response.json();
+        const apiResponse = data;
+        const feeders = data.data?.feeders ?? [];
+        const currentDtrId = numericDtrId;
+
+        console.log('DTR Detail API Response:', apiResponse);
+        console.log('Feeders Received:', feeders);
+        console.log('Current DTR ID:', currentDtrId);
 
         if (data.success) {
-          const selectedMeterDisplay = String(
-            mapApiRowToDtrStatsTableRow(
-              {
-                meterNo: rowNavState?.meterNo ?? rowNavState?.meterNumber,
-                meterNumber: rowNavState?.meterNumber ?? rowNavState?.meterNo,
-              },
-              1,
-            ).meterNumber || '',
-          ).trim();
-
-          const transformedFeedersData =
-            data.data?.feeders?.map((feeder: any, index: number) => {
-              return {
-                sNo: index + 1,
-                feederName: selectedMeterDisplay || 'N/A',
-                meterNumber: selectedMeterDisplay || undefined,
-                serialNumber: feeder.serialNumber,
-                feederId: feeder.feederId,
-                loadStatus: feeder.status || 'N/A',
-                condition: feeder.status || 'N/A',
-                capacity: 'N/A', // Not available in current API
-                address:
-                  (typeof feeder.location === 'string'
-                    ? feeder.location
-                    : feeder.location?.name) ||
-                  feeder.city ||
-                  'N/A',
-              };
-            }) || [];
-
-          setFeedersData(transformedFeedersData);
+          const feederRows = feeders.map(
+            (feeder: Record<string, unknown>, index: number) =>
+              mapDtrApiFeederToFeedersTableRow(feeder, index),
+          );
+          setFeedersData(feederRows);
 
           // Set location hierarchy if available
           if (data.data?.locationHierarchy) {
@@ -1090,7 +1068,7 @@ const DTRDetailPage = () => {
         }
       } catch (error) {
         console.error('Error fetching feeders data:', error);
-        setFeedersData(dummyFeedersData);
+        setFeedersData([]);
         setErrors((prev) => {
           if (!prev.includes('Failed to fetch feeders data')) {
             const updated = [...prev, 'Failed to fetch feeders data'];
@@ -1543,7 +1521,7 @@ const DTRDetailPage = () => {
                       name: 'PageHeader',
                       props: {
                         title: 'DTR Details',
-                        onBackClick: () => navigate('/dtr-dashboard'),
+                        onBackClick: () => navigate('/'),
                         backButtonText: 'Back to Dashboard',
                         buttons: [
                           ...(showSupportActions

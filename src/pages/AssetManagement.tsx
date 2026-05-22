@@ -81,6 +81,13 @@ const ASSET_EDIT_PATCH_KEYS = [
 
 type AssetEditPatchKey = (typeof ASSET_EDIT_PATCH_KEYS)[number];
 
+/** Shown in modal but not editable and never sent in PATCH body */
+const ASSET_EDIT_READONLY_FIELDS = new Set<AssetEditPatchKey>(["meterNumber"]);
+
+const ASSET_EDIT_PATCHABLE_KEYS = ASSET_EDIT_PATCH_KEYS.filter(
+    (key) => !ASSET_EDIT_READONLY_FIELDS.has(key),
+);
+
 const ASSET_EDIT_FIELD_LABELS: Record<AssetEditPatchKey, string> = {
     discom: "DISCOM",
     circle: "Circle",
@@ -106,17 +113,17 @@ const getAssetEditFormInitialData = (
     return initial;
 };
 
-/** Changed editable fields only (id is added in save handler). */
+/** PATCH body: only keys whose edited value differs from the modal open snapshot. */
 const buildAssetEditFieldChanges = (
     formData: Record<string, unknown>,
-    original: AssetTableRow,
+    originalData: Record<string, string>,
 ): Record<string, string> => {
     const changes: Record<string, string> = {};
-    ASSET_EDIT_PATCH_KEYS.forEach((key) => {
+    ASSET_EDIT_PATCHABLE_KEYS.forEach((key) => {
         const newVal =
             typeof formData[key] === "string" ? formData[key].trim() : "";
-        const oldVal = displayAssetEditFieldValue(String(original[key] ?? ""));
-        if (newVal !== oldVal && newVal.length > 0) {
+        const oldVal = (originalData[key] ?? "").trim();
+        if (newVal !== oldVal) {
             changes[key] = newVal;
         }
     });
@@ -204,16 +211,41 @@ function EditLocationModal({
                                     id={`edit-location-${fieldName}`}
                                     name={fieldName}
                                     type="text"
-                                    className="w-full rounded-2xl border border-primary-border bg-background-secondary px-4 py-3 text-sm font-medium text-primary outline-none focus:border-primary dark:border-dark-border dark:bg-white/5 dark:text-white"
-                                    placeholder={`Enter ${ASSET_EDIT_FIELD_LABELS[fieldName]}`}
+                                    readOnly={ASSET_EDIT_READONLY_FIELDS.has(
+                                        fieldName,
+                                    )}
+                                    className={`w-full rounded-2xl border border-primary-border px-4 py-3 text-sm font-medium text-primary outline-none dark:border-dark-border dark:text-white ${
+                                        ASSET_EDIT_READONLY_FIELDS.has(
+                                            fieldName,
+                                        )
+                                            ? "cursor-default bg-background-secondary/80 dark:bg-white/10"
+                                            : "bg-background-secondary focus:border-primary dark:bg-white/5"
+                                    }`}
+                                    placeholder={
+                                        ASSET_EDIT_READONLY_FIELDS.has(
+                                            fieldName,
+                                        )
+                                            ? undefined
+                                            : `Enter ${ASSET_EDIT_FIELD_LABELS[fieldName]}`
+                                    }
                                     value={draft[fieldName] ?? ""}
-                                    onChange={(e) =>
+                                    onChange={(e) => {
+                                        if (
+                                            ASSET_EDIT_READONLY_FIELDS.has(
+                                                fieldName,
+                                            )
+                                        ) {
+                                            return;
+                                        }
                                         setDraft((prev) => ({
                                             ...prev,
                                             [fieldName]: e.target.value,
-                                        }))
-                                    }
+                                        }));
+                                    }}
                                     disabled={isSaving}
+                                    aria-readonly={ASSET_EDIT_READONLY_FIELDS.has(
+                                        fieldName,
+                                    )}
                                 />
                             </div>
                         ))}
@@ -702,6 +734,10 @@ export default function AssetManagment() {
     const [isEditLocationModalOpen, setIsEditLocationModalOpen] =
         useState(false);
     const [assetToEdit, setAssetToEdit] = useState<AssetTableRow | null>(null);
+    /** Snapshot when Edit Location opens — used for diff-only PATCH payload */
+    const [editLocationOriginalData, setEditLocationOriginalData] = useState<
+        Record<string, string> | null
+    >(null);
     const [savingLocationEdit, setSavingLocationEdit] = useState(false);
     const assetEditInitialValues = useMemo(
         () =>
@@ -824,6 +860,7 @@ export default function AssetManagment() {
             return;
         }
         setAssetToEdit(selectedRow);
+        setEditLocationOriginalData(getAssetEditFormInitialData(selectedRow));
         setIsEditLocationModalOpen(true);
     };
 
@@ -840,37 +877,30 @@ export default function AssetManagment() {
     const handleCloseEditLocationModal = () => {
         setIsEditLocationModalOpen(false);
         setAssetToEdit(null);
+        setEditLocationOriginalData(null);
     };
 
     const handleSaveAssetLocationEdit = async (
         formData: Record<string, unknown>,
     ) => {
-        if (!assetToEdit?.id) {
+        if (!assetToEdit?.id || !editLocationOriginalData) {
             return;
         }
 
         const fieldChanges = buildAssetEditFieldChanges(
             formData,
-            assetToEdit,
+            editLocationOriginalData,
         );
         const assetId = assetToEdit.id;
         const patchUrl = `${BACKEND_URL}/assets/location?id=${encodeURIComponent(String(assetId))}`;
 
         if (Object.keys(fieldChanges).length === 0) {
-            console.log(
-                "PATCH skipped: no non-empty changed fields (empty body would fail backend validation)",
-            );
-            handleCloseEditLocationModal();
+            alert("No changes detected");
             return;
         }
 
-        // Row id is in query (?id=); body = changed fields only (backend scopes update to that row)
+        // Row id is in query (?id=); body = changed fields only
         const patchBody: Record<string, string> = fieldChanges;
-
-        console.log("PATCH formData (modal draft):", formData);
-        console.log("PATCH original row:", assetToEdit);
-        console.log("PATCH PAYLOAD:", patchBody);
-        console.log("PATCH endpoint:", patchUrl);
 
         setSavingLocationEdit(true);
         try {
@@ -887,7 +917,6 @@ export default function AssetManagment() {
             );
 
             const result = await response.json();
-            console.log("PATCH response:", result);
 
             if (!response.ok || !result.success) {
                 throw new Error(
