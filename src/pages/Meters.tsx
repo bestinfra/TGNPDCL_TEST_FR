@@ -100,7 +100,7 @@ const dummyFilterOptions = {
         { value: "OUTDOOR", label: "Outdoor" },
     ],
     communicationStatuses: [
-        { value: "all", label: "All communication statuses" },
+        { value: "all", label: "Comm Status" },
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
     ],

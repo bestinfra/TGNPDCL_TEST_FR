@@ -779,19 +779,10 @@ const DTRDashboard: React.FC = () => {
         }
     };
 
-    const retryCircleWiseStatsAPI = async (
-        lastSelectedId?: string | null,
-    ) => {
+    const retryCircleWiseStatsAPI = async () => {
         setIsCircleWiseTableLoading(true);
         try {
-            const params = new URLSearchParams();
-            if (lastSelectedId) {
-                params.append("hierarchyId", lastSelectedId);
-            }
-
-            const data = await apiClient.get(
-                `/dtrs/circle-wise-stats?${params.toString()}`,
-            );
+            const data = await apiClient.get("/dtrs/circle-wise-stats");
 
             let rows: any[] = [];
 
@@ -1131,7 +1122,7 @@ const DTRDashboard: React.FC = () => {
                     retryChartAPI(hierarchyId, chartRange),
                     retryMeterStatusAPI(hierarchyId),
                     fetchAllDTRsForMap(hierarchyId),
-                    retryCircleWiseStatsAPI(hierarchyId),
+                    retryCircleWiseStatsAPI(),
                 ]);
                 return;
             }
@@ -1143,7 +1134,7 @@ const DTRDashboard: React.FC = () => {
                 retryChartAPI(undefined, chartRange),
                 retryMeterStatusAPI(),
                 fetchAllDTRsForMap(),
-                retryCircleWiseStatsAPI(undefined),
+                retryCircleWiseStatsAPI(),
             ]);
         };
 
@@ -1594,7 +1585,7 @@ const DTRDashboard: React.FC = () => {
                 retryChartAPI(hierarchyId, chartRange),
                 retryMeterStatusAPI(hierarchyId),
                 fetchAllDTRsForMap(hierarchyId ?? null),
-                retryCircleWiseStatsAPI(hierarchyId ?? null),
+                retryCircleWiseStatsAPI(),
             ]);
         } catch (error) {
             // Error applying filters handled silently
@@ -1614,7 +1605,7 @@ const DTRDashboard: React.FC = () => {
             retryChartAPI(undefined, chartRange),
             retryMeterStatusAPI(),
             fetchAllDTRsForMap(),
-            retryCircleWiseStatsAPI(undefined),
+            retryCircleWiseStatsAPI(),
         ]);
     };
 
