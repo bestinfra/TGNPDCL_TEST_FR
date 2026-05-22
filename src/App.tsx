@@ -6,6 +6,7 @@ import {
     Navigate,
 } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
+import { HierarchyFilterProvider } from "@/context/HierarchyFilterContext";
 import { AuthProvider } from "@/components/auth/LocalAuthWrapper";
 import AppLayout from "@/components/AppLayout";
 import Login from "@/pages/SubLogin";
@@ -39,6 +40,7 @@ const App: React.FC = () => {
     return (
         <AuthProvider>
             <AppProvider>
+                <HierarchyFilterProvider>
                 <Router basename={basename}>
                     <Routes>
                         <Route path="/login" element={<Login />} />
@@ -57,6 +59,10 @@ const App: React.FC = () => {
                                             <Routes>
                                                 <Route
                                                     path="/"
+                                                    element={<DTRDashboard />}
+                                                />
+                                                <Route
+                                                    path="/dtr-dashboard"
                                                     element={<DTRDashboard />}
                                                 />
                                                 <Route
@@ -175,6 +181,7 @@ const App: React.FC = () => {
                         />
                     </Routes>
                 </Router>
+                </HierarchyFilterProvider>
             </AppProvider>
         </AuthProvider>
     );
