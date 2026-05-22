@@ -1007,11 +1007,31 @@ export default function AssetManagment() {
                 url += `?hierarchyId=${lastSelectedId}`;
             }
 
+            console.log("[AssetManagement DEBUG] API Params", {
+                endpoint: url,
+                hierarchyId: lastSelectedId ?? null,
+                mode: "hierarchy",
+            });
+
             const response = await fetch(url);
             const data = await response.json();
 
             if (data.success) {
-                setHierarchicalData(data.data || []);
+                const tree = data.data || [];
+                console.log("[AssetManagement DEBUG] API Response Count", {
+                    topLevelNodes: Array.isArray(tree) ? tree.length : 0,
+                    mode: "hierarchy",
+                });
+                console.log(
+                    "[AssetManagement DEBUG] Filtered Table Rows (hierarchy tree root names)",
+                    Array.isArray(tree)
+                        ? tree.map(
+                              (n: { hierarchy_name?: string; name?: string }) =>
+                                  n.hierarchy_name ?? n.name,
+                          )
+                        : [],
+                );
+                setHierarchicalData(tree);
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "assets"),
                 );
@@ -1098,6 +1118,15 @@ export default function AssetManagment() {
         );
     };
 
+    const debugFilterLabel = (
+        options: { value: string; label: string }[],
+        value: string,
+    ) => {
+        if (value === "all") return "all";
+        return options.find((o) => o.value.toString() === value.toString())
+            ?.label;
+    };
+
     // Fetch asset table rows from GET /assets (Get All Assets)
     const fetchAssetTableData = async (
         page = 1,
@@ -1118,6 +1147,15 @@ export default function AssetManagment() {
                 queryParams.append("search", search.trim());
             }
 
+            console.log("[AssetManagement DEBUG] API Params", {
+                endpoint: `${BACKEND_URL}/assets`,
+                queryString: queryParams.toString(),
+                hierarchyId: hierarchyId ?? null,
+                page,
+                pageSize,
+                search: search.trim() || null,
+            });
+
             const response = await fetch(
                 `${BACKEND_URL}/assets?${queryParams.toString()}`,
                 {
@@ -1134,6 +1172,30 @@ export default function AssetManagment() {
             if (data.success) {
                 const rows = (data.data || []).map((row: Record<string, unknown>) =>
                     mapAssetApiRowToTableRow(row),
+                );
+                const uniqueCircles = [
+                    ...new Set(
+                        rows.map((r: AssetTableRow) => r.circle).filter(Boolean),
+                    ),
+                ];
+                const uniqueDivisions = [
+                    ...new Set(
+                        rows
+                            .map((r: AssetTableRow) => r.division)
+                            .filter(Boolean),
+                    ),
+                ];
+                console.log("[AssetManagement DEBUG] API Response Count", {
+                    rowCount: rows.length,
+                    pagination: data.pagination ?? null,
+                });
+                console.log(
+                    "[AssetManagement DEBUG] Filtered Table Rows (table view)",
+                    {
+                        uniqueCircles,
+                        uniqueDivisions,
+                        sampleFirstRow: rows[0] ?? null,
+                    },
                 );
                 setAssetTableData(rows);
                 applyAssetTablePaginationFromResponse(
@@ -1172,6 +1234,10 @@ export default function AssetManagment() {
     // Fetch asset table when view mode is table or hierarchy scope changes
     useEffect(() => {
         if (viewMode === "table") {
+            console.log(
+                "[AssetManagement DEBUG] useEffect → fetchAssetTableData",
+                { viewMode, lastSelectedId, currentPage, assetTableLimit },
+            );
             fetchAssetTableData(currentPage, assetTableLimit, "", lastSelectedId);
         }
     }, [viewMode, lastSelectedId]);
@@ -1814,16 +1880,59 @@ export default function AssetManagment() {
             lastId = filterValues.discom;
         }
 
+        const params = new URLSearchParams();
+        Object.entries(filterValues).forEach(([key, value]) => {
+            if (value !== "all") {
+                params.append(key, value);
+            }
+        });
+
+        console.log("[AssetManagement DEBUG] Selected Filters", {
+            filterValues,
+            displayLabels: {
+                discom: debugFilterLabel(filterOptions.discoms, filterValues.discom),
+                circle: debugFilterLabel(
+                    filterOptions.circles,
+                    filterValues.circle,
+                ),
+                division: debugFilterLabel(
+                    filterOptions.divisions,
+                    filterValues.division,
+                ),
+                subDivision: debugFilterLabel(
+                    filterOptions.subDivisions,
+                    filterValues.subDivision,
+                ),
+                section: debugFilterLabel(
+                    filterOptions.sections,
+                    filterValues.section,
+                ),
+                meterLocation: debugFilterLabel(
+                    filterOptions.meterLocations,
+                    filterValues.meterLocation,
+                ),
+                communicationStatus: filterValues.communicationStatus,
+            },
+            computedHierarchyId: lastId,
+            viewMode,
+        });
+        console.log(
+            "[AssetManagement DEBUG] API Params (built in handleGetData, note which are actually sent)",
+            {
+                unusedNamedFilterQuery: params.toString(),
+                actuallySentToFetch: lastId
+                    ? `hierarchyId=${lastId}`
+                    : "(no hierarchyId — full dataset)",
+                notSent: [
+                    "circle/division/discom names (IDs only in unusedNamedFilterQuery)",
+                    "communicationStatus (never appended to GET /assets)",
+                ],
+            },
+        );
+
         setLastSelectedId(lastId);
 
         try {
-            const params = new URLSearchParams();
-            Object.entries(filterValues).forEach(([key, value]) => {
-                if (value !== "all") {
-                    params.append(key, value);
-                }
-            });
-
             // Refresh data with new filters
             if (viewMode === "table") {
                 fetchAssetTableData(currentPage, assetTableLimit, "", lastId);

@@ -143,9 +143,9 @@ function buildSidebarMenusFromPermissions(perms: string[]): SidebarMenuItem[] {
 
     if (hasDailyConsumptionPermission(perms)) {
         items.push({
-            title: "Daily Consumption",
+            title: "Daily Reports",
             icon: "icons/consumption.svg",
-            link: "/asset-management",
+            link: "/daily-reports",
         });
     }
 
@@ -789,6 +789,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         "/meter-alert": "Meter Events",
         "/reports": "MIS Reports",
         "/asset-management": "Asset Management",
+        "/daily-reports": "Daily Reports",
         "/users": "Users",
         "/users/:userId": "User Detail",
         "/add-user": "Add User",
