@@ -5,8 +5,7 @@ import { FILTER_STYLES } from "../contexts/FilterStyleContext";
 import { exportChartData } from "../utils/excelExport";
 const Page = lazy(() => import("SuperAdmin/Page"));
 
-// Dummy data for fallbackf
-const dummyInstantaneousStatsData = {
+const emptyInstantaneousStatsData = {
     rphVolt: "0",
     yphVolt: "0",
     bphVolt: "0",
@@ -25,16 +24,16 @@ const dummyInstantaneousStatsData = {
     lastCommDate: null,
 };
 
-const dummyConsumptionAnalyticsData = {
-    xAxisData: ["0"],
-    seriesData: [{ name: "Consumption", data: [0] }],
+const emptyConsumptionAnalyticsData = {
+    xAxisData: [],
+    seriesData: [],
     monthly: {
-        xAxisData: ["0"],
-        seriesData: [{ name: "Consumption", data: [0] }],
+        xAxisData: [],
+        seriesData: [],
     },
 };
 
-const dummyFeederInfoData = {
+const emptyFeederInfoData = {
     dtr: {
         dtrNumber: "0",
         capacity: "0",
@@ -42,21 +41,6 @@ const dummyFeederInfoData = {
     },
     totalFeeders: "0",
 };
-
-const dummyAlertsData = [
-    {
-        alertId: "ALT001",
-        type: "Overload",
-        feederName: "D1F1(32500114)",
-        occuredOn: "2024-01-15 14:30:00",
-    },
-    {
-        alertId: "ALT002",
-        type: "Power Failure",
-        feederName: "D1F1(32500114)",
-        occuredOn: "2024-01-15 12:15:00",
-    },
-];
 
 // Default stats data
 const defaultStats = [
@@ -352,15 +336,15 @@ const Feeders = () => {
         effectiveDtrId || null
     );
 
-    // State for API data - initialized with dummy data
+    // State for API data
     const [instantaneousStatsData, setInstantaneousStatsData] = useState<any>(
-        dummyInstantaneousStatsData
+        emptyInstantaneousStatsData
     );
     const [consumptionAnalyticsData, setConsumptionAnalyticsData] =
-        useState<any>(dummyConsumptionAnalyticsData);
+        useState<any>(emptyConsumptionAnalyticsData);
     const [feederInfoData, setFeederInfoData] =
-        useState<any>(dummyFeederInfoData);
-    const [alertsData, setAlertsData] = useState(dummyAlertsData);
+        useState<any>(emptyFeederInfoData);
+    const [alertsData, setAlertsData] = useState<any[]>([]);
 
     // State for map coordinates - initialized with default coordinates
     const [mapLatitude, setMapLatitude] = useState<number>(17.992887);
@@ -462,7 +446,7 @@ const Feeders = () => {
                 );
             }
         } catch (error: any) {
-            setInstantaneousStatsData(dummyInstantaneousStatsData);
+            setInstantaneousStatsData(emptyInstantaneousStatsData);
             setFailedApis((prev) => [
                 ...prev,
                 {
@@ -553,7 +537,7 @@ const Feeders = () => {
                 );
             }
         } catch (error: any) {
-            setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
+            setConsumptionAnalyticsData(emptyConsumptionAnalyticsData);
             setFailedApis((prev) => [
                 ...prev,
                 {
@@ -662,7 +646,7 @@ const Feeders = () => {
                 );
             }
         } catch (error: any) {
-            setFeederInfoData(dummyFeederInfoData);
+            setFeederInfoData(emptyFeederInfoData);
             setFailedApis((prev) => [
                 ...prev,
                 {
@@ -748,7 +732,7 @@ const Feeders = () => {
                 throw new Error(data.message || "Failed to fetch alerts");
             }
         } catch (error: any) {
-            setAlertsData(dummyAlertsData);
+            setAlertsData([]);
             setFailedApis((prev) => [
                 ...prev,
                 {
@@ -1138,7 +1122,7 @@ const Feeders = () => {
                 throw new Error(data.message || 'Failed to fetch instantaneous stats');
             }
         } catch (err: any) {
-            setInstantaneousStatsData(dummyInstantaneousStatsData);
+            setInstantaneousStatsData(emptyInstantaneousStatsData);
         } finally {
             setTimeout(() => {
                 setIsStatsLoading(false);
@@ -1191,7 +1175,7 @@ const Feeders = () => {
                 throw new Error(data.message || 'Failed to fetch consumption analytics');
             }
         } catch (err: any) {
-            setConsumptionAnalyticsData(dummyConsumptionAnalyticsData);
+            setConsumptionAnalyticsData(emptyConsumptionAnalyticsData);
         } finally {
                 setIsConsumptionLoading(false);
         }
@@ -1267,7 +1251,7 @@ const Feeders = () => {
             }
         } catch (err: any) {
             console.error("Error in Feeder Info API:", err);
-            setFeederInfoData(dummyFeederInfoData);
+            setFeederInfoData(emptyFeederInfoData);
         }
     };
 
@@ -1325,7 +1309,7 @@ const Feeders = () => {
             }
         } catch (err: any) {
             console.error("Error in Alerts API:", err);
-            setAlertsData(dummyAlertsData);
+            setAlertsData([]);
         } finally {
                 setIsAlertsLoading(false);
         }

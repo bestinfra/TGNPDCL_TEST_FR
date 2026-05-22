@@ -82,7 +82,7 @@ function mapCircleWiseRowToTableData(
     };
 }
 
-const dummyDtrStatsData = {
+const emptyDtrStatsData = {
     totalDtrs: "0",
     totalLtFeeders: "0",
     totalFuseBlown: "0",
@@ -99,40 +99,16 @@ const dummyDtrStatsData = {
     htSideFuseBlown: "0",
 };
 
-const dummyFilterOptions = {
-    discoms: [
-        { value: "all", label: "All DISCOMs" },
-        { value: "DISCOM1", label: "DISCOM 1" },
-        { value: "DISCOM2", label: "DISCOM 2" },
-    ],
-    circles: [
-        { value: "all", label: "All Circles" },
-        { value: "CIRCLE1", label: "Circle 1" },
-        { value: "CIRCLE2", label: "Circle 2" },
-    ],
-    divisions: [
-        { value: "all", label: "All Divisions" },
-        { value: "DIV1", label: "Division 1" },
-        { value: "DIV2", label: "Division 2" },
-    ],
-    subDivisions: [
-        { value: "all", label: "All Sub-Divisions" },
-        { value: "SUBDIV1", label: "Sub Division 1" },
-        { value: "SUBDIV2", label: "Sub Division 2" },
-    ],
-    sections: [
-        { value: "all", label: "All Sections" },
-        { value: "SECTION1", label: "Section 1" },
-        { value: "SECTION2", label: "Section 2" },
-    ],
-    substations: [
-        { value: "all", label: "All Substations" },
-        { value: "SUB1", label: "Substation 1" },
-        { value: "SUB2", label: "Substation 2" },
-    ],
+const emptyFilterOptions = {
+    discoms: [{ value: "all", label: "All DISCOMs" }],
+    circles: [{ value: "all", label: "All Circles" }],
+    divisions: [{ value: "all", label: "All Divisions" }],
+    subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+    sections: [{ value: "all", label: "All Sections" }],
+    substations: [{ value: "all", label: "All Substations" }],
 };
 
-const dummyDtrConsumptionData = {
+const emptyDtrConsumptionData = {
     daily: {
         totalKwh: "0",
         totalKvah: "0",
@@ -161,68 +137,8 @@ const dummyDtrConsumptionData = {
     },
 };
 
-const dummyDtrTableData = [
-    {
-        dtrId: "1",
-        dtrName: "DTR-001",
-        feedersCount: "3",
-        streetName: "Main Street",
-        city: "Hyderabad",
-        commStatus: "Active",
-        lastCommunication: "2024-01-15 14:30:00",
-        meterlocation: "17.9964, 79.5336",
-    },
-    {
-        dtrId: "2",
-        dtrName: "DTR-002",
-        feedersCount: "2",
-        streetName: "Tech Park Road",
-        city: "Hyderabad",
-        commStatus: "Active",
-        lastCommunication: "2024-01-15 12:15:00",
-        meterlocation: "17.3850, 78.4867",
-    },
-];
-
-const dummyAlertsData = [
-    {
-        alertId: "ALT001",
-        type: "Overload",
-        feederName: "D1F1(32500114)",
-        dtrNumber: "DTR-201",
-        dtrId: "201",
-        occuredOn: "2024-01-15 14:30:00",
-        status: "Active",
-    },
-    {
-        alertId: "ALT002",
-        type: "Power Failure",
-        feederName: "D1F2(32500115)",
-        dtrNumber: "DTR-202",
-        dtrId: "202",
-        occuredOn: "2024-01-15 12:15:00",
-        status: "Resolved",
-    },
-];
-
 /** Reuse in-flight dashboard init across React StrictMode remount (same page load). */
 let dtrDashboardInitPromise: Promise<void> | null = null;
-
-const dummyChartData = {
-    months: ["0"],
-    series: [
-        { name: "LT FUSE BLOWN", data: [0] },
-        { name: "HT FUSE BLOWN", data: [0] },
-        { name: "OVERLOAD", data: [0] },
-        { name: "UNDERLOAD", data: [0] },
-        { name: "POWER FAILURE", data: [0] },
-    ],
-};
-
-const dummyMeterStatusData = [
-    { value: 0, name: "Communicating", meterNumbers: [] },
-    { value: 0, name: "Non-Communicating", meterNumbers: [] },
-];
 
 // Utility function to format timestamp
 const formatTimestamp = (timestamp: string | null | undefined): string => {
@@ -270,9 +186,9 @@ const DTRDashboard: React.FC = () => {
         "Daily" | "Weekly" | "Monthly"
     >("Daily");
 
-    const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
+    const [filterOptions, setFilterOptions] = useState(emptyFilterOptions);
     const [originalApiData, setOriginalApiData] = useState<any[]>([]);
-    const [dtrStatsData, setDtrStatsData] = useState<any>(dummyDtrStatsData);
+    const [dtrStatsData, setDtrStatsData] = useState<any>(emptyDtrStatsData);
     const [dtrConsumptionData, setDtrConsumptionData] = useState<{
         daily: {
             totalKwh: string | number;
@@ -300,12 +216,11 @@ const DTRDashboard: React.FC = () => {
             latestKwTimestamp?: string | null;
             latestKvaTimestamp?: string | null;
         };
-    }>(dummyDtrConsumptionData);
-    const [dtrTableData, setDtrTableData] =
-        useState<TableData[]>(dummyDtrTableData);
+    }>(emptyDtrConsumptionData);
+    const [dtrTableData, setDtrTableData] = useState<TableData[]>([]);
     const [dtrMapData, setDtrMapData] = useState<TableData[]>([]);
 
-    const [alertsData, setAlertsData] = useState<any[]>(dummyAlertsData);
+    const [alertsData, setAlertsData] = useState<any[]>([]);
 
     const [serverPagination, setServerPagination] = useState({
         currentPage: 1,
@@ -324,12 +239,10 @@ const DTRDashboard: React.FC = () => {
 
 
 
-    const [chartMonths, setChartMonths] = useState<string[]>(
-        dummyChartData.months,
-    );
+    const [chartMonths, setChartMonths] = useState<string[]>([]);
     const [chartSeries, setChartSeries] = useState<
         { name: string; data: number[] }[]
-    >(dummyChartData.series);
+    >([]);
     const alertColors = [
         "#163b7c",
         "#ed8c22",
@@ -704,8 +617,8 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch DTR stats");
             }
         } catch (err: any) {
-            setDtrStatsData(dummyDtrStatsData);
-            setDtrConsumptionData(dummyDtrConsumptionData);
+            setDtrStatsData(emptyDtrStatsData);
+            setDtrConsumptionData(emptyDtrConsumptionData);
         } finally {
             setIsStatsLoading(false);
         }
@@ -773,7 +686,7 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch DTR table");
             }
         } catch (err: any) {
-            setDtrTableData(dummyDtrTableData);
+            setDtrTableData([]);
         } finally {
             setIsTableLoading(false);
         }
@@ -874,7 +787,7 @@ const DTRDashboard: React.FC = () => {
                 throw new Error(data.message || "Failed to fetch DTR alerts");
             }
         } catch (err: any) {
-            setAlertsData(dummyAlertsData);
+            setAlertsData([]);
         } finally {
             setIsAlertsLoading(false);
         }
@@ -941,8 +854,8 @@ const DTRDashboard: React.FC = () => {
                 );
             }
         } catch (err: any) {
-            setChartMonths(dummyChartData.months);
-            setChartSeries(dummyChartData.series);
+            setChartMonths([]);
+            setChartSeries([]);
         } finally {
             setIsChartLoading(false);
         }
@@ -2355,9 +2268,7 @@ const DTRDashboard: React.FC = () => {
                                         {
                                             name: "PieChart",
                                             props: {
-                                                data:
-                                                    meterStatus ||
-                                                    dummyMeterStatusData,
+                                                data: meterStatus || [],
                                                 height: 330,
                                                 showStatsLabels: false,
                                                 showLegend: false,

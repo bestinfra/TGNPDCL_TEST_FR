@@ -358,324 +358,19 @@ const ASSET_TABLE_COLUMNS = [
 //     meterLocations: MeterLocationOption[];
 // }
 
-// Updated filter options structure to match API response
-const dummyFilterOptions = {
-    discoms: [
-        { value: "all", label: "All DISCOMs" },
-        { value: "DISCOM1", label: "DISCOM 1" },
-        { value: "DISCOM2", label: "DISCOM 2" },
-    ],
-    circles: [
-        { value: "all", label: "All Circles" },
-        { value: "CIRCLE1", label: "Circle 1" },
-        { value: "CIRCLE2", label: "Circle 2" },
-    ],
-    divisions: [
-        { value: "all", label: "All Divisions" },
-        { value: "DIV1", label: "Division 1" },
-        { value: "DIV2", label: "Division 2" },
-    ],
-    subDivisions: [
-        { value: "all", label: "All Sub-Divisions" },
-        { value: "SUBDIV1", label: "Sub Division 1" },
-        { value: "SUBDIV2", label: "Sub Division 2" },
-    ],
-    sections: [
-        { value: "all", label: "All Sections" },
-        { value: "SECTION1", label: "Section 1" },
-        { value: "SECTION2", label: "Section 2" },
-    ],
-    meterLocations: [
-        { value: "all", label: "All Meter Locations" },
-        { value: "INDOOR", label: "Indoor" },
-        { value: "OUTDOOR", label: "Outdoor" },
-    ],
+const emptyFilterOptions = {
+    discoms: [{ value: "all", label: "All DISCOMs" }],
+    circles: [{ value: "all", label: "All Circles" }],
+    divisions: [{ value: "all", label: "All Divisions" }],
+    subDivisions: [{ value: "all", label: "All Sub-Divisions" }],
+    sections: [{ value: "all", label: "All Sections" }],
+    meterLocations: [{ value: "all", label: "All Meter Locations" }],
     communicationStatuses: [
         { value: "all", label: "All communication statuses" },
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
     ],
 };
-
-const dummyHierarchyData = [
-    {
-        id: 1,
-        name: "India",
-        hierarchy_type_title: "Country",
-        children: [
-            {
-                id: 2,
-                name: "Tamil Nadu",
-                hierarchy_type_title: "State",
-                children: [
-                    {
-                        id: 3,
-                        name: "Chennai District",
-                        hierarchy_type_title: "District",
-                        children: [
-                            {
-                                id: 4,
-                                name: "Chennai",
-                                hierarchy_type_title: "City",
-                                children: [
-                                    {
-                                        id: 5,
-                                        name: "T. Nagar",
-                                        hierarchy_type_title: "Area",
-                                        count: 150,
-                                    },
-                                    {
-                                        id: 6,
-                                        name: "Velachery",
-                                        hierarchy_type_title: "Area",
-                                        count: 200,
-                                    },
-                                    {
-                                        id: 7,
-                                        name: "Anna Nagar",
-                                        hierarchy_type_title: "Area",
-                                        count: 180,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                    {
-                        id: 8,
-                        name: "Coimbatore District",
-                        hierarchy_type_title: "District",
-                        children: [
-                            {
-                                id: 9,
-                                name: "Coimbatore",
-                                hierarchy_type_title: "City",
-                                children: [
-                                    {
-                                        id: 10,
-                                        name: "RS Puram",
-                                        hierarchy_type_title: "Area",
-                                        count: 120,
-                                    },
-                                    {
-                                        id: 11,
-                                        name: "Gandhipuram",
-                                        hierarchy_type_title: "Area",
-                                        count: 95,
-                                    },
-                                    {
-                                        id: 12,
-                                        name: "Peelamedu",
-                                        hierarchy_type_title: "Area",
-                                        count: 110,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                id: 13,
-                name: "Telangana",
-                hierarchy_type_title: "State",
-                children: [
-                    {
-                        id: 14,
-                        name: "Hyderabad District",
-                        hierarchy_type_title: "District",
-                        children: [
-                            {
-                                id: 15,
-                                name: "Hyderabad",
-                                hierarchy_type_title: "City",
-                                children: [
-                                    {
-                                        id: 16,
-                                        name: "Banjara Hills",
-                                        hierarchy_type_title: "Area",
-                                        count: 85,
-                                    },
-                                    {
-                                        id: 17,
-                                        name: "Madhapur",
-                                        hierarchy_type_title: "Area",
-                                        count: 160,
-                                    },
-                                    {
-                                        id: 18,
-                                        name: "Gachibowli",
-                                        hierarchy_type_title: "Area",
-                                        count: 140,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ],
-    },
-    {
-        id: 19,
-        name: "Kerala",
-        hierarchy_type_title: "State",
-        children: [
-            {
-                id: 20,
-                name: "Kochi District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 25,
-                        name: "Ernakulam",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 26,
-                                name: "Edappally",
-                                hierarchy_type_title: "Area",
-                                count: 60,
-                            },
-                            {
-                                id: 27,
-                                name: "Fort Kochi",
-                                hierarchy_type_title: "Area",
-                                count: 45,
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                id: 21,
-                name: "Kozhikode District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 28,
-                        name: "Kozhikode",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 29,
-                                name: "Kallayi",
-                                hierarchy_type_title: "Area",
-                                count: 30,
-                            },
-                            {
-                                id: 30,
-                                name: "Beypore",
-                                hierarchy_type_title: "Area",
-                                count: 25,
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                id: 22,
-                name: "Kannur District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 31,
-                        name: "Kannur",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 32,
-                                name: "Thalassery",
-                                hierarchy_type_title: "Area",
-                                count: 20,
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                id: 23,
-                name: "Kasaragod District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 33,
-                        name: "Kasaragod",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 34,
-                                name: "Manjeshwar",
-                                hierarchy_type_title: "Area",
-                                count: 15,
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                id: 24,
-                name: "Kollam District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 35,
-                        name: "Kollam",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 36,
-                                name: "Chinnakada",
-                                hierarchy_type_title: "Area",
-                                count: 18,
-                            },
-                        ],
-                    },
-                ],
-            },
-            // Added more dummy districts for Kerala
-            {
-                id: 37,
-                name: "Alappuzha District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 38,
-                        name: "Alappuzha",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 39,
-                                name: "Ambalapuzha",
-                                hierarchy_type_title: "Area",
-                                count: 22,
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                id: 40,
-                name: "Thrissur District",
-                hierarchy_type_title: "District",
-                children: [
-                    {
-                        id: 41,
-                        name: "Thrissur",
-                        hierarchy_type_title: "City",
-                        children: [
-                            {
-                                id: 42,
-                                name: "Guruvayur",
-                                hierarchy_type_title: "Area",
-                                count: 28,
-                            },
-                        ],
-                    },
-                ],
-            },
-        ],
-    },
-];
 
 const PlusIcon = () => (
     <svg
@@ -748,7 +443,6 @@ export default function AssetManagment() {
     const [hierarchicalData, setHierarchicalData] = useState<HierarchyNode[]>(
         [],
     );
-    const [useDummyData, _setUseDummyData] = useState(false); // Toggle to use dummy data - SET TO FALSE TO USE REAL API
     // State for tracking failed APIs
     const [failedApis, setFailedApis] = useState<
         Array<{
@@ -1059,13 +753,10 @@ export default function AssetManagment() {
     };
 
     useEffect(() => {
-        if (!useDummyData) {
-            // Add initial delay to simulate loading
-            setTimeout(() => {
-                fetchAssets();
-            }, 1000);
-        }
-    }, [useDummyData]);
+        setTimeout(() => {
+            fetchAssets();
+        }, 1000);
+    }, []);
 
     const applyAssetTablePaginationFromResponse = (
         pagination: {
@@ -1359,7 +1050,7 @@ export default function AssetManagment() {
                         })),
                     ],
                     communicationStatuses:
-                        dummyFilterOptions.communicationStatuses,
+                        emptyFilterOptions.communicationStatuses,
                 });
                 setFailedApis((prev) =>
                     prev.filter((api) => api.id !== "filterOptions"),
@@ -1522,7 +1213,7 @@ export default function AssetManagment() {
                             ),
                         ],
                         communicationStatuses:
-                            dummyFilterOptions.communicationStatuses,
+                            emptyFilterOptions.communicationStatuses,
                     });
                     setFailedApis((prev) =>
                         prev.filter((api) => api.id !== "filterOptions"),
@@ -1571,7 +1262,7 @@ export default function AssetManagment() {
     const [dropdownLoading, setDropdownLoading] = useState(false);
 
     // State for filter options from backend
-    const [filterOptions, setFilterOptions] = useState(dummyFilterOptions);
+    const [filterOptions, setFilterOptions] = useState(emptyFilterOptions);
 
     // Store original API data with parent relationships
     const [originalApiData, setOriginalApiData] = useState<any[]>([]);
@@ -2257,7 +1948,7 @@ export default function AssetManagment() {
                             ),
                         ],
                         communicationStatuses:
-                            dummyFilterOptions.communicationStatuses,
+                            emptyFilterOptions.communicationStatuses,
                     });
                 }
             } catch (error) {
@@ -2452,9 +2143,6 @@ export default function AssetManagment() {
 
     // Get the data to display - uses real API data when available
     const getDisplayData = () => {
-        if (useDummyData) {
-            return dummyHierarchyData;
-        }
         return mapHierarchyRecursively(hierarchicalData);
     };
 
