@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect, useCallback } from "react";
+import React, { lazy, useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 const Header = lazy(() => import("SuperAdmin/Header"));
 const Sidebar = lazy(() => import("SuperAdmin/Sidebar"));
@@ -29,7 +29,173 @@ declare global {
             disconnect: () => void;
         };
         notificationSocket?: any;
+        clearSidebarPermissions?: () => void;
     }
+}
+
+type SidebarMenuItem = {
+    title: string;
+    icon: string;
+    link?: string;
+    hasSubmenu?: boolean;
+    submenu?: { title: string; link: string }[];
+};
+
+/** Read permission names from JWT (same token keys as SuperAdmin/Sidebar). */
+function getPermissionsFromToken(): string[] {
+    try {
+        const possibleTokenNames = ["token", "accessToken", "GMRAccesstoken"];
+        let token: string | null = null;
+        for (const name of possibleTokenNames) {
+            token = localStorage.getItem(name);
+            if (token) break;
+        }
+        if (!token) return [];
+
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split("")
+                .map(
+                    (c) =>
+                        `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`,
+                )
+                .join(""),
+        );
+        const decoded = JSON.parse(jsonPayload);
+        return Array.isArray(decoded.permissions) ? decoded.permissions : [];
+    } catch {
+        return [];
+    }
+}
+
+function hasDailyConsumptionPermission(perms: string[]): boolean {
+    return perms.some(
+        (p) =>
+            p === "daily_consumption" ||
+            p === "DAILY_CONSUMPTION" ||
+            p.toLowerCase() === "daily_consumption",
+    );
+}
+
+/**
+ * Build sidebar items from JWT permissions (aligned with SuperAdmin/Sidebar
+ * buildGroupedMenusFromPermissions) plus Daily Consumption when permitted.
+ */
+function buildSidebarMenusFromPermissions(perms: string[]): SidebarMenuItem[] {
+    const items: SidebarMenuItem[] = [];
+
+    const hasDTR = perms.includes("dtr_dashboard");
+    const hasConsumerDashboard = perms.includes("consumer_dashboard");
+    const hasBothDashboards = hasDTR && hasConsumerDashboard;
+
+    if (hasDTR || hasConsumerDashboard) {
+        if (hasBothDashboards) {
+            items.push({
+                title: "Dashboard",
+                icon: "icons/dashboard.svg",
+                hasSubmenu: true,
+                submenu: [
+                    { title: "DTR Dashboard", link: "/dtr-dashboard" },
+                    { title: "Consumer Dashboard", link: "/consumer-dashboard" },
+                ],
+            });
+        } else if (hasDTR) {
+            items.push({
+                title: "Dashboard",
+                icon: "icons/dashboard.svg",
+                link: "/dtr-dashboard",
+            });
+        } else if (hasConsumerDashboard) {
+            items.push({
+                title: "Dashboard",
+                icon: "icons/dashboard.svg",
+                link: "/consumer-dashboard",
+            });
+        }
+    }
+
+    const normalizePermKey = (p: string) => p.toLowerCase().replace(/_/g, "-");
+    const hasMetersInventoryPerm = perms.some((p) => {
+        const v = normalizePermKey(p);
+        return (
+            v === "view-meters" ||
+            v === "meter-inventory" ||
+            v === "meter-list" ||
+            v === "meters-inventory" ||
+            v === "meter-details" ||
+            v === "add-meter"
+        );
+    });
+    if (
+        hasMetersInventoryPerm ||
+        perms.includes("commands") ||
+        perms.includes("meter_management") ||
+        perms.includes("meter_list")
+    ) {
+        items.push({
+            title: "Meters",
+            icon: "icons/meter-bolt.svg",
+            link: "/meters",
+        });
+    }
+
+    if (hasDailyConsumptionPermission(perms)) {
+        items.push({
+            title: "Daily Consumption",
+            icon: "icons/consumption.svg",
+            link: "/asset-management",
+        });
+    }
+
+    if (perms.includes("tickets")) {
+        items.push({
+            title: "Tickets",
+            icon: "icons/customer-service.svg",
+            link: "/tickets",
+        });
+    }
+
+    if (perms.includes("reports")) {
+        items.push({
+            title: "MIS Reports",
+            icon: "icons/reports2.svg",
+            link: "/reports",
+        });
+    }
+
+    if (perms.includes("asset_management")) {
+        items.push({
+            title: "Estate Management",
+            icon: "icons/Asset_managment.svg",
+            link: "/asset-management",
+        });
+    }
+
+    const userChildren: { title: string; link: string }[] = [];
+    if (perms.includes("users") || perms.includes("user_management_default")) {
+        userChildren.push({ title: "Users", link: "/users" });
+    }
+    if (perms.includes("role_management")) {
+        userChildren.push({
+            title: "Role Management",
+            link: "/role-management",
+        });
+    }
+    if (userChildren.length > 0) {
+        items.push({
+            title: "User Management",
+            icon: "icons/user_managment.svg",
+            hasSubmenu: true,
+            submenu: userChildren,
+        });
+    }
+
+    const seen: Record<string, boolean> = {};
+    return items.filter((it) =>
+        seen[it.title] ? false : (seen[it.title] = true),
+    );
 }
 
 function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
@@ -635,113 +801,20 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         "/meter-details/:meterId": "Meter Details",
         "/": "DTR Dashboard",
     };
-    // Menu configuration
-    const menuItems = [
-        { title: "DTR Dashboard", icon: "icons/dashboard.svg", link: "/" },
-        {
-            title: "Dashboard",
-            icon: "icons/dashboard.svg",
-            hasSubmenu: true,
-            submenu: [
-                ,
-                {
-                    title: "Consumer Dashboard",
-                    link: "/consumer-dashboard",
-                },
-                ,
-                {
-                    title: "DTR Dashboard",
-                    link: "/dtr-dashboard",
-                },
-                ,
-            ],
-        },
+    const permissions = useMemo(
+        () => getPermissionsFromToken(),
+        [location.pathname, location.search],
+    );
+    const menuItems = useMemo(
+        () => buildSidebarMenusFromPermissions(permissions),
+        [permissions],
+    );
 
-        {
-            title: "MeterManagment",
-            icon: "icons/meter-bolt.svg",
-            link: "/meters",
-        },
-        {
-            title: "Assets",
-            icon: "icons/workflow-setting-alt.svg",
-            link: "/asset-management",
-        },
-        {
-            title: "User Management",
-            icon: "icons/user.svg",
-            hasSubmenu: true,
-            submenu: [
-                ,
-                {
-                    title: "Users",
-                    link: "/users",
-                },
-                ,
-                {
-                    title: "User Detail",
-                    link: "/users/:userId",
-                },
-                ,
-                {
-                    title: "Add User",
-                    link: "/add-user",
-                },
-                ,
-                {
-                    title: "Role Management",
-                    link: "/role-management",
-                },
-            ],
-        },
-        ,
-        { title: "Users", icon: "icons/user.svg", link: "/users" },
-        {
-            title: "Role Management",
-            icon: "icons/roles.svg",
-            link: "/role-management",
-        },
-        {
-            title: "All Tickets",
-            icon: "icons/customer-service.svg",
-            link: "/tickets",
-        },
-
-        {
-            title: "Meter Management",
-            icon: "icons/meter-bolt.svg",
-            hasSubmenu: true,
-            submenu: [
-                ,
-                {
-                    title: "Data Logger",
-                    link: "/asset-managment",
-                },
-                ,
-                {
-                    title: "Meter List",
-                    link: "/meters",
-                },
-                ,
-                {
-                    title: "Meter Details",
-                    link: "/meter-details/:meterId",
-                },
-                ,
-                {
-                    title: "Add Meter",
-                    link: "/add-meter",
-                },
-                ,
-            ],
-        },
-        {
-            title: "Data Logger",
-            icon: "icons/meter-bolt.svg",
-            link: "/data-logger",
-        },
-        { title: "Meter List", icon: "icons/meter-bolt.svg", link: "/meters" },
-    ];
+    // SuperAdmin/Sidebar ignores `menus` when JWT permissions exist; clear so our
+    // permission-built list (includes daily_consumption) is used.
+    useEffect(() => {
+        window.clearSidebarPermissions?.();
+    }, [menuItems]);
     const handleSidebarNavigate = (rawPath: string) => {
         const path = (rawPath || "").trim();
         const normalized = path.toLowerCase().replace(/\/+$/, "");
@@ -771,7 +844,11 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
             <Sidebar
                 currentPath={location.pathname}
                 onNavigate={handleSidebarNavigate}
-                menus={[{ category: "GENERAL", items: menuItems }]}
+                menus={
+                    menuItems.length > 0
+                        ? [{ category: "GENERAL", items: menuItems }]
+                        : undefined
+                }
                 logo={{
                     src: "images/bi-logo-latest.svg",
                     alt: "Best Infra",

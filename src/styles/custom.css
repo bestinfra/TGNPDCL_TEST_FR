@@ -1,0 +1,19 @@
+/* Sidebar icon tinting (src/utils/sidebar.tsx) */
+.icon-filter {
+    filter: brightness(0) saturate(100%) invert(32%) sepia(89%) saturate(1945%)
+        hue-rotate(173deg) brightness(95%) contrast(101%);
+}
+
+.icon-dark-filter {
+    opacity: 0.72;
+}
+
+.dark .icon-dark-filter {
+    opacity: 0.9;
+    filter: brightness(0) invert(1);
+}
+
+.group:hover .group-hover\:icon-filter {
+    filter: brightness(0) saturate(100%) invert(32%) sepia(89%) saturate(1945%)
+        hue-rotate(173deg) brightness(95%) contrast(101%);
+}

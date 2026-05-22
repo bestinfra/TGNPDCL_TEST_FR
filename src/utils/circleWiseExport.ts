@@ -5,6 +5,10 @@ import {
     DTR_STATS_ENDPOINT_MAP,
     mapApiRowToDtrStatsTableRow,
 } from "./dtrStatsTable";
+import {
+    appendHierarchyFiltersToSearchParams,
+    type HierarchyFilterValues,
+} from "./hierarchyFilters";
 
 /** Row shape from Circle-wise table / API (matches dashboard `TableData`). */
 export type CircleWiseTableRow = Record<
@@ -172,6 +176,7 @@ export function buildDtrTableDrillUrl(options: {
     circle?: string;
     hierarchyId?: string | null;
     lastSelectedId?: string | null;
+    filterValues?: HierarchyFilterValues | null;
 }): string {
     const params = new URLSearchParams();
     params.set("type", options.type);
@@ -181,7 +186,11 @@ export function buildDtrTableDrillUrl(options: {
     const hid =
         options.hierarchyId?.toString().trim() ||
         options.lastSelectedId?.toString().trim();
-    if (hid) params.set("hierarchyId", hid);
+    appendHierarchyFiltersToSearchParams(
+        params,
+        options.filterValues,
+        hid ?? null,
+    );
     return `/dtr-table?${params.toString()}`;
 }
 
@@ -194,6 +203,7 @@ export function buildCircleWiseStatDrillUrl(
     row: CircleWiseTableRow,
     circleOptions: CircleWiseCircleOption[],
     lastSelectedId?: string | null,
+    filterValues?: HierarchyFilterValues | null,
 ): string | null {
     const cardType = getCardTableTypeForCircleWiseColumn(columnKey);
     if (!cardType) return null;
@@ -207,6 +217,7 @@ export function buildCircleWiseStatDrillUrl(
         circle: circleLabel || undefined,
         hierarchyId,
         lastSelectedId: hierarchyId ? null : lastSelectedId,
+        filterValues,
     });
 }
 

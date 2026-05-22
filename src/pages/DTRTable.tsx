@@ -6,7 +6,12 @@ import React, {
     useCallback,
     useMemo,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useHierarchyFilters } from "../context/HierarchyFilterContext";
+import {
+    hasActiveHierarchyFilters,
+    parseHierarchyFiltersFromSearchParams,
+} from "../utils/hierarchyFilters";
 import BACKEND_URL from "../config";
 import { exportToExcel } from "../utils/excelExport";
 import {
@@ -21,6 +26,7 @@ import {
     mapDtrStatsTableRows,
     normalizeDtrStatsCardType,
     resolveDtrStatsEndpoint,
+    resolveDtrDetailRouteParam,
 } from "../utils/dtrStatsTable";
 
 const Page = lazy(() => import("SuperAdmin/Page"));
@@ -28,6 +34,14 @@ const Page = lazy(() => import("SuperAdmin/Page"));
 // Define TableData type locally since we're using federated components
 interface TableData {
     [key: string]: string | number | boolean | null | undefined;
+}
+
+/** Debug only — DTR Detail feeder mapping investigation (no logic change). */
+function logDtrDetailRowClickDebug(row: TableData) {
+    console.log("Clicked Row Data:", row);
+    console.log("Clicked Meter Number:", row.meterNumber);
+    console.log("Clicked DTR ID:", row.dtrId);
+    console.log("Navigate To:", `/dtr-detail/${row.id}`);
 }
 
 interface Pagination {
@@ -52,6 +66,9 @@ const EXPORT_FETCH_PAGE_SIZE = 50_000;
 
 const DTRTable: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { syncFiltersFromUrl, lastSelectedId: contextHierarchyId } =
+      useHierarchyFilters();
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -91,18 +108,28 @@ const DTRTable: React.FC = () => {
 
   // Apply URL params only once
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(searchParams.toString());
     const type = urlParams.get('type');
     const title = urlParams.get('title');
-    const selectedHierarchyId = urlParams.get('hierarchyId') || urlParams.get('lastSelectedId');
+    const { filterValues: urlFilters, lastSelectedId: urlHierarchyId } =
+        parseHierarchyFiltersFromSearchParams(urlParams);
     const circleParam = urlParams.get('circle');
 
     if (type) setCardType(normalizeDtrStatsCardType(type) || type);
     if (title) setCardTitle(decodeURIComponent(title));
-    if (selectedHierarchyId) setHierarchyId(selectedHierarchyId);
+    const effectiveHierarchyId =
+        urlHierarchyId || contextHierarchyId || null;
+    if (effectiveHierarchyId) setHierarchyId(effectiveHierarchyId);
     if (circleParam) setCircleFilter(decodeURIComponent(circleParam));
     setHierarchyDetailView(urlParams.get("view") === "hierarchy");
-  }, []);
+    if (
+        hasActiveHierarchyFilters(urlFilters) ||
+        urlParams.has("hierarchyId") ||
+        urlParams.has("lastSelectedId")
+    ) {
+        syncFiltersFromUrl(urlFilters, effectiveHierarchyId);
+    }
+  }, [searchParams, syncFiltersFromUrl, contextHierarchyId]);
 
     const getTableColumns = () => {
         if (hierarchyDetailView) {
@@ -553,8 +580,12 @@ const DTRTable: React.FC = () => {
             isDtrStatsDrillType(statsType) &&
             statsType !== "total-lt-feeders"
         ) {
-            if (!row?.id) return;
-            navigate(`/dtr-detail/${row.id}`, {
+            const dtrRouteId = resolveDtrDetailRouteParam(
+                row as Record<string, unknown>,
+            );
+            if (!dtrRouteId) return;
+            logDtrDetailRowClickDebug(row);
+            navigate(`/dtr-detail/${dtrRouteId}`, {
                 state: {
                     division: row.division,
                     subDivision: row.subDivision,
@@ -592,8 +623,12 @@ const DTRTable: React.FC = () => {
                 "monthly-kvarh",
             ].includes(normalizedCardType || "")
         ) {
-            if (!row?.id) return;
-            navigate(`/dtr-detail/${row.id}`, {
+            const dtrRouteId = resolveDtrDetailRouteParam(
+                row as Record<string, unknown>,
+            );
+            if (!dtrRouteId) return;
+            logDtrDetailRowClickDebug(row);
+            navigate(`/dtr-detail/${dtrRouteId}`, {
                 state: {
                     division: row.division,
                     subDivision: row.subDivision,
@@ -714,7 +749,7 @@ const DTRTable: React.FC = () => {
                       name: 'PageHeader',
                       props: {
                         title: cardTitle,
-                        onBackClick: () => navigate('/dtr-dashboard'),
+                        onBackClick: () => navigate('/'),
                         backButtonText: 'Back to Dashboard',
                         buttonsLabel: 'Export',
                         variant: 'primary',
