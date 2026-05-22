@@ -75,7 +75,7 @@ const emptyFilterOptions = {
     sections: [{ value: "all", label: "All Sections" }],
     meterLocations: [{ value: "all", label: "All Meter Locations" }],
     communicationStatuses: [
-        { value: "all", label: "All communication statuses" },
+        { value: "all", label: "Comm Status" },
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
     ],
