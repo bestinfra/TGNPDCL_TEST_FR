@@ -1,7 +1,6 @@
 import { lazy } from "react";
 import React from "react";
 const Page = lazy(() => import("SuperAdmin/Page"));
-import { APP_CONFIG } from "../config/constants";
 // Define CarouselSlide type locally since we're using federated components
 interface CarouselSlide {
     title: string;
@@ -9,6 +8,8 @@ interface CarouselSlide {
     description: string;
 }
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/auth/LocalAuthWrapper";
 // Define FormInputValue type locally since we're using federated components
 type FormInputValue =
     | string
@@ -19,7 +20,6 @@ type FormInputValue =
     | File
     | null
     | undefined;
-import { login } from "../api/subAppAuth";
 
 const slides: CarouselSlide[] = [
     {
@@ -40,6 +40,8 @@ const slides: CarouselSlide[] = [
 ];
 
 const SubLogin: React.FC = () => {
+    const navigate = useNavigate();
+    const { login } = useAuth();
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
@@ -126,14 +128,12 @@ If you have any questions about this Privacy Policy, please contact us.`;
         setLoading(true);
 
         try {
-            const result = await login({
-                identifier: data.identifier as string,
-                password: data.password as string,
-                appId: "TGNPDCL",
-                rememberMe: data.rememberMe as boolean,
-            });
+            const result = await login(
+                data.identifier as string,
+                data.password as string,
+                "TGNPDCL",
+            );
 
-            // 🔥 ADD THIS BLOCK HERE
             if (!result.success) {
                 switch (result.code) {
                     case "INVALID_USERNAME":
@@ -164,19 +164,7 @@ If you have any questions about this Privacy Policy, please contact us.`;
                 return;
             }
 
-            // ✅ SUCCESS FLOW
-            if (result.data) {
-                // Handle both 'token' and 'accessToken' for backward compatibility
-                const data: any = result.data;
-                const token = data.token || data.accessToken;
-                if (token) {
-                    localStorage.setItem("token", token);
-                    localStorage.setItem("user", JSON.stringify(result.data.user));
-                    window.location.href = `${APP_CONFIG.BASENAME}/`;
-                } else {
-                    setError("Token missing in response");
-                }
-            }
+            navigate("/", { replace: true });
         } catch (error) {
             console.error("Login error:", error);
             setError("Network error. Please try again.");

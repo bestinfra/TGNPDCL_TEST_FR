@@ -4,7 +4,11 @@
  * Errors and warnings are logged to files on the backend
  */
 
-import BACKEND_URL from '../config';
+import { API_BASE_URL } from "../config";
+
+const ENABLE_FRONTEND_LOGS =
+    import.meta.env.VITE_ENABLE_FRONTEND_LOGS !== "false";
+const LOG_REQUEST_TIMEOUT_MS = 3000;
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
@@ -107,25 +111,32 @@ class FrontendLogger {
   }
 
   private async sendLogs(entries: LogEntry[]): Promise<void> {
-    if (entries.length === 0) return;
+    if (entries.length === 0 || !ENABLE_FRONTEND_LOGS) return;
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => controller.abort(),
+      LOG_REQUEST_TIMEOUT_MS,
+    );
 
     try {
-      const response = await fetch(`${BACKEND_URL}/frontend-logs`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/frontend-logs`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
+        signal: controller.signal,
         body: JSON.stringify({ logs: entries }),
       });
 
       if (!response.ok) {
-        // If logging fails, we can't log it (would cause infinite loop)
-        // Just silently fail
+        // Silently fail
       }
-    } catch (error) {
-      // Silently fail - we don't want to log logging errors
-      // This prevents infinite loops
+    } catch {
+      // Never block UI on logging failures
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }
 

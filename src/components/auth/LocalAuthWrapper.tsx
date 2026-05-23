@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { API_BASE_URL } from '@/config';
 export interface User {
   id: string;
   username: string;
@@ -11,6 +12,7 @@ export interface User {
 export interface LoginResult {
   success: boolean;
   message?: string;
+  code?: string;
 }
 export interface AuthContextType {
   user: User | null;
@@ -55,31 +57,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (identifier: string, password: string, appId?: string): Promise<LoginResult> => {
     try {
       // Sub-apps use the application-backend authentication
-      const endpoint = '/api/sub-app-auth/login';
+      const endpoint = `${API_BASE_URL}/sub-app/auth/login`;
       const requestBody = { identifier, password, appId: appId || 'TGNPDCL' };
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-      if (!response.ok) {
-        console.error('HTTP Error:', response.status, response.statusText);
-        return { success: false, message: `HTTP ${response.status}: ${response.statusText}` };
+
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+
+      let response: Response;
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          signal: controller.signal,
+          body: JSON.stringify(requestBody),
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return {
+            success: false,
+            message:
+              'Login timed out. Is the backend running at http://localhost:4249?',
+          };
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(timeoutId);
       }
       const responseText = await response.text();
-      let data;
+      let data: Record<string, unknown>;
       try {
-        data = JSON.parse(responseText);
+        data = JSON.parse(responseText) as Record<string, unknown>;
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
         return { success: false, message: 'Invalid response from server' };
       }
-      if (data.success && data.data) {
-        // Handle both 'token' and 'accessToken' for backward compatibility
-        const userToken = data.data.token || data.data.accessToken;
-        const userData = data.data.user;
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message:
+            (typeof data.message === 'string' && data.message) ||
+            `HTTP ${response.status}: ${response.statusText}`,
+          code: typeof data.code === 'string' ? data.code : undefined,
+        };
+      }
+
+      const payload = data.data as Record<string, unknown> | undefined;
+      if (data.success && payload) {
+        const userToken =
+          (payload.token as string | undefined) ||
+          (payload.accessToken as string | undefined);
+        const userData = payload.user;
 
         if (!userToken) {
           console.error('Token missing in response');
@@ -91,11 +122,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(userData));
         // Update state
         setToken(userToken);
-        setUser(userData);
+        setUser(userData as User);
         return { success: true };
       } else {
         console.error('Login failed:', data.message);
-        return { success: false, message: data.message || 'Login failed' };
+        return {
+          success: false,
+          message:
+            (typeof data.message === 'string' && data.message) || 'Login failed',
+          code: typeof data.code === 'string' ? data.code : undefined,
+        };
       }
     } catch (error) {
       console.error('Login error:', error);
