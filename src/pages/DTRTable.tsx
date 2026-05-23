@@ -25,7 +25,6 @@ import {
     mapApiRowToDtrStatsTableRow,
     mapDtrStatsTableRows,
     normalizeDtrStatsCardType,
-    resolveDtrStatsEndpoint,
     resolveDtrDetailRouteParam,
 } from "../utils/dtrStatsTable";
 
@@ -61,8 +60,8 @@ const nonActionableCardTypes: string[] = [
     // 'daily-kva','monthly-kva'
 ];
 
-/** Max rows per export API request (matches circle-wise export pattern). */
-const EXPORT_FETCH_PAGE_SIZE = 50_000;
+/** Max rows per export API request (keeps drill-down APIs responsive). */
+const EXPORT_FETCH_PAGE_SIZE = 100;
 
 const DTRTable: React.FC = () => {
   const navigate = useNavigate();
@@ -368,18 +367,6 @@ const DTRTable: React.FC = () => {
                     return;
                 }
 
-                if (isDtrStatsDrillType(normalizedCardType)) {
-                    resolveDtrStatsEndpoint(normalizedCardType);
-                }
-                console.log(
-                    `[DTRTable] Fetching data for ${normalizedCardType} from: ${url}`,
-                );
-                console.log(`[DTRTable] Request params:`, {
-                    page,
-                    pageSize,
-                    search,
-                });
-
                 const response = await fetch(url, { credentials: "include" });
                 if (!response.ok) {
                     throw new Error(
@@ -392,10 +379,6 @@ const DTRTable: React.FC = () => {
                     throw new Error("Invalid response format");
 
                 const data = await response.json();
-                console.log(
-                    `[DTRTable] Full API response for ${normalizedCardType}:`,
-                    data,
-                );
 
                 if (data.success) {
                     let rows = data.data || [];
@@ -463,13 +446,6 @@ const DTRTable: React.FC = () => {
                             },
                         ];
                     }
-
-                    console.log(
-                        `[DTRTable] Raw data for ${normalizedCardType}:`,
-                        rows.length,
-                        "rows",
-                    );
-                    console.log(`[DTRTable] Sample row:`, rows[0]);
 
                     // No client-side filter needed; backend returns filtered rows
 
