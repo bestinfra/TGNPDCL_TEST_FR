@@ -2,6 +2,12 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
+  readonly VITE_SOCKET_URL: string
+  readonly VITE_SOCKET_ENABLED: string
+  readonly VITE_SOCKET_IO_PATH: string
+  readonly VITE_ENABLE_FRONTEND_LOGS: string
+  readonly VITE_SUPER_ADMIN_URL: string
+  readonly VITE_GOOGLE_MAPS_API_KEY: string
   readonly VITE_API_TIMEOUT: string
   readonly VITE_APP_TITLE: string
   readonly VITE_APP_VERSION: string

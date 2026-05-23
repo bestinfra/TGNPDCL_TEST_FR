@@ -1,5 +1,11 @@
 import React, { lazy, useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "@/config";
+import {
+    SOCKET_ENABLED,
+    acquireSocket,
+    releaseSocket,
+} from "@/utils/socketClient";
 const Header = lazy(() => import("SuperAdmin/Header"));
 const Sidebar = lazy(() => import("SuperAdmin/Sidebar"));
 
@@ -202,9 +208,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Resolve API base URL: prop -> env -> default '/api'
-    const baseApiUrl =
-        apiBaseUrl ?? (import.meta.env?.VITE_API_BASE_URL || "/api");
+    const baseApiUrl = apiBaseUrl ?? API_BASE_URL;
 
     // Notification state
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -393,86 +397,51 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         }
     };
 
-    // Load notification stats and notifications on component mount
+    // Defer notifications + socket so login and route paint stay fast
     useEffect(() => {
-        // fetchNotificationStats();
-        fetchNotificationsList();
+        const notificationsTimer = window.setTimeout(() => {
+            void fetchNotificationsList();
+        }, 0);
 
-        // Set up polling for notification stats every 30 seconds
-        const interval = setInterval(() => {
-            // fetchNotificationStats();
-            fetchNotificationsList();
+        const interval = window.setInterval(() => {
+            void fetchNotificationsList();
         }, 30000);
 
-        // Set up WebSocket listener for real-time notifications (if available)
-        const setupWebSocketListener = () => {
-            // Check if socket.io is available
-            if (typeof window !== "undefined" && window.io) {
-                try {
-                    // Connect to socket server on port 4250
-                    const socket = window.io("http://localhost:4250");
+        let notificationSocket: ReturnType<typeof acquireSocket> = null;
 
-                    socket.on(
-                        "escalation_notification",
-                        (notification: any) => {
-                            console.log(
-                                "New escalation notification received:",
-                                notification,
-                            );
-                            // Refresh notification stats when new notification arrives
-                            // fetchNotificationStats();
-                        },
-                    );
-
-                    socket.on("notification_resolved", (data: any) => {
-                        console.log("Notification resolved:", data);
-                        // Refresh notification stats when notification is resolved
-                        //  fetchNotificationStats();
-                    });
-
-                    socket.on("connect", () => {
-                        console.log(
-                            "🔌 [SOCKET] Connected to notification server",
-                        );
-                    });
-
-                    socket.on("disconnect", () => {
-                        console.log(
-                            "🔌 [SOCKET] Disconnected from notification server",
-                        );
-                    });
-
-                    socket.on("connect_error", (error: any) => {
-                        console.warn("🔌 [SOCKET] Connection error:", error);
-                    });
-
-                    // Store socket reference for cleanup
-                    (window as any).notificationSocket = socket;
-                } catch (error) {
-                    console.warn("Failed to connect to socket server:", error);
-                }
-            } else {
-                console.log(
-                    "🔌 [SOCKET] Socket.io not available, using polling only",
-                );
+        const socketTimer = window.setTimeout(() => {
+            if (!SOCKET_ENABLED) {
+                return;
             }
-        };
 
-        setupWebSocketListener();
+            notificationSocket = acquireSocket();
+            if (!notificationSocket) {
+                return;
+            }
+
+            const onEscalation = () => {
+                void fetchNotificationsList();
+            };
+            const onResolved = () => {
+                void fetchNotificationsList();
+            };
+
+            notificationSocket.on("escalation_notification", onEscalation);
+            notificationSocket.on("notification_resolved", onResolved);
+            (window as any).notificationSocket = notificationSocket;
+        }, 3000);
 
         return () => {
-            clearInterval(interval);
-            // Clean up WebSocket listeners if needed
-            if (
-                typeof window !== "undefined" &&
-                (window as any).notificationSocket
-            ) {
-                const socket = (window as any).notificationSocket;
-                socket.off("escalation_notification");
-                socket.off("notification_resolved");
-                socket.disconnect();
+            window.clearTimeout(notificationsTimer);
+            window.clearInterval(interval);
+            window.clearTimeout(socketTimer);
+
+            if (notificationSocket) {
+                notificationSocket.off("escalation_notification");
+                notificationSocket.off("notification_resolved");
                 (window as any).notificationSocket = null;
             }
+            releaseSocket();
         };
     }, []);
 

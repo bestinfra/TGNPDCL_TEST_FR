@@ -1,5 +1,5 @@
 // Sub-App Authentication API Service
-const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4249';
+import { API_BASE_URL } from '../config';
 
 interface LoginRequest {
   identifier: string;
@@ -65,7 +65,7 @@ interface ProfileResponse {
 }
 
 // Base API URL - Updated to use application-backend
-const API_BASE = `${BACKEND_URL}/sub-app/auth`;
+const API_BASE = `${API_BASE_URL}/sub-app/auth`;
 
 // Helper function to make API requests
 async function apiRequest<T>(

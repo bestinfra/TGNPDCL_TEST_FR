@@ -13,6 +13,11 @@ interface TableData {
 import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
+import {
+    SOCKET_ENABLED,
+    acquireSocket,
+    releaseSocket,
+} from "../utils/socketClient";
 import { apiClient } from "../api/apiUtils";
 import {
     buildCircleWiseStatDrillUrl,
@@ -29,7 +34,7 @@ import {
     rebuildCascadeFilterOptions,
     type HierarchyFilterValues,
 } from "../utils/hierarchyFilters";
-import { io, Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import "./DTRDashboard.circleWiseTable.css";
 import { applyCircleWiseTotalsRowHighlight } from "../utils/circleWiseTableHighlight";
 
@@ -136,9 +141,6 @@ const emptyDtrConsumptionData = {
         latestKvaTimestamp: null,
     },
 };
-
-/** Reuse in-flight dashboard init across React StrictMode remount (same page load). */
-let dtrDashboardInitPromise: Promise<void> | null = null;
 
 // Utility function to format timestamp
 const formatTimestamp = (timestamp: string | null | undefined): string => {
@@ -625,11 +627,14 @@ const DTRDashboard: React.FC = () => {
     };
 
 
-    const fetchAllDTRsForMap = async (lastSelectedId?: string | null) => {
+    const fetchAllDTRsForMap = async (
+        lastSelectedId?: string | null,
+        pageSize = 150,
+    ) => {
         try {
             const params = new URLSearchParams();
             params.append("page", "1");
-            params.append("pageSize", "5000");
+            params.append("pageSize", String(pageSize));
             if (lastSelectedId) {
                 params.append("lastSelectedId", lastSelectedId);
             }
@@ -895,8 +900,9 @@ const DTRDashboard: React.FC = () => {
     const fetchFilterOptions = async (opts?: {
         skipUserLocation?: boolean;
         restoreValues?: HierarchyFilterValues;
-    }) => {
+    }): Promise<{ hierarchyId: string | null }> => {
         setIsFiltersLoading(true);
+        let resolvedHierarchyId: string | null = null;
         try {
             const data = await apiClient.get("/dtrs/filter/filter-options");
             if (data.success) {
@@ -916,7 +922,10 @@ const DTRDashboard: React.FC = () => {
                         ),
                     }));
                     setFilterValues(opts.restoreValues);
-                    return apiData;
+                    resolvedHierarchyId = computeLastSelectedId(
+                        opts.restoreValues,
+                    );
+                    return { hierarchyId: resolvedHierarchyId };
                 }
 
                 const transformedData = hierarchyLevels.reduce((acc: any, level) => {
@@ -986,6 +995,8 @@ const DTRDashboard: React.FC = () => {
                             ),
                         }));
                         applyFilters(selectedPath);
+                        resolvedHierarchyId =
+                            computeLastSelectedId(selectedPath);
                     }
                 }
             } else {
@@ -1012,58 +1023,80 @@ const DTRDashboard: React.FC = () => {
         } finally {
             setIsFiltersLoading(false);
         }
+
+        return { hierarchyId: resolvedHierarchyId };
     };
 
     const skipChartEffectOnMountRef = useRef(true);
 
+    const dashboardInitStartedRef = useRef(false);
+
     useEffect(() => {
+        if (dashboardInitStartedRef.current) {
+            return;
+        }
+        dashboardInitStartedRef.current = true;
+
+        let cancelled = false;
+
+        const clearDashboardLoading = () => {
+            setIsStatsLoading(false);
+            setIsTableLoading(false);
+            setIsAlertsLoading(false);
+            setIsChartLoading(false);
+            setIsMeterStatusLoading(false);
+            setIsCircleWiseTableLoading(false);
+        };
+
         const runDashboardInit = async () => {
             const restoreValues = filtersApplied ? filterValues : undefined;
-            await fetchFilterOptions({
-                skipUserLocation: filtersApplied,
-                restoreValues,
-            });
-
-            const hierarchyId = filtersApplied ? lastSelectedId : null;
             const chartRange = selectedChartTimeRange.toLowerCase();
 
-            if (filtersApplied && hierarchyId) {
-                await Promise.all([
-                    retryStatsAPI(hierarchyId),
-                    retryTableAPI(hierarchyId),
-                    retryAlertsAPI(hierarchyId),
-                    retryChartAPI(hierarchyId, chartRange),
-                    retryMeterStatusAPI(hierarchyId),
-                    fetchAllDTRsForMap(hierarchyId),
-                    retryCircleWiseStatsAPI(),
-                ]);
+            const { hierarchyId: filterHierarchyId } = await fetchFilterOptions(
+                {
+                    skipUserLocation: filtersApplied,
+                    restoreValues,
+                },
+            );
+
+            if (cancelled) {
                 return;
             }
 
+            const hierarchyId =
+                filterHierarchyId ??
+                (filtersApplied ? lastSelectedId : null);
+            const hid = hierarchyId || undefined;
+
             await Promise.all([
-                retryStatsAPI(),
-                retryTableAPI(),
-                retryAlertsAPI(),
-                retryChartAPI(undefined, chartRange),
-                retryMeterStatusAPI(),
-                fetchAllDTRsForMap(),
+                retryStatsAPI(hid),
+                retryTableAPI(hid),
+                retryAlertsAPI(hid),
+                retryChartAPI(hid, chartRange),
+                retryMeterStatusAPI(hid),
                 retryCircleWiseStatsAPI(),
             ]);
+
+            if (cancelled) {
+                return;
+            }
+
+            window.setTimeout(() => {
+                if (!cancelled) {
+                    void fetchAllDTRsForMap(hierarchyId, 150);
+                }
+            }, 3000);
         };
 
-        if (!dtrDashboardInitPromise) {
-            dtrDashboardInitPromise = runDashboardInit().finally(() => {
-                dtrDashboardInitPromise = null;
-            });
-        }
+        runDashboardInit().catch(() => {
+            if (!cancelled) {
+                clearDashboardLoading();
+            }
+        });
 
         return () => {
-            const pending = dtrDashboardInitPromise;
-            window.setTimeout(() => {
-                if (dtrDashboardInitPromise === pending) {
-                    dtrDashboardInitPromise = null;
-                }
-            }, 500);
+            cancelled = true;
+            dashboardInitStartedRef.current = false;
         };
     }, []);
 
@@ -1090,31 +1123,52 @@ const DTRDashboard: React.FC = () => {
         }
     }, [dtrMapData]);
 
-    // Initialize Socket.IO connection
+    // Socket deferred — does not block dashboard API load
     useEffect(() => {
-        const socketInstance = io("http://localhost:4250", {
-            transports: ["websocket", "polling"],
-            reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionAttempts: 5,
-        });
+        if (!SOCKET_ENABLED) {
+            return;
+        }
 
-        socketInstance.on("connect", () => {
-            setIsSocketConnected(true);
-        });
+        let active = true;
+        let socketInstance: Socket | null = null;
 
-        socketInstance.on("disconnect", () => {
-            setIsSocketConnected(false);
-        });
+        const timer = window.setTimeout(() => {
+            socketInstance = acquireSocket();
+            if (!active || !socketInstance) {
+                return;
+            }
 
-        // socketInstance.on("connect_error", (error) => {
-        //     // Socket connection error handled silently
-        // });
+            setSocket(socketInstance);
 
-        setSocket(socketInstance);
+            const onConnect = () => {
+                if (active) {
+                    setIsSocketConnected(true);
+                }
+            };
+            const onDisconnect = () => {
+                if (active) {
+                    setIsSocketConnected(false);
+                }
+            };
+
+            socketInstance.on("connect", onConnect);
+            socketInstance.on("disconnect", onDisconnect);
+            if (socketInstance.connected) {
+                setIsSocketConnected(true);
+            }
+        }, 2500);
 
         return () => {
-            socketInstance.disconnect();
+            active = false;
+            window.clearTimeout(timer);
+            if (socketInstance) {
+                socketInstance.off("connect");
+                socketInstance.off("disconnect");
+                socketInstance.off("dtr-alert-update");
+            }
+            setSocket(null);
+            setIsSocketConnected(false);
+            releaseSocket();
         };
     }, []);
 
@@ -1497,9 +1551,9 @@ const DTRDashboard: React.FC = () => {
                 retryAlertsAPI(hierarchyId),
                 retryChartAPI(hierarchyId, chartRange),
                 retryMeterStatusAPI(hierarchyId),
-                fetchAllDTRsForMap(hierarchyId ?? null),
                 retryCircleWiseStatsAPI(),
             ]);
+            void fetchAllDTRsForMap(hierarchyId ?? null);
         } catch (error) {
             // Error applying filters handled silently
         }
@@ -1508,18 +1562,18 @@ const DTRDashboard: React.FC = () => {
     // Handle Reset button click
     const handleResetFilters = async () => {
         resetHierarchyFilters();
-        await fetchFilterOptions();
 
         const chartRange = selectedChartTimeRange.toLowerCase();
         await Promise.all([
+            fetchFilterOptions(),
             retryStatsAPI(),
             retryTableAPI(),
             retryAlertsAPI(),
             retryChartAPI(undefined, chartRange),
             retryMeterStatusAPI(),
-            fetchAllDTRsForMap(),
             retryCircleWiseStatsAPI(),
         ]);
+        void fetchAllDTRsForMap();
     };
 
     // DTR statistics cards data - Using API data
