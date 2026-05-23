@@ -109,11 +109,7 @@ export function resolveDtrStatsEndpoint(
 ): string | null {
     const normalized = normalizeDtrStatsCardType(type);
     if (!isDtrStatsDrillType(normalized)) return null;
-    const endpoint =
-        DTR_STATS_ENDPOINT_MAP[normalized as DtrStatsDrillType];
-    console.log("[DTR stats drill] type", normalized);
-    console.log("[DTR stats drill] endpoint", endpoint);
-    return endpoint;
+    return DTR_STATS_ENDPOINT_MAP[normalized as DtrStatsDrillType];
 }
 
 export function buildDtrStatsListApiUrl(
@@ -133,9 +129,7 @@ export function buildDtrStatsListApiUrl(
     if (search) params.append("search", search);
     if (hierarchyId) params.append("hierarchyId", hierarchyId);
 
-    const url = `${backendUrl}${path}?${params.toString()}`;
-    console.log("[DTR stats drill] full URL", url);
-    return url;
+    return `${backendUrl}${path}?${params.toString()}`;
 }
 
 /** Map list API rows to unified drill-down columns (preserves numeric `id` for navigation). */
