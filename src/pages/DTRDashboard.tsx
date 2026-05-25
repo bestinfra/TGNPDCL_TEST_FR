@@ -1059,52 +1059,33 @@ const DTRDashboard: React.FC = () => {
             const restoreValues = filtersApplied ? filterValues : undefined;
             const chartRange = selectedChartTimeRange.toLowerCase();
 
-            // When filters have already been applied we know the hierarchyId from
-            // existing state — use it immediately so data APIs don't have to wait
-            // for filter options to resolve.  For a fresh load (filtersApplied=false)
-            // we use undefined and may re-fetch once filter options return a location-
-            // scoped hierarchyId (non-admin users only).
-            const immediateHid: string | undefined = filtersApplied
-                ? lastSelectedId || undefined
-                : undefined;
-
-            // Fire filter options + all data APIs in parallel — nothing blocks anything.
-            const [{ hierarchyId: filterHierarchyId }] = await Promise.all([
-                fetchFilterOptions({ skipUserLocation: filtersApplied, restoreValues }),
-                retryStatsAPI(immediateHid),
-                retryTableAPI(immediateHid),
-                retryAlertsAPI(immediateHid),
-                retryChartAPI(immediateHid, chartRange),
-                retryMeterStatusAPI(immediateHid),
-                retryCircleWiseStatsAPI(),
-            ]);
+            const { hierarchyId: filterHierarchyId } = await fetchFilterOptions(
+                {
+                    skipUserLocation: filtersApplied,
+                    restoreValues,
+                },
+            );
 
             if (cancelled) {
                 return;
             }
 
-            // Resolve the authoritative hierarchyId now that filter options are done.
             const hierarchyId =
                 filterHierarchyId ??
                 (filtersApplied ? lastSelectedId : null);
-            const finalHid = hierarchyId || undefined;
+            const hid = hierarchyId || undefined;
 
-            // If filter options returned a hierarchyId that differs from what we
-            // already used (only happens for non-admin users on a fresh load), re-fetch
-            // the location-sensitive APIs with the correct filter.  The Promise.all
-            // above is already settled so there is no race condition.
-            if (finalHid !== immediateHid) {
-                await Promise.all([
-                    retryStatsAPI(finalHid),
-                    retryTableAPI(finalHid),
-                    retryAlertsAPI(finalHid),
-                    retryChartAPI(finalHid, chartRange),
-                    retryMeterStatusAPI(finalHid),
-                ]);
+            await Promise.all([
+                retryStatsAPI(hid),
+                retryTableAPI(hid),
+                retryAlertsAPI(hid),
+                retryChartAPI(hid, chartRange),
+                retryMeterStatusAPI(hid),
+                retryCircleWiseStatsAPI(),
+            ]);
 
-                if (cancelled) {
-                    return;
-                }
+            if (cancelled) {
+                return;
             }
 
             window.setTimeout(() => {
