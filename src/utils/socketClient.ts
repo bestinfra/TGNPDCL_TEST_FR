@@ -1,6 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 
-/** Live WebSocket (nginx → backend SOCKET_PORT). */
+/** Live WebSocket host (same origin as API; path derived in parseSocketIoConfig). */
 export const LIVE_SOCKET_WS_URL = "wss://api.bestinfra.app/tgnpdcl/api";
 
 export type SocketIoConnectionConfig = {
@@ -8,7 +8,7 @@ export type SocketIoConnectionConfig = {
     path: string;
 };
 
-/** Parse VITE_SOCKET_URL (e.g. wss://api.bestinfra.app/tgnpdcl/api) for socket.io-client. */
+/** Parse VITE_SOCKET_URL for socket.io-client (REST …/api URLs map to …/socket.io). */
 export function parseSocketIoConfig(raw?: string): SocketIoConnectionConfig {
     const value = (raw?.trim() || LIVE_SOCKET_WS_URL).trim();
 
@@ -29,8 +29,13 @@ export function parseSocketIoConfig(raw?: string): SocketIoConnectionConfig {
         path = explicitPath.startsWith("/") ? explicitPath : `/${explicitPath}`;
     } else if (!pathname || pathname === "/") {
         path = "/socket.io";
-    } else {
+    } else if (pathname.endsWith("/socket.io")) {
         path = pathname;
+    } else if (pathname.endsWith("/api")) {
+        const base = pathname.slice(0, -"/api".length);
+        path = base ? `${base}/socket.io` : "/socket.io";
+    } else {
+        path = `${pathname}/socket.io`;
     }
 
     let protocol = parsed.protocol;

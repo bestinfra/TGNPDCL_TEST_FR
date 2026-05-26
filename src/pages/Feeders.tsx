@@ -608,6 +608,7 @@ const Feeders = () => {
 
                         feederInfo = {
                             dtr: feederInfo.dtr,
+                            locationHierarchy: feederInfo.locationHierarchy,
                             totalFeeders: actualTotalFeeders, // Use actual DTR's total feeder count
                             specificFeeder: {
                                 serialNumber: specificFeeder.serialNumber,
@@ -1226,6 +1227,7 @@ const Feeders = () => {
                         // Create feeder-specific info
                         feederInfo = {
                             dtr: feederInfo.dtr,
+                            locationHierarchy: feederInfo.locationHierarchy,
                             totalFeeders: 1, // This is now for a specific feeder
                             specificFeeder: {
                                 serialNumber: specificFeeder.serialNumber,
@@ -1556,10 +1558,28 @@ const Feeders = () => {
 
     //   const { center: mapCenter, zoom: mapZoom } = getMapCenterAndZoom();
 
-    const dtrLocationFeeder =
-        feederInfoData?.specificFeeder ?? feederInfoData?.feeders?.[0];
-    const dtrInfoLat = dtrLocationFeeder?.latitude ?? 0;
-    const dtrInfoLng = dtrLocationFeeder?.longitude ?? 0;
+    const hierarchy =
+        feederInfoData?.locationHierarchy ||
+        (feederData as { locationHierarchy?: { type?: string; name?: string }[] })
+            ?.locationHierarchy ||
+        [];
+
+    const circle =
+        hierarchy.find((item: { type?: string; name?: string }) => item.type === 'Circle')
+            ?.name || 'N/A';
+
+    const division =
+        hierarchy.find((item: { type?: string; name?: string }) => item.type === 'Division')
+            ?.name || 'N/A';
+
+    const subDivision =
+        hierarchy.find(
+            (item: { type?: string; name?: string }) => item.type === 'Sub-Division',
+        )?.name || 'N/A';
+
+    const section =
+        hierarchy.find((item: { type?: string; name?: string }) => item.type === 'Section')
+            ?.name || 'N/A';
 
     return (
         <div className=" sticky top-0 ">
@@ -1722,54 +1742,27 @@ const Feeders = () => {
                                                         },
                                                         items: [
                                                             {
-                                                                title: "DTR No",
-                                                                value:
-                                                                    feederInfoData
-                                                                        ?.dtr
-                                                                        ?.dtrNumber ||
-                                                                    passedData?.dtrNumber ||
-                                                                    "N/A",
+                                                                title: "Circle",
+                                                                value: circle,
                                                                 align: "start",
                                                                 gap: "gap-1",
-                                                            },
-                                                            {
-                                                                title: "DTR Name",
-                                                                value:
-                                                                    passedData?.dtrName ||
-                                                                    feederInfoData
-                                                                        ?.dtr
-                                                                        ?.serialNumber ||
-                                                                    "N/A",
-                                                                align: "start",
-                                                                gap: "gap-1",
-                                                                statusIndicator:
-                                                                    true,
-                                                                statusType:
-                                                                    feederInfoData
-                                                                        ?.dtr
-                                                                        ?.status,
                                                             },
                                                             {
                                                                 title: "Division",
-                                                                value:
-                                                                    feederInfoData
-                                                                        ?.dtr
-                                                                        ?.division ||
-                                                                    "N/A",
+                                                                value: division,
                                                                 align: "start",
                                                                 gap: "gap-1",
                                                             },
                                                             {
                                                                 title:
-                                                                    "Sub-Division",
-                                                                value:
-                                                                    feederInfoData
-                                                                        ?.dtr
-                                                                        ?.subDivision ||
-                                                                    feederInfoData
-                                                                        ?.dtr
-                                                                        ?.sub_division ||
-                                                                    "N/A",
+                                                                    "Sub Division",
+                                                                value: subDivision,
+                                                                align: "start",
+                                                                gap: "gap-1",
+                                                            },
+                                                            {
+                                                                title: "Section",
+                                                                value: section,
                                                                 align: "start",
                                                                 gap: "gap-1",
                                                             },
@@ -1785,56 +1778,86 @@ const Feeders = () => {
                                                         },
                                                         items: [
                                                             {
-                                                                title: "Capacity",
+                                                                title: "DTR Number",
                                                                 value:
                                                                     feederInfoData
                                                                         ?.dtr
+                                                                        ?.dtrNumber ||
+                                                                    passedData?.dtrNumber ||
+                                                                    "N/A",
+                                                                align: "start",
+                                                                gap: "gap-1",
+                                                            },
+                                                            {
+                                                                title: "DTR Capacity",
+                                                                value: `${
+                                                                    feederInfoData
+                                                                        ?.dtr
                                                                         ?.capacity ||
-                                                                    "N/A",
+                                                                    100
+                                                                } kVA`,
                                                                 align: "start",
                                                                 gap: "gap-1",
                                                             },
                                                             {
-                                                                title: "Address",
-                                                                value:
-                                                                    dtrLocationFeeder
-                                                                        ?.location
-                                                                        ?.name ||
-                                                                    dtrLocationFeeder?.city ||
-                                                                    passedData
-                                                                        ?.feederData
-                                                                        ?.address ||
-                                                                    "N/A",
+                                                                title: "Feeder Capacity",
+                                                                value: (() => {
+                                                                    const dtrCapacity =
+                                                                        feederInfoData
+                                                                            ?.dtr
+                                                                            ?.capacity ||
+                                                                        100;
+                                                                    const totalFeeders =
+                                                                        feederInfoData?.totalFeeders ||
+                                                                        1;
+                                                                    const feederCapacity =
+                                                                        Math.round(
+                                                                            dtrCapacity /
+                                                                                totalFeeders,
+                                                                        );
+                                                                    return `${feederCapacity} kVA`;
+                                                                })(),
                                                                 align: "start",
                                                                 gap: "gap-1",
                                                             },
                                                             {
-                                                                title: "Latitude",
-                                                                value:
-                                                                    dtrInfoLat !==
-                                                                    0
-                                                                        ? Number(
-                                                                              dtrInfoLat,
-                                                                          ).toFixed(
-                                                                              6,
-                                                                          )
-                                                                        : "N/A",
+                                                                title: "Feeder Status",
+                                                                value: (() => {
+                                                                    const feederStatus =
+                                                                        feederInfoData
+                                                                            ?.specificFeeder
+                                                                            ?.status ||
+                                                                        feederInfoData
+                                                                            ?.feeders?.[0]
+                                                                            ?.status;
+                                                                    return (
+                                                                        feederStatus ||
+                                                                        feederInfoData
+                                                                            ?.dtr
+                                                                            ?.status ||
+                                                                        "ACTIVE"
+                                                                    );
+                                                                })(),
                                                                 align: "start",
                                                                 gap: "gap-1",
-                                                            },
-                                                            {
-                                                                title: "Longitude",
-                                                                value:
-                                                                    dtrInfoLng !==
-                                                                    0
-                                                                        ? Number(
-                                                                              dtrInfoLng,
-                                                                          ).toFixed(
-                                                                              6,
-                                                                          )
-                                                                        : "N/A",
-                                                                align: "start",
-                                                                gap: "gap-1",
+                                                                statusIndicator:
+                                                                    true,
+                                                                statusType:
+                                                                    (() => {
+                                                                        const feederStatus =
+                                                                            feederInfoData
+                                                                                ?.specificFeeder
+                                                                                ?.status ||
+                                                                            feederInfoData
+                                                                                ?.feeders?.[0]
+                                                                                ?.status;
+                                                                        return (
+                                                                            feederStatus ||
+                                                                            feederInfoData
+                                                                                ?.dtr
+                                                                                ?.status
+                                                                        );
+                                                                    })(),
                                                             },
                                                         ],
                                                     },
