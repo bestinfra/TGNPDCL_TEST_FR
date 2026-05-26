@@ -12,12 +12,18 @@ type AlertTypeOption = {
 
 const defaultFilterOptions: {
     statusOptions: { value: string; label: string }[];
+    meterFilterOptions: { value: string; label: string }[];
     alertTypeOptions: AlertTypeOption[];
 } = {
     statusOptions: [
         { value: "all", label: "Status" },
         { value: "active", label: "Active" },
         { value: "resolved", label: "Resolved" },
+    ],
+    meterFilterOptions: [
+        { value: "all", label: "All Meters" },
+        { value: "mapped", label: "Mapped" },
+        { value: "unmapped", label: "Unmapped" },
     ],
     // No default "Select" option; alert types will come from API
     alertTypeOptions: [],
@@ -107,6 +113,7 @@ const MeterAlert: React.FC = () => {
     const [filterValues, setFilterValues] = useState({
         meterId: "",
         status: "all",
+        meterFilter: "all",
         dateRange: {
             start: getTodayStr(),
             end: getTodayStr(),
@@ -333,9 +340,13 @@ const MeterAlert: React.FC = () => {
       "status",
       filterValues.status === "all" ? "all" : filterValues.status
     );
+    params.append(
+      "meterFilter",
+      filterValues.meterFilter === "all" ? "all" : filterValues.meterFilter
+    );
 
     if (hierarchyId) {
-      params.append("hierarchyId", hierarchyId);
+        params.append("hierarchyId", hierarchyId);
     }
 
     params.append("page", String(_page));
@@ -350,11 +361,11 @@ const MeterAlert: React.FC = () => {
     setTotalRecords(
         (pagination.totalCount as number) || events.length,
     );
-    setCurrentPage((pagination.currentPage as number) || 1);
-    setPageSize((pagination.pageSize as number) || size);
+    setCurrentPage(_page);
+    setPageSize(size);
 
-    const pageNum = _page || (pagination.currentPage as number) || 1;
-    const sizeUsed = size || (pagination.pageSize as number) || 10;
+    const pageNum = _page;
+    const sizeUsed = size;
     const baseSno = (pageNum - 1) * sizeUsed;
     const mappedData = events.map((item: any, idx: number) =>
       mapTamperEventToTableRow(item ?? {}, idx, baseSno),
@@ -371,13 +382,39 @@ const MeterAlert: React.FC = () => {
   }
 };
 
-    const runGenerateReport = () => {
+    const handleGetData = useCallback(async () => {
         if (!filterValues.dateRange.start || !filterValues.dateRange.end) {
             return;
         }
-        const hierarchyId = applyCurrentFilters();
+
+        const lastId = applyCurrentFilters();
+        try {
+            setCurrentPage(1);
+            await fetchTableData(1, pageSize, lastId);
+        } catch (error) {
+            console.error("Error applying filters:", error);
+        }
+    }, [
+        applyCurrentFilters,
+        filterValues.dateRange.end,
+        filterValues.dateRange.start,
+        pageSize,
+    ]);
+
+    const handleAlertTablePageChange = (page: number, limit?: number) => {
+        const lim =
+            typeof limit === "number" && limit > 0 ? limit : pageSize;
+        setCurrentPage(page);
+        if (lim !== pageSize) {
+            setPageSize(lim);
+        }
+        void fetchTableData(page, lim, lastSelectedId);
+    };
+
+    const handleAlertTableRowsPerPageChange = (limit: number) => {
+        setPageSize(limit);
         setCurrentPage(1);
-        void fetchTableData(1, pageSize, hierarchyId);
+        void fetchTableData(1, limit, lastSelectedId);
     };
 
     const handleHierarchyReset = useCallback(async () => {
@@ -394,7 +431,7 @@ const MeterAlert: React.FC = () => {
                 filterValues: hierarchyFilterValues,
                 isFiltersLoading: isHierarchyFiltersLoading,
                 onFilterChange: handleHierarchyFilterChange,
-                onGetData: runGenerateReport,
+                onGetData: handleGetData,
                 onReset: () => {
                     void handleHierarchyReset();
                 },
@@ -404,7 +441,7 @@ const MeterAlert: React.FC = () => {
             hierarchyFilterValues,
             isHierarchyFiltersLoading,
             handleHierarchyFilterChange,
-            runGenerateReport,
+            handleGetData,
             handleHierarchyReset,
         ],
     );
@@ -526,6 +563,7 @@ const MeterAlert: React.FC = () => {
     const prevDateRangeRef = React.useRef({ start: filterValues.dateRange.start, end: filterValues.dateRange.end });
     const prevAlertTypeRef = React.useRef(filterValues.alertType);
     const prevStatusRef = React.useRef(filterValues.status);
+    const prevMeterFilterRef = React.useRef(filterValues.meterFilter);
     const isInitialMount = React.useRef(true);
 
     // Fetch data when date range, alertType, or pagination changes
@@ -535,6 +573,8 @@ const MeterAlert: React.FC = () => {
             prevDateRangeRef.current.end !== filterValues.dateRange.end;
         const alertTypeChanged = prevAlertTypeRef.current !== filterValues.alertType;
         const statusChanged = prevStatusRef.current !== filterValues.status;
+        const meterFilterChanged =
+            prevMeterFilterRef.current !== filterValues.meterFilter;
 
         // Check if both date range and alertType are selected
         const hasDateRange = filterValues.dateRange.start && filterValues.dateRange.end;
@@ -548,6 +588,7 @@ const MeterAlert: React.FC = () => {
             };
             prevAlertTypeRef.current = filterValues.alertType;
             prevStatusRef.current = filterValues.status;
+            prevMeterFilterRef.current = filterValues.meterFilter;
             // Clear table on initial mount since no filters are selected
             setAlertTableData([]);
             setAlertTableColumns([]);
@@ -555,8 +596,13 @@ const MeterAlert: React.FC = () => {
             return;
         }
 
-        // If date range, alert type, or status changed, reset to page 1
-        if (dateRangeChanged || alertTypeChanged || statusChanged) {
+        // If date range, alert type, status, or meter filter changed, reset to page 1
+        if (
+            dateRangeChanged ||
+            alertTypeChanged ||
+            statusChanged ||
+            meterFilterChanged
+        ) {
             setCurrentPage(1);
             prevDateRangeRef.current = { 
                 start: filterValues.dateRange.start, 
@@ -564,11 +610,17 @@ const MeterAlert: React.FC = () => {
             };
             prevAlertTypeRef.current = filterValues.alertType;
             prevStatusRef.current = filterValues.status;
+            prevMeterFilterRef.current = filterValues.meterFilter;
         }
 
         // Only fetch if both date range and alertType are selected
         if (hasDateRange) {
-            if (dateRangeChanged || alertTypeChanged || statusChanged) {
+            if (
+                dateRangeChanged ||
+                alertTypeChanged ||
+                statusChanged ||
+                meterFilterChanged
+            ) {
                 fetchTableData(1, pageSize, lastSelectedId);
             } else {
                 fetchTableData(currentPage, pageSize, lastSelectedId);
@@ -584,6 +636,7 @@ const MeterAlert: React.FC = () => {
         filterValues.dateRange.end,
         filterValues.alertType,
         filterValues.status,
+        filterValues.meterFilter,
         currentPage,
         pageSize,
         lastSelectedId,
@@ -675,12 +728,6 @@ const MeterAlert: React.FC = () => {
                                       variant: 'primary',
                                       backButtonText: 'Back to Dashboard',
                                       buttons: [
-                                      
-                                        {
-                                            label: "Generate Report",
-                                            variant: "secondary",
-                                            onClick: runGenerateReport,
-                                        },
                                         {
                                             label: "Download",
                                             variant: "primary",
@@ -738,6 +785,16 @@ const MeterAlert: React.FC = () => {
                                         onChange: (value: string) =>
                                             handleFilterChange("status", value),
                                         placeholder: "Select Status",
+                                        className: "w-max-xl",
+                                       },
+                                       {
+                                        type: 'dropdown',
+                                        options: filterOptions.meterFilterOptions,
+                                        value: filterValues.meterFilter,
+                                        searchable: false,
+                                        onChange: (value: string) =>
+                                            handleFilterChange("meterFilter", value),
+                                        placeholder: "Meter",
                                         className: "w-max-xl",
                                        },
                                       ],
@@ -829,11 +886,9 @@ const MeterAlert: React.FC = () => {
                                     ],
                                     onRowClick: undefined,
                                     onView: undefined,
-                                    onPageChange: (page: number) => setCurrentPage(page),
-                                    onRowsPerPageChange: (size: number) => {
-                                        setPageSize(size);
-                                        setCurrentPage(1);
-                                    },
+                                    onPageChange: handleAlertTablePageChange,
+                                    onRowsPerPageChange:
+                                        handleAlertTableRowsPerPageChange,
                                     loading: isTableLoading,
                                     emptyMessage: (() => {
                                         const hasDateRange = filterValues.dateRange.start && filterValues.dateRange.end;
