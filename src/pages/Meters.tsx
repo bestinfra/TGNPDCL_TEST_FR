@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
+import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import BACKEND_URL from "../config";
@@ -11,6 +11,13 @@ import { fetchAllPaginatedRows } from "../utils/exportPagedData";
 import { createLocationHierarchyFilterSection } from "../components/locationHierarchyFilterSection";
 import { COMMUNICATION_STATUS_FILTER_OPTIONS } from "../constants/locationHierarchy";
 import { useLocationHierarchyFilterBar } from "../hooks/useLocationHierarchyFilterBar";
+
+const METER_FILTER_OPTIONS = [
+    { value: "all", label: "All Meters" },
+    { value: "mapped", label: "Mapped" },
+    { value: "unmapped", label: "Unmapped" },
+] as const;
+
 const Page = lazy(() => import("SuperAdmin/Page"));
 
 interface HierarchyNode {
@@ -154,6 +161,8 @@ export default function Meters() {
     });
     const [isExporting, setIsExporting] = useState(false);
     const [communicationStatus, setCommunicationStatus] = useState("all");
+    const [meterFilter, setMeterFilter] = useState("all");
+    const meterFilterRef = useRef("all");
     const [isSubNodeChecked, setIsSubNodeChecked] = useState(false);
 
     const {
@@ -353,13 +362,13 @@ export default function Meters() {
         if (lim !== meterTableLimit) {
             setMeterTableLimit(lim);
         }
-        fetchMeterData(page, lim, "", lastSelectedId);
+        fetchMeterData(page, lim, "", lastSelectedId, meterFilterRef.current);
     };
 
     const handleMeterTableRowsPerPageChange = (limit: number) => {
         setMeterTableLimit(limit);
         setCurrentPage(1);
-        fetchMeterData(1, limit, "", lastSelectedId);
+        fetchMeterData(1, limit, "", lastSelectedId, meterFilterRef.current);
     };
 
     // Retry function for meter data API
@@ -378,6 +387,12 @@ export default function Meters() {
             if (communicationStatus && communicationStatus !== "all") {
                 queryParams.append("communicationStatus", communicationStatus);
             }
+            queryParams.append(
+                "mappingStatus",
+                meterFilterRef.current === "all"
+                    ? "all"
+                    : meterFilterRef.current,
+            );
 
             const response = await fetch(
                 `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
@@ -433,7 +448,9 @@ export default function Meters() {
         pageSize = 20,
         search = "",
         lastSelectedId?: string | null,
+        mappingStatusParam?: string,
     ) => {
+        const effectiveMappingStatus = mappingStatusParam ?? meterFilter;
         setIsLoadingMeterData(true);
         try {
             const queryParams = new URLSearchParams({
@@ -449,6 +466,12 @@ export default function Meters() {
             if (communicationStatus && communicationStatus !== "all") {
                 queryParams.append("communicationStatus", communicationStatus);
             }
+            queryParams.append(
+                "mappingStatus",
+                effectiveMappingStatus === "all"
+                    ? "all"
+                    : effectiveMappingStatus,
+            );
 
             const response = await fetch(
                 `${BACKEND_URL}/dtrs/all-meters?${queryParams}`,
@@ -501,13 +524,14 @@ export default function Meters() {
     // Load table data after hierarchy filters init (TGNPDCL default — no Get Data click)
     useEffect(() => {
         if (!isFiltersReady || viewMode !== "table") return;
-        fetchMeterData(currentPage, meterTableLimit, "", lastSelectedId);
+        fetchMeterData(currentPage, meterTableLimit, "", lastSelectedId, meterFilter);
         // Pagination changes call fetchMeterData directly; refetch when scope/filters change.
     }, [
         isFiltersReady,
         viewMode,
         lastSelectedId,
         communicationStatus,
+        meterFilter,
     ]);
 
     const handleTabChange = (newTabIndex: number) => {
@@ -518,6 +542,13 @@ export default function Meters() {
     const handleCheckboxChange = (checked: boolean) => {
         setIsSubNodeChecked(checked);
     };
+
+    const handleMeterFilterChange = useCallback((value: any) => {
+        const actualValue =
+            typeof value === "string" ? value : value?.target?.value || value;
+        meterFilterRef.current = actualValue;
+        setMeterFilter(actualValue);
+    }, []);
 
     // Retry specific API
     const retrySpecificAPI = (apiId: string) => {
@@ -531,10 +562,24 @@ export default function Meters() {
         const lastId = applyCurrentFilters();
         try {
             if (viewMode === "table") {
-                fetchMeterData(currentPage, meterTableLimit, "", lastId);
+                setCurrentPage(1);
+                fetchMeterData(
+                    1,
+                    meterTableLimit,
+                    "",
+                    lastId,
+                    meterFilterRef.current,
+                );
             } else if (viewMode === "hierarchy") {
                 fetchAssets(lastId);
-                fetchMeterData(1, meterTableLimit, "", lastId);
+                setCurrentPage(1);
+                fetchMeterData(
+                    1,
+                    meterTableLimit,
+                    "",
+                    lastId,
+                    meterFilterRef.current,
+                );
             }
         } catch (error) {
             console.error("Error applying filters:", error);
@@ -543,13 +588,15 @@ export default function Meters() {
 
     const handleResetFilters = async () => {
         setCommunicationStatus("all");
+        setMeterFilter("all");
+        meterFilterRef.current = "all";
         await resetLocationFilters();
         if (viewMode === "table") {
             setMeterTableLimit(20);
-            fetchMeterData(1, 20, "", null);
+            fetchMeterData(1, 20, "", null, "all");
         } else if (viewMode === "hierarchy") {
             fetchAssets(null);
-            fetchMeterData(1, meterTableLimit, "", null);
+            fetchMeterData(1, meterTableLimit, "", null, "all");
         }
     };
 
@@ -583,6 +630,12 @@ export default function Meters() {
                             communicationStatus,
                         );
                     }
+                    queryParams.append(
+                        "mappingStatus",
+                        meterFilterRef.current === "all"
+                            ? "all"
+                            : meterFilterRef.current,
+                    );
                     return `${BACKEND_URL}/dtrs/all-meters?${queryParams.toString()}`;
                 },
                 { expectedTotalCount: expectedTotal > 0 ? expectedTotal : undefined },
@@ -975,6 +1028,7 @@ export default function Meters() {
                         meterTableLimit,
                         "",
                         lastSelectedId,
+                        meterFilterRef.current,
                     );
                     await fetchAssets(lastSelectedId ?? undefined);
                 } else {
@@ -1102,8 +1156,13 @@ export default function Meters() {
                         props: {
                             options: [...COMMUNICATION_STATUS_FILTER_OPTIONS],
                             value: communicationStatus,
-                            onChange: (value: string) =>
-                                setCommunicationStatus(value),
+                            onChange: (value: any) => {
+                                const actualValue =
+                                    typeof value === "string"
+                                        ? value
+                                        : value?.target?.value || value;
+                                setCommunicationStatus(actualValue);
+                            },
                             placeholder: "Communication status",
                             loading: false,
                             searchable: false,
@@ -1199,6 +1258,20 @@ export default function Meters() {
                                     ],
                                     onMenuItemClick:
                                         handleMenuClick,
+
+                                    showRightDropdowns: true,
+                                    rightDropdownsClassName: "w-max-lg",
+                                    rightDropdowns: [
+                                        {
+                                            type: "dropdown",
+                                            options: [...METER_FILTER_OPTIONS],
+                                            value: meterFilter,
+                                            onChange: handleMeterFilterChange,
+                                            placeholder: "Meter",
+                                            searchable: false,
+                                            className: "w-max-xl",
+                                        },
+                                    ],
 
                                     buttons: [
                                         bulkUploadButton,
@@ -1529,6 +1602,7 @@ export default function Meters() {
                                                                             meterTableLimit,
                                                                             searchTerm,
                                                                             lastSelectedId,
+                                                                            meterFilterRef.current,
                                                                         );
                                                                     }
                                                                   : undefined,

@@ -2336,7 +2336,16 @@ const DTRDashboard: React.FC = () => {
                                         {
                                             name: "PieChart",
                                             props: {
-                                                data: meterStatus || [],
+                                                data: (meterStatus || []).map(
+                                                    (item: {
+                                                        name?: string;
+                                                        value?: number;
+                                                        unit?: string;
+                                                    }) => ({
+                                                        ...item,
+                                                        unit: item.unit || item.name,
+                                                    }),
+                                                ),
                                                 height: 330,
                                                 showStatsLabels: false,
                                                 showLegend: false,
@@ -2368,9 +2377,12 @@ const DTRDashboard: React.FC = () => {
                                                         navigate(
                                                             "/dtr-table?type=non-communicating-meters&title=Non-Communicating%20Meters",
                                                         );
-                                                    } else {
+                                                    } else if (
+                                                        segmentName ===
+                                                        "Unmapped"
+                                                    ) {
                                                         navigate(
-                                                            "/dtr-table?type=communicating-meters&title=Communicating%20Meters",
+                                                            "/dtr-table?type=unmapped-meters&title=Unmapped%20Meters",
                                                         );
                                                     }
                                                 },
