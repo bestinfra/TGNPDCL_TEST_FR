@@ -202,128 +202,66 @@ const MeterAlert: React.FC = () => {
         autoSelectDefaultDiscom: true,
     });
 
-    // Function to generate table columns dynamically based on data
-    const generateColumnsFromData = (data: any[]): any[] => {
-        if (!data || data.length === 0) {
-            return [];
+    const mapTamperEventToTableRow = (
+        item: Record<string, unknown>,
+        rowIndex: number,
+        baseSno: number,
+    ): Record<string, unknown> => {
+        const { locationHierarchy, ...rest } = item ?? {};
+        const flatRow: Record<string, unknown> =
+            locationHierarchy &&
+            typeof locationHierarchy === "object" &&
+            !Array.isArray(locationHierarchy)
+                ? {
+                      ...(locationHierarchy as Record<string, unknown>),
+                      ...rest,
+                  }
+                : { ...rest };
+
+        if (flatRow.slNo == null && flatRow.sNo != null) {
+            flatRow.slNo = flatRow.sNo;
+        }
+        if (flatRow.slNo == null) {
+            flatRow.slNo = baseSno + rowIndex + 1;
         }
 
-        // Get all unique keys from the data (skip nested objects e.g. locationHierarchy)
-        const allKeys = new Set<string>();
-        data.forEach((item) => {
-            Object.keys(item).forEach((key) => {
-                const value = item[key];
-                if (
-                    value !== null &&
-                    typeof value === "object" &&
-                    !Array.isArray(value)
-                ) {
-                    return;
-                }
-                allKeys.add(key);
-            });
-        });
+        return flatRow;
+    };
 
-        // Convert keys to column definitions
-        const columns = Array.from(allKeys).map((key) => {
-            // Special handling for serial number columns - prefer sNo and skip slNo if sNo exists
-            if (key === 'slNo' || key === 'slno') {
-                // Skip slNo if sNo exists
-                if (allKeys.has('sNo')) {
-                    return null; // Skip this column, sNo will be used instead
-                }
-                return {
-                    key,
-                    label: 'S.No',
-                };
-            }
-
-            if (key === 'sNo' || key === 'sno') {
-                return {
-                    key,
-                    label: 'S.No',
-                };
-            }
-
-            // Format key to label: use as-is if backend already sent a spaced label (e.g. "USC No", "Meter SLNo")
-            // Otherwise convert camelCase/snake_case to Title Case
-            let label: string;
-            if (key.includes(' ')) {
-                // Backend sent a pre-formatted label; use as-is to avoid "U S C No" etc.
-                label = key.trim();
-            } else {
-                label = key
-                    .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, (str) => str.toUpperCase())
-                    .trim();
-            }
-
-            // Special label mappings (for camelCase keys that weren't caught above)
-            const keyLower = key.toLowerCase();
-            if (keyLower === 'dtrcode' || key === 'dtrCode' || key === 'DtrCode' || key === 'DTRCode') {
-                label = 'DTR Code';
-            } else if (keyLower === 'landmark' || key === 'landMark' || label === 'Land Mark') {
-                label = 'Landmark';
-            } else if (keyLower === 'cap') {
-                label = 'Capacity';
-            } else if (keyLower === 'meterslno' || keyLower === 'meterserialno' || label === 'Meter S L No' || label === 'Meter Sl No') {
-                label = 'Meter SL No';
-            } else if (keyLower === 'uscno' || keyLower === 'usc' || label === 'U S C No' || label === 'Usc No') {
-                label = 'USC No';
-            } else if (label.match(/Number\s+Of/i) || label.match(/Number\s+of/i)) {
-                label = label.replace(/Number\s+Of/gi, 'No: of').replace(/Number\s+of/gi, 'No: of');
-            }
-
-            // Special handling for status column
-            if (key.toLowerCase() === 'status') {
-                return {
-                    key,
-                    label,
-                    statusIndicator: {
-                        activeColor: 'bg-secondary',
-                        inactiveColor: 'bg-danger',
-                    },
-                    isActive: (value: string) => {
-                        const v = (value || '').toString().toLowerCase();
-                        return v === 'resolved';
-                    },
-                };
-            }
-
-            return {
-                key,
-                label,
-            };
-        }).filter((col) => col !== null) as any[]; // Remove null entries
-
-        // Enforce MIS Reports table sequence
-        const columnOrder = [
-            'sNo',
-            'dtrName',
-            'meterSlNo',
-            'tamperType',
-            'occurredOn',
-            'resolvedOn',
-            'duration',
-            'status',
+    const generateColumnsFromData = (_data: any[]): any[] => {
+        const columnDefs: { key: string; label: string }[] = [
+            { key: "slNo", label: "S.No" },
+            { key: "circle", label: "Circle" },
+            { key: "division", label: "Division" },
+            { key: "subDivision", label: "Sub Division" },
+            { key: "section", label: "Section" },
+            { key: "substation", label: "Substation" },
+            { key: "feeder", label: "Feeder" },
+            { key: "dtrNumber", label: "DTR Number" },
+            { key: "meterNumber", label: "Meter Number" },
+            { key: "tamperType", label: "Tamper Type" },
+            { key: "occurredOn", label: "Occurred On" },
+            { key: "resolvedOn", label: "Resolved On" },
+            { key: "duration", label: "Duration" },
+            { key: "status", label: "Status" },
         ];
-        const orderedColumns: any[] = [];
-        const remainingColumns: any[] = [];
 
-        columnOrder.forEach((orderKey) => {
-            const found = columns.find((col) => col.key === orderKey);
-            if (found) {
-                orderedColumns.push(found);
+        return columnDefs.map((col) => {
+            if (col.key !== "status") {
+                return col;
             }
+            return {
+                ...col,
+                statusIndicator: {
+                    activeColor: "bg-secondary",
+                    inactiveColor: "bg-danger",
+                },
+                isActive: (value: string) => {
+                    const v = (value || "").toString().toLowerCase();
+                    return v === "resolved";
+                },
+            };
         });
-
-        columns.forEach((col) => {
-            if (!columnOrder.includes(col.key)) {
-                remainingColumns.push(col);
-            }
-        });
-
-        return [...orderedColumns, ...remainingColumns];
     };
 
     // Helper function to ensure date is in YYYY-MM-DD format
@@ -418,13 +356,9 @@ const MeterAlert: React.FC = () => {
     const pageNum = _page || (pagination.currentPage as number) || 1;
     const sizeUsed = size || (pagination.pageSize as number) || 10;
     const baseSno = (pageNum - 1) * sizeUsed;
-    const mappedData = events.map((item: any, idx: number) => {
-      const { locationHierarchy: _locationHierarchy, ...rest } = item ?? {};
-      return {
-        ...rest,
-        sNo: baseSno + idx + 1,
-      };
-    });
+    const mappedData = events.map((item: any, idx: number) =>
+      mapTamperEventToTableRow(item ?? {}, idx, baseSno),
+    );
 
     setAlertTableData(mappedData);
     setAlertTableColumns(generateColumnsFromData(mappedData));
