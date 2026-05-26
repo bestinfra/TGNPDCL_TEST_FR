@@ -1,7 +1,9 @@
-import React, { useState, useEffect, lazy } from "react";
+import React, { useState, useEffect, lazy, useMemo, useCallback } from "react";
 // import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { apiClient } from "../api/apiUtils";
+import { createLocationHierarchyFilterSection } from "../components/locationHierarchyFilterSection";
+import { useLocationHierarchyFilterBar } from "../hooks/useLocationHierarchyFilterBar";
 // import dayjs from "dayjs";
 type AlertTypeOption = {
     value: string;
@@ -36,6 +38,66 @@ const getTodayStr = () => {
     const month = String(t.getMonth() + 1).padStart(2, "0");
     const day = String(t.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+};
+
+/** Match tamper-events API shapes: top-level events, nested data.events, or data as array. */
+const extractTamperEvents = (response: unknown): any[] => {
+    if (!response) return [];
+    if (Array.isArray(response)) return response;
+    if (typeof response !== "object") return [];
+
+    const root = response as Record<string, unknown>;
+    if (Array.isArray(root.events)) return root.events;
+
+    const data = root.data;
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") {
+        const nested = data as Record<string, unknown>;
+        if (Array.isArray(nested.events)) return nested.events;
+        if (Array.isArray(nested.data)) return nested.data;
+        if (Array.isArray(nested.records)) return nested.records;
+    }
+    return [];
+};
+
+const extractTamperPagination = (response: unknown): Record<string, unknown> => {
+    if (!response || typeof response !== "object" || Array.isArray(response)) {
+        return {};
+    }
+    const root = response as Record<string, unknown>;
+    if (root.pagination && typeof root.pagination === "object") {
+        return root.pagination as Record<string, unknown>;
+    }
+    const data = root.data;
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+        const nested = data as Record<string, unknown>;
+        if (nested.pagination && typeof nested.pagination === "object") {
+            return nested.pagination as Record<string, unknown>;
+        }
+        const meta = nested.meta;
+        if (
+            meta &&
+            typeof meta === "object" &&
+            (meta as Record<string, unknown>).pagination
+        ) {
+            return (meta as Record<string, unknown>).pagination as Record<
+                string,
+                unknown
+            >;
+        }
+    }
+    const meta = root.meta;
+    if (
+        meta &&
+        typeof meta === "object" &&
+        (meta as Record<string, unknown>).pagination
+    ) {
+        return (meta as Record<string, unknown>).pagination as Record<
+            string,
+            unknown
+        >;
+    }
+    return {};
 };
 
 const MeterAlert: React.FC = () => {
@@ -128,16 +190,38 @@ const MeterAlert: React.FC = () => {
     // Loading states
     const [isTableLoading, setIsTableLoading] = useState(false);
 
+    const {
+        filterOptions: hierarchyFilterOptions,
+        isFiltersLoading: isHierarchyFiltersLoading,
+        filterValues: hierarchyFilterValues,
+        lastSelectedId,
+        handleFilterChange: handleHierarchyFilterChange,
+        applyCurrentFilters,
+        resetLocationFilters,
+    } = useLocationHierarchyFilterBar({
+        autoSelectDefaultDiscom: true,
+    });
+
     // Function to generate table columns dynamically based on data
     const generateColumnsFromData = (data: any[]): any[] => {
         if (!data || data.length === 0) {
             return [];
         }
 
-        // Get all unique keys from the data
+        // Get all unique keys from the data (skip nested objects e.g. locationHierarchy)
         const allKeys = new Set<string>();
         data.forEach((item) => {
-            Object.keys(item).forEach((key) => allKeys.add(key));
+            Object.keys(item).forEach((key) => {
+                const value = item[key];
+                if (
+                    value !== null &&
+                    typeof value === "object" &&
+                    !Array.isArray(value)
+                ) {
+                    return;
+                }
+                allKeys.add(key);
+            });
         });
 
         // Convert keys to column definitions
@@ -291,7 +375,11 @@ const MeterAlert: React.FC = () => {
         // If all parsing fails, return empty string
         return "";
     };
-    const fetchTableData = async (_page: number = 1, size: number = 25) => {
+    const fetchTableData = async (
+        _page: number = 1,
+        size: number = 25,
+        hierarchyId?: string | null,
+    ) => {
   setIsTableLoading(true);
 
   try {
@@ -308,34 +396,35 @@ const MeterAlert: React.FC = () => {
       filterValues.status === "all" ? "all" : filterValues.status
     );
 
+    if (hierarchyId) {
+      params.append("hierarchyId", hierarchyId);
+    }
+
     params.append("page", String(_page));
     // Backend expects pageSize; keep limit too for compatibility.
     params.append("pageSize", String(size));
     params.append("limit", String(size));
 
     const response = await apiClient.get(`/alerts/tamper-events?${params}`);
-    const payload = response?.data ?? response ?? {};
+    const events = extractTamperEvents(response);
+    const pagination = extractTamperPagination(response);
 
-    // Backend returns { events, pagination, ... }, while older handlers may return { data, meta }.
-    const events = Array.isArray(payload?.events)
-      ? payload.events
-      : Array.isArray(payload?.data)
-      ? payload.data
-      : [];
+    setTotalRecords(
+        (pagination.totalCount as number) || events.length,
+    );
+    setCurrentPage((pagination.currentPage as number) || 1);
+    setPageSize((pagination.pageSize as number) || size);
 
-    const pagination = payload?.pagination || payload?.meta?.pagination || {};
-
-    setTotalRecords(pagination.totalCount || events.length);
-    setCurrentPage(pagination.currentPage || 1);
-    setPageSize(pagination.pageSize || size);
-
-    const pageNum = _page || pagination.currentPage || 1;
-    const sizeUsed = size || pagination.pageSize || 10;
+    const pageNum = _page || (pagination.currentPage as number) || 1;
+    const sizeUsed = size || (pagination.pageSize as number) || 10;
     const baseSno = (pageNum - 1) * sizeUsed;
-    const mappedData = events.map((item: any, idx: number) => ({
-      ...item,
-      sNo: baseSno + idx + 1,
-    }));
+    const mappedData = events.map((item: any, idx: number) => {
+      const { locationHierarchy: _locationHierarchy, ...rest } = item ?? {};
+      return {
+        ...rest,
+        sNo: baseSno + idx + 1,
+      };
+    });
 
     setAlertTableData(mappedData);
     setAlertTableColumns(generateColumnsFromData(mappedData));
@@ -347,6 +436,44 @@ const MeterAlert: React.FC = () => {
     setIsTableLoading(false);
   }
 };
+
+    const runGenerateReport = () => {
+        if (!filterValues.dateRange.start || !filterValues.dateRange.end) {
+            return;
+        }
+        const hierarchyId = applyCurrentFilters();
+        setCurrentPage(1);
+        void fetchTableData(1, pageSize, hierarchyId);
+    };
+
+    const handleHierarchyReset = useCallback(async () => {
+        await resetLocationFilters();
+        setAlertTableData([]);
+        setAlertTableColumns([]);
+        setTotalRecords(0);
+    }, [resetLocationFilters]);
+
+    const locationHierarchyFilterSection = useMemo(
+        () =>
+            createLocationHierarchyFilterSection({
+                filterOptions: hierarchyFilterOptions,
+                filterValues: hierarchyFilterValues,
+                isFiltersLoading: isHierarchyFiltersLoading,
+                onFilterChange: handleHierarchyFilterChange,
+                onGetData: runGenerateReport,
+                onReset: () => {
+                    void handleHierarchyReset();
+                },
+            }),
+        [
+            hierarchyFilterOptions,
+            hierarchyFilterValues,
+            isHierarchyFiltersLoading,
+            handleHierarchyFilterChange,
+            runGenerateReport,
+            handleHierarchyReset,
+        ],
+    );
 
     // Filter change handlers
     const handleFilterChange = (filterName: string, value: any) => {
@@ -508,10 +635,9 @@ const MeterAlert: React.FC = () => {
         // Only fetch if both date range and alertType are selected
         if (hasDateRange) {
             if (dateRangeChanged || alertTypeChanged || statusChanged) {
-                fetchTableData(1, pageSize); // Update pageSize when filters change
+                fetchTableData(1, pageSize, lastSelectedId);
             } else {
-                // Only pagination changed, fetch with current page
-                fetchTableData(currentPage, pageSize); // Don't update pageSize on page change
+                fetchTableData(currentPage, pageSize, lastSelectedId);
             }
         } else {
             // Clear table if filters are not complete
@@ -519,7 +645,15 @@ const MeterAlert: React.FC = () => {
             setAlertTableColumns([]);
             setTotalRecords(0);
         }
-    }, [filterValues.dateRange.start, filterValues.dateRange.end, filterValues.alertType, filterValues.status, currentPage, pageSize]);
+    }, [
+        filterValues.dateRange.start,
+        filterValues.dateRange.end,
+        filterValues.alertType,
+        filterValues.status,
+        currentPage,
+        pageSize,
+        lastSelectedId,
+    ]);
 
     // Load tamper type dropdown options on mount
     useEffect(() => {
@@ -611,16 +745,7 @@ const MeterAlert: React.FC = () => {
                                         {
                                             label: "Generate Report",
                                             variant: "secondary",
-                                            onClick: () => {
-                                                // Validate that both date range and alertType are selected
-                                                if (!filterValues.dateRange.start || !filterValues.dateRange.end) {
-                                                    // You can add a toast/notification here if needed
-                                                    return;
-                                                }
-                                                // Reset to page 1 and fetch data with current filter values
-                                                setCurrentPage(1);
-                                                fetchTableData(1, pageSize); // Update pageSize when manually loading
-                                            },
+                                            onClick: runGenerateReport,
                                         },
                                         {
                                             label: "Download",
@@ -700,7 +825,7 @@ const MeterAlert: React.FC = () => {
                             },
                         ],
                     },
-
+                    locationHierarchyFilterSection,
 
                     // Alert Table Section
                     {
