@@ -819,12 +819,14 @@ const DTRDetailPage = () => {
   useEffect(() => {
     if (locationHierarchy.length > 0) {
       const feederLocation = locationHierarchy.find((loc: any) => loc.type === 'Feeder');
-      if (feederLocation) {
-        setDtr((prev) => ({
-          ...prev,
-          address: feederLocation.name || 'N/A',
-        }));
-      }
+      setDtr((prev) => ({
+        ...prev,
+        address: feederLocation?.name || prev.address,
+        division:
+          locationHierarchy.find((loc) => loc.type === 'Division')?.name || 'N/A',
+        subDivision:
+          locationHierarchy.find((loc) => loc.type === 'Sub-Division')?.name || 'N/A',
+      }));
     }
   }, [locationHierarchy]);
 
@@ -1620,13 +1622,17 @@ const DTRDetailPage = () => {
                               },
                               {
                                 title: 'Division',
-                                value: dtr.division || 'N/A',
+                                value:
+                                  locationHierarchy.find((loc) => loc.type === 'Division')
+                                    ?.name || 'N/A',
                                 align: 'start',
                                 gap: 'gap-1',
                               },
                               {
                                 title: 'Sub-Division',
-                                value: dtr.subDivision || 'N/A',
+                                value:
+                                  locationHierarchy.find((loc) => loc.type === 'Sub-Division')
+                                    ?.name || 'N/A',
                                 align: 'start',
                                 gap: 'gap-1',
                               },
