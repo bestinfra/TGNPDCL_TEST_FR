@@ -63,6 +63,91 @@ const nonActionableCardTypes: string[] = [
 /** Max rows per export API request (keeps drill-down APIs responsive). */
 const EXPORT_FETCH_PAGE_SIZE = 100;
 
+const METER_COMMUNICATION_TABLE_TYPES = new Set([
+    "communicating-meters",
+    "non-communicating-meters",
+    "unmapped-meters",
+]);
+
+async function fetchMeterStatusCategoryNumbers(
+    statusName: string,
+    hierarchyId: string | null,
+    circleFilter: string | null,
+): Promise<string[]> {
+    const params = new URLSearchParams();
+    if (hierarchyId) params.append("hierarchyId", hierarchyId);
+    if (circleFilter?.trim()) {
+        params.append("circle", circleFilter.trim());
+    }
+
+    const url = `${BACKEND_URL}/dtrs/meter-status${
+        params.toString() ? `?${params.toString()}` : ""
+    }`;
+    const response = await fetch(url, { credentials: "include" });
+    if (!response.ok) {
+        throw new Error("Failed to fetch meter status");
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType?.includes("application/json")) {
+        throw new Error("Invalid response format");
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+        throw new Error(data.message || "Failed to fetch meter status");
+    }
+
+    const entry = (data.data || []).find(
+        (item: { name?: string }) => item.name === statusName,
+    );
+
+    return Array.isArray(entry?.meterNumbers)
+        ? entry.meterNumbers.map(String)
+        : [];
+}
+
+function mapMeterNumbersToCommunicationTableRows(
+    meterNumbers: string[],
+    communicationStatus: string,
+    page: number,
+    pageSize: number,
+    search?: string,
+): { rows: TableData[]; pagination: Pagination } {
+    let filtered = meterNumbers;
+    const query = search?.trim().toLowerCase();
+    if (query) {
+        filtered = filtered.filter((meterNo) =>
+            meterNo.toLowerCase().includes(query),
+        );
+    }
+
+    const totalCount = filtered.length;
+    const totalPages = totalCount === 0 ? 1 : Math.ceil(totalCount / pageSize);
+    const start = (page - 1) * pageSize;
+    const pageRows = filtered.slice(start, start + pageSize);
+
+    return {
+        rows: pageRows.map((meterNo, index) => ({
+            slNo: start + index + 1,
+            meterNo,
+            dtrId: "N/A",
+            dtrName: "N/A",
+            location: "N/A",
+            communicationStatus,
+            lastCommunicationDate: "N/A",
+        })),
+        pagination: {
+            currentPage: page,
+            totalPages,
+            totalCount,
+            limit: pageSize,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1,
+        },
+    };
+}
+
 const DTRTable: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -140,6 +225,7 @@ const DTRTable: React.FC = () => {
         switch (normalizedCardType) {
             case "communicating-meters":
             case "non-communicating-meters":
+            case "unmapped-meters":
                 return [
                     { key: "slNo", label: "S.No" },
                     { key: "meterNo", label: "Meter Number" },
@@ -276,6 +362,8 @@ const DTRTable: React.FC = () => {
                     return `${BACKEND_URL}/dtrs/communicating-meters?${params.toString()}`;
                 case "non-communicating-meters":
                     return `${BACKEND_URL}/dtrs/non-communicating-meters?${params.toString()}`;
+                case "unmapped-meters":
+                    return null;
                 default:
                     if (nonActionableCardTypes.includes(normalizedCardType)) {
                         return null;
@@ -288,6 +376,22 @@ const DTRTable: React.FC = () => {
 
     const fetchAllRowsForExport = useCallback(async (): Promise<TableData[]> => {
         const search = searchTerm.trim() || undefined;
+
+        if (normalizedCardType === "unmapped-meters") {
+            const meterNumbers = await fetchMeterStatusCategoryNumbers(
+                "Unmapped",
+                hierarchyId,
+                circleFilter,
+            );
+            return mapMeterNumbersToCommunicationTableRows(
+                meterNumbers,
+                "Unmapped",
+                1,
+                Math.max(meterNumbers.length, 1),
+                search,
+            ).rows;
+        }
+
         const allRows: TableData[] = [];
         let page = 1;
         let hasNextPage = true;
@@ -341,6 +445,8 @@ const DTRTable: React.FC = () => {
         cardType,
         normalizedCardType,
         searchTerm,
+        hierarchyId,
+        circleFilter,
     ]);
 
     const fetchData = useCallback(
@@ -348,6 +454,27 @@ const DTRTable: React.FC = () => {
             setLoading(true);
             try {
                 if (!normalizedCardType) return;
+
+                if (normalizedCardType === "unmapped-meters") {
+                    const meterNumbers = await fetchMeterStatusCategoryNumbers(
+                        "Unmapped",
+                        hierarchyId,
+                        circleFilter,
+                    );
+                    const { rows, pagination } =
+                        mapMeterNumbersToCommunicationTableRows(
+                            meterNumbers,
+                            "Unmapped",
+                            page,
+                            pageSize,
+                            search,
+                        );
+                    safeSetTableData(rows);
+                    setServerPagination(pagination);
+                    setError(null);
+                    setLoading(false);
+                    return;
+                }
 
                 const url = buildListApiUrl(page, pageSize, search);
                 if (!url) {
@@ -507,7 +634,7 @@ const DTRTable: React.FC = () => {
         setLoading(false);
       }
     },
-    [cardType, hierarchyId, buildListApiUrl, normalizedCardType, hierarchyDetailView]
+    [cardType, hierarchyId, circleFilter, buildListApiUrl, normalizedCardType, hierarchyDetailView]
   );
 
     useEffect(() => {
@@ -574,8 +701,7 @@ const DTRTable: React.FC = () => {
 
         // For meter-related tables, navigate to meter search
         if (
-            (normalizedCardType === "communicating-meters" ||
-                normalizedCardType === "non-communicating-meters") &&
+            METER_COMMUNICATION_TABLE_TYPES.has(normalizedCardType || "") &&
             row.meterNo != null
         ) {
             navigate(`/meters?search=${row.meterNo}`);
