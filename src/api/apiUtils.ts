@@ -1,14 +1,40 @@
 // API Utilities for TGNPDCL
 // This file provides utilities to connect to the backend API
 
-import BACKEND_URL from "../config";
+import BACKEND_URL, { API_BASE_URL } from "../config";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
 
 const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem('token');
+  const token =
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    localStorage.getItem('GMRAccesstoken');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: options.signal ?? controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 /**
  * Make API requests to the backend
@@ -25,14 +51,14 @@ export class ApiClient {
    */
   async get(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
         ...(options.headers as Record<string, string> | undefined),
       } as HeadersInit,
-      credentials: 'include', // Include cookies for authentication
+      credentials: 'include',
       ...options,
     });
 

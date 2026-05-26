@@ -13,6 +13,11 @@ interface TableData {
 import { useNavigate } from "react-router-dom";
 const Page = lazy(() => import("SuperAdmin/Page"));
 import { exportChartData } from "../utils/excelExport";
+import {
+    SOCKET_ENABLED,
+    acquireSocket,
+    releaseSocket,
+} from "../utils/socketClient";
 import { apiClient } from "../api/apiUtils";
 import {
     buildCircleWiseStatDrillUrl,
@@ -29,7 +34,7 @@ import {
     rebuildCascadeFilterOptions,
     type HierarchyFilterValues,
 } from "../utils/hierarchyFilters";
-import { io, Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import "./DTRDashboard.circleWiseTable.css";
 import { applyCircleWiseTotalsRowHighlight } from "../utils/circleWiseTableHighlight";
 
@@ -136,9 +141,6 @@ const emptyDtrConsumptionData = {
         latestKvaTimestamp: null,
     },
 };
-
-/** Reuse in-flight dashboard init across React StrictMode remount (same page load). */
-let dtrDashboardInitPromise: Promise<void> | null = null;
 
 // Utility function to format timestamp
 const formatTimestamp = (timestamp: string | null | undefined): string => {
@@ -303,6 +305,13 @@ const DTRDashboard: React.FC = () => {
             lastSelectedId,
             filterValues,
         });
+
+    const navigateToDtrStatDrill = useCallback(
+        (type: string, title: string) => {
+            navigate(buildDtrTableUrl(type, title));
+        },
+        [navigate, lastSelectedId, filterValues],
+    );
 
     // Function to calculate map center and zoom based on DTR locations
     const calculateMapCenterAndZoom = (dtrData: any[]) => {
@@ -625,11 +634,14 @@ const DTRDashboard: React.FC = () => {
     };
 
 
-    const fetchAllDTRsForMap = async (lastSelectedId?: string | null) => {
+    const fetchAllDTRsForMap = async (
+        lastSelectedId?: string | null,
+        pageSize = 150,
+    ) => {
         try {
             const params = new URLSearchParams();
             params.append("page", "1");
-            params.append("pageSize", "5000");
+            params.append("pageSize", String(pageSize));
             if (lastSelectedId) {
                 params.append("lastSelectedId", lastSelectedId);
             }
@@ -895,8 +907,9 @@ const DTRDashboard: React.FC = () => {
     const fetchFilterOptions = async (opts?: {
         skipUserLocation?: boolean;
         restoreValues?: HierarchyFilterValues;
-    }) => {
+    }): Promise<{ hierarchyId: string | null }> => {
         setIsFiltersLoading(true);
+        let resolvedHierarchyId: string | null = null;
         try {
             const data = await apiClient.get("/dtrs/filter/filter-options");
             if (data.success) {
@@ -916,7 +929,10 @@ const DTRDashboard: React.FC = () => {
                         ),
                     }));
                     setFilterValues(opts.restoreValues);
-                    return apiData;
+                    resolvedHierarchyId = computeLastSelectedId(
+                        opts.restoreValues,
+                    );
+                    return { hierarchyId: resolvedHierarchyId };
                 }
 
                 const transformedData = hierarchyLevels.reduce((acc: any, level) => {
@@ -986,6 +1002,8 @@ const DTRDashboard: React.FC = () => {
                             ),
                         }));
                         applyFilters(selectedPath);
+                        resolvedHierarchyId =
+                            computeLastSelectedId(selectedPath);
                     }
                 }
             } else {
@@ -1012,58 +1030,80 @@ const DTRDashboard: React.FC = () => {
         } finally {
             setIsFiltersLoading(false);
         }
+
+        return { hierarchyId: resolvedHierarchyId };
     };
 
     const skipChartEffectOnMountRef = useRef(true);
 
+    const dashboardInitStartedRef = useRef(false);
+
     useEffect(() => {
+        if (dashboardInitStartedRef.current) {
+            return;
+        }
+        dashboardInitStartedRef.current = true;
+
+        let cancelled = false;
+
+        const clearDashboardLoading = () => {
+            setIsStatsLoading(false);
+            setIsTableLoading(false);
+            setIsAlertsLoading(false);
+            setIsChartLoading(false);
+            setIsMeterStatusLoading(false);
+            setIsCircleWiseTableLoading(false);
+        };
+
         const runDashboardInit = async () => {
             const restoreValues = filtersApplied ? filterValues : undefined;
-            await fetchFilterOptions({
-                skipUserLocation: filtersApplied,
-                restoreValues,
-            });
-
-            const hierarchyId = filtersApplied ? lastSelectedId : null;
             const chartRange = selectedChartTimeRange.toLowerCase();
 
-            if (filtersApplied && hierarchyId) {
-                await Promise.all([
-                    retryStatsAPI(hierarchyId),
-                    retryTableAPI(hierarchyId),
-                    retryAlertsAPI(hierarchyId),
-                    retryChartAPI(hierarchyId, chartRange),
-                    retryMeterStatusAPI(hierarchyId),
-                    fetchAllDTRsForMap(hierarchyId),
-                    retryCircleWiseStatsAPI(),
-                ]);
+            const { hierarchyId: filterHierarchyId } = await fetchFilterOptions(
+                {
+                    skipUserLocation: filtersApplied,
+                    restoreValues,
+                },
+            );
+
+            if (cancelled) {
                 return;
             }
 
+            const hierarchyId =
+                filterHierarchyId ??
+                (filtersApplied ? lastSelectedId : null);
+            const hid = hierarchyId || undefined;
+
             await Promise.all([
-                retryStatsAPI(),
-                retryTableAPI(),
-                retryAlertsAPI(),
-                retryChartAPI(undefined, chartRange),
-                retryMeterStatusAPI(),
-                fetchAllDTRsForMap(),
+                retryStatsAPI(hid),
+                retryTableAPI(hid),
+                retryAlertsAPI(hid),
+                retryChartAPI(hid, chartRange),
+                retryMeterStatusAPI(hid),
                 retryCircleWiseStatsAPI(),
             ]);
+
+            if (cancelled) {
+                return;
+            }
+
+            window.setTimeout(() => {
+                if (!cancelled) {
+                    void fetchAllDTRsForMap(hierarchyId, 150);
+                }
+            }, 3000);
         };
 
-        if (!dtrDashboardInitPromise) {
-            dtrDashboardInitPromise = runDashboardInit().finally(() => {
-                dtrDashboardInitPromise = null;
-            });
-        }
+        runDashboardInit().catch(() => {
+            if (!cancelled) {
+                clearDashboardLoading();
+            }
+        });
 
         return () => {
-            const pending = dtrDashboardInitPromise;
-            window.setTimeout(() => {
-                if (dtrDashboardInitPromise === pending) {
-                    dtrDashboardInitPromise = null;
-                }
-            }, 500);
+            cancelled = true;
+            dashboardInitStartedRef.current = false;
         };
     }, []);
 
@@ -1090,31 +1130,52 @@ const DTRDashboard: React.FC = () => {
         }
     }, [dtrMapData]);
 
-    // Initialize Socket.IO connection
+    // Socket deferred — does not block dashboard API load
     useEffect(() => {
-        const socketInstance = io("http://localhost:4250", {
-            transports: ["websocket", "polling"],
-            reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionAttempts: 5,
-        });
+        if (!SOCKET_ENABLED) {
+            return;
+        }
 
-        socketInstance.on("connect", () => {
-            setIsSocketConnected(true);
-        });
+        let active = true;
+        let socketInstance: Socket | null = null;
 
-        socketInstance.on("disconnect", () => {
-            setIsSocketConnected(false);
-        });
+        const timer = window.setTimeout(() => {
+            socketInstance = acquireSocket();
+            if (!active || !socketInstance) {
+                return;
+            }
 
-        // socketInstance.on("connect_error", (error) => {
-        //     // Socket connection error handled silently
-        // });
+            setSocket(socketInstance);
 
-        setSocket(socketInstance);
+            const onConnect = () => {
+                if (active) {
+                    setIsSocketConnected(true);
+                }
+            };
+            const onDisconnect = () => {
+                if (active) {
+                    setIsSocketConnected(false);
+                }
+            };
+
+            socketInstance.on("connect", onConnect);
+            socketInstance.on("disconnect", onDisconnect);
+            if (socketInstance.connected) {
+                setIsSocketConnected(true);
+            }
+        }, 2500);
 
         return () => {
-            socketInstance.disconnect();
+            active = false;
+            window.clearTimeout(timer);
+            if (socketInstance) {
+                socketInstance.off("connect");
+                socketInstance.off("disconnect");
+                socketInstance.off("dtr-alert-update");
+            }
+            setSocket(null);
+            setIsSocketConnected(false);
+            releaseSocket();
         };
     }, []);
 
@@ -1497,9 +1558,9 @@ const DTRDashboard: React.FC = () => {
                 retryAlertsAPI(hierarchyId),
                 retryChartAPI(hierarchyId, chartRange),
                 retryMeterStatusAPI(hierarchyId),
-                fetchAllDTRsForMap(hierarchyId ?? null),
                 retryCircleWiseStatsAPI(),
             ]);
+            void fetchAllDTRsForMap(hierarchyId ?? null);
         } catch (error) {
             // Error applying filters handled silently
         }
@@ -1508,29 +1569,30 @@ const DTRDashboard: React.FC = () => {
     // Handle Reset button click
     const handleResetFilters = async () => {
         resetHierarchyFilters();
-        await fetchFilterOptions();
 
         const chartRange = selectedChartTimeRange.toLowerCase();
         await Promise.all([
+            fetchFilterOptions(),
             retryStatsAPI(),
             retryTableAPI(),
             retryAlertsAPI(),
             retryChartAPI(undefined, chartRange),
             retryMeterStatusAPI(),
-            fetchAllDTRsForMap(),
             retryCircleWiseStatsAPI(),
         ]);
+        void fetchAllDTRsForMap();
     };
 
-    // DTR statistics cards data - Using API data
+    // DTR statistics cards — drillClass enables delegated clicks if federated Card drops onValueClick
     const dtrStatsCards = [
         {
             title: "Total DTRs",
             value: pickStat(dtrStatsData, "totalDtrs", "0"),
             icon: "icons/dtr.svg",
             subtitle1: "Total Transformer Units",
-            onValueClick: () =>
-                navigate(buildDtrTableUrl("total-dtrs", "Total DTRs")),
+            drillType: "total-dtrs",
+            drillTitle: "Total DTRs",
+            drillClass: "dtr-stat-total-dtrs",
             bg: "bg-stat-icon-gradient",
             loading: isStatsLoading,
         },
@@ -1539,10 +1601,9 @@ const DTRDashboard: React.FC = () => {
             value: pickStat(dtrStatsData, "totalLtFeeders", "0"),
             icon: "icons/feeder.svg",
             subtitle1: "Connected to DTRs",
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("total-lt-feeders", "Total LT Feeders"),
-                ),
+            drillType: "total-lt-feeders",
+            drillTitle: "Total LT Feeders",
+            drillClass: "dtr-stat-total-lt-feeders",
             loading: isStatsLoading,
         },
         {
@@ -1550,8 +1611,9 @@ const DTRDashboard: React.FC = () => {
             value: pickStat(dtrStatsData, "totalFuseBlown", "0"),
             icon: "icons/power_failure.svg",
             subtitle1: `${pickStat(dtrStatsData, "fuseBlownPercentage", "0")}% of Total Feeders`,
-            onValueClick: () =>
-                navigate(buildDtrTableUrl("fuse-blown", "Today's Fuse Blown")),
+            drillType: "fuse-blown",
+            drillTitle: "Today's Fuse Blown",
+            drillClass: "dtr-stat-fuse-blown",
             loading: isStatsLoading,
         },
         {
@@ -1564,15 +1626,10 @@ const DTRDashboard: React.FC = () => {
                     return "No DTRs with load > 90%";
                 }
                 return `No of DTRs with load > 90%`;
-                // {dtrStatsData.overloadedPercentage || dtrStatsData?.row1?.overloadedPercentage || 0}
             })(),
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl(
-                        "overloaded-feeders",
-                        "Overloaded Feeders",
-                    ),
-                ),
+            drillType: "overloaded-feeders",
+            drillTitle: "Overloaded Feeders",
+            drillClass: "dtr-stat-overloaded-feeders",
             loading: isStatsLoading,
         },
         {
@@ -1580,21 +1637,9 @@ const DTRDashboard: React.FC = () => {
             value: pickStat(dtrStatsData, "underloadedFeeders", 0),
             icon: "icons/dtr.svg",
             subtitle1: "No of DTRs with load < 30%",
-            // subtitle1: (() => {
-            //   const count = dtrStatsData.underloadedFeeders || dtrStatsData?.row1?.underloadedFeeders || 0;
-            //   if (count === 0) {
-            //     return "No of DTRs with load < 30%";
-            //   }
-            //   return `${dtrStatsData.underloadedPercentage || dtrStatsData?.row1?.underloadedPercentage || 0}% of Total Feeders`;
-            // })(),
-
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl(
-                        "underloaded-feeders",
-                        "Underloaded Feeders",
-                    ),
-                ),
+            drillType: "underloaded-feeders",
+            drillTitle: "Underloaded Feeders",
+            drillClass: "dtr-stat-underloaded-feeders",
             loading: isStatsLoading,
         },
         {
@@ -1602,10 +1647,9 @@ const DTRDashboard: React.FC = () => {
             value: pickStat(dtrStatsData, "ltSideFuseBlown", "0"),
             icon: "icons/power_failure.svg",
             subtitle1: "Incidents Today",
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("lt-fuse-blown", "LT Side Fuse Blown"),
-                ),
+            drillType: "lt-fuse-blown",
+            drillTitle: "LT Side Fuse Blown",
+            drillClass: "dtr-stat-lt-fuse-blown",
             loading: isStatsLoading,
         },
         {
@@ -1613,28 +1657,19 @@ const DTRDashboard: React.FC = () => {
             value: pickStat(dtrStatsData, "unbalancedDtrs", "0"),
             icon: "icons/dtr.svg",
             subtitle1: `${pickStat(dtrStatsData, "unbalancedPercentage", "0")}% of Total DTRs`,
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("unbalanced-dtrs", "Unbalanced DTRs"),
-                ),
+            drillType: "unbalanced-dtrs",
+            drillTitle: "Unbalanced DTRs",
+            drillClass: "dtr-stat-unbalanced-dtrs",
             loading: isStatsLoading,
         },
         {
             title: "Power Failure Feeders",
             value: pickStat(dtrStatsData, "powerFailureFeeders", "0"),
             icon: "icons/power_failure.svg",
-            subtitle1: `
-        LT Feeders`,
-            // {dtrStatsData.powerFailurePercentage ||
-            // dtrStatsData?.row1?.powerFailurePercentage ||
-            // ""}
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl(
-                        "power-failure-feeders",
-                        "Power Failure Feeders",
-                    ),
-                ),
+            subtitle1: "LT Feeders",
+            drillType: "power-failure-feeders",
+            drillTitle: "Power Failure Feeders",
+            drillClass: "dtr-stat-power-failure-feeders",
             loading: isStatsLoading,
         },
         {
@@ -1642,13 +1677,16 @@ const DTRDashboard: React.FC = () => {
             value: pickStat(dtrStatsData, "htSideFuseBlown", "0"),
             icon: "icons/dtr.svg",
             subtitle1: "Incidents Today",
-            onValueClick: () =>
-                navigate(
-                    buildDtrTableUrl("ht-fuse-blown", "HT Side Fuse Blown"),
-                ),
+            drillType: "ht-fuse-blown",
+            drillTitle: "HT Side Fuse Blown",
+            drillClass: "dtr-stat-ht-fuse-blown",
             loading: isStatsLoading,
         },
-    ];
+    ].map((stat) => ({
+        ...stat,
+        onValueClick: () =>
+            navigateToDtrStatDrill(stat.drillType, stat.drillTitle),
+    }));
 
     const monthlyConsumptionCards = [
         {
@@ -1836,6 +1874,33 @@ const DTRDashboard: React.FC = () => {
         },
         [filterOptions.circles, lastSelectedId, filterValues, navigate],
     );
+
+    useLayoutEffect(() => {
+        const drillByClass = new Map(
+            dtrStatsCards.map((stat) => [
+                stat.drillClass,
+                { type: stat.drillType, title: stat.drillTitle },
+            ]),
+        );
+
+        const onStatCardClickCapture = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const card = target.closest(".dtr-stat-card");
+            if (!card) return;
+
+            for (const [drillClass, drill] of drillByClass) {
+                if (!card.classList.contains(drillClass)) continue;
+                e.preventDefault();
+                e.stopPropagation();
+                navigateToDtrStatDrill(drill.type, drill.title);
+                return;
+            }
+        };
+
+        document.addEventListener("click", onStatCardClickCapture, true);
+        return () =>
+            document.removeEventListener("click", onStatCardClickCapture, true);
+    }, [dtrStatsCards, navigateToDtrStatDrill]);
 
     useLayoutEffect(() => {
         const onClickCapture = (e: MouseEvent) => {
@@ -2136,6 +2201,9 @@ const DTRDashboard: React.FC = () => {
                                                 icon: stat.icon,
                                                 subtitle1: stat.subtitle1,
                                                 onValueClick: stat.onValueClick,
+                                                onSubtitle1Click:
+                                                    stat.onValueClick,
+                                                containerClassName: `w-full h-full dtr-stat-card ${stat.drillClass}`,
                                                 bg:
                                                     stat.bg ||
                                                     "bg-stat-icon-gradient",

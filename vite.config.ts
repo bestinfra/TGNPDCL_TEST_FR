@@ -43,11 +43,11 @@ export default defineConfig(({ mode }) => {
             fs: {
                 allow: [".."],
             },
+            // Optional: use /api in dev without VITE_API_BASE_URL (proxy → :4249)
             proxy: {
                 "/api": {
                     target: "http://localhost:4249",
                     changeOrigin: true,
-                    secure: false,
                 },
             },
         },
