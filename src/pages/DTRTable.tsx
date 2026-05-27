@@ -69,6 +69,24 @@ const METER_COMMUNICATION_TABLE_TYPES = new Set([
     "unmapped-meters",
 ]);
 
+const METER_STATUS_TABLE_EXPORT: Record<
+    string,
+    { statusName: string; communicationStatus: string }
+> = {
+    "communicating-meters": {
+        statusName: "Communicating",
+        communicationStatus: "Communicating",
+    },
+    "non-communicating-meters": {
+        statusName: "Non-Communicating",
+        communicationStatus: "Non-Communicating",
+    },
+    "unmapped-meters": {
+        statusName: "Unmapped",
+        communicationStatus: "Unmapped",
+    },
+};
+
 async function fetchMeterStatusCategoryNumbers(
     statusName: string,
     hierarchyId: string | null,
@@ -377,15 +395,16 @@ const DTRTable: React.FC = () => {
     const fetchAllRowsForExport = useCallback(async (): Promise<TableData[]> => {
         const search = searchTerm.trim() || undefined;
 
-        if (normalizedCardType === "unmapped-meters") {
+        const meterStatusExport = METER_STATUS_TABLE_EXPORT[normalizedCardType];
+        if (meterStatusExport) {
             const meterNumbers = await fetchMeterStatusCategoryNumbers(
-                "Unmapped",
+                meterStatusExport.statusName,
                 hierarchyId,
                 circleFilter,
             );
             return mapMeterNumbersToCommunicationTableRows(
                 meterNumbers,
-                "Unmapped",
+                meterStatusExport.communicationStatus,
                 1,
                 Math.max(meterNumbers.length, 1),
                 search,

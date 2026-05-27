@@ -30,6 +30,7 @@ import { resolveDtrDetailRouteParam } from "../utils/dtrStatsTable";
 import { useHierarchyFilters } from "../context/HierarchyFilterContext";
 import {
     computeLastSelectedId,
+    DEFAULT_HIERARCHY_FILTER_VALUES,
     hasActiveHierarchyFilters,
     rebuildCascadeFilterOptions,
     type HierarchyFilterValues,
@@ -281,6 +282,18 @@ const DTRDashboard: React.FC = () => {
         { filterName: "section", levelName: "Section", optionKey: "sections", allLabel: "All Sections" },
         { filterName: "substation", levelName: "Substation", optionKey: "substations", allLabel: "All Substations" },
     ] as const;
+
+    /** Communication Status pie chart: scope only from Circle downward (not discom-only defaults). */
+    const resolveMeterStatusHierarchyId = (
+        values: HierarchyFilterValues,
+    ): string | undefined => {
+        if (values.substation !== "all") return values.substation;
+        if (values.section !== "all") return values.section;
+        if (values.subDivision !== "all") return values.subDivision;
+        if (values.division !== "all") return values.division;
+        if (values.circle !== "all") return values.circle;
+        return undefined;
+    };
 
     const getStoredUser = () => {
         try {
@@ -1080,7 +1093,13 @@ const DTRDashboard: React.FC = () => {
                 retryTableAPI(hid),
                 retryAlertsAPI(hid),
                 retryChartAPI(hid, chartRange),
-                retryMeterStatusAPI(hid),
+                retryMeterStatusAPI(
+                    resolveMeterStatusHierarchyId(
+                        filtersApplied
+                            ? filterValues
+                            : DEFAULT_HIERARCHY_FILTER_VALUES,
+                    ),
+                ),
                 retryCircleWiseStatsAPI(),
             ]);
 
@@ -1557,7 +1576,9 @@ const DTRDashboard: React.FC = () => {
                 retryTableAPI(hierarchyId),
                 retryAlertsAPI(hierarchyId),
                 retryChartAPI(hierarchyId, chartRange),
-                retryMeterStatusAPI(hierarchyId),
+                retryMeterStatusAPI(
+                    resolveMeterStatusHierarchyId(filterValues),
+                ),
                 retryCircleWiseStatsAPI(),
             ]);
             void fetchAllDTRsForMap(hierarchyId ?? null);
@@ -2388,14 +2409,10 @@ const DTRDashboard: React.FC = () => {
                                                         "Unmapped"
                                                     ) {
                                                         navigate(
-
-                                                            "/dtr-table?type=unmapped-meters&title=Unmapped%20Meters",
-
                                                             buildDtrTableUrl(
-                                                                "communicating-meters",
-                                                                "Communicating Meters",
+                                                                "unmapped-meters",
+                                                                "Unmapped Meters",
                                                             ),
-
                                                         );
                                                     }
                                                 },
