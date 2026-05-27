@@ -168,6 +168,53 @@ const formatTimestamp = (timestamp: string | null | undefined): string => {
     }
 };
 
+type MeterStatusSegment = {
+    name?: string;
+    unit?: string;
+    value?: number;
+    meterNumbers?: string[];
+    [key: string]: unknown;
+};
+
+const normalizeMeterStatusSegmentName = (name: string): string =>
+    name.toLowerCase().replace(/[\s_-]/g, "");
+
+const parseMeterStatusPayload = (response: unknown): MeterStatusSegment[] => {
+    if (!response || typeof response !== "object") return [];
+    const payload = (response as { data?: unknown }).data;
+    return Array.isArray(payload) ? (payload as MeterStatusSegment[]) : [];
+};
+
+const findMeterStatusSegment = (
+    segments: MeterStatusSegment[],
+    segmentKey: "communicating" | "noncommunicating" | "unmapped",
+): MeterStatusSegment | undefined =>
+    segments.find((item) => {
+        const normalized = normalizeMeterStatusSegmentName(
+            String(item.name ?? item.unit ?? ""),
+        );
+        return normalized === segmentKey;
+    });
+
+const mergeMeterStatusWithGlobalUnmapped = (
+    scoped: MeterStatusSegment[],
+    global: MeterStatusSegment[],
+): MeterStatusSegment[] => {
+    const merged: MeterStatusSegment[] = [];
+    const communicating = findMeterStatusSegment(scoped, "communicating");
+    const nonCommunicating = findMeterStatusSegment(
+        scoped,
+        "noncommunicating",
+    );
+    const unmapped = findMeterStatusSegment(global, "unmapped");
+
+    if (communicating) merged.push(communicating);
+    if (nonCommunicating) merged.push(nonCommunicating);
+    if (unmapped) merged.push(unmapped);
+
+    return merged;
+};
+
 const DTRDashboard: React.FC = () => {
     const navigate = useNavigate();
     const {
@@ -889,20 +936,47 @@ const DTRDashboard: React.FC = () => {
     const retryMeterStatusAPI = async (lastSelectedId?: string) => {
         setIsMeterStatusLoading(true);
         try {
-            const endpoint = lastSelectedId
-                ? `/dtrs/meter-status?hierarchyId=${lastSelectedId}`
-                : "/dtrs/meter-status";
+            if (lastSelectedId) {
+                const [scopedResponse, globalResponse] = await Promise.all([
+                    apiClient.get(
+                        `/dtrs/meter-status?hierarchyId=${lastSelectedId}`,
+                    ),
+                    apiClient.get("/dtrs/meter-status"),
+                ]);
 
-            const data = await apiClient.get(endpoint);
+                if (!scopedResponse.success) {
+                    throw new Error(
+                        scopedResponse.message ||
+                            "Failed to fetch meter status",
+                    );
+                }
+                if (!globalResponse.success) {
+                    throw new Error(
+                        globalResponse.message ||
+                            "Failed to fetch global meter status",
+                    );
+                }
 
-            if (data.success) {
-                setMeterStatus(data.data);
-                setFailedApis((prev) =>
-                    prev.filter((api) => api.id !== "meterStatus"),
+                const scoped = parseMeterStatusPayload(scopedResponse);
+                const global = parseMeterStatusPayload(globalResponse);
+                setMeterStatus(
+                    mergeMeterStatusWithGlobalUnmapped(scoped, global),
                 );
             } else {
-                throw new Error(data.message || "Failed to fetch meter status");
+                const data = await apiClient.get("/dtrs/meter-status");
+
+                if (data.success) {
+                    setMeterStatus(data.data);
+                } else {
+                    throw new Error(
+                        data.message || "Failed to fetch meter status",
+                    );
+                }
             }
+
+            setFailedApis((prev) =>
+                prev.filter((api) => api.id !== "meterStatus"),
+            );
         } catch (err: any) {
             setMeterStatus(null);
         } finally {
