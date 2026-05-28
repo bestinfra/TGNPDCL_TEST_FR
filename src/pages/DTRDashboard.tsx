@@ -366,6 +366,27 @@ const DTRDashboard: React.FC = () => {
             filterValues,
         });
 
+    /** Pie-chart drill-down — same scope as `retryMeterStatusAPI` / `resolveMeterStatusHierarchyId`. */
+    const buildCommunicationStatusDrillUrl = (type: string, title: string) => {
+        if (type === "unmapped-meters") {
+            return buildDtrTableDrillUrl({
+                type,
+                title,
+                hierarchyId: null,
+                lastSelectedId: null,
+                filterValues: DEFAULT_HIERARCHY_FILTER_VALUES,
+            });
+        }
+        const meterStatusScope = resolveMeterStatusHierarchyId(filterValues);
+        return buildDtrTableDrillUrl({
+            type,
+            title,
+            hierarchyId: meterStatusScope ?? null,
+            lastSelectedId: null,
+            filterValues,
+        });
+    };
+
     const navigateToDtrStatDrill = useCallback(
         (type: string, title: string) => {
             navigate(buildDtrTableUrl(type, title));
@@ -2463,7 +2484,7 @@ const DTRDashboard: React.FC = () => {
                                                         "Communicating"
                                                     ) {
                                                         navigate(
-                                                            buildDtrTableUrl(
+                                                            buildCommunicationStatusDrillUrl(
                                                                 "communicating-meters",
                                                                 "Communicating Meters",
                                                             ),
@@ -2473,7 +2494,7 @@ const DTRDashboard: React.FC = () => {
                                                         "Non-Communicating"
                                                     ) {
                                                         navigate(
-                                                            buildDtrTableUrl(
+                                                            buildCommunicationStatusDrillUrl(
                                                                 "non-communicating-meters",
                                                                 "Non-Communicating Meters",
                                                             ),
@@ -2483,7 +2504,7 @@ const DTRDashboard: React.FC = () => {
                                                         "Unmapped"
                                                     ) {
                                                         navigate(
-                                                            buildDtrTableUrl(
+                                                            buildCommunicationStatusDrillUrl(
                                                                 "unmapped-meters",
                                                                 "Unmapped Meters",
                                                             ),

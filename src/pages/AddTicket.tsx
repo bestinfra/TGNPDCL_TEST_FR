@@ -4,54 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Suspense } from 'react';
 const Page = lazy(() => import('SuperAdmin/Page'));
 import type { FormInputConfig } from '../components/Form/types';
-import BACKEND_URL from '../config';
+import { buildApiUrl } from '../config/api';
 import { getStoredToken, logout } from '../api/subAppAuth';
-
-// Helper function to get the correct API URL
-// Use the full API URL directly: http://localhost:3001/api/tickets
-const getApiUrl = (endpoint: string): string => {
-  // Check if we're in development (localhost) or production
-  const isDevelopment = window.location.hostname === 'localhost' || 
-                       window.location.hostname === '127.0.0.1' ||
-                       import.meta.env.DEV;
-  
-  // Determine base URL - use full URL directly
-  let baseUrl: string;
-  if (isDevelopment) {
-    // Development: Use localhost:3001 directly as specified by user
-    baseUrl = 'http://localhost:3001/api';
-  } else {
-    // Production: Extract domain from BACKEND_URL or use current origin
-    const backendUrl = BACKEND_URL || '';
-    if (backendUrl.startsWith('http')) {
-      try {
-        const urlObj = new URL(backendUrl);
-        // Extract domain and port, always use /api (not /api/v1)
-        baseUrl = `${urlObj.protocol}//${urlObj.host}/api`;
-      } catch (e) {
-        // Fallback: use current origin
-        baseUrl = `${window.location.protocol}//${window.location.host}/api`;
-      }
-    } else {
-      // Relative URL - use current origin
-      baseUrl = `${window.location.origin}/api`;
-    }
-  }
-  
-  // Ensure endpoint doesn't start with /
-  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-  
-  // Build final URL
-  const finalUrl = `${baseUrl}/${normalizedEndpoint}`;
-  
-  console.log('📋 API URL Construction (AddTicket):');
-  console.log('  - Environment:', isDevelopment ? 'Development (localhost)' : 'Production');
-  console.log('  - Base URL:', baseUrl);
-  console.log('  - Endpoint:', normalizedEndpoint);
-  console.log('  - ✅ Final API URL:', finalUrl);
-  
-  return finalUrl;
-};
 
 // Helper function to make authenticated API requests
 const authenticatedFetch = async (
@@ -257,7 +211,7 @@ export default function AddTicket() {
                 setSuccess('');
                 
                 // Call the API to get consumer details
-                const url = getApiUrl(`tickets/consumer/${trimmedNumber}`);
+                const url = buildApiUrl(`tickets/consumer/${trimmedNumber}`);
                 const response = await authenticatedFetch(url, {
                     method: 'GET',
                 });
@@ -389,7 +343,7 @@ export default function AddTicket() {
                 attachments: formData.attachments || null,
             };
 
-            const url = getApiUrl('tickets');
+            const url = buildApiUrl('tickets');
             const response = await authenticatedFetch(url, {
                 method: 'POST',
                 body: JSON.stringify(ticketData),

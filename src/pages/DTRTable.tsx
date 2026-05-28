@@ -396,7 +396,7 @@ const DTRTable: React.FC = () => {
         const search = searchTerm.trim() || undefined;
 
         const meterStatusExport = METER_STATUS_TABLE_EXPORT[normalizedCardType];
-        if (meterStatusExport) {
+        if (meterStatusExport?.statusName === "Unmapped") {
             const meterNumbers = await fetchMeterStatusCategoryNumbers(
                 meterStatusExport.statusName,
                 hierarchyId,
