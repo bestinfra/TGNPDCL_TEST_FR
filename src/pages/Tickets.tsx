@@ -8,7 +8,7 @@ import { useLocationHierarchyFilterBar } from '../hooks/useLocationHierarchyFilt
 interface TableData {
   [key: string]: string | number | boolean | null | undefined;
 }
-import BACKEND_URL from '../config';
+import BACKEND_URL, { buildApiUrl } from '../config';
 import { exportChartData } from '../utils/excelExport';
 import { getStoredToken, logout } from '../api/subAppAuth';
 
@@ -471,53 +471,6 @@ export default function Tickets() {
       'brightness(0) saturate(100%) invert(52%) sepia(60%) saturate(497%) hue-rotate(105deg) brightness(95%) contrast(90%)',
   };
 
-  // Helper function to get the correct API URL
-  // Use the full API URL directly: http://localhost:3001/api/tickets
-  const getApiUrl = (endpoint: string): string => {
-    // Check if we're in development (localhost) or production
-    const isDevelopment = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' ||
-                         import.meta.env.DEV;
-    
-    // Determine base URL - use full URL directly
-    let baseUrl: string;
-    if (isDevelopment) {
-      // Development: Use localhost:3001 directly as specified by user
-      baseUrl = BACKEND_URL || '';
-    } else {
-      // Production: Extract domain from BACKEND_URL or use current origin
-      const backendUrl = BACKEND_URL || '';
-      if (backendUrl.startsWith('http')) {
-        try {
-          const urlObj = new URL(backendUrl);
-          // Extract domain and port, always use /api (not /api/v1)
-          baseUrl = `${urlObj.protocol}//${urlObj.host}/api`;
-        } catch (e) {
-          // Fallback: use current origin
-          baseUrl = `${window.location.protocol}//${window.location.host}/api`;
-        }
-      } else {
-        // Relative URL - use current origin
-        baseUrl = `${window.location.origin}/api`;
-      }
-    }
-    
-    // Ensure endpoint doesn't start with /
-    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-    
-    // Build final URL
-    const finalUrl = `${baseUrl}/${normalizedEndpoint}`;
-    
-    console.log('📋 API URL Construction:');
-    console.log('  - Environment:', isDevelopment ? 'Development (localhost)' : 'Production');
-    console.log('  - BACKEND_URL config:', BACKEND_URL);
-    console.log('  - Base URL:', baseUrl);
-    console.log('  - Endpoint:', normalizedEndpoint);
-    console.log('  - ✅ Final API URL:', finalUrl);
-    
-    return finalUrl;
-  };
-
   const appendLocationIdParam = (params: URLSearchParams) => {
     if (selectedLocationId) {
       params.set('locationId', String(selectedLocationId));
@@ -589,7 +542,7 @@ export default function Tickets() {
       const params = appendLocationIdParam(new URLSearchParams());
       params.set('page', '1');
       params.set('limit', '1000');
-      const url = getApiUrl(`tickets/table?${params.toString()}`);
+      const url = buildApiUrl(`tickets/table?${params.toString()}`);
       console.log('📡 Fetching tickets for stats/trends from:', url);
       const res = await authenticatedFetch(url);
 
@@ -677,7 +630,7 @@ export default function Tickets() {
         params.append('search', searchTerm.trim());
       }
 
-      const url = getApiUrl(`tickets/table?${params.toString()}`);
+      const url = buildApiUrl(`tickets/table?${params.toString()}`);
       console.log('Fetching tickets table from:', url);
       const res = await authenticatedFetch(url);
 
@@ -842,7 +795,7 @@ export default function Tickets() {
         params.append('page', '1');
         params.append('limit', '1000');
 
-        const url = getApiUrl(`tickets/table?${params.toString()}`);
+        const url = buildApiUrl(`tickets/table?${params.toString()}`);
         console.log('Fetching tickets table (initial load) from:', url);
         const res = await authenticatedFetch(url);
 
