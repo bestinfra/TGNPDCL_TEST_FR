@@ -1,9 +1,9 @@
 // API Utilities for TGNPDCL
 // This file provides utilities to connect to the backend API
 
-import BACKEND_URL, { API_BASE_URL } from "../config";
+import BACKEND_URL, { API_BASE_URL, API_REQUEST_TIMEOUT_MS } from "../config";
 
-const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
+const DEFAULT_REQUEST_TIMEOUT_MS = API_REQUEST_TIMEOUT_MS;
 
 const getAuthHeaders = (): Record<string, string> => {
   const token =

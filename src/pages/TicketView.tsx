@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import { Suspense, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 const Page = lazy(() => import('SuperAdmin/Page'));
-import BACKEND_URL from '../config';
+import { buildApiUrl } from '../config/api';
 import { getStoredToken, logout } from '../api/subAppAuth';
 
 // API Response Types (same as Tickets.tsx)
@@ -50,41 +50,6 @@ interface TicketResponse {
     attachments: number;
   };
 }
-
-// Helper function to get the correct API URL (same as Tickets.tsx)
-const getApiUrl = (endpoint: string): string => {
-  const isDevelopment = window.location.hostname === 'localhost' || 
-                       window.location.hostname === '127.0.0.1' ||
-                       import.meta.env.DEV;
-  
-  let baseUrl: string;
-  if (isDevelopment) {
-    baseUrl = BACKEND_URL || '';
-  } else {
-    const backendUrl = BACKEND_URL || '';
-    if (backendUrl.startsWith('http')) {
-      try {
-        const urlObj = new URL(backendUrl);
-        baseUrl = `${urlObj.protocol}//${urlObj.host}/api`;
-      } catch (e) {
-        baseUrl = `${window.location.protocol}//${window.location.host}/api`;
-      }
-    } else {
-      baseUrl = `${window.location.origin}/api`;
-    }
-  }
-  
-  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-  const finalUrl = `${baseUrl}/${normalizedEndpoint}`;
-  
-  console.log('📋 API URL Construction (TicketView):');
-  console.log('  - Environment:', isDevelopment ? 'Development (localhost)' : 'Production');
-  console.log('  - Base URL:', baseUrl);
-  console.log('  - Endpoint:', normalizedEndpoint);
-  console.log('  - ✅ Final API URL:', finalUrl);
-  
-  return finalUrl;
-};
 
 // Helper function to get token (same as Tickets.tsx)
 const getToken = (): string | null => {
@@ -321,7 +286,7 @@ export default function TicketView() {
       setIsTicketLoading(true);
       setFailedApis(prev => prev.filter(api => api.id !== 'ticketData'));
 
-      const url = getApiUrl(`tickets/${ticketId}`);
+      const url = buildApiUrl(`tickets/${ticketId}`);
       console.log('📥 Fetching ticket data from:', url);
 
       const res = await authenticatedFetch(url);
@@ -453,7 +418,7 @@ export default function TicketView() {
       setIsActivityLoading(true);
       setFailedApis(prev => prev.filter(api => api.id !== 'activityLog'));
 
-      const url = getApiUrl(`tickets/${ticketId}/activity-log`);
+      const url = buildApiUrl(`tickets/${ticketId}/activity-log`);
       console.log('📥 Fetching activity log from:', url);
 
       const res = await authenticatedFetch(url);
