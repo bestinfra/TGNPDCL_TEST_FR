@@ -78,3 +78,55 @@
   font-size: 0;
   line-height: 0;
 }
+
+/* Distribution Transformers table — no horizontal scroll, wrap long text */
+.dtr-distribution-table-host {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.dtr-distribution-table-host .overflow-x-auto,
+.dtr-distribution-table-host [class*='overflow-x-auto'] {
+  overflow-x: hidden !important;
+}
+
+.dtr-distribution-table-host table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.dtr-distribution-table-host th,
+.dtr-distribution-table-host td {
+  min-width: 0 !important;
+  padding: var(--space-1, 4px) var(--space-2, 8px) !important;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.dtr-distribution-table-host th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  hyphens: auto;
+}
+
+.dtr-distribution-table-host td[data-label='S.No'],
+.dtr-distribution-table-host th:first-child {
+  width: 2.5rem;
+  white-space: nowrap;
+}
+
+.dtr-distribution-table-host td[data-label='Substation'],
+.dtr-distribution-table-host td[data-label='DTR Name'],
+.dtr-distribution-table-host td[data-label='DTR ID'],
+.dtr-distribution-table-host th[data-label='Substation'],
+.dtr-distribution-table-host th[data-label='DTR Name'],
+.dtr-distribution-table-host th[data-label='DTR ID'] {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
