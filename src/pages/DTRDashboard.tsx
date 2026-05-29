@@ -65,6 +65,39 @@ function pickStat(
     return fallback;
 }
 
+const DTR_TABLE_HIERARCHY_KEYS = [
+    "circle",
+    "division",
+    "subDivision",
+    "section",
+    "substation",
+] as const;
+
+function displayDtrTableCell(value: unknown): string | number {
+    if (value === null || value === undefined || value === "") return "-";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return value as string | number;
+}
+
+function formatDtrCapacity(value: unknown): string {
+    if (value === null || value === undefined || value === "") return "-";
+    const str = String(value).trim();
+    if (str === "" || str === "-") return "-";
+    if (/kva/i.test(str)) return str;
+    const num = Number(str);
+    if (Number.isFinite(num)) return `${num} kVA`;
+    return str;
+}
+
+function normalizeDtrTableRow(row: Record<string, unknown>): TableData {
+    const normalized = { ...(row as TableData) };
+    for (const key of DTR_TABLE_HIERARCHY_KEYS) {
+        normalized[key] = displayDtrTableCell(row[key]);
+    }
+    normalized.capacity = formatDtrCapacity(row.capacity);
+    return normalized;
+}
+
 /** Pass through API row fields; `sNo` is derived for circle rows only (totals row has no S.No). */
 function mapCircleWiseRowToTableData(
     row: Record<string, unknown>,
@@ -286,6 +319,9 @@ const DTRDashboard: React.FC = () => {
     const [isCircleWiseTableLoading, setIsCircleWiseTableLoading] =
         useState(true);
     const [dtrTableSearch, setDtrTableSearch] = useState("");
+    const dtrSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
 
 
 
@@ -759,7 +795,13 @@ const DTRDashboard: React.FC = () => {
             const data = await apiClient.get(`/dtrs?${params.toString()}`);
 
             if (data.success) {
-                setDtrTableData(data.data);
+                const rows = Array.isArray(data.data) ? data.data : [];
+                setDtrTableData(
+                    rows.map((row: Record<string, unknown>, index: number) => ({
+                        ...normalizeDtrTableRow(row),
+                        sNo: (page - 1) * pageSize + index + 1,
+                    })),
+                );
                 const pagination = data.pagination || {};
                 setServerPagination({
                     currentPage: pagination.currentPage || data.page || 1,
@@ -1391,17 +1433,45 @@ const DTRDashboard: React.FC = () => {
             typeof limit === "number" && limit > 0
                 ? limit
                 : serverPagination.limit || 10;
-        retryTableAPI(undefined, page, pageSize, dtrTableSearch);
+        retryTableAPI(
+            lastSelectedId || undefined,
+            page,
+            pageSize,
+            dtrTableSearch,
+        );
     };
 
     const handleRowsPerPageChange = (limit: number) => {
-        retryTableAPI(undefined, 1, limit, dtrTableSearch);
+        retryTableAPI(
+            lastSelectedId || undefined,
+            1,
+            limit,
+            dtrTableSearch,
+        );
     };
 
     const handleSearch = (searchTerm: string) => {
         setDtrTableSearch(searchTerm || "");
-        retryTableAPI(undefined, 1, serverPagination.limit || 10, searchTerm);
+        if (dtrSearchDebounceRef.current) {
+            clearTimeout(dtrSearchDebounceRef.current);
+        }
+        dtrSearchDebounceRef.current = window.setTimeout(() => {
+            retryTableAPI(
+                lastSelectedId || undefined,
+                1,
+                serverPagination.limit || 10,
+                searchTerm,
+            );
+        }, 500);
     };
+
+    useEffect(() => {
+        return () => {
+            if (dtrSearchDebounceRef.current) {
+                clearTimeout(dtrSearchDebounceRef.current);
+            }
+        };
+    }, []);
 
     const handleTimeRangeChange = (range: string) => {
         setSelectedTimeRange(range as "Daily" | "Monthly");
@@ -1945,9 +2015,20 @@ const DTRDashboard: React.FC = () => {
 
     // Dummy data for DTRs table
     const dtrTableColumns = [
-        { key: "sNo", label: "S.No" },
+        {
+            key: "serialNo",
+            label: "S.No",
+            render: (_value: unknown, row: TableData) =>
+                row?.sNo !== undefined && row?.sNo !== null ? row.sNo : "",
+        },
+        { key: "circle", label: "Circle" },
+        { key: "division", label: "Division" },
+        { key: "subDivision", label: "Sub Division" },
+        { key: "section", label: "Section" },
+        { key: "substation", label: "Substation" },
         { key: "dtrId", label: "DTR ID" },
         { key: "dtrName", label: "DTR Name" },
+        { key: "capacity", label: "Capacity" },
         { key: "feedersCount", label: "Feeders Count" },
         { key: "meterlocation", label: "Coordinates" },
         // { key: "city", label: "City" },
@@ -2065,6 +2146,50 @@ const DTRDashboard: React.FC = () => {
         const frameId = requestAnimationFrame(run);
         return () => cancelAnimationFrame(frameId);
     }, [circleWiseTableData, isCircleWiseTableLoading]);
+
+    const DTR_TABLE_SEARCH_PLACEHOLDER = "Search by DTR Name...";
+
+    useLayoutEffect(() => {
+        const root = document.querySelector(".dtr-distribution-table-host");
+        if (!root) return;
+
+        let input: HTMLInputElement | null = null;
+        let inputObserver: MutationObserver | null = null;
+
+        const syncPlaceholder = () => {
+            if (input && input.placeholder !== DTR_TABLE_SEARCH_PLACEHOLDER) {
+                input.placeholder = DTR_TABLE_SEARCH_PLACEHOLDER;
+            }
+        };
+
+        const bindInput = () => {
+            const nextInput = root.querySelector(
+                'input[type="text"]',
+            ) as HTMLInputElement | null;
+            if (!nextInput) return;
+            if (nextInput === input) {
+                syncPlaceholder();
+                return;
+            }
+            inputObserver?.disconnect();
+            input = nextInput;
+            syncPlaceholder();
+            inputObserver = new MutationObserver(syncPlaceholder);
+            inputObserver.observe(input, {
+                attributes: true,
+                attributeFilter: ["placeholder"],
+            });
+        };
+
+        bindInput();
+        const rootObserver = new MutationObserver(bindInput);
+        rootObserver.observe(root, { childList: true, subtree: true });
+
+        return () => {
+            inputObserver?.disconnect();
+            rootObserver.disconnect();
+        };
+    }, [isTableLoading, dtrTableData.length]);
 
     const circleWiseTableColumns = [
         { key: "sNo", label: "S.No" },
@@ -2552,7 +2677,8 @@ const DTRDashboard: React.FC = () => {
                     {
                         layout: {
                             type: "grid" as const,
-                            className: "",
+                            className:
+                                "dtr-distribution-table-host w-full min-w-0 overflow-x-hidden gap-4",
                             columns: 2,
                         },
                         components: [
@@ -2564,10 +2690,12 @@ const DTRDashboard: React.FC = () => {
                                     showHeader: true,
                                     headerTitle: "Distribution Transformers",
                                     headerClassName: "h-18",
-                                    searchable: false,
+                                    showSearch: true,
+                                    searchPlaceholder: "Search by DTR Name...",
                                     sortable: true,
+                                    enableHorizontalScroll: false,
+                                    className: "w-full min-w-0",
                                     initialRowsPerPage: 10,
-                                    // selectable: true,
                                     showActions: true,
                                     text: "DTR Management Table",
                                     onRowClick: (row: TableData) => {
