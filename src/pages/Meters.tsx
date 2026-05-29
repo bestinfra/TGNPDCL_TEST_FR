@@ -5,6 +5,8 @@ import BACKEND_URL from "../config";
 import {
     fetchAssetBulkUploadTemplateMeta,
     postAssetsBulkUpload,
+    formatBulkUploadResultMessage,
+    isBulkUploadSuccessful,
 } from "../api/apiUtils";
 import { downloadConsumerBulkUploadTemplateXlsx } from "../utils/excelExport";
 import { fetchAllPaginatedRows } from "../utils/exportPagedData";
@@ -973,55 +975,11 @@ export default function Meters() {
                 setBulkFlowLoading(true);
                 console.log("Upload Request:", formData);
 
-                const { parsed, raw } = await postAssetsBulkUpload(uploadFile);
-                const response =
-                    raw && typeof raw === "object"
-                        ? (raw as Record<string, unknown>)
-                        : {};
-                console.log("UPLOAD RESPONSE:", response);
-                console.log("UPLOAD RESPONSE DATA:", response.data);
-                console.log("[BulkUpload] Parsed summary:", {
-                    ok: parsed.ok,
-                    created: parsed.created,
-                    failed: parsed.failed,
-                });
+                const { parsed } = await postAssetsBulkUpload(uploadFile);
+                console.log("[BulkUpload] Parsed summary:", parsed.summary);
 
-                const hasAnyOutcome =
-                    parsed.created > 0 ||
-                    parsed.failed > 0 ||
-                    parsed.failedRows.length > 0;
-
-                /** HTTP layer already OK; backend may use success:false for partial failures. */
-                const showSuccessUi =
-                    parsed.ok || hasAnyOutcome;
-
-                if (showSuccessUi) {
-                    const partialNote =
-                        !parsed.ok && hasAnyOutcome
-                            ? "Note: response indicated incomplete success.\n\n"
-                            : "";
-                    const failedCount = Math.max(
-                        parsed.failed,
-                        parsed.failedRows.length,
-                    );
-                    const firstErr = parsed.failedRows[0]?.error ?? "";
-                    const isDuplicateMeterMsg =
-                        /meter\s+already\s+exist/i.test(firstErr);
-                    const duplicateMessage =
-                        failedCount > 1
-                            ? "Meters already exist"
-                            : "Meter already exists";
-                    const failureDetailText =
-                        parsed.failed > 0 && parsed.failedRows.length
-                            ? isDuplicateMeterMsg
-                                ? duplicateMessage
-                                : firstErr
-                            : "";
-                    const summary =
-                        partialNote +
-                        `${parsed.message}\nCreated: ${parsed.created}\nFailed: ${parsed.failed}` +
-                        (failureDetailText ? `\n\n${failureDetailText}` : "");
-                    window.alert(summary);
+                if (isBulkUploadSuccessful(parsed.summary)) {
+                    window.alert(formatBulkUploadResultMessage(parsed));
                     setIsBulkUploadModalOpen(false);
                     await fetchMeterData(
                         currentPage,
@@ -1032,6 +990,7 @@ export default function Meters() {
                     );
                     await fetchAssets(lastSelectedId ?? undefined);
                 } else {
+                    window.alert(formatBulkUploadResultMessage(parsed));
                     throw new Error(parsed.message || "Upload failed");
                 }
             } catch (error) {

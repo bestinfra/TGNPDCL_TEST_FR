@@ -209,6 +209,20 @@ export const api = {
 
 // --- Estate / Meter Management: bulk upload (deep response parsing) ---
 
+export type BulkUploadSummaryError = {
+    row: number;
+    reason: string;
+};
+
+export interface BulkUploadSummary {
+    totalRows: number;
+    created: number;
+    updated: number;
+    failed: number;
+    processed: number;
+    errors?: BulkUploadSummaryError[];
+}
+
 export type BulkUploadFailedRow = {
     row: number | string;
     error: string;
@@ -217,10 +231,178 @@ export type BulkUploadFailedRow = {
 export type BulkUploadConsumersParsed = {
     ok: boolean;
     message: string;
+    summary: BulkUploadSummary;
+    /** @deprecated Prefer summary.created */
     created: number;
+    /** @deprecated Prefer summary.updated */
+    updated: number;
+    /** @deprecated Prefer summary.failed */
     failed: number;
     failedRows: BulkUploadFailedRow[];
 };
+
+const PRISMA_STACK_PATTERN =
+    /\n?(Invalid `[^`]+` invocation[\s\S]*|PrismaClient[\s\S]*|→[\s\S]*at\s+[\s\S]*)/;
+
+/** Strip Prisma / stack-trace noise from API error strings. */
+export function cleanBulkUploadReason(raw: unknown): string {
+    let text = String(raw ?? "").trim();
+    text = text.replace(PRISMA_STACK_PATTERN, "").trim();
+    const firstLine = text.split("\n")[0]?.trim() ?? "";
+    return firstLine || "Unknown error";
+}
+
+function summaryErrorsToFailedRows(
+    errors: BulkUploadSummaryError[] | undefined,
+): BulkUploadFailedRow[] {
+    if (!errors?.length) return [];
+    return errors.map((e) => ({
+        row: e.row,
+        error: e.reason,
+    }));
+}
+
+function extractStructuredSummary(raw: unknown): BulkUploadSummary | null {
+    if (!raw || typeof raw !== "object") return null;
+
+    const root = raw as Record<string, unknown>;
+    const candidates: unknown[] = [root.summary];
+    if (isPlainObject(root.data)) {
+        candidates.push((root.data as Record<string, unknown>).summary);
+    }
+
+    for (const candidate of candidates) {
+        if (!isPlainObject(candidate)) continue;
+        const s = candidate as Record<string, unknown>;
+        const hasSummaryShape =
+            "created" in s ||
+            "updated" in s ||
+            "failed" in s ||
+            "totalRows" in s ||
+            "processed" in s;
+        if (!hasSummaryShape) continue;
+
+        const created = bulkUploadNum(s.created);
+        const updated = bulkUploadNum(s.updated);
+        const failed = bulkUploadNum(s.failed);
+        const totalRows = bulkUploadNum(s.totalRows);
+        const processed =
+            bulkUploadNum(s.processed) || created + updated;
+
+        let errors: BulkUploadSummaryError[] | undefined;
+        const errorsRaw = s.errors;
+        if (Array.isArray(errorsRaw) && errorsRaw.length > 0) {
+            errors = errorsRaw
+                .map((item) => {
+                    if (!item || typeof item !== "object") return null;
+                    const row = item as Record<string, unknown>;
+                    return {
+                        row: bulkUploadNum(
+                            row.row ??
+                                row.rowNumber ??
+                                row.line ??
+                                row.lineNumber ??
+                                row.index,
+                        ),
+                        reason: cleanBulkUploadReason(
+                            row.reason ??
+                                row.error ??
+                                row.message ??
+                                row.description,
+                        ),
+                    };
+                })
+                .filter(
+                    (e): e is BulkUploadSummaryError =>
+                        e !== null && e.row > 0,
+                );
+            if (errors.length === 0) errors = undefined;
+        }
+
+        return {
+            totalRows,
+            created,
+            updated,
+            failed,
+            processed,
+            errors,
+        };
+    }
+
+    return null;
+}
+
+export function isBulkUploadSuccessful(summary: BulkUploadSummary): boolean {
+    return summary.created > 0 || summary.updated > 0;
+}
+
+export function isBulkUploadFailed(summary: BulkUploadSummary): boolean {
+    return summary.created === 0 && summary.updated === 0;
+}
+
+const BULK_UPLOAD_ERROR_PREVIEW_LIMIT = 5;
+
+function formatBulkUploadErrorDetails(summary: BulkUploadSummary): string {
+    const errors = summary.errors ?? [];
+    if (errors.length === 0) return "";
+
+    const preview = errors.slice(0, BULK_UPLOAD_ERROR_PREVIEW_LIMIT);
+    const lines = preview.map(
+        (e) => `Row ${e.row} → ${e.reason}`,
+    );
+    const remaining = errors.length - preview.length;
+    if (remaining > 0) {
+        lines.push(`… and ${remaining} more failed row(s)`);
+    }
+    return ["Failed Rows:", "", ...lines].join("\n");
+}
+
+export function formatBulkUploadSuccessMessage(
+    summary: BulkUploadSummary,
+): string {
+    const lines = [
+        "Bulk Upload Completed Successfully",
+        "",
+        `Total Rows: ${summary.totalRows}`,
+        `Created: ${summary.created}`,
+        `Updated: ${summary.updated}`,
+        `Failed: ${summary.failed}`,
+        `Processed: ${summary.processed} / ${summary.totalRows}`,
+    ];
+    const errorDetails = formatBulkUploadErrorDetails(summary);
+    if (errorDetails) {
+        lines.push("", errorDetails);
+    }
+    return lines.join("\n");
+}
+
+export function formatBulkUploadFailureMessage(
+    summary: BulkUploadSummary,
+): string {
+    const lines = [
+        "Upload Failed",
+        "",
+        `Total Rows: ${summary.totalRows}`,
+        `Created: ${summary.created}`,
+        `Updated: ${summary.updated}`,
+        `Failed: ${summary.failed}`,
+        `Processed: ${summary.processed} / ${summary.totalRows}`,
+    ];
+    const errorDetails = formatBulkUploadErrorDetails(summary);
+    if (errorDetails) {
+        lines.push("", errorDetails);
+    }
+    return lines.join("\n");
+}
+
+export function formatBulkUploadResultMessage(
+    parsed: BulkUploadConsumersParsed,
+): string {
+    if (isBulkUploadSuccessful(parsed.summary)) {
+        return formatBulkUploadSuccessMessage(parsed.summary);
+    }
+    return formatBulkUploadFailureMessage(parsed.summary);
+}
 
 function bulkUploadNum(v: unknown): number {
     if (typeof v === "number" && !Number.isNaN(v)) return v;
@@ -324,11 +506,37 @@ function normalizeBulkUploadFailedRows(rows: unknown[]): BulkUploadFailedRow[] {
             "Unknown error";
         out.push({
             row: rowNum as number | string,
-            error: String(err),
+            error: cleanBulkUploadReason(err),
         });
     }
     return out;
 }
+
+const BULK_UPLOAD_UPDATED_NUM_KEYS = [
+    "updated",
+    "updatedCount",
+    "totalUpdated",
+    "updated_count",
+    "rowsUpdated",
+    "recordsUpdated",
+    "modified",
+    "modifiedCount",
+];
+
+const BULK_UPLOAD_TOTAL_ROWS_KEYS = [
+    "totalRows",
+    "total_rows",
+    "totalRecords",
+    "rowCount",
+    "total",
+];
+
+const BULK_UPLOAD_PROCESSED_NUM_KEYS = [
+    "processed",
+    "processedCount",
+    "totalProcessed",
+    "processed_count",
+];
 
 const BULK_UPLOAD_CREATED_NUM_KEYS = [
     "created",
@@ -473,15 +681,41 @@ export function parseBulkUploadConsumersResponse(
     raw: unknown,
     options?: { httpOk?: boolean },
 ): BulkUploadConsumersParsed {
+    const emptySummary: BulkUploadSummary = {
+        totalRows: 0,
+        created: 0,
+        updated: 0,
+        failed: 0,
+        processed: 0,
+    };
     const empty: BulkUploadConsumersParsed = {
         ok: false,
         message: "Upload failed",
+        summary: emptySummary,
         created: 0,
+        updated: 0,
         failed: 0,
         failedRows: [],
     };
 
     if (!raw || typeof raw !== "object") return empty;
+
+    const structured = extractStructuredSummary(raw);
+    if (structured) {
+        const failedRows = summaryErrorsToFailedRows(structured.errors);
+        const ok = isBulkUploadSuccessful(structured);
+        return {
+            ok,
+            message: ok
+                ? "Bulk Upload Completed Successfully"
+                : "Upload Failed",
+            summary: structured,
+            created: structured.created,
+            updated: structured.updated,
+            failed: structured.failed,
+            failedRows,
+        };
+    }
 
     const root = raw as Record<string, unknown>;
     const layers = collectBulkUploadObjectLayers(root);
@@ -575,6 +809,16 @@ export function parseBulkUploadConsumersResponse(
         if (h.created > 0) created = h.created;
     }
 
+    let updated = pickFirstNumericFromLayers(layers, BULK_UPLOAD_UPDATED_NUM_KEYS);
+    if (updated === 0) {
+        updated = pickFirstNumericCaseInsensitive(layers, [
+            "updated",
+            "updatedCount",
+            "totalUpdated",
+            "modified",
+        ]);
+    }
+
     let failed = failedRows.length;
     if (failed === 0) {
         for (const layer of layers) {
@@ -650,13 +894,44 @@ export function parseBulkUploadConsumersResponse(
 
     let outMessage = messageRaw;
     if (ok && outMessage === empty.message) {
-        outMessage = "Upload completed";
+        outMessage = isBulkUploadSuccessful({
+            totalRows: 0,
+            created,
+            updated,
+            failed,
+            processed: created + updated,
+        })
+            ? "Bulk Upload Completed Successfully"
+            : "Upload completed";
     }
 
-    return {
-        ok,
-        message: outMessage,
+    const totalRows =
+        pickFirstNumericFromLayers(layers, BULK_UPLOAD_TOTAL_ROWS_KEYS) ||
+        created + updated + failed;
+    const processed =
+        pickFirstNumericFromLayers(layers, BULK_UPLOAD_PROCESSED_NUM_KEYS) ||
+        created + updated;
+
+    const summaryErrors: BulkUploadSummaryError[] = failedRows.map((row) => ({
+        row: bulkUploadNum(row.row),
+        reason: row.error,
+    }));
+
+    const summary: BulkUploadSummary = {
+        totalRows,
         created,
+        updated,
+        failed,
+        processed,
+        errors: summaryErrors.length > 0 ? summaryErrors : undefined,
+    };
+
+    return {
+        ok: isBulkUploadSuccessful(summary) ? true : ok,
+        message: outMessage,
+        summary,
+        created,
+        updated,
         failed,
         failedRows,
     };
