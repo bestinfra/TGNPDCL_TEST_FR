@@ -85,6 +85,19 @@ function hasDailyConsumptionPermission(perms: string[]): boolean {
     );
 }
 
+function hasFieldOfficerPermission(perms: string[]): boolean {
+    const normalizePermKey = (p: string) => p.toLowerCase().replace(/_/g, "-");
+    return perms.some((p) => {
+        const v = normalizePermKey(p);
+        return (
+            v === "field-officer" ||
+            v === "field-officers" ||
+            p === "field_officer" ||
+            p === "field_officers"
+        );
+    });
+}
+
 /**
  * Build sidebar items from JWT permissions (aligned with SuperAdmin/Sidebar
  * buildGroupedMenusFromPermissions) plus Daily Consumption when permitted.
@@ -176,6 +189,20 @@ function buildSidebarMenusFromPermissions(perms: string[]): SidebarMenuItem[] {
             title: "Estate Management",
             icon: "icons/Asset_managment.svg",
             link: "/asset-management",
+        });
+    }
+
+    if (
+        hasFieldOfficerPermission(perms) ||
+        perms.includes("dtr_dashboard") ||
+        perms.includes("asset_management") ||
+        perms.includes("users") ||
+        perms.includes("user_management_default")
+    ) {
+        items.push({
+            title: "Field Officer",
+            icon: "icons/user-profile.svg",
+            link: "/field-officers",
         });
     }
 

@@ -1,0 +1,11 @@
+/* Add Field Officer modal — width & height (panel only, no position overrides) */
+.field-officer-add-modal-panel {
+    width: min(56rem, 92vw) !important;
+    max-width: min(56rem, 92vw) !important;
+    min-height: min(22rem, 75vh) !important;
+}
+
+.field-officer-add-modal-panel form {
+    min-height: 18rem;
+    padding: 1.75rem 2rem 2rem;
+}

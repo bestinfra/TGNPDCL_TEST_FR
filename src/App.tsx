@@ -34,6 +34,7 @@ import Instantaneous from "./pages/Instantaneous";
 import MDReport from "./pages/MDReport";
 import LSData from "./pages/LSData";
 import LSDataIndividual from "./pages/LSDataIndividual";
+import FieldOfficers from "./pages/FieldOfficers";
 
 const App: React.FC = () => {
     const basename = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, "") || "";
@@ -71,6 +72,10 @@ const App: React.FC = () => {
                                                     element={
                                                         <AssetManagement />
                                                     }
+                                                />
+                                                <Route
+                                                    path="/field-officers"
+                                                    element={<FieldOfficers />}
                                                 />
                                                 <Route
                                                     path="/daily-reports"

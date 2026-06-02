@@ -1029,4 +1029,305 @@ export async function postAssetsBulkUpload(
     return { parsed, raw };
 }
 
+/** Field officer record from GET /field-officers */
+export type FieldOfficerApiRecord = {
+    id: number;
+    dtr_id: number;
+    officer_name: string;
+    phone: string;
+    employee_code?: string | null;
+    designation?: string | null;
+    is_active: boolean;
+    dtrs?: { id: number; dtrNumber: string } | null;
+};
+
+function normalizeFieldOfficerRecord(
+    raw: Record<string, unknown>,
+): FieldOfficerApiRecord | null {
+    const id = Number(raw.id);
+    const officer_name = String(
+        raw.officer_name ?? raw.officerName ?? "",
+    ).trim();
+    const phone = String(raw.phone ?? "").trim();
+    if (!Number.isFinite(id) || !officer_name) return null;
+
+    const dtr_id = Number(raw.dtr_id ?? raw.dtrId);
+    const dtrsRaw = raw.dtrs ?? raw.dtr;
+    let dtrs: FieldOfficerApiRecord["dtrs"] = null;
+    if (dtrsRaw && typeof dtrsRaw === "object") {
+        const d = dtrsRaw as Record<string, unknown>;
+        dtrs = {
+            id: Number(d.id),
+            dtrNumber: String(d.dtrNumber ?? d.dtr_number ?? ""),
+        };
+    }
+
+    const isActiveRaw = raw.is_active ?? raw.isActive;
+    const is_active =
+        isActiveRaw === false || isActiveRaw === "false" ? false : true;
+
+    return {
+        id,
+        dtr_id: Number.isFinite(dtr_id) ? dtr_id : 0,
+        officer_name,
+        phone,
+        employee_code:
+            (raw.employee_code ?? raw.employeeCode ?? null) as string | null,
+        designation: (raw.designation ?? null) as string | null,
+        is_active,
+        dtrs,
+    };
+}
+
+/** Parse GET /field-officers body (supports nested `data` shapes). */
+export function parseFieldOfficersListResponse(
+    raw: unknown,
+): FieldOfficerApiRecord[] {
+    if (!raw || typeof raw !== "object") return [];
+    const root = raw as Record<string, unknown>;
+
+    let list: unknown[] | null = null;
+    if (Array.isArray(root.data)) {
+        list = root.data;
+    } else if (root.data && typeof root.data === "object") {
+        const inner = root.data as Record<string, unknown>;
+        if (Array.isArray(inner.data)) list = inner.data;
+        else if (Array.isArray(inner.officers)) list = inner.officers;
+    } else if (Array.isArray(root.officers)) {
+        list = root.officers;
+    }
+
+    if (!list) return [];
+
+    return list
+        .map((item) =>
+            item && typeof item === "object"
+                ? normalizeFieldOfficerRecord(item as Record<string, unknown>)
+                : null,
+        )
+        .filter((x): x is FieldOfficerApiRecord => x != null);
+}
+
+export type FieldOfficersPagination = {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+};
+
+function parseFieldOfficersPagination(
+    raw: unknown,
+): FieldOfficersPagination | null {
+    if (!raw || typeof raw !== "object") return null;
+    const p = raw as Record<string, unknown>;
+    const currentPage = Number(p.currentPage);
+    const totalCount = Number(p.totalCount);
+    const pageSize = Number(p.pageSize ?? p.limit);
+    if (!Number.isFinite(currentPage) || !Number.isFinite(totalCount)) {
+        return null;
+    }
+    const totalPages = Math.max(
+        1,
+        Number(p.totalPages) ||
+            Math.ceil(totalCount / (pageSize || 20)),
+    );
+    return {
+        currentPage,
+        totalPages,
+        totalCount,
+        pageSize: pageSize || 20,
+        hasNextPage: Boolean(p.hasNextPage ?? currentPage < totalPages),
+        hasPrevPage: Boolean(p.hasPrevPage ?? currentPage > 1),
+    };
+}
+
+/** GET /field-officers — paginated list (page, pageSize, search). */
+export async function fetchFieldOfficersPage(
+    page = 1,
+    pageSize = 20,
+    search = "",
+): Promise<{
+    officers: FieldOfficerApiRecord[];
+    pagination: FieldOfficersPagination;
+    message: string;
+}> {
+    const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+    });
+    const q = search.trim();
+    if (q) params.append("search", q);
+
+    const res = await fetchWithTimeout(
+        `${BACKEND_URL}/field-officers?${params.toString()}`,
+        {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders(),
+            },
+        },
+    );
+
+    const raw = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+        const msg =
+            raw &&
+            typeof raw === "object" &&
+            typeof (raw as { message?: string }).message === "string"
+                ? (raw as { message: string }).message
+                : `HTTP ${res.status}`;
+        throw new Error(msg);
+    }
+
+    if (
+        raw &&
+        typeof raw === "object" &&
+        (raw as { success?: boolean }).success === false
+    ) {
+        throw new Error(
+            (raw as { message?: string }).message ||
+                "Failed to fetch field officers",
+        );
+    }
+
+    const officers = parseFieldOfficersListResponse(raw);
+    const pagination =
+        parseFieldOfficersPagination(
+            (raw as { pagination?: unknown })?.pagination,
+        ) ?? {
+            currentPage: page,
+            totalPages: 1,
+            totalCount: officers.length,
+            pageSize,
+            hasNextPage: false,
+            hasPrevPage: page > 1,
+        };
+
+    const message =
+        raw &&
+        typeof raw === "object" &&
+        typeof (raw as { message?: string }).message === "string"
+            ? (raw as { message: string }).message
+            : "Field officers retrieved successfully";
+
+    return { officers, pagination, message };
+}
+
+export type DtrNameOption = {
+    id: number;
+    dtrName: string;
+};
+
+/** GET /dtrs/names — DTR names (serialNumber) with ids; optional search filter. */
+export async function fetchDtrNamesList(
+    search?: string,
+): Promise<DtrNameOption[]> {
+    const params = new URLSearchParams();
+    const term = typeof search === "string" ? search.trim() : "";
+    if (term) {
+        params.set("search", term);
+    }
+    const query = params.toString();
+    const res = await fetchWithTimeout(
+        `${BACKEND_URL}/dtrs/names${query ? `?${query}` : ""}`,
+        {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders(),
+            },
+        },
+    );
+
+    const raw = await res.json().catch(() => ({}));
+
+    if (!res.ok || (raw as { success?: boolean }).success === false) {
+        const msg =
+            raw &&
+            typeof raw === "object" &&
+            typeof (raw as { message?: string }).message === "string"
+                ? (raw as { message: string }).message
+                : `HTTP ${res.status}`;
+        throw new Error(msg);
+    }
+
+    const data = (raw as { data?: unknown }).data;
+    if (!Array.isArray(data)) return [];
+
+    return data
+        .map((row) => {
+            if (!row || typeof row !== "object") return null;
+            const r = row as { id?: unknown; dtrName?: unknown };
+            const id = Number(r.id);
+            const dtrName = String(r.dtrName ?? "").trim();
+            if (!Number.isFinite(id) || id <= 0 || !dtrName) return null;
+            return { id, dtrName };
+        })
+        .filter((row): row is DtrNameOption => row !== null)
+        .sort((a, b) =>
+            a.dtrName.localeCompare(b.dtrName, undefined, { sensitivity: "base" }),
+        );
+}
+
+export type CreateFieldOfficerPayload = {
+    dtr_id: number;
+    officer_name: string;
+    phone: string;
+    employee_code?: string;
+    designation?: string;
+};
+
+export async function createFieldOfficer(
+    payload: CreateFieldOfficerPayload,
+): Promise<FieldOfficerApiRecord> {
+    const res = await fetchWithTimeout(`${BACKEND_URL}/field-officers`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const raw = await res.json().catch(() => ({}));
+
+    if (!res.ok || (raw as { success?: boolean }).success === false) {
+        const msg =
+            raw &&
+            typeof raw === "object" &&
+            typeof (raw as { message?: string }).message === "string"
+                ? (raw as { message: string }).message
+                : `HTTP ${res.status}`;
+        throw new Error(msg);
+    }
+
+    const created = (raw as { data?: unknown }).data;
+    const list = parseFieldOfficersListResponse({
+        success: true,
+        data: created ? [created] : [],
+    });
+    if (list[0]) return list[0];
+
+    throw new Error("Field officer created but response was invalid");
+}
+
+/** @deprecated Use fetchFieldOfficersPage */
+export async function fetchAllFieldOfficers(): Promise<{
+    officers: FieldOfficerApiRecord[];
+    message: string;
+}> {
+    const { officers, message, pagination } = await fetchFieldOfficersPage(
+        1,
+        100,
+    );
+    return { officers, message: `${message} (${pagination.totalCount} total)` };
+}
+
 export default apiClient;
