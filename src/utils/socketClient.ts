@@ -8,8 +8,38 @@ export type SocketIoConnectionConfig = {
     path: string;
 };
 
+/** Local dev: Socket.IO runs on SOCKET_PORT (default 4250), not the REST port. */
+function resolveLocalDevSocketConfig(): SocketIoConnectionConfig | null {
+    const apiBase = import.meta.env.VITE_API_BASE_URL?.trim();
+    if (!apiBase || !/localhost|127\.0\.0\.1/i.test(apiBase)) {
+        return null;
+    }
+
+    try {
+        const apiUrl = new URL(apiBase);
+        const socketPort =
+            import.meta.env.VITE_SOCKET_PORT?.trim() || "4250";
+        const socketPath =
+            import.meta.env.VITE_SOCKET_IO_PATH?.trim() || "/tgnpdcl/api";
+
+        return {
+            url: `${apiUrl.protocol}//${apiUrl.hostname}:${socketPort}`,
+            path: socketPath.startsWith("/")
+                ? socketPath
+                : `/${socketPath}`,
+        };
+    } catch {
+        return null;
+    }
+}
+
 /** Parse VITE_SOCKET_URL for socket.io-client (REST …/api URLs map to …/socket.io). */
 export function parseSocketIoConfig(raw?: string): SocketIoConnectionConfig {
+    const local = resolveLocalDevSocketConfig();
+    if (local) {
+        return local;
+    }
+
     const value = (raw?.trim() || LIVE_SOCKET_WS_URL).trim();
 
     const explicitPath =
