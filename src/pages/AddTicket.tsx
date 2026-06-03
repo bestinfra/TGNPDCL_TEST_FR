@@ -362,7 +362,7 @@ export default function AddTicket() {
                 setSuccess('Ticket created successfully!');
                 // Navigate back after successful creation
                 setTimeout(() => {
-                    navigate('/tickets');
+                    navigate('/tickets', { replace: true });
                 }, 1500);
             } else {
                 setError(result.message || 'Failed to create ticket');
@@ -376,7 +376,7 @@ export default function AddTicket() {
     };
 
     const handleFormCancel = () => {
-        navigate('/tickets');
+        navigate('/tickets', { replace: true });
     };
 
     return (
@@ -396,7 +396,8 @@ export default function AddTicket() {
                                             name: 'PageHeader',
                                             props: {
                                                 title: 'Create New Ticket',
-                                                onBackClick: () => navigate('/tickets'),
+                                                onBackClick: () => navigate('/tickets', { replace: true }),
+                                                backButtonText: 'Back to Tickets',
                                                 showMenu: false,
                                                 showDropdown: false,
                                             },

@@ -42,6 +42,8 @@ export interface FormInputConfig {
   onClick?: () => void;
   searchable?: boolean;
   isMultiSelect?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
   validation?: {
     pattern?: RegExp;
     minLength?: number;

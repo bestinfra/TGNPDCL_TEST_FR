@@ -24,6 +24,7 @@ import AddTicket from "@/pages/AddTicket";
 import DataLogger from "@/pages/DataLogger";
 // import MetersList from '@/pages/MetersList';
 import MeterDetails from "@/pages/MeterDetails";
+import EditMeter from "@/pages/EditMeter";
 import Feeders from "@/pages/Feeders";
 import DTRDetailPage from "./pages/DTRDetailPage";
 import DTRTable from "./pages/DTRTable";
@@ -140,6 +141,10 @@ const App: React.FC = () => {
                                                 <Route
                                                     path="/meters"
                                                     element={<Meters />}
+                                                />
+                                                <Route
+                                                    path="/meters/edit/:meterNumber"
+                                                    element={<EditMeter />}
                                                 />
                                                 <Route
                                                     path="/meter-details/:meterId"
