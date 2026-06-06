@@ -228,11 +228,32 @@ export default function Meters() {
         }
     };
 
+    const handleEditMeter = (row: Record<string, unknown>) => {
+        const meterNumber = String(row.meterNo ?? row.meterNumber ?? "").trim();
+        if (!meterNumber || meterNumber === "N/A") {
+            window.alert("This row cannot be edited because it has no meter number.");
+            return;
+        }
+        navigate(`/meters/edit/${encodeURIComponent(meterNumber)}`);
+    };
+
+    const meterTableEditActions = [
+        {
+            id: "edit",
+            label: "Edit",
+            icon: "icons/user-pen.svg",
+            onClick: handleEditMeter,
+        },
+    ];
+
     // Handle asset actions
     const handleAssetAction = (actionId: string, row: any) => {
         switch (actionId) {
             case "view":
                 handleViewFeeder(row);
+                break;
+            case "edit":
+                handleEditMeter(row);
                 break;
             default:
         }
@@ -1567,7 +1588,13 @@ export default function Meters() {
                                                                   : undefined,
                                                           showActions: true,
                                                           actions:
-                                                              assetManagementActions,
+                                                              meterTableEditActions,
+                                                          actionsColumnLabel:
+                                                              "Edit",
+                                                          onEdit: (row: any) =>
+                                                              handleEditMeter(
+                                                                  row,
+                                                              ),
                                                           onRowClick: (
                                                               row: any,
                                                           ) =>
@@ -1580,9 +1607,9 @@ export default function Meters() {
                                                           ) => {
                                                               if (
                                                                   actionId ===
-                                                                  "view"
+                                                                  "edit"
                                                               ) {
-                                                                  handleViewFeeder(
+                                                                  handleEditMeter(
                                                                       row,
                                                                   );
                                                               } else {

@@ -740,6 +740,7 @@ function AppLayout({ children, apiBaseUrl }: AppLayoutProps) {
         "/add-ticket": "Add Ticket",
         "/data-logger": "Data Logger",
         "/meters": "Meter Management",
+        "/meters/edit/:meterNumber": "Edit Meter",
         "/meter-details/:meterId": "Meter Details",
         "/": "DTR Dashboard",
     };
