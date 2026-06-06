@@ -437,7 +437,7 @@ export default function Tickets() {
   // State for API data with smart fallbacks
   const [ticketStats, setTicketStats] = useState(dummyTicketStats);
   const [ticketTrends, setTicketTrends] = useState(dummyTicketTrends);
-  const [tickets, setTickets] = useState(dummyTickets);
+  const [tickets, setTickets] = useState<TableData[]>([]);
   const [_allTickets, setAllTickets] = useState<TicketResponse[]>([]); // Store all tickets for stats/trends
 
   // Loading states
@@ -607,10 +607,8 @@ export default function Tickets() {
     setIsStatsLoading(true);
     setIsTrendsLoading(true);
     await fetchAllTicketsForStats();
-    setTimeout(() => {
-      setIsStatsLoading(false);
-      setIsTrendsLoading(false);
-    }, 1000);
+    setIsStatsLoading(false);
+    setIsTrendsLoading(false);
   };
 
   // Retry function for Table API
@@ -703,10 +701,7 @@ export default function Tickets() {
         return prev;
       });
     } finally {
-      // Add a small delay to make loading state visible
-      setTimeout(() => {
-        setIsTableLoading(false);
-      }, 1000);
+      setIsTableLoading(false);
     }
   };
 
@@ -768,11 +763,8 @@ export default function Tickets() {
           return newApis;
         });
       } finally {
-        // Add a small delay to make loading state visible
-        setTimeout(() => {
-          setIsStatsLoading(false);
-          setIsTrendsLoading(false);
-        }, 1000);
+        setIsStatsLoading(false);
+        setIsTrendsLoading(false);
       }
     };
 
@@ -861,10 +853,7 @@ export default function Tickets() {
           return prev;
         });
       } finally {
-        // Add a small delay to make loading state visible
-        setTimeout(() => {
-          setIsTableLoading(false);
-        }, 1000);
+        setIsTableLoading(false);
       }
     };
 
@@ -1058,7 +1047,7 @@ export default function Tickets() {
                 name: 'PageHeader',
                 props: {
                   title: 'Tickets',
-                  onBackClick: () => window.history.back(),
+                  onBackClick: () => navigate('/'),
                   backButtonText: 'Back to Dashboard',
                   buttonsLabel: 'Add Ticket',
                   variant: 'primary',
@@ -1155,7 +1144,7 @@ export default function Tickets() {
                     {
                       name: 'Table',
                       props: {
-                        data: tickets || dummyTickets,
+                        data: tickets,
                         columns: tableColumns,
                         showHeader: true,
                         headerTitle: 'Recent Tickets',
